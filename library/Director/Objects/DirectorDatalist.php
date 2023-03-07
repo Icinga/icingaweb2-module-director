@@ -30,39 +30,6 @@ class DirectorDatalist extends DbObject implements ExportInterface
         return $this->get('list_name');
     }
 
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return static
-     * @throws \Icinga\Exception\NotFoundError
-     * @throws DuplicateKeyException
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-        $name = $properties['list_name'];
-
-        if ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::exists($name, $db)) {
-            throw new DuplicateKeyException(
-                'Data List %s already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
     public function setEntries($entries)
     {
         $existing = $this->getStoredEntries();
@@ -183,30 +150,6 @@ class DirectorDatalist extends DbObject implements ExportInterface
                 unset($this->storedEntries[$key]);
             }
         }
-    }
-
-    /**
-     * @deprecated please use \Icinga\Module\Director\Data\Exporter
-     * @return object
-     */
-    public function export()
-    {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
-
-        $plain->entries = [];
-        foreach ($this->getStoredEntries() as $key => $entry) {
-            if ($entry->shouldBeRemoved()) {
-                continue;
-            }
-            $plainEntry = (object) $entry->getProperties();
-            unset($plainEntry->list_id);
-
-            $plain->entries[] = $plainEntry;
-        }
-
-        return $plain;
     }
 
     protected function getStoredEntries()

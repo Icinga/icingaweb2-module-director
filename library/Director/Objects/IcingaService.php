@@ -8,7 +8,6 @@ use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
@@ -166,94 +165,6 @@ class IcingaService extends IcingaObject implements ExportInterface
             throw new RuntimeException(
                 'getUniqueIdentifier() is supported by Service Templates only'
             );
-        }
-    }
-
-    /**
-     * @return object
-     * @deprecated please use \Icinga\Module\Director\Data\Exporter
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
-    {
-        // TODO: ksort in toPlainObject?
-        $props = (array) $this->toPlainObject();
-        $props['fields'] = $this->loadFieldReferences();
-        ksort($props);
-
-        return (object) $props;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return IcingaService
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        $name = $properties['object_name'];
-        if ($properties['object_type'] !== 'template') {
-            throw new InvalidArgumentException(sprintf(
-                'Can import only Templates, got "%s" for "%s"',
-                $properties['object_type'],
-                $name
-            ));
-        }
-        $key = [
-            'object_type' => 'template',
-            'object_name' => $name
-        ];
-
-        if ($replace && static::exists($key, $db)) {
-            $object = static::load($key, $db);
-        } elseif (static::exists($key, $db)) {
-            throw new DuplicateKeyException(
-                'Service Template "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        // $object->newFields = $properties['fields'];
-        unset($properties['fields']);
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
-    /**
-     * @deprecated please use \Icinga\Module\Director\Data\FieldReferenceLoader
-     * @return array
-     */
-    protected function loadFieldReferences()
-    {
-        $db = $this->getDb();
-
-        $res = $db->fetchAll(
-            $db->select()->from([
-                'sf' => 'icinga_service_field'
-            ], [
-                'sf.datafield_id',
-                'sf.is_required',
-                'sf.var_filter',
-            ])->join(['df' => 'director_datafield'], 'df.id = sf.datafield_id', [])
-                ->where('service_id = ?', $this->get('id'))
-                ->order('varname ASC')
-        );
-
-        if (empty($res)) {
-            return [];
-        } else {
-            foreach ($res as $field) {
-                $field->datafield_id = (int) $field->datafield_id;
-            }
-
-            return $res;
         }
     }
 

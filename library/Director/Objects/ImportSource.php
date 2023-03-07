@@ -52,68 +52,6 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
     private $newRowModifiers;
 
-    /**
-     * @deprecated please use \Icinga\Module\Director\Data\FieldReferenceLoader
-     * @return \stdClass
-     */
-    public function export()
-    {
-        $plain = $this->getProperties();
-        $plain['originalId'] = $plain['id'];
-        unset($plain['id']);
-
-        foreach ($this->stateProperties as $key) {
-            unset($plain[$key]);
-        }
-
-        $plain['settings'] = (object) $this->getSettings();
-        $plain['modifiers'] = $this->exportRowModifiers();
-        ksort($plain);
-
-        return (object) $plain;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return ImportSource
-     * @throws DuplicateKeyException
-     * @throws NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-        $name = $properties['source_name'];
-
-        if ($replace && $id && static::existsWithNameAndId($name, $id, $db)) {
-            $object = static::loadWithAutoIncId($id, $db);
-        } elseif ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::existsWithName($name, $db)) {
-            throw new DuplicateKeyException(
-                'Import Source %s already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        if (! isset($properties['modifiers'])) {
-            $properties['modifiers'] = [];
-        }
-
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
     public function setModifiers(array $modifiers)
     {
         if ($this->loadedRowModifiers === null && $this->hasBeenLoadedFromDb()) {

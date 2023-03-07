@@ -68,44 +68,6 @@ class Basket extends DbObject implements ExportInterface
         return $this->get('basket_name');
     }
 
-    public function export()
-    {
-        $result = $this->getProperties();
-        unset($result['uuid']);
-        $result['objects'] = Json::decode($result['objects']);
-        ksort($result);
-
-        return (object) $result;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return static
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        $name = $properties['basket_name'];
-
-        if ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::exists($name, $db)) {
-            throw new DuplicateKeyException(
-                'Basket "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
     public function supportsCustomSelectionFor($type)
     {
         if (! array_key_exists($type, $this->chosenObjects)) {
