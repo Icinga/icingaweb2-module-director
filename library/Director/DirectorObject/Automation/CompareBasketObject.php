@@ -46,7 +46,11 @@ class CompareBasketObject
     protected static function sortListBy($key, &$list)
     {
         usort($list, function ($a, $b) use ($key) {
-            return $a->$key > $b->$key ? -1 : 1;
+            if (is_array($a)) {
+                return $a[$key] > $b[$key] ? -1 : 1;
+            } else {
+                return $a->$key > $b->$key ? -1 : 1;
+            }
         });
     }
 
