@@ -80,6 +80,9 @@ abstract class DbObject
 
     protected $binaryProperties = [];
 
+    /* key/value!! */
+    protected $booleans = [];
+
     /**
      * Filled with object instances when prefetchAll is used
      */
@@ -344,6 +347,10 @@ abstract class DbObject
 
         if (method_exists($this, $func)) {
             return $this->$func($value);
+        }
+
+        if ($this->propertyIsBoolean($key)) {
+            $value = DbDataFormatter::normalizeBoolean($value);
         }
 
         if (! $this->hasProperty($key)) {
@@ -876,6 +883,11 @@ abstract class DbObject
     protected function isBinaryColumn($column)
     {
         return in_array($column, $this->binaryProperties) || $this->getUuidColumn() === $column;
+    }
+
+    public function propertyIsBoolean($property)
+    {
+        return array_key_exists($property, $this->booleans);
     }
 
     /**

@@ -63,9 +63,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $type;
 
-    /* key/value!! */
-    protected $booleans = [];
-
     // Property suffixed with _id must exist
     protected $relations = [
         // property => PropertyClass
@@ -140,11 +137,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getConnection()
     {
         return $this->connection;
-    }
-
-    public function propertyIsBoolean($property)
-    {
-        return array_key_exists($property, $this->booleans);
     }
 
     public function propertyIsInterval($property)
@@ -769,10 +761,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             && substr($key, 0, 10) === 'arguments.') {
             $this->arguments()->set(substr($key, 10), $value);
             return $this;
-        }
-
-        if ($this->propertyIsBoolean($key)) {
-            return parent::set($key, DbDataFormatter::normalizeBoolean($value));
         }
 
         // e.g. zone_id
@@ -2894,7 +2882,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             // TODO: Do not ship null properties based on flag?
             if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
-                    $props[$k] = $this->booleanForDbValue($v);
+                    $props[$k] = DbDataFormatter::booleanForDbValue($v);
                 } else {
                     $props[$k] = $v;
                 }
@@ -3003,18 +2991,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         ksort($props);
 
         return (object) $props;
-    }
-
-    protected function booleanForDbValue($value)
-    {
-        if ($value === 'y') {
-            return true;
-        }
-        if ($value === 'n') {
-            return false;
-        }
-
-        return $value; // let this fail elsewhere, if not null
     }
 
     public function listImportNames()
@@ -3161,7 +3137,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
             if ($this->differsFromDefaultValue($k, $v)) {
                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
-                    $props[$k] = $this->booleanForDbValue($v);
+                    $props[$k] = DbDataFormatter::booleanForDbValue($v);
                 } else {
                     $props[$k] = $v;
                 }
