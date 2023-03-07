@@ -64,6 +64,7 @@ class BasketDiff
         } else {
             $exported = null;
         }
+        CompareBasketObject::normalize($exported);
 
         return $exported;
     }
@@ -78,9 +79,9 @@ class BasketDiff
         if ($fields === null) {
             unset($reExport->fields);
         } else {
-            CompareBasketObject::normalize($fields);
             $reExport->fields = $fields;
         }
+        CompareBasketObject::normalize($reExport);
 
         return $reExport;
     }
