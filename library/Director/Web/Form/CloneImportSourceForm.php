@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use gipfl\Web\Form;
 use Icinga\Module\Director\Data\Exporter;
-use ipl\Html\Form;
 use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
 use ipl\Html\FormDecorator\DdDtDecorator;
