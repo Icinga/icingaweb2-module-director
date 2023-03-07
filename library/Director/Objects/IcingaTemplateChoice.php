@@ -155,7 +155,7 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
 
     public function hasBeenModified()
     {
-        if ($this->newChoices !== null && $this->choices !== $this->newChoices) {
+        if ($this->newChoices !== null && ($this->choices ?? $this->fetchChoices()) !== $this->newChoices) {
             return true;
         }
 
