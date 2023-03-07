@@ -31,7 +31,7 @@ class CompareBasketObject
                 static::normalize($v);
             }
             unset($v);
-            $value = $sorted;
+            $value = (object) $sorted;
 
             // foreign baskets might not sort those lists correctly:
             if (isset($value->list_name) && isset($value->entries)) {
