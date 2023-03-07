@@ -43,6 +43,10 @@ class SyncRule extends DbObject implements ExportInterface
         'last_attempt',
     ];
 
+    protected $booleans = [
+        'purge_existing' => 'purge_existing',
+    ];
+
     private $sync;
 
     private $purgeStrategy;
