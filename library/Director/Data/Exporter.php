@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Data;
 
+use gipfl\Json\JsonString;
 use gipfl\ZfDb\Adapter\Adapter;
 use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorDatalistEntry;
@@ -258,6 +260,11 @@ class Exporter
                 $props['settings'] = (object) $object->getInstance()->exportSettings();
             } else {
                 $props['settings'] = (object) $object->getSettings(); // Already sorted
+            }
+        }
+        if ($object instanceof Basket) {
+            if (isset($props['objects']) && is_string($props['objects'])) {
+                $props['objects'] = JsonString::decode($props['objects']);
             }
         }
         unset($props['uuid']); // Not yet
