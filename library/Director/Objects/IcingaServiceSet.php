@@ -15,6 +15,7 @@ use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 use RuntimeException;
+use stdClass;
 
 class IcingaServiceSet extends IcingaObject implements ExportInterface
 {
@@ -45,6 +46,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     protected $relations = array(
         'host' => 'IcingaHost',
     );
+
+    /** @var IcingaService[]|null */
+    private $services;
 
     public function isDisabled()
     {
@@ -79,6 +83,56 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     }
 
     /**
+     * @param stdClass[] $services
+     * @return void
+     */
+    public function setServices(array $services)
+    {
+        $existing = $this->getServices();
+        $uuidMap = [];
+        foreach ($existing as $service) {
+            $uuidMap[$service->getUniqueId()->getBytes()] = $service;
+        }
+        $this->services = [];
+        foreach ($services as $service) {
+            if (isset($service->uuid)) {
+                $uuid = Uuid::fromString($service->uuid)->getBytes();
+                $current = $uuidMap[$uuid] ?? IcingaService::create([], $this->connection);
+            } else {
+                if (! is_object($service)) {
+                    var_dump($service);
+                    exit;
+                }
+                $current = $existing[$service->object_name] ?? IcingaService::create([], $this->connection);
+            }
+            $current->setProperties((array) $service);
+            $this->services[] = $current;
+        }
+    }
+
+    protected function storeRelatedServices()
+    {
+        if ($this->services === null) {
+            return;
+        }
+
+        $seen = [];
+        /** @var IcingaService $service */
+        foreach ($this->services as $service) {
+            $seen[$service->getUniqueId()->getBytes()] = true;
+            $service->set('service_set_id', $this->get('id'));
+            $service->store();
+        }
+
+        foreach ($this->fetchServices() as $service) {
+            if (!isset($seen[$service->getUniqueId()->getBytes()])) {
+                $service->delete();
+            }
+        }
+    }
+
+    /**
+     * @deprecated
      * @return IcingaService[]
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -516,7 +570,23 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     /**
      * @return IcingaService[]
      */
-    public function fetchServices()
+    public function getServices(): array
+    {
+        if ($this->services !== null) {
+            return $this->services;
+        }
+
+        if ($this->hasBeenLoadedFromDb()) {
+            return $this->fetchServices();
+        }
+
+        return [];
+    }
+
+    /**
+     * @return IcingaService[]
+     */
+    public function fetchServices(): array
     {
         if ($store = self::$dbObjectStore) {
             $uuid = $store->getBranch()->getUuid();
@@ -578,6 +648,24 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
                 $name
             );
         }
+    }
+
+    public function onStore()
+    {
+        $this->storeRelatedServices();
+    }
+
+    public function hasBeenModified()
+    {
+        if ($this->services !== null) {
+            foreach ($this->services as $service) {
+                if ($service->hasBeenModified()) {
+                    return true;
+                }
+            }
+        }
+
+        return parent::hasBeenModified();
     }
 
     public function toSingleIcingaConfig()
