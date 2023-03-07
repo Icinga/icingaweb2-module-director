@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Data;
 
 use gipfl\ZfDb\Adapter\Adapter;
+use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
@@ -246,6 +247,12 @@ class Exporter
     protected function exportDbObject(DbObject $object)
     {
         $props = $object->getProperties();
+        foreach ($props as $key => &$value) {
+            if ($object->propertyIsBoolean($key)) {
+                $value = DbDataFormatter::booleanForDbValue($value);
+            }
+        }
+        unset($value);
         if ($object instanceof DbObjectWithSettings) {
             if ($object instanceof InstantiatedViaHook) {
                 $props['settings'] = (object) $object->getInstance()->exportSettings();
