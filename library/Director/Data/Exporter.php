@@ -21,6 +21,7 @@ use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\InstantiatedViaHook;
 use Icinga\Module\Director\Objects\SyncRule;
+use Ramsey\Uuid\Uuid;
 use RuntimeException;
 
 class Exporter
@@ -70,6 +71,11 @@ class Exporter
             }
 
             $props = $chosen;
+        }
+        if ($column = $object->getUuidColumn()) {
+            if ($uuid = $object->get($column)) {
+                $props[$column] = Uuid::fromBytes($uuid)->toString();
+            }
         }
 
         ksort($props);

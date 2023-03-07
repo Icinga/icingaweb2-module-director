@@ -4,8 +4,6 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 
 /**
  * Class Basket
@@ -22,6 +20,8 @@ class Basket extends DbObject implements ExportInterface
     protected $table = 'director_basket';
 
     protected $keyName = 'basket_name';
+
+    protected $uuidColumn = 'uuid';
 
     protected $chosenObjects = [];
 

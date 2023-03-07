@@ -349,6 +349,12 @@ abstract class DbObject
             return $this->$func($value);
         }
 
+        if ($this->getUuidColumn() === $key) {
+            if (strlen($value) > 16) {
+                $value = Uuid::fromString($value)->getBytes();
+            }
+        }
+
         if ($this->propertyIsBoolean($key)) {
             $value = DbDataFormatter::normalizeBoolean($value);
         }

@@ -21,6 +21,7 @@ use Icinga\Module\Director\Forms\RestoreBasketForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use ipl\Html\Html;
 use Icinga\Module\Director\Web\Table\BasketSnapshotTable;
+use Ramsey\Uuid\Uuid;
 
 class BasketController extends ActionController
 {
@@ -268,8 +269,11 @@ class BasketController extends ActionController
                     $linkParams['target_db'] = $targetDbName;
                 }
                 try {
-                    if ($diff->hasCurrentInstance($type, $key)) {
-                        if ($diff->hasChangedFor($type, $key)) {
+                    if ($uuid = $object->uuid ?? null) {
+                        $uuid = Uuid::fromString($uuid);
+                    }
+                    if ($diff->hasCurrentInstance($type, $key, $uuid)) {
+                        if ($diff->hasChangedFor($type, $key, $uuid)) {
                             $link = Link::create(
                                 $this->translate('modified'),
                                 'director/basket/snapshotobject',
@@ -358,8 +362,12 @@ class BasketController extends ActionController
             $connection = Db::fromResourceName($targetDbName);
         }
         $diff = new BasketDiff($snapshot, $connection);
-        $currentJson = $diff->getCurrentString($type, $key);
+        $object = $diff->getBasketObject($type, $key);
+        if ($uuid = $object->uuid ?? null) {
+            $uuid = Uuid::fromString($uuid);
+        }
         $basketJson = $diff->getBasketString($type, $key);
+        $currentJson = $diff->getCurrentString($type, $key, $uuid);
         if ($currentJson === $basketJson) {
             $this->content()->add([
                 Hint::ok('Basket equals current object'),

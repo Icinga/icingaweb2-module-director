@@ -30,6 +30,7 @@ use Icinga\Module\Director\Objects\IcingaUserGroup;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use InvalidArgumentException;
+use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
 use stdClass;
 
@@ -475,6 +476,17 @@ class BasketSnapshot extends DbObject
         foreach ($identifiers as $identifier) {
             $this->addByIdentifier($typeName, $identifier);
         }
+    }
+
+    /**
+     * @return ExportInterface|DbObject|null
+     */
+    public static function instanceByUuid(string $typeName, UuidInterface $uuid, Db $connection)
+    {
+        /** @var class-string<DbObject> $class */
+        $class = static::getClassForType($typeName);
+        /** @var ExportInterface $object */
+        return $class::loadWithUniqueId($uuid, $connection);
     }
 
     /**
