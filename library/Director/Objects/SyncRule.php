@@ -316,6 +316,16 @@ class SyncRule extends DbObject implements ExportInterface
         return $object;
     }
 
+    /**
+     * Flat object has 'properties', but setProperties() is not available in DbObject
+     *
+     * @return void
+     */
+    public function setSyncProperties(?array $value)
+    {
+        $this->newSyncProperties = $value;
+    }
+
     public function getUniqueIdentifier()
     {
         return $this->get('rule_name');
