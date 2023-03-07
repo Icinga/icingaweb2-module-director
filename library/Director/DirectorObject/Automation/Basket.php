@@ -15,8 +15,9 @@ use Icinga\Module\Director\Exception\DuplicateKeyException;
  */
 class Basket extends DbObject implements ExportInterface
 {
-    const SELECTION_ALL = true;
-    const SELECTION_NONE = false;
+    const SELECTION_ALL = 'ALL';
+    const SELECTION_NONE = 'IGNORE';
+    const SELECTION_CUSTOM = '[]';
 
     protected $table = 'director_basket';
 
@@ -141,11 +142,11 @@ class Basket extends DbObject implements ExportInterface
     {
         BasketSnapshot::assertValidType($type);
         // '1' -> from Form!
-        if ($objects === 'ALL') {
+        if ($objects === self::SELECTION_ALL) {
             $objects = true;
-        } elseif ($objects === null || $objects === 'IGNORE') {
+        } elseif ($objects === null || $objects === self::SELECTION_NONE) {
             return;
-        } elseif ($objects === '[]' || is_array($objects)) {
+        } elseif ($objects === self::SELECTION_CUSTOM || is_array($objects)) {
             if (! isset($this->chosenObjects[$type]) || ! is_array($this->chosenObjects[$type])) {
                 $this->chosenObjects[$type] = [];
             }
@@ -157,16 +158,14 @@ class Basket extends DbObject implements ExportInterface
                 }
             }
 
-            if ($objects === '[]') {
+            if ($objects === self::SELECTION_CUSTOM) {
                 $objects = [];
             }
         }
 
         if ($objects === true) {
             $this->chosenObjects[$type] = true;
-        } elseif ($objects === '0') {
-            // nothing
-        } else {
+        } elseif ($objects !== '0') { // TODO: what would generate '0'?
             foreach ($objects as $object) {
                 $this->addObject($type, $object);
             }
