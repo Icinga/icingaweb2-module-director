@@ -97,8 +97,8 @@ class BasketDiff
 
     public function getCurrentInstance(string $type, string $key, ?UuidInterface $uuid = null)
     {
-        if ($uuid) {
-            return BasketSnapshot::instanceByUuid($type, $uuid, $this->db);
+        if ($uuid && $instance = BasketSnapshot::instanceByUuid($type, $uuid, $this->db)) {
+            return $instance;
         } else {
             return BasketSnapshot::instanceByIdentifier($type, $key, $this->db);
         }

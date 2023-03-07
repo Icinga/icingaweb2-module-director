@@ -120,8 +120,10 @@ class ObjectImporter
      */
     protected function loadExistingObject(string $implementation, stdClass $plain): ?DbObject
     {
-        if (isset($plain->uuid)) {
-            return $implementation::loadWithUniqueId(Uuid::fromString($plain->uuid), $this->db);
+        if (isset($plain->uuid)
+            && $instance = $implementation::loadWithUniqueId(Uuid::fromString($plain->uuid), $this->db)
+        ) {
+            return $instance;
         }
 
         if ($implementation === IcingaService::class) {
