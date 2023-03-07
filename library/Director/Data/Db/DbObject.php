@@ -1049,7 +1049,7 @@ abstract class DbObject
         if ($this->hasUuidColumn() && $this->properties[$this->uuidColumn] !== null) {
             return $this->db->quoteInto(
                 sprintf('%s = ?', $this->getUuidColumn()),
-                $this->connection->quoteBinary($this->getUniqueId()->getBytes())
+                $this->connection->quoteBinary($this->getOriginalProperty($this->uuidColumn))
             );
         }
         if ($id = $this->getAutoincId()) {
