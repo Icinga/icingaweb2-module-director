@@ -177,6 +177,7 @@ CREATE TABLE director_deployment_log (
 
 CREATE TABLE director_datalist (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   list_name VARCHAR(255) NOT NULL,
   owner VARCHAR(255) NOT NULL,
   PRIMARY KEY (id),
@@ -207,6 +208,7 @@ CREATE TABLE director_datafield_category (
 
 CREATE TABLE director_datafield (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   category_id INT(10) UNSIGNED DEFAULT NULL,
   varname VARCHAR(64) NOT NULL COLLATE utf8_bin,
   caption VARCHAR(255) NOT NULL,
@@ -2443,4 +2445,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (184, NOW());
+  VALUES (186, NOW());

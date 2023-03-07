@@ -2,28 +2,30 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use gipfl\Json\JsonString;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
+use Icinga\Module\Director\Exception\JsonEncodeException;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Resolver\OverriddenVarsResolver;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
+use stdClass;
 use Zend_Form_Element as ZfElement;
 
 class DirectorDatafield extends DbObjectWithSettings
 {
     protected $table = 'director_datafield';
-
     protected $keyName = 'id';
-
     protected $autoincKeyName = 'id';
+    protected $uuidColumn = 'uuid';
 
     protected $defaultProperties = [
         'id'            => null,
+        'uuid'          => null,
         'category_id'   => null,
         'varname'       => null,
         'caption'       => null,
@@ -124,8 +126,10 @@ class DirectorDatafield extends DbObjectWithSettings
     public function export()
     {
         $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
         unset($plain->id);
+        if ($uuid = $this->get('uuid')) {
+            $plain->uuid = Uuid::fromBytes($uuid)->toString();
+        }
         $plain->settings = (object) $this->getSettings();
 
         if (property_exists($plain->settings, 'datalist_id')) {
@@ -144,63 +148,44 @@ class DirectorDatafield extends DbObjectWithSettings
     }
 
     /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return DirectorDatafield
      * @throws \Icinga\Exception\NotFoundError
+     * @throws JsonEncodeException
      */
-    public static function import($plain, Db $db, $replace = false)
+    public static function import(stdClass $plain, Db $db): DirectorDatafield
     {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-
-        if (isset($properties['settings']->datalist)) {
-            // Just try to load the list, import should fail if missing
-            $list = DirectorDatalist::load(
-                $properties['settings']->datalist,
-                $db
-            );
-        } else {
-            $list = null;
-        }
-
-        $compare = Json::decode(Json::encode($properties));
-        if ($id && static::exists($id, $db)) {
-            $existing = static::loadWithAutoIncId($id, $db);
-            $existingProperties = (array) $existing->export();
-            unset($existingProperties['originalId']);
-            if (CompareBasketObject::equals((object) $compare, (object) $existingProperties)) {
-                return $existing;
+        $dba = $db->getDbAdapter();
+        if ($uuid = $plain->uuid ?? null) {
+            $uuid = Uuid::fromString($uuid);
+            if ($candidate = DirectorDatafield::loadWithUniqueId($uuid, $db)) {
+                self::fixOptionalDatalistReference($plain, $db);
+                assert($candidate instanceof DirectorDatafield);
+                $candidate->setProperties((array) $plain);
+                return $candidate;
             }
         }
-
-        if ($list) {
-            unset($properties['settings']->datalist);
-            $properties['settings']->datalist_id = $list->get('id');
-        }
-
-        $dba = $db->getDbAdapter();
-        $query = $dba->select()
-            ->from('director_datafield')
-            ->where('varname = ?', $plain->varname);
+        $query = $dba->select()->from('director_datafield')->where('varname = ?', $plain->varname);
         $candidates = DirectorDatafield::loadAll($db, $query);
 
         foreach ($candidates as $candidate) {
             $export = $candidate->export();
-            unset($export->originalId);
             CompareBasketObject::normalize($export);
-            if (CompareBasketObject::equals($export, $compare)) {
+            if (CompareBasketObject::equals($export, $plain)) {
                 return $candidate;
             }
         }
+        self::fixOptionalDatalistReference($plain, $db);
 
-        return static::create($properties, $db);
+        return static::create((array) $plain, $db);
+    }
+
+    protected static function fixOptionalDatalistReference(stdClass $plain, Db $db)
+    {
+        if (isset($plain->settings->datalist)) {
+            // Just try to load the list, import should fail if missing
+            $list = DirectorDatalist::load($plain->settings->datalist, $db);
+            unset($plain->settings->datalist);
+            $plain->settings->datalist_id = $list->get('id');
+        }
     }
 
     protected function beforeStore()

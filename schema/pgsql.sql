@@ -246,6 +246,7 @@ CREATE INDEX start_time_idx ON director_deployment_log (start_time);
 
 CREATE TABLE director_datalist (
   id serial,
+  uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
   list_name character varying(255) NOT NULL,
   owner character varying(255) NOT NULL,
   PRIMARY KEY (id)
@@ -283,6 +284,7 @@ CREATE UNIQUE INDEX datafield_category_name ON director_datafield_category (cate
 
 CREATE TABLE director_datafield (
   id serial,
+  uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
   category_id integer DEFAULT NULL,
   varname character varying(64) NOT NULL,
   caption character varying(255) NOT NULL,
@@ -2782,4 +2784,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (184, NOW());
+  VALUES (186, NOW());

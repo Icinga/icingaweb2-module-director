@@ -11,16 +11,16 @@ use Icinga\Module\Director\Exception\DuplicateKeyException;
 class DirectorDatalist extends DbObject implements ExportInterface
 {
     protected $table = 'director_datalist';
-
     protected $keyName = 'list_name';
-
     protected $autoincKeyName = 'id';
+    protected $uuidColumn = 'uuid';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'            => null,
+        'uuid'          => null,
         'list_name'     => null,
         'owner'         => null
-    );
+    ];
 
     /** @var DirectorDatalistEntry[] */
     protected $storedEntries;
