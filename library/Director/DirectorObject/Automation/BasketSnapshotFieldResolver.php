@@ -114,6 +114,8 @@ class BasketSnapshotFieldResolver
     }
 
     /**
+     * For diff purposes only, gives '(UNKNOWN)' for fields missing in our DB
+     *
      * @param object $object
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -127,7 +129,7 @@ class BasketSnapshotFieldResolver
                 if (isset($map[$id])) {
                     $field->datafield_id = $map[$id];
                 } else {
-                    $field->datafield_id = "(NEW)";
+                    $field->datafield_id = "(UNKNOWN)";
                 }
             }
         }
