@@ -152,10 +152,10 @@ class Exporter
                 throw new RuntimeException('Not yet');
             }
             $props['services'] = [];
-            foreach ($object->getServiceObjects() as $serviceObject) {
-                $props['services'][$serviceObject->getObjectName()] = $this->export($serviceObject);
+            foreach ($object->getServices() as $serviceObject) {
+                $props['services'][] = $this->export($serviceObject);
             }
-            ksort($props['services']);
+            usort($props['services'], [$this, 'sortByName']);
         } elseif ($object instanceof IcingaHost) {
             if ($this->exportHostServices) {
                 $services = [];
@@ -166,6 +166,11 @@ class Exporter
                 $props['services'] = $services;
             }
         }
+    }
+
+    protected function sortByName($left, $right)
+    {
+        return $left->object_name < $right->object_name ? '-1' : '1';
     }
 
     public function serviceLoader()
