@@ -2,12 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use gipfl\Json\JsonString;
-use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
-use Icinga\Module\Director\Exception\JsonEncodeException;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Resolver\OverriddenVarsResolver;
@@ -22,6 +19,8 @@ class DirectorDatafield extends DbObjectWithSettings
     protected $keyName = 'id';
     protected $autoincKeyName = 'id';
     protected $uuidColumn = 'uuid';
+    protected $settingsTable = 'director_datafield_setting';
+    protected $settingsRemoteId = 'datafield_id';
 
     protected $defaultProperties = [
         'id'            => null,
@@ -35,16 +34,11 @@ class DirectorDatafield extends DbObjectWithSettings
     ];
 
     protected $relations = [
-        'category'      => 'DirectorDatafieldCategory'
+        'category' => 'DirectorDatafieldCategory'
     ];
 
-    protected $settingsTable = 'director_datafield_setting';
-
-    protected $settingsRemoteId = 'datafield_id';
-
-    /** @var DirectorDatafieldCategory|null */
+    /** @var ?DirectorDatafieldCategory */
     private $category;
-
     private $object;
 
     public static function fromDbRow($row, Db $connection)
@@ -72,10 +66,9 @@ class DirectorDatafield extends DbObjectWithSettings
     }
 
     /**
-     * @return DirectorDatafieldCategory|null
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function getCategory()
+    public function getCategory(): ?DirectorDatafieldCategory
     {
         if ($this->category) {
             return $this->category;
@@ -86,7 +79,7 @@ class DirectorDatafield extends DbObjectWithSettings
         }
     }
 
-    public function getCategoryName()
+    public function getCategoryName(): ?string
     {
         $category = $this->getCategory();
         if ($category === null) {
@@ -107,23 +100,20 @@ class DirectorDatafield extends DbObjectWithSettings
             }
             $this->category = $category;
         } else {
-            if (DirectorDatafieldCategory::exists($category, $this->getConnection())) {
-                $this->setCategory(DirectorDatafieldCategory::load($category, $this->getConnection()));
+            if ($category = DirectorDatafieldCategory::loadOptional($category, $this->getConnection())) {
+                $this->setCategory($category);
             } else {
                 $this->setCategory(DirectorDatafieldCategory::create([
                     'category_name' => $category
                 ], $this->getConnection()));
             }
         }
-
-        return $this;
     }
 
     /**
-     * @return object
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function export()
+    public function export(): stdClass
     {
         $plain = (object) $this->getProperties();
         unset($plain->id);
@@ -149,7 +139,6 @@ class DirectorDatafield extends DbObjectWithSettings
 
     /**
      * @throws \Icinga\Exception\NotFoundError
-     * @throws JsonEncodeException
      */
     public static function import(stdClass $plain, Db $db): DirectorDatafield
     {
@@ -210,7 +199,7 @@ class DirectorDatafield extends DbObjectWithSettings
         return $this->object;
     }
 
-    public function getFormElement(DirectorObjectForm $form, $name = null)
+    public function getFormElement(DirectorObjectForm $form, $name = null): ?ZfElement
     {
         $className = $this->get('datatype');
 
@@ -292,7 +281,7 @@ class DirectorDatafield extends DbObjectWithSettings
         }
     }
 
-    protected function eventuallyGetResolvedCommandVar(IcingaObject $object, $varName)
+    protected function eventuallyGetResolvedCommandVar(IcingaObject $object, $varName): ?array
     {
         if (! $object->hasRelation('check_command')) {
             return null;
