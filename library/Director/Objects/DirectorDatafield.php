@@ -169,6 +169,8 @@ class DirectorDatafield extends DbObjectWithSettings
         foreach ($candidates as $candidate) {
             $export = $candidate->export();
             CompareBasketObject::normalize($export);
+            unset($export->uuid);
+            unset($plain->originalId);
             if (CompareBasketObject::equals($export, $plain)) {
                 return $candidate;
             }
