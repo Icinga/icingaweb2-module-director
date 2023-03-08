@@ -2246,7 +2246,7 @@ msgid "Disable Checks"
 msgstr "Checks deaktivieren"
 
 #: application/forms/IcingaDependencyForm.php:167
-msgid "Disable Notificiations"
+msgid "Disable Notifications"
 msgstr "Benachrichtigungen deaktivieren"
 
 #: application/forms/SettingsForm.php:54
