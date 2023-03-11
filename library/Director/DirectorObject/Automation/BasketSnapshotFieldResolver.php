@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaObject;
+use InvalidArgumentException;
 
 class BasketSnapshotFieldResolver
 {
@@ -90,6 +91,11 @@ class BasketSnapshotFieldResolver
             $existingFields[(int) $mapping->datafield_id] = $mapping;
         }
         foreach ($object->fields as $field) {
+            if (! isset($fieldMap[(int) $field->datafield_id])) {
+                throw new InvalidArgumentException(
+                    'Basket Snapshot contains invalid field reference: ' . $field->datafield_id
+                );
+            }
             $id = $fieldMap[(int) $field->datafield_id];
             if (isset($existingFields[$id])) {
                 unset($existingFields[$id]);
