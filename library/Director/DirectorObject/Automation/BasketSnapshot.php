@@ -293,6 +293,10 @@ class BasketSnapshot extends DbObject
         Db $connection,
         bool $replace
     ) {
+        if ($replace === false) {
+            throw new RuntimeException('Replace flag should no longer be in use');
+        }
+
         if (isset($all->$typeName)) {
             $objects = (array) $all->$typeName;
         } else {
