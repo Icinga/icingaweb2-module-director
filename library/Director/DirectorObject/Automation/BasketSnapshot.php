@@ -220,16 +220,11 @@ class BasketSnapshot extends DbObject
 
     /**
      * @param Db $connection
-     * @param bool $replace
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function restoreTo(Db $connection, $replace = true)
+    public function restoreTo(Db $connection)
     {
-        static::restoreJson(
-            $this->getJsonDump(),
-            $connection,
-            $replace
-        );
+        static::restoreJson($this->getJsonDump(), $connection);
     }
 
     /**
@@ -250,14 +245,9 @@ class BasketSnapshot extends DbObject
         return $snapshot;
     }
 
-    public static function restoreJson($string, Db $connection, $replace = true)
+    public static function restoreJson($string, Db $connection)
     {
-        $snapshot = new static();
-        $snapshot->restoreObjects(
-            JsonString::decode($string),
-            $connection,
-            $replace
-        );
+        (new static())->restoreObjects(JsonString::decode($string), $connection);
     }
 
     /**
@@ -266,16 +256,16 @@ class BasketSnapshot extends DbObject
      * @throws \Icinga\Exception\NotFoundError
      * @throws JsonDecodeException
      */
-    protected function restoreObjects(stdClass $all, Db $connection, $replace = true)
+    protected function restoreObjects(stdClass $all, Db $connection)
     {
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
         $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
-        $this->restoreType($all, 'DataList', $fieldResolver, $connection, $replace);
-        $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection, $replace);
+        $this->restoreType($all, 'DataList', $fieldResolver, $connection);
+        $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
         $fieldResolver->storeNewFields();
         foreach ($this->restoreOrder as $typeName) {
-            $this->restoreType($all, $typeName, $fieldResolver, $connection, $replace);
+            $this->restoreType($all, $typeName, $fieldResolver, $connection);
         }
         $db->commit();
     }
@@ -290,13 +280,8 @@ class BasketSnapshot extends DbObject
         stdClass $all,
         string $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
-        Db $connection,
-        bool $replace
+        Db $connection
     ) {
-        if ($replace === false) {
-            throw new RuntimeException('Replace flag should no longer be in use');
-        }
-
         if (isset($all->$typeName)) {
             $objects = (array) $all->$typeName;
         } else {
