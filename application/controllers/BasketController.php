@@ -125,6 +125,26 @@ class BasketController extends ActionController
         $this->content()->add($form);
     }
 
+    public function uploadSnapshotAction()
+    {
+        $basket = Basket::load($this->params->get('name'), $this->db());
+        $this->actions()->add(
+            Link::create(
+                $this->translate('back'),
+                'director/basket/snapshots',
+                ['name' => $basket->get('basket_name')],
+                ['class' => 'icon-left-big']
+            )
+        );
+        $this->basketTabs()->activate('snapshots');
+        $this->addTitle($this->translate('Upload a Configuration Basket Snapshot'));
+        $form = (new BasketUploadForm())
+            ->setObject($basket)
+            ->setDb($this->db())
+            ->handleRequest();
+        $this->content()->add($form);
+    }
+
     /**
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -145,6 +165,12 @@ class BasketController extends ActionController
                 $basket->get('basket_name')
             ));
             $this->basketTabs()->activate('snapshots');
+            $this->actions()->add(Link::create(
+                $this->translate('Upload'),
+                'director/basket/upload-snapshot',
+                ['name' => $basket->get('basket_name')],
+                ['class' => 'icon-upload']
+            ));
         }
         if ($basket !== null) {
             $this->content()->add(
