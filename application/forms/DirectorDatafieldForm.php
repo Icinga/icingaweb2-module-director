@@ -140,8 +140,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
         $this->addElement('text', 'varname', array(
             'label'       => $this->translate('Field name'),
             'description' => $this->translate(
-                'The unique name of the field. This will be the name of the custom'
-                . ' variable in the rendered Icinga configuration.'
+                'This will be the name of the custom variable in the rendered Icinga configuration.'
             ),
             'required'    => true,
         ));
