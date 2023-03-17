@@ -50,7 +50,7 @@ class ExtensibleSet
         $set->object = $object;
         $set->propertyName = $propertyName;
 
-        if ($object->hasBeenLoadedFromDb()) {
+        if ($object->hasBeenLoadedFromDb() && $id = $object->get('id')) {
             $set->loadFromDb();
         }
 
