@@ -294,7 +294,13 @@ class BranchActivity
      */
     public function getObjectName()
     {
-        return $this->getProperty('object_name', 'unknown object name');
+        if ($this->objectTable === BranchSupport::TABLE_ICINGA_SERVICE && $host = $this->getProperty('host')) {
+            $suffix = " ($host)";
+        } else {
+            $suffix = '';
+        }
+
+        return $this->getProperty('object_name', 'unknown object name') . $suffix;
     }
 
     /**

@@ -14,6 +14,7 @@ This version hasn't been released yet
 * FEATURE: Data Fields are now sorted in a case-insensitive way (#2358)
 * FEATURE: Deployment Log now breaks lines (#2677)
 * FEATURE: Sort Template trees by name (#2691)
+* FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 
 ### Icinga Configuration
