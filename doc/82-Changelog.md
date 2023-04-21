@@ -34,6 +34,10 @@ This version hasn't been released yet
 ### Health Check
 * FIX: complaint about overdue jobs was not correct (#2680, #2681)
 
+### Internals
+
+* FIX: group membership is no longer resolved when not needed (#2048)
+
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/33?closed=1)
