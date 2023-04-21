@@ -4,12 +4,14 @@ namespace Icinga\Module\Director\PropertyModifier;
 
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
+use Icinga\Module\Director\Import\SyncUtils;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class PropertyModifierMap extends PropertyModifierHook
 {
     private $cache;
 
+    public static function addSettingsFormFields(QuickForm $form)
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('select', 'datalist_id', array(
@@ -30,13 +32,35 @@ class PropertyModifierMap extends PropertyModifierHook
                 . ' or interrupt the import process'
             ),
             'multiOptions' => $form->optionalEnum(array(
-                'null' => $form->translate('Set null'),
-                'keep' => $form->translate('Return lookup key unmodified'),
-                'fail' => $form->translate('Let the import fail'),
+                'null'   => $form->translate('Set null'),
+                'keep'   => $form->translate('Return lookup key unmodified'),
+                'custom' => $form->translate('Return custom default value'),
+                'fail'   => $form->translate('Let the import fail'),
             )),
+            'class' => 'autosubmit',
         ));
 
+        $method = $form->getSetting('on_missing');
+        if ($method == 'custom') {
+            $form->addElement('text', 'custom_value', array(
+                'label'       => $form->translate('Default value'),
+                'required'    => true,
+                'description' => $form->translate(
+                    'This value will be evaluated, and variables like ${some_column}'
+                    . ' will be filled accordingly. A typical use-case is generating'
+                    . ' unique service identifiers via ${host}!${service} in case your'
+                    . ' data source doesn\'t allow you to ship such. The chosen "property"'
+                    . ' has no effect here and will be ignored.'
+                )
+            ));
+        }
+
         // TODO: ignore case
+    }
+
+    public function requiresRow()
+    {
+        return true;
     }
 
     public function transform($value)
@@ -52,6 +76,9 @@ class PropertyModifierMap extends PropertyModifierHook
 
             case 'keep':
                 return $value;
+
+            case 'custom':
+                return SyncUtils::fillVariables($this->getSetting('custom_value'), $this->getRow());
 
             case 'fail':
             default:
