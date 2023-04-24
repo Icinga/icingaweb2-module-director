@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
 use Icinga\Authentication\Auth;
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
@@ -20,13 +22,15 @@ class ObjectSetTable extends ZfQueryBasedTable
         'os.object_name',
         'os.description',
         'os.assign_filter',
-        'o.object_name',
+        'service_object_name',
     ];
 
     private $type;
 
     /** @var Auth */
     private $auth;
+
+    protected $queries = [];
 
     public static function create($type, Db $db, Auth $auth)
     {
@@ -94,6 +98,7 @@ class ObjectSetTable extends ZfQueryBasedTable
             'object_type'    => 'os.object_type',
             'assign_filter'  => 'os.assign_filter',
             'description'    => 'os.description',
+            'service_object_name' => 'o.object_name',
             'count_services' => 'COUNT(DISTINCT o.uuid)',
         ];
         if ($this->branchUuid) {
@@ -145,7 +150,20 @@ class ObjectSetTable extends ZfQueryBasedTable
                 $query->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid');
                 $right->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid');
             }
-
+            $right->joinLeft(
+                ['bo' => "branched_icinga_${type}"],
+                "bo.${type}_set = bos.object_name",
+                []
+            );
+            $query->joinLeft(
+                ['bo' => "branched_icinga_${type}"],
+                "bo.${type}_set = bos.object_name",
+                []
+            );
+            $this->queries = [
+                $query,
+                $right
+            ];
             $query = $this->db()->select()->union([
                 'l' => new DbSelectParenthesis($query),
                 'r' => new DbSelectParenthesis($right),
@@ -196,9 +214,38 @@ class ObjectSetTable extends ZfQueryBasedTable
                     ->group('os.assign_filter')
                     ->group('os.description');
             };
+            $this->queries = [$query];
         }
 
         return $query;
+    }
+
+    public function search($search)
+    {
+        if (! empty($search)) {
+            $columns = $this->getSearchColumns();
+            if (strpos($search, ' ') === false) {
+                $filter = Filter::matchAny();
+                foreach ($columns as $column) {
+                    $filter->addFilter(Filter::expression($column, '=', "*$search*"));
+                }
+            } else {
+                $filter = Filter::matchAll();
+                foreach (explode(' ', $search) as $s) {
+                    $sub = Filter::matchAny();
+                    foreach ($columns as $column) {
+                        $sub->addFilter(Filter::expression($column, '=', "*$s*"));
+                    }
+                    $filter->addFilter($sub);
+                }
+            }
+
+            foreach ($this->queries as $query) {
+                FilterRenderer::applyToQuery($filter, $query);
+            }
+        }
+
+        return $this;
     }
 
     /**

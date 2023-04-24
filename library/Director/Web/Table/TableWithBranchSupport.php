@@ -56,6 +56,9 @@ trait TableWithBranchSupport
 
             $result[$alias] = $column;
         }
+        if (isset($result['count_services'])) {
+            $result['count_services'] = 'COUNT(DISTINCT COALESCE(o.uuid, bo.uuid))';
+        }
 
         return $result;
     }
