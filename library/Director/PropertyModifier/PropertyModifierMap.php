@@ -12,7 +12,6 @@ class PropertyModifierMap extends PropertyModifierHook
     private $cache;
 
     public static function addSettingsFormFields(QuickForm $form)
-    public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('select', 'datalist_id', array(
             'label'       => 'Lookup list',
