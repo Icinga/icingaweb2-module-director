@@ -2662,14 +2662,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         /** @var DbObject $class */
         $class = DbObjectTypeRegistry::classByType($type);
 
+        if ($keyColumn === null && is_array($class::create()->getKeyName())) {
+            return $class::loadAll($db, $query);
+        }
+
         if ($keyColumn === null) {
             if (method_exists($class, 'getKeyColumnName')) {
                 $keyColumn = $class::getKeyColumnName();
             }
-        }
-
-        if (is_array($class::create()->getKeyName())) {
-            return $class::loadAll($db, $query);
         }
 
         if (PrefetchCache::shouldBeUsed()

@@ -23,6 +23,7 @@ This version hasn't been released yet
 
 ### Import and Sync
 * FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
+* FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 
 ### Permissions and Restrictions
 * FIX: monitoring-related permission checks have been refactored (#2712)

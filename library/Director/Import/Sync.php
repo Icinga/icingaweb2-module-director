@@ -452,7 +452,28 @@ class Sync
             if ($this->store) {
                 $objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType), 'object_name');
             } else {
-                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
+                $keyColumn = null;
+                $query = null;
+                // We enforce named index for combined-key templates (Services and Sets) and applied Sets
+                if ($ruleObjectType === 'service' || $ruleObjectType === 'serviceSet') {
+                    foreach ($this->syncProperties as $prop) {
+                        $configuredObjectType = $prop->get('source_expression');
+                        if ($prop->get('destination_field') === 'object_type'
+                            && (
+                                $configuredObjectType === 'template'
+                                || ($configuredObjectType === 'apply' && $ruleObjectType === 'serviceSet')
+                            )
+                        ) {
+                            $keyColumn = 'object_name';
+                            $table = $ruleObjectType === 'service'
+                                ? BranchSupport::TABLE_ICINGA_SERVICE
+                                : BranchSupport::TABLE_ICINGA_SERVICE_SET;
+                            $query = $this->db->getDbAdapter()->select()
+                                ->from($table)->where('object_type = ?', $configuredObjectType);
+                        }
+                    }
+                }
+                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db, $query, $keyColumn);
             }
 
             if ($useLowerCaseKeys) {
