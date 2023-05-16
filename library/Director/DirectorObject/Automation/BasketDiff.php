@@ -57,7 +57,7 @@ class BasketDiff
         return $this->fieldResolver;
     }
 
-    protected function getCurrent(string $type, string $key, ?UuidInterface $uuid = null): ?object
+    protected function getCurrent(string $type, string $key, ?UuidInterface $uuid = null): ?stdClass
     {
         if ($uuid && $current = BasketSnapshot::instanceByUuid($type, $uuid, $this->db)) {
             $exported = $this->exporter->export($current);
