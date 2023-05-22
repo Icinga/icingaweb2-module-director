@@ -251,6 +251,7 @@ class IcingaCloneObjectForm extends DirectorForm
         return $db->fetchPairs(
             $db->select()
                 ->from('icinga_service_set', ['id', 'object_name'])
+                ->where('object_type = ?','template')
                 ->order('object_name')
         );
     }
