@@ -23,6 +23,8 @@ This version hasn't been released yet
 
 ### Import and Sync
 * FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
+* FEATURE: property modifiers can now be applied based on filters (#2756)
+* FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 
 ### Permissions and Restrictions

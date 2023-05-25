@@ -3,12 +3,14 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
+use Icinga\Data\Filter\Filter;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
+use Icinga\Module\Director\Filter\FilterEnrichment;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\SyncUtils;
@@ -252,10 +254,14 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
         foreach ($modifiers as $modPair) {
             /** @var PropertyModifierHook $modifier */
-            list($property, $modifier) = $modPair;
+            /** @var ?Filter $filter */
+            list($property, $modifier, $filter) = $modPair;
             $rejected = [];
             $newRows = [];
             foreach ($data as $key => $row) {
+                if ($filter && ! $filter->matches($row)) {
+                    continue;
+                }
                 $this->applyPropertyModifierToRow($modifier, $property, $row);
                 if ($modifier->rejectsRow()) {
                     $rejected[] = $key;
@@ -372,7 +378,12 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     {
         $mods = [];
         foreach ($this->fetchRowModifiers() as $mod) {
-            $mods[] = [$mod->get('property_name'), $mod->getInstance()];
+            if ($filterExpression = $mod->get('filter_expression')) {
+                $filter = FilterEnrichment::enrichFilter(Filter::fromQueryString($filterExpression));
+            } else {
+                $filter = null;
+            }
+            $mods[] = [$mod->get('property_name'), $mod->getInstance(), $filter];
         }
 
         return $mods;

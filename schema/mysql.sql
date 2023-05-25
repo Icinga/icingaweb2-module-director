@@ -1459,6 +1459,7 @@ CREATE TABLE import_row_modifier (
   target_property VARCHAR(255) DEFAULT NULL,
   provider_class VARCHAR(128) NOT NULL,
   priority SMALLINT UNSIGNED NOT NULL,
+  filter_expression TEXT DEFAULT NULL,
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   KEY search_idx (property_name),
@@ -2445,4 +2446,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (186, NOW());
+  VALUES (187, NOW());

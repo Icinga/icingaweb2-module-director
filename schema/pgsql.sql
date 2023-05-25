@@ -1608,6 +1608,7 @@ CREATE TABLE import_row_modifier (
   target_property character varying(255) DEFAULT NULL,
   provider_class character varying(128) NOT NULL,
   priority integer NOT NULL,
+  filter_expression text DEFAULT NULL,
   description text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT row_modifier_import_source
@@ -2784,4 +2785,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (186, NOW());
+  VALUES (187, NOW());
