@@ -93,7 +93,7 @@ class ImportRowModifierForm extends DirectorObjectForm
                     . ' set this property only for rows imported with a host property starting'
                     . ' with "www". Complex example: host=www*&!(address=127.*|address6=::1).'
                     . ' Please note, that CIDR notation based matches are also supported: '
-                    . ' address=192.0.2.128/25|address=2001:db8::/32|address=::ffff:192.0.2.0/96'
+                    . ' address=192.0.2.128/25| address=2001:db8::/32| address=::ffff:192.0.2.0/96'
                 ),
                 'required'    => true,
                 // TODO: validate filter
