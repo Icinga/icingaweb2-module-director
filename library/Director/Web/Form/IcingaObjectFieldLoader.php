@@ -421,27 +421,32 @@ class IcingaObjectFieldLoader
     {
         $fields = $this->loadResolvedFieldsForObject($object);
         if ($object->hasRelation('check_command')) {
-            try {
-                /** @var IcingaCommand $command */
-                $command = $object->getResolvedRelated('check_command');
-            } catch (Exception $e) {
-                // Ignore failures
-                $command = null;
-            }
-
-            if ($command) {
-                $cmdLoader = new static($command);
-                $cmdFields = $cmdLoader->getFields();
-                foreach ($cmdFields as $varname => $field) {
-                    if (! array_key_exists($varname, $fields)) {
-                        $fields[$varname] = $field;
-                    }
-                }
-            }
-
-            // TODO -> filters!
+            #for checks
+            $relation = "check_command";
+        } elseif ($object->hasRelation('command')) {
+            #for notifications
+            $relation = "command";
+        }
+        
+        try {
+            /** @var IcingaCommand $command */
+            $command = $object->getResolvedRelated($relation);
+        } catch (Exception $e) {
+            // Ignore failures
+            $command = null;
         }
 
+        if ($command) {
+            $cmdLoader = new static($command);
+            $cmdFields = $cmdLoader->getFields();
+            foreach ($cmdFields as $varname => $field) {
+                if (!array_key_exists($varname, $fields)) {
+                    $fields[$varname] = $field;
+                }
+            }
+        }
+        
+        // TODO -> filters!
         return $fields;
     }
 
