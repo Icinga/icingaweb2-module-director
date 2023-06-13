@@ -604,11 +604,13 @@ class HostController extends ObjectController
     }
 
     /**
-     * @return IcingaHost
+     * @return ?IcingaHost
      */
     protected function getHostObject()
     {
-        assert($this->object instanceof IcingaHost);
+        if ($this->object !== null) {
+            assert($this->object instanceof IcingaHost);
+        }
         return $this->object;
     }
 }
