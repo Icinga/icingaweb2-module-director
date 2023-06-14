@@ -195,14 +195,16 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         assert($connection instanceof Db);
         $builder = new ServiceSetQueryBuilder($connection, $this->branchUuid);
         $query = $builder->selectServicesForSet($this->set);
-        if ($hostId = $this->affectedHost->get('id') !== null) {
-            $query->joinLeft(
-                ['hsb' => 'icinga_host_service_blacklist'],
-                $this->db()->quoteInto('o.id = hsb.service_id AND hsb.host_id = ?', $hostId),
-                []
-            )->columns([
-                'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"
-            ]);
+        if ($this->affectedHost) {
+            if ($hostId = $this->affectedHost->get('id')) {
+                $query->joinLeft(
+                    ['hsb' => 'icinga_host_service_blacklist'],
+                    $this->db()->quoteInto('o.id = hsb.service_id AND hsb.host_id = ?', $hostId),
+                    []
+                )->columns([
+                    'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"
+                ]);
+            }
         }
 
         return $query->limit(100);
