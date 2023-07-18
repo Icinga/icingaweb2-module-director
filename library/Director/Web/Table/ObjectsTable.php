@@ -298,6 +298,7 @@ class ObjectsTable extends ZfQueryBasedTable
             $query->order('object_name')->limit(100);
         } else {
             $this->applyObjectTypeFilter($query);
+            $query = $this->applyRestrictions($query);
             $query->order('o.object_name')->limit(100);
         }
 
