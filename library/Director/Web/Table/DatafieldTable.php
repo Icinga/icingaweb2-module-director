@@ -96,7 +96,7 @@ class DatafieldTable extends ZfQueryBasedTable
      */
     protected function makeDatafieldSub($type, ZfDbAdapter $db)
     {
-        return $db->select()->from("icinga_${type}_field", [
+        return $db->select()->from("icinga_{$type}_field", [
             'cnt' => 'COUNT(*)',
             'datafield_id'
         ])->group('datafield_id');
@@ -110,7 +110,7 @@ class DatafieldTable extends ZfQueryBasedTable
      */
     protected function makeVarSub($type, ZfDbAdapter $db)
     {
-        return $db->select()->from("icinga_${type}_var", [
+        return $db->select()->from("icinga_{$type}_var", [
             'cnt' => 'COUNT(*)',
             'varname'
         ])->group('varname');

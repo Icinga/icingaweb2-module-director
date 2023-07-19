@@ -94,7 +94,7 @@ abstract class TemplateController extends CompatController
         $this->actions()->add(
             Link::create(
                 $this->translate('Back'),
-                "director/${type}template/usage",
+                "director/{$type}template/usage",
                 ['name' => $template->getObjectName()],
                 ['class' => 'icon-left-big']
             )

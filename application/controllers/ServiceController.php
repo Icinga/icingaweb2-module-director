@@ -62,7 +62,7 @@ class ServiceController extends ObjectController
 
     protected function getOptionalRelatedObjectFromParams($type, $parameter)
     {
-        if ($id = $this->params->get("${parameter}_id")) {
+        if ($id = $this->params->get("{$parameter}_id")) {
             $key = (int) $id;
         } else {
             $key = $this->params->get($parameter);
@@ -80,7 +80,7 @@ class ServiceController extends ObjectController
     {
         $key = $object->getUnresolvedRelated($relation);
         if ($key === null) {
-            if ($key = $object->get("${relation}_id")) {
+            if ($key = $object->get("{$relation}_id")) {
                 $key = (int) $key;
             } else {
                 $key = $object->get($relation);

@@ -217,7 +217,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             } elseif (substr($col, $prefixLen, 5) === 'vars.') {
                 $var = substr($col, $prefixLen + 5);
 
-                return $this->text($filter, "DataListValues!${var}");
+                return $this->text($filter, "DataListValues!{$var}");
             }
         }
 
@@ -236,7 +236,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             $filter->getExpression(),
             [
                 'class' => 'director-suggest',
-                'data-suggestion-context' => "${type}groupnames",
+                'data-suggestion-context' => "{$type}groupnames",
             ]
         );
     }

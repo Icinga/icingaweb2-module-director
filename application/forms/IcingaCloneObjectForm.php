@@ -193,7 +193,7 @@ class IcingaCloneObjectForm extends DirectorForm
             $fields = $db->fetchAll(
                 $db->select()
                     ->from($table . '_field')
-                    ->where("${type}_id = ?", $object->get('id'))
+                    ->where("{$type}_id = ?", $object->get('id'))
             );
         } else {
             $fields = [];
@@ -225,7 +225,7 @@ class IcingaCloneObjectForm extends DirectorForm
             }
 
             foreach ($fields as $row) {
-                $row->{"${type}_id"} = $newId;
+                $row->{"{$type}_id"} = $newId;
                 $db->insert($table . '_field', (array) $row);
             }
 

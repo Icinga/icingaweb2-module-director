@@ -40,7 +40,7 @@ class TemplateUsageTable extends Table
     public static function forTemplate(IcingaObject $template)
     {
         $type = ucfirst($template->getShortTableName());
-        $class = __NAMESPACE__ . "\\${type}TemplateUsageTable";
+        $class = __NAMESPACE__ . "\\{$type}TemplateUsageTable";
         if (class_exists($class)) {
             return new $class($template);
         } else {
@@ -85,7 +85,7 @@ class TemplateUsageTable extends Table
                     Table::td(
                         Link::create(
                             $count,
-                            "director/${objectType}template/$type",
+                            "director/{$objectType}template/$type",
                             [
                                 'name' => $template->getObjectName(),
                                 'inheritance' => $inheritance
@@ -120,18 +120,18 @@ class TemplateUsageTable extends Table
             ['o' => 'icinga_' . $oType],
             $this->getTypeSummaryDefinitions()
         )->joinLeft(
-            ['oi' => "icinga_${oType}_inheritance"],
-            "oi.${oType}_id = o.id",
+            ['oi' => "icinga_{$oType}_inheritance"],
+            "oi.{$oType}_id = o.id",
             []
         );
 
         $query = clone($baseQuery);
         $direct = $db->fetchRow(
-            $query->where("oi.parent_${oType}_id = ?", $id)
+            $query->where("oi.parent_{$oType}_id = ?", $id)
         );
         $query = clone($baseQuery);
         $indirect = $db->fetchRow(
-            $query->where("oi.parent_${oType}_id IN (?)", $ids)
+            $query->where("oi.parent_{$oType}_id IN (?)", $ids)
         );
         //$indirect->templates = count($ids) - 1;
         $total = [];
@@ -152,6 +152,6 @@ class TemplateUsageTable extends Table
         if ($extra !== null) {
             $extra = " AND $extra";
         }
-        return "COALESCE(SUM(CASE WHEN o.object_type = '${type}'${extra} THEN 1 ELSE 0 END), 0)";
+        return "COALESCE(SUM(CASE WHEN o.object_type = '{$type}'{$extra} THEN 1 ELSE 0 END), 0)";
     }
 }

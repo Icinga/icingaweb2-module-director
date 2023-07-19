@@ -29,12 +29,12 @@ class FieldReferenceLoader
         }
         $type = $object->getShortTableName();
         $res = $db->fetchAll(
-            $db->select()->from(['f' => "icinga_${type}_field"], [
+            $db->select()->from(['f' => "icinga_{$type}_field"], [
                 'f.datafield_id',
                 'f.is_required',
                 'f.var_filter',
             ])->join(['df' => 'director_datafield'], 'df.id = f.datafield_id', [])
-                ->where("${type}_id = ?", (int) $id)
+                ->where("{$type}_id = ?", (int) $id)
                 ->order('varname ASC')
         );
 

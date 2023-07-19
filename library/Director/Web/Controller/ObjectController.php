@@ -273,7 +273,7 @@ abstract class ObjectController extends ActionController
 
         if ($id = $this->params->get('field_id')) {
             $form->loadObject([
-                "${type}_id"   => $object->id,
+                "{$type}_id"   => $object->id,
                 'datafield_id' => $id
             ]);
 
@@ -368,7 +368,7 @@ abstract class ObjectController extends ActionController
             $this->actions()->add([
                 Link::create(
                     $this->translate('Usage'),
-                    "director/${type}template/usage",
+                    "director/{$type}template/usage",
                     ['name'  => $object->getObjectName()],
                     ['class' => 'icon-sitemap']
                 )

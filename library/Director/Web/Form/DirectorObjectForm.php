@@ -444,7 +444,7 @@ abstract class DirectorObjectForm extends DirectorForm
                         $this->setInheritedValue(
                             $el,
                             $object->getRelatedObjectName($k, $v),
-                            $origins->{"${k}_id"}
+                            $origins->{"{$k}_id"}
                         );
                     }
                 }
@@ -1277,7 +1277,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'required'     => $required,
             'spellcheck'   => 'false',
             'hideOptions'  => $choiceNames,
-            'suggest'      => "${type}templates",
+            'suggest'      => "{$type}templates",
             // 'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'value'        => $this->presetImports,
