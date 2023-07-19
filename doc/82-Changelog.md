@@ -19,6 +19,7 @@ This version hasn't been released yet
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
 
 ### Icinga Configuration
+* FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
 * FIX: render Set Services to individual zones where required (#1589, #2356)
 
 ### Import and Sync
