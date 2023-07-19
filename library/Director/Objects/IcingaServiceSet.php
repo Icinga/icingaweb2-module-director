@@ -313,13 +313,13 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
         if ($config->isLegacy()) {
             if ($assign !== null) {
-                return "## applied Service Set '${name}'\n\n";
+                return "## applied Service Set '{$name}'\n\n";
             } else {
-                return "## Service Set '${name}' on this host\n\n";
+                return "## Service Set '{$name}' on this host\n\n";
             }
         } else {
             $comment = [
-                "Service Set: ${name}",
+                "Service Set: {$name}",
             ];
 
             if (($host = $this->get('host')) !== null) {

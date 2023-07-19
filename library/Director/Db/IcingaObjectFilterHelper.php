@@ -54,12 +54,12 @@ class IcingaObjectFilterHelper
         $db = $template->getDb();
         $id = static::wantId($template);
         $sub = $db->select()->from(
-            array($i => "icinga_${type}_inheritance"),
+            array($i => "icinga_{$type}_inheritance"),
             array('e' => '(1)')
-        )->where("$i.${type}_id = $o.id");
+        )->where("$i.{$type}_id = $o.id");
 
         if ($inheritanceType === self::INHERIT_DIRECT) {
-            $sub->where("$i.parent_${type}_id = ?", $id);
+            $sub->where("$i.parent_{$type}_id = ?", $id);
         } elseif ($inheritanceType === self::INHERIT_INDIRECT
             || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
         ) {
@@ -72,7 +72,7 @@ class IcingaObjectFilterHelper
             if (empty($ids)) {
                 $sub->where('(1 = 0)');
             } else {
-                $sub->where("$i.parent_${type}_id IN (?)", $ids);
+                $sub->where("$i.parent_{$type}_id IN (?)", $ids);
             }
         } else {
             throw new RuntimeException(sprintf(
@@ -95,12 +95,12 @@ class IcingaObjectFilterHelper
             $query->where('(1 = 0)');
         } else {
             $sub = $query->getAdapter()->select()->from(
-                array('go' => "icinga_${type}group_${type}"),
+                array('go' => "icinga_{$type}group_{$type}"),
                 array('e' => '(1)')
             )->join(
-                array('g' => "icinga_${type}group"),
-                "go.${type}group_id = g.id"
-            )->where("go.${type}_id = ${tableAlias}.id")
+                array('g' => "icinga_{$type}group"),
+                "go.{$type}group_id = g.id"
+            )->where("go.{$type}_id = {$tableAlias}.id")
                 ->where('g.object_name IN (?)', $groups);
 
             $query->where('EXISTS ?', $sub);
@@ -118,13 +118,13 @@ class IcingaObjectFilterHelper
             $query->where('(1 = 0)');
         } else {
             $sub = $query->getAdapter()->select()->from(
-                array('go' => "icinga_${type}group_${type}_resolved"),
+                array('go' => "icinga_{$type}group_{$type}_resolved"),
                 array('e' => '(1)')
             )->join(
-                array('g' => "icinga_${type}group"),
-                "go.${type}group_id = g.id",
+                array('g' => "icinga_{$type}group"),
+                "go.{$type}group_id = g.id",
                 []
-            )->where("go.${type}_id = ${tableAlias}.id")
+            )->where("go.{$type}_id = {$tableAlias}.id")
                 ->where('g.object_name IN (?)', $groups);
 
             $query->where('EXISTS ?', $sub);

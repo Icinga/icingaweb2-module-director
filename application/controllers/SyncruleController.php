@@ -464,7 +464,7 @@ class SyncruleController extends ActionController
     {
         $list = new UnorderedList();
         foreach ($properties as $property => $cnt) {
-            $list->addItem("${cnt}x $property");
+            $list->addItem("{$cnt}x $property");
         }
 
         return $list;

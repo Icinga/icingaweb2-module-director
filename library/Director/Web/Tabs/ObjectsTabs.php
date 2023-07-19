@@ -77,7 +77,7 @@ class ObjectsTabs extends Tabs
                 ]);
             }
         }
-        if ($object->supportsSets() && $auth->hasPermission("director/${typeUrl}sets")) {
+        if ($object->supportsSets() && $auth->hasPermission("director/{$typeUrl}sets")) {
             $this->add('sets', [
                 'url'   => sprintf('director/%s/sets', $plType),
                 'label' => $this->translate('Sets')

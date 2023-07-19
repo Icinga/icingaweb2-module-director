@@ -142,7 +142,7 @@ class ObjectsTable extends ZfQueryBasedTable
     protected function renderObjectNameColumn($row)
     {
         $type = $this->baseObjectUrl;
-        $url = Url::fromPath("director/${type}", [
+        $url = Url::fromPath("director/{$type}", [
             'uuid' => Uuid::fromBytes($row->uuid)->toString()
         ]);
 

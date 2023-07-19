@@ -297,7 +297,7 @@ class AgentWizard
             } else {
                 $value = escapeshellarg($value);
             }
-            $script = preg_replace("~^#?$quotedKey='@$quotedKey@'$~m", "${key}=${value}", $script);
+            $script = preg_replace("~^#?$quotedKey='@$quotedKey@'$~m", "{$key}={$value}", $script);
         }
 
         return $script;
