@@ -12,6 +12,7 @@ This version hasn't been released yet
 ### UI
 * FEATURE: allow to clone commands with fields (#2264)
 * FEATURE: Data Fields are now sorted in a case-insensitive way (#2358)
+* FEATURE: Data Field search is now case-insensitive (#2359)
 * FEATURE: Deployment Log now breaks lines (#2677)
 * FEATURE: Sort Template trees by name (#2691)
 * FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
