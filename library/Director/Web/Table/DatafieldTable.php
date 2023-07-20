@@ -5,12 +5,13 @@ namespace Icinga\Module\Director\Web\Table;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Zend_Db_Adapter_Abstract as ZfDbAdapter;
+use Zend_Db_Expr as DbExpr;
 use Zend_Db_Select as ZfDbSelect;
 
 class DatafieldTable extends ZfQueryBasedTable
 {
     protected $searchColumns = [
-        'df.varname',
+        'lc_varname',
         'df.caption',
     ];
 
@@ -19,6 +20,7 @@ class DatafieldTable extends ZfQueryBasedTable
         return [
             'id'              => 'df.id',
             'varname'         => 'df.varname',
+            'lc_varname'      => new DbExpr('LOWER(df.varname)'),
             'caption'         => 'df.caption',
             'description'     => 'df.description',
             'datatype'        => 'df.datatype',
@@ -86,6 +88,15 @@ class DatafieldTable extends ZfQueryBasedTable
             'used_vars.varname = df.varname',
             []
         )->group('df.id')->group('df.varname')->group('dfc.category_name')->order('caption ASC');
+    }
+
+    public function search($search)
+    {
+        if ($search !== null) {
+            $search = strtolower($search);
+        }
+
+        return parent::search($search);
     }
 
     /**
