@@ -4,8 +4,10 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
+use stdClass;
 
 class BasketSnapshotFieldResolver
 {
@@ -137,6 +139,22 @@ class BasketSnapshotFieldResolver
                 } else {
                     $field->datafield_id = "(UNKNOWN)";
                 }
+            }
+        }
+    }
+
+    public static function fixOptionalDatalistReference(stdClass $plain, Db $db)
+    {
+        if (isset($plain->settings->datalist_uuid)) {
+            unset($plain->settings->datalist);
+            return;
+        }
+        if (isset($plain->settings->datalist)) {
+            // Just try to load the list, final import will fail if missing
+            // No modification in case we do not find the list,
+            if ($list = DirectorDatalist::loadOptional($plain->settings->datalist, $db)) {
+                unset($plain->settings->datalist);
+                $plain->settings->datalist_id = $list->get('id');
             }
         }
     }
