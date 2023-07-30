@@ -19,6 +19,7 @@ This version hasn't been released yet
 * FEATURE: Show more details for assign filter parsing errors (#2667)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
+* FIX: Template usage table had no header (#2780)
 
 ### Icinga Configuration
 * FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
