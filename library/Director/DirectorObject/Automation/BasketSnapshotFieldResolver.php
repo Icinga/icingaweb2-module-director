@@ -40,7 +40,7 @@ class BasketSnapshotFieldResolver
      * @return DirectorDatafield[]
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function loadCurrentFields(Db $db)
+    public function loadCurrentFields(Db $db): array
     {
         $fields = [];
         foreach ($this->getRequiredIds() as $id) {
@@ -141,15 +141,12 @@ class BasketSnapshotFieldResolver
         }
     }
 
-    /**
-     * @return int
-     */
-    protected function getNextNewId()
+    protected function getNextNewId(): int
     {
         return $this->nextNewId++;
     }
 
-    protected function getRequiredIds()
+    protected function getRequiredIds(): array
     {
         if ($this->requiredIds === null) {
             if (isset($this->objects['Datafield'])) {
@@ -177,7 +174,7 @@ class BasketSnapshotFieldResolver
      * @param $type
      * @return object[]
      */
-    protected function getObjectsByType($type)
+    protected function getObjectsByType($type): array
     {
         if (isset($this->objects->$type)) {
             return (array) $this->objects->$type;
@@ -190,7 +187,7 @@ class BasketSnapshotFieldResolver
      * @return DirectorDatafield[]
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getTargetFields()
+    protected function getTargetFields(): array
     {
         if ($this->targetFields === null) {
             $this->calculateIdMap();
@@ -202,7 +199,7 @@ class BasketSnapshotFieldResolver
     /**
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getIdMap()
+    protected function getIdMap(): array
     {
         if ($this->idMap === null) {
             $this->calculateIdMap();
