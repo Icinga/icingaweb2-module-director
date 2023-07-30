@@ -110,7 +110,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     protected function renderSingleObjectHeader($to)
     {
         return sprintf(
-            "%s %s %s to %s {\n",
+            "%s %s %s to %s ignore_on_error {\n", // TODO: DB flag
             $this->getObjectTypeName(),
             $this->getType(),
             c::renderString($this->getObjectName()),

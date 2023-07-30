@@ -256,8 +256,16 @@ class IcingaDependencyForm extends DirectorObjectForm
                 ]);
             }
         }
+        $this->addBoolean('ignore_on_error', [
+'ignore' => true,
+            'label' => $this->translate('Ignore on error'),
+            'description' => $this->translate(
+                'Please do not set this to true, unless you really want to create rules that would otherwise fail'
+                . '  because of a matching assignment clause combined with no such parent'),
+            'order' => 80,
+        ], false);
 
-        $elements = ['parent_host', 'child_host', 'parent_service', 'child_service'];
+        $elements = ['parent_host', 'child_host', 'parent_service', 'child_service', 'ignore_on_error'];
         $this->addDisplayGroup($elements, 'related_objects', [
             'decorators' => [
                 'FormElements',
