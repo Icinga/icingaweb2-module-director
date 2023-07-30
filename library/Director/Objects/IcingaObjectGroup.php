@@ -22,6 +22,8 @@ abstract class IcingaObjectGroup extends IcingaObject implements ExportInterface
         'assign_filter' => null,
     ];
 
+    protected $memberShipShouldBeRefreshed = false;
+
     public function getUniqueIdentifier()
     {
         return $this->getObjectName();
@@ -32,24 +34,27 @@ abstract class IcingaObjectGroup extends IcingaObject implements ExportInterface
         return true;
     }
 
-    protected function memberShipShouldBeRefreshed(): bool
+    protected function beforeStore()
     {
+        parent::beforeStore();
         if ($this->hasBeenLoadedFromDb()) {
             if (!array_key_exists('assign_filter', $this->getModifiedProperties())) {
-                return false;
+                $this->memberShipShouldBeRefreshed = false;
+                return;
             }
         } else {
             if ($this->get('assign_filter') === null) {
-                return false;
+                $this->memberShipShouldBeRefreshed = false;
+                return;
             }
         }
 
-        return true;
+        $this->memberShipShouldBeRefreshed = true;
     }
 
     protected function notifyResolvers()
     {
-        if ($this->memberShipShouldBeRefreshed()) {
+        if ($this->memberShipShouldBeRefreshed) {
             $resolver = $this->getMemberShipResolver();
             $resolver->addGroup($this);
             $resolver->refreshDb();
