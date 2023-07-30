@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
@@ -146,7 +147,7 @@ class DirectorDatafield extends DbObjectWithSettings
         if ($uuid = $plain->uuid ?? null) {
             $uuid = Uuid::fromString($uuid);
             if ($candidate = DirectorDatafield::loadWithUniqueId($uuid, $db)) {
-                self::fixOptionalDatalistReference($plain, $db);
+                BasketSnapshotFieldResolver::fixOptionalDatalistReference($plain, $db);
                 assert($candidate instanceof DirectorDatafield);
                 $candidate->setProperties((array) $plain);
                 return $candidate;
@@ -164,19 +165,9 @@ class DirectorDatafield extends DbObjectWithSettings
                 return $candidate;
             }
         }
-        self::fixOptionalDatalistReference($plain, $db);
+        BasketSnapshotFieldResolver::fixOptionalDatalistReference($plain, $db);
 
         return static::create((array) $plain, $db);
-    }
-
-    protected static function fixOptionalDatalistReference(stdClass $plain, Db $db)
-    {
-        if (isset($plain->settings->datalist)) {
-            // Just try to load the list, import should fail if missing
-            $list = DirectorDatalist::load($plain->settings->datalist, $db);
-            unset($plain->settings->datalist);
-            $plain->settings->datalist_id = $list->get('id');
-        }
     }
 
     protected function beforeStore()
