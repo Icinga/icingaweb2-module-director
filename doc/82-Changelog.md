@@ -16,6 +16,7 @@ This version hasn't been released yet
 * FEATURE: Deployment Log now breaks lines (#2677)
 * FEATURE: Sort Template trees by name (#2691)
 * FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
+* FEATURE: Show more details for assign filter parsing errors (#2667)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
 
