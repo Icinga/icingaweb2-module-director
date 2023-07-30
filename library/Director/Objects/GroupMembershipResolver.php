@@ -211,7 +211,7 @@ abstract class GroupMembershipResolver
             $query,
             $object,
             'o',
-            Db\IcingaObjectFilterHelper::INHERIT_DIRECT_OR_INDIRECT
+            IcingaObjectFilterHelper::INHERIT_DIRECT_OR_INDIRECT
         );
 
         foreach ($object::loadAll($this->connection, $query) as $child) {
