@@ -385,7 +385,10 @@ abstract class DbObject
             return $this;
         }
         if ($key === 'id' || substr($key, -3) === '_id') {
-            if ((int) $value === (int) $this->properties[$key]) {
+            if ($value !== null
+                && $this->properties[$key] !== null
+                && (int) $value === (int) $this->properties[$key]
+            ) {
                 return $this;
             }
         }
