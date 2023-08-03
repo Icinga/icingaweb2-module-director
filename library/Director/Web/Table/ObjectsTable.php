@@ -14,6 +14,7 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Ramsey\Uuid\Uuid;
+use Zend_Db_Adapter_Pdo_Pgsql;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable
@@ -124,11 +125,17 @@ class ObjectsTable extends ZfQueryBasedTable
         IcingaObject $template,
         $inheritance = Db\IcingaObjectFilterHelper::INHERIT_DIRECT
     ) {
+        if ($this->branchUuid) {
+            $tableAlias = 'u';
+        } else {
+            $tableAlias = 'o';
+        }
         IcingaObjectFilterHelper::filterByTemplate(
             $this->getQuery(),
             $template,
-            'o',
-            $inheritance
+            $tableAlias,
+            $inheritance,
+            $this->branchUuid
         );
 
         return $this;
@@ -279,7 +286,41 @@ class ObjectsTable extends ZfQueryBasedTable
                     $conn->quoteBinary($this->branchUuid->getBytes())
                 ),
                 []
-            )->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
+            );
+
+            // keep the imported templates as columns
+            if ($this->getType() === 'host' || $this->getType() === 'service') {
+                $leftColumns = $columns;
+                $rightColumns = $columns;
+
+                if ($this->db() instanceof Zend_Db_Adapter_Pdo_Pgsql) {
+                    $leftColumns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
+                        . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
+                } else {
+                    $leftColumns['imports'] = 'CONCAT(\'[\', '
+                        . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
+                }
+
+                $query->reset('columns');
+
+                $query->columns($leftColumns)
+                    ->joinLeft(
+                        ['oi' => $table . '_inheritance'],
+                        'o.id = oi.' . $this->getType() . '_id',
+                        []
+                    )->joinLeft(
+                        ['sub_o' => $table],
+                        'sub_o.id = oi.parent_' . $this->getType() . '_id',
+                        []
+                    )->group(['o.id', 'bo.uuid', 'bo.branch_uuid']);
+
+                $rightColumns['imports'] = 'bo.imports';
+
+                $right->reset('columns');
+                $right->columns($rightColumns);
+            }
+
+            $query->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
             $this->applyObjectTypeFilter($query, $right);
             $right->joinRight(
                 ['bo' => "branched_$table"],
