@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Authentication\Auth;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Resolver\TemplateTree;
 use gipfl\IcingaWeb2\Link;
-use Icinga\Module\Director\Web\Controller\BranchHelper;
 use ipl\Html\Table;
 use gipfl\Translation\TranslationHelper;
 
@@ -31,17 +31,13 @@ class TemplateUsageTable extends Table
         ];
     }
 
-    protected function getTypeSummaryDefinitions()
-    {
-        return [
-            'templates'  => $this->getSummaryLine('template'),
-            'objects'    => $this->getSummaryLine('object'),
-        ];
-    }
-
     /**
      * @param IcingaObject $template
+     * @param Branch|null $branch
+     *
      * @return TemplateUsageTable
+     *
+     * @throws ProgrammingError
      */
     public static function forTemplate(IcingaObject $template, Branch $branch = null)
     {
@@ -114,52 +110,45 @@ class TemplateUsageTable extends Table
 
     protected function getUsageSummary(IcingaObject $template)
     {
-        $id = $template->getAutoincId();
         $connection = $template->getConnection();
         $db = $connection->getDbAdapter();
-        $oType = $this->objectType;
-        $tree = new TemplateTree($oType, $connection);
-        $ids = $tree->listDescendantIdsFor($template);
-        if (empty($ids)) {
-            $ids = [0];
+
+        $types = array_keys($this->getTypes());
+        $direct = [];
+        $indirect = [];
+        $templateType = $template->getShortTableName();
+
+        foreach ($this->getSummaryTables($templateType, $connection) as $type => $summaryTable) {
+            $direct[$type] = $db
+                ->query($summaryTable->filterTemplate($template, 'direct')->getQuery())
+                ->rowCount();
+            $indirect[$type] = $db
+                ->query($summaryTable->filterTemplate($template, 'indirect')->getQuery())
+                ->rowCount();
         }
 
-        $baseQuery = $db->select()->from(
-            ['o' => 'icinga_' . $oType],
-            $this->getTypeSummaryDefinitions()
-        )->joinLeft(
-            ['oi' => "icinga_{$oType}_inheritance"],
-            "oi.{$oType}_id = o.id",
-            []
-        );
-
-        $query = clone($baseQuery);
-        $direct = $db->fetchRow(
-            $query->where("oi.parent_{$oType}_id = ?", $id)
-        );
-        $query = clone($baseQuery);
-        $indirect = $db->fetchRow(
-            $query->where("oi.parent_{$oType}_id IN (?)", $ids)
-        );
-        //$indirect->templates = count($ids) - 1;
         $total = [];
-        $types = array_keys($this->getTypes());
         foreach ($types as $type) {
-            $total[$type] = $direct->$type + $indirect->$type;
+            $total[$type] = $direct[$type] + $indirect[$type];
         }
 
         return (object) [
-            'direct'   => $direct,
-            'indirect' => $indirect,
+            'direct'   => (object) $direct,
+            'indirect' => (object) $indirect,
             'total'    => (object) $total
         ];
     }
 
-    protected function getSummaryLine($type, $extra = null)
+    protected function getSummaryTables(string $templateType, Db $connection)
     {
-        if ($extra !== null) {
-            $extra = " AND $extra";
-        }
-        return "COALESCE(SUM(CASE WHEN o.object_type = '{$type}'{$extra} THEN 1 ELSE 0 END), 0)";
+        return [
+            'templates' => TemplatesTable::create(
+                $templateType,
+                $connection
+            ),
+            'objects'   => ObjectsTable::create($templateType, $connection)
+                ->setAuth(Auth::getInstance())
+                ->setBranchUuid($this->branchUuid)
+        ];
     }
 }

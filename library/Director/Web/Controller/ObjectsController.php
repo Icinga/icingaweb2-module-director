@@ -157,7 +157,7 @@ abstract class ObjectsController extends ActionController
      */
     protected function getApplyRulesTable()
     {
-        $table = new ApplyRulesTable($this->db());
+        $table = (new ApplyRulesTable($this->db()))->setBranch($this->getBranch());
         $table->setType($this->getType())
             ->setBaseObjectUrl($this->getBaseObjectUrl());
         $this->eventuallyFilterCommand($table);

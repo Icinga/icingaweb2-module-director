@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
+use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
@@ -58,6 +59,15 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
         return $this;
     }
 
+    protected function getRowClasses($row)
+    {
+        // TODO: remove isset, to figure out where it is missing
+        if (isset($row->branch_uuid) && $row->branch_uuid !== null) {
+            return ['branch_modified'];
+        }
+        return [];
+    }
+
     /**
      * Should be triggered from renderRow, still unused.
      *
@@ -74,7 +84,8 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
             $this->getQuery(),
             $template,
             'o',
-            $inheritance
+            $inheritance,
+            $this->branchUuid
         );
 
         return $this;
@@ -85,7 +96,7 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
     {
         $url = Url::fromPath('director/service/edit', [
             'name' => $row->object_name,
-            'id'   => $row->id,
+            'uuid' => $row->uuid,
         ]);
 
         return static::tr([
@@ -93,7 +104,7 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
                 Link::create($row->service_set, $url),
             ]),
             static::td($row->object_name),
-        ]);
+        ])->addAttributes(['class' => $this->getRowClasses($row)]);
     }
 
     /**
@@ -115,6 +126,7 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
 
         $columns = [
             'id'             => 'o.id',
+            'uuid'           => 'o.uuid',
             'service_set'    => 'os.object_name',
             'object_name'    => 'o.object_name',
             'object_type'    => 'os.object_type',
@@ -138,9 +150,96 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
         );
         $nameFilter->applyToQuery($query, 'os');
 
-        $query
-            ->where('o.object_type = ?', 'object')
-            ->order('os.object_name');
+        if ($this->branchUuid) {
+            $columns['branch_uuid'] = 'bos.branch_uuid';
+            $conn = $this->connection();
+            if ($conn->isPgsql()) {
+                $columns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
+                    . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
+            } else {
+                $columns['imports'] = 'CONCAT(\'[\', '
+                    . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
+            }
+
+            $columns = $this->branchifyColumns($columns);
+            $this->stripSearchColumnAliases();
+
+            $query->reset('columns');
+            $right = clone($query);
+            $conn = $this->connection();
+
+            $query->columns($columns)->joinLeft(
+                ['bos' => "branched_icinga_{$type}_set"],
+                // TODO: PgHexFunc
+                $this->db()->quoteInto(
+                    'bos.uuid = os.uuid AND bos.branch_uuid = ?',
+                    $conn->quoteBinary($this->branchUuid->getBytes())
+                ),
+                []
+            )->joinLeft(
+                ['oi' => $table . '_inheritance'],
+                'o.id = oi.' . $this->getType() . '_id',
+                []
+            )->joinLeft(
+                ['sub_o' => $table],
+                'sub_o.id = oi.parent_' . $this->getType() . '_id',
+                []
+            )->where("(bos.branch_deleted IS NULL OR bos.branch_deleted = 'n')");
+
+            $columns['imports'] = 'bo.imports';
+            $right->columns($columns)->joinRight(
+                ['bos' => "branched_icinga_{$type}_set"],
+                'bos.uuid = os.uuid',
+                []
+            )
+                ->where('os.uuid IS NULL')
+                ->where('bos.branch_uuid = ?', $conn->quoteBinary($this->branchUuid->getBytes()));
+            $query->group('COALESCE(os.uuid, bos.uuid)');
+            $right->group('COALESCE(os.uuid, bos.uuid)');
+            if ($conn->isPgsql()) {
+                // This is ugly, might want to modify the query - even a subselect looks better
+                $query->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid')->group('o.id');
+                $right->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid')->group('o.id');
+            }
+            $right->joinLeft(
+                ['bo' => "branched_icinga_{$type}"],
+                "bo.{$type}_set = bos.object_name",
+                []
+            )->group(['bo.object_name', 'o.object_name', 'bo.uuid', 'bo.imports']);
+            $query->joinLeft(
+                ['bo' => "branched_icinga_{$type}"],
+                "bo.{$type}_set = bos.object_name",
+                []
+            )->group(['bo.object_name', 'o.object_name', 'bo.uuid']);
+
+            $query = $this->db()->select()->union([
+                'l' => new DbSelectParenthesis($query),
+                'r' => new DbSelectParenthesis($right),
+            ]);
+            $query = $this->db()->select()->from(['u' => $query]);
+            $query->order('object_name')->limit(100);
+
+            $query
+                ->group('uuid')
+                ->where('object_type = ?', 'template')
+                ->order('object_name');
+            if ($conn->isPgsql()) {
+                $query
+                    ->group('uuid')
+                    ->group('id')
+                    ->group('imports')
+                    ->group('branch_uuid')
+                    ->group('object_name')
+                    ->group('object_type')
+                    ->group('assign_filter')
+                    ->group('description')
+                    ->group('service_set');
+            }
+        } else {
+            $query
+                ->where('o.object_type = ?', 'object')
+                ->order('os.object_name');
+        }
 
         return $query;
     }
