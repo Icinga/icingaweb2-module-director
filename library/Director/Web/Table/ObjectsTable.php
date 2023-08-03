@@ -289,36 +289,34 @@ class ObjectsTable extends ZfQueryBasedTable
             );
 
             // keep the imported templates as columns
-            if ($this->getType() === 'host' || $this->getType() === 'service') {
-                $leftColumns = $columns;
-                $rightColumns = $columns;
+            $leftColumns = $columns;
+            $rightColumns = $columns;
 
-                if ($this->db() instanceof Zend_Db_Adapter_Pdo_Pgsql) {
-                    $leftColumns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
-                        . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
-                } else {
-                    $leftColumns['imports'] = 'CONCAT(\'[\', '
-                        . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
-                }
-
-                $query->reset('columns');
-
-                $query->columns($leftColumns)
-                    ->joinLeft(
-                        ['oi' => $table . '_inheritance'],
-                        'o.id = oi.' . $this->getType() . '_id',
-                        []
-                    )->joinLeft(
-                        ['sub_o' => $table],
-                        'sub_o.id = oi.parent_' . $this->getType() . '_id',
-                        []
-                    )->group(['o.id', 'bo.uuid', 'bo.branch_uuid']);
-
-                $rightColumns['imports'] = 'bo.imports';
-
-                $right->reset('columns');
-                $right->columns($rightColumns);
+            if ($this->db() instanceof Zend_Db_Adapter_Pdo_Pgsql) {
+                $leftColumns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
+                    . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
+            } else {
+                $leftColumns['imports'] = 'CONCAT(\'[\', '
+                    . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
             }
+
+            $query->reset('columns');
+
+            $query->columns($leftColumns)
+                ->joinLeft(
+                    ['oi' => $table . '_inheritance'],
+                    'o.id = oi.' . $this->getType() . '_id',
+                    []
+                )->joinLeft(
+                    ['sub_o' => $table],
+                    'sub_o.id = oi.parent_' . $this->getType() . '_id',
+                    []
+                )->group(['o.id', 'bo.uuid', 'bo.branch_uuid']);
+
+            $rightColumns['imports'] = 'bo.imports';
+
+            $right->reset('columns');
+            $right->columns($rightColumns);
 
             $query->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
             $this->applyObjectTypeFilter($query, $right);

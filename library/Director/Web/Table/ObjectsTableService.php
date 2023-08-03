@@ -203,7 +203,13 @@ class ObjectsTableService extends ObjectsTable
                 'hsb.service_id = o.id AND hsb.host_id = o.host_id',
                 []
             )->where('o.service_set_id IS NULL')
+                ->group(['o.id', 'h.id','hsb.service_id', 'hsb.host_id'])
                 ->order('o.object_name')->order('h.object_name');
+
+            if ($this->branchUuid) {
+                $subQuery->where('bo.service_set IS NULL')
+                    ->group(['bo.uuid', 'bo.branch_uuid']);
+            }
 
             if ($this->host) {
                 if ($this->branchUuid) {

@@ -66,6 +66,7 @@ abstract class TemplateController extends CompatController
 
         ObjectsTableSetMembers::create($this->getType(), $this->db(), $this->Auth())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
+            ->setBranch($this->getBranch())
             ->filterTemplate($template, $this->getInheritance())
             ->renderTo($this);
     }
@@ -84,6 +85,7 @@ abstract class TemplateController extends CompatController
 
         ApplyRulesTable::create($type, $this->db())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
+            ->setBranch($this->getBranch())
             ->filterTemplate($template, $this->params->get('inheritance', 'direct'))
             ->renderTo($this);
     }
@@ -212,7 +214,7 @@ abstract class TemplateController extends CompatController
 
         try {
             $this->content()->add(
-                TemplateUsageTable::forTemplate($template)
+                TemplateUsageTable::forTemplate($template, $this->getBranch())
             );
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));
