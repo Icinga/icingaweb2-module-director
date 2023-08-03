@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\TemplateTree;
 use InvalidArgumentException;
+use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
 use Zend_Db_Select as ZfSelect;
 
@@ -46,13 +47,42 @@ class IcingaObjectFilterHelper
         ZfSelect $query,
         $template,
         $tableAlias = 'o',
-        $inheritanceType = self::INHERIT_DIRECT
+        $inheritanceType = self::INHERIT_DIRECT,
+        UuidInterface $branchuuid = null
     ) {
         $i = $tableAlias . 'i';
         $o = $tableAlias;
         $type = $template->getShortTableName();
         $db = $template->getDb();
         $id = static::wantId($template);
+
+        if ($branchuuid) {
+            if ($inheritanceType === self::INHERIT_DIRECT) {
+                return $query->where('imports LIKE \'%"' . $template->getObjectName() . '"%\'');
+            } elseif ($inheritanceType === self::INHERIT_INDIRECT
+                || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
+            ) {
+                $tree = new TemplateTree($type, $template->getConnection());
+                $templateNames = $tree->getDescendantsFor($template);
+
+                if ($inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT) {
+                    $templateNames[] = $template->getObjectName();
+                }
+
+                if (empty($templateNames)) {
+                    $condition = '(1 = 0)';
+                } else {
+                    $condition = 'imports LIKE \'%"' . array_pop($templateNames) . '"%\'';
+
+                    foreach ($templateNames as $templateName) {
+                        $condition .= " OR imports LIKE '%\"$templateName\"%'";
+                    }
+                }
+
+                return $query->where($condition);
+            }
+        }
+
         $sub = $db->select()->from(
             array($i => "icinga_{$type}_inheritance"),
             array('e' => '(1)')
