@@ -3,9 +3,11 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\TemplateTree;
 use gipfl\IcingaWeb2\Link;
+use Icinga\Module\Director\Web\Controller\BranchHelper;
 use ipl\Html\Table;
 use gipfl\Translation\TranslationHelper;
 
@@ -13,9 +15,13 @@ class TemplateUsageTable extends Table
 {
     use TranslationHelper;
 
+    use TableWithBranchSupport;
+
     protected $defaultAttributes = ['class' => 'pivot'];
 
     protected $objectType;
+
+    protected $searchColumns = [];
 
     public function getTypes()
     {
@@ -37,14 +43,14 @@ class TemplateUsageTable extends Table
      * @param IcingaObject $template
      * @return TemplateUsageTable
      */
-    public static function forTemplate(IcingaObject $template)
+    public static function forTemplate(IcingaObject $template, Branch $branch = null)
     {
         $type = ucfirst($template->getShortTableName());
         $class = __NAMESPACE__ . "\\{$type}TemplateUsageTable";
         if (class_exists($class)) {
-            return new $class($template);
+            return new $class($template, $branch);
         } else {
-            return new static($template);
+            return new static($template, $branch);
         }
     }
 
@@ -58,7 +64,7 @@ class TemplateUsageTable extends Table
         ];
     }
 
-    protected function __construct(IcingaObject $template)
+    protected function __construct(IcingaObject $template, Branch $branch = null)
     {
 
         if ($template->get('object_type') !== 'template') {
@@ -68,6 +74,7 @@ class TemplateUsageTable extends Table
             );
         }
 
+        $this->setBranch($branch);
         $this->objectType = $objectType = $template->getShortTableName();
         $types = $this->getTypes();
         $usage = $this->getUsageSummary($template);

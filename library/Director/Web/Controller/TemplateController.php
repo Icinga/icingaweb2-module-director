@@ -25,6 +25,8 @@ abstract class TemplateController extends CompatController
 {
     use DirectorDb;
 
+    use BranchHelper;
+
     /** @var IcingaObject */
     protected $template;
 
@@ -43,6 +45,7 @@ abstract class TemplateController extends CompatController
 
         ObjectsTable::create($this->getType(), $this->db())
             ->setAuth($this->Auth())
+            ->setBranch($this->getBranch())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
             ->filterTemplate($template, $this->getInheritance())
             ->renderTo($this);
