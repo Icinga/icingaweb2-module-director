@@ -39,6 +39,25 @@ class SettingsForm extends DirectorForm
             'value'  => $settings->getStoredValue('default_global_zone')
         ));
 
+        $this->addElement('select', 'default_group_behaviour', array(
+            'label'        => $this->translate('Default group behaviour'),
+            'multiOptions' => $this->eventuallyConfiguredEnum(
+                'default_group_behaviour',
+                array(
+                    'assign' => $this->translate('Assign'),
+                    'add' => $this->translate('Add'),
+                    // Remove (-=) is a group option but global remove isn't useful as all groups would be removed all the time.
+                )
+            ),
+            'description'  => $this->translate(
+                'Icinga Director deploys group objects using the operator assign (=)'
+                . ', which overrides groups set in inherited objects, by default.'
+                . ' This option allows you to adjust the group operator globally to'
+                . ' add (+=) which appends groups from inherited objects.'
+            ),
+            'value'  => $settings->getStoredValue('default_group_behaviour')
+        ));
+
         $this->addElement('text', 'icinga_package_name', array(
             'label'        => $this->translate('Icinga Package Name'),
             'description'  => $this->translate(
