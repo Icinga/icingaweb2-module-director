@@ -6453,12 +6453,12 @@ msgstr "Dieser Auftrag wurde bisher nicht ausgeführt"
 #: library/Director/Web/Widget/JobDetails.php:36
 #, php-format
 msgid "This job runs every %ds and is currently pending"
-msgstr "Dieser Auftrag läuft alle %d und ist aktuell ausständig"
+msgstr "Dieser Auftrag läuft alle %ds und ist aktuell ausständig"
 
 #: library/Director/Web/Widget/JobDetails.php:40
 #, php-format
 msgid "This job runs every %ds."
-msgstr "Dieser Auftrag läuft alle %d."
+msgstr "Dieser Auftrag läuft alle %ds."
 
 #: library/Director/Web/Widget/JobDetails.php:27
 #, php-format
