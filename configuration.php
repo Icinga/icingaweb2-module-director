@@ -146,4 +146,4 @@ $section->add(N_('Activity log'))
 $section->add(N_('Deployments'))
     ->setUrl('director/config/deployments')
     ->setPriority(902)
-    ->setPermission(Permission::DEPLOYMENTS);
+    ->setPermission(Permission::DEPLOY);
