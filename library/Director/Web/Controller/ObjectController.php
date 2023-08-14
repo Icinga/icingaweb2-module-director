@@ -33,6 +33,8 @@ use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
+use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Util;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Html;
 use Ramsey\Uuid\Uuid;
@@ -380,14 +382,15 @@ abstract class ObjectController extends ActionController
 
     protected function addActionClone()
     {
-        $this->actions()->add(Link::create(
-            $this->translate('Clone'),
-            $this->getObjectBaseUrl() . '/clone',
-            $this->object->getUrlParams(),
-            array('class' => 'icon-paste')
-        ));
-
-        return $this;
+        if ($this->hasPermission('director/clone')) {
+            $this->actions()->add(Link::create(
+                $this->translate('Clone'),
+                $this->getObjectBaseUrl() . '/clone',
+                $this->object->getUrlParams(),
+                array('class' => 'icon-paste')
+            ));
+        }
+            return $this;
     }
 
     /**
@@ -743,5 +746,13 @@ abstract class ObjectController extends ActionController
                 $this->content()->add(Html::tag('br'));
             }
         }
+    }
+                /**
+     * @param  string $permission
+     * @return bool
+     */
+    public function hasPermission($permission)
+    {
+        return Util::hasPermission($permission);
     }
 }
