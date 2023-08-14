@@ -508,7 +508,9 @@ abstract class DirectorObjectForm extends DirectorForm
             $this->setSubmitLabel(
                 $this->translate('Store')
             );
+            if ($this->hasPermission(PERMISSION::OBJECTS_DELETE)) {
             $this->addDeleteButton();
+            }
         }
     }
 
