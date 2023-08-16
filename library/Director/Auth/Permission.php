@@ -15,6 +15,7 @@ class Permission
     public const GROUPS_FOR_RESTRICTED_HOSTS = 'director/groups-for-restricted-hosts';
     public const HOSTS = 'director/hosts';
     public const HOST_CREATE = 'director/host_create';
+    public const HOST_TEMPLATES = 'director/host_templates';
     public const HOST_GROUPS = 'director/hostgroups'; // internal, assign ALL_PERMISSIONS
     public const INSPECT = 'director/inspect';
     public const MONITORING_SERVICES_RO = 'director/monitoring/services-ro';
@@ -25,6 +26,7 @@ class Permission
     public const SCHEDULED_DOWNTIMES = 'director/scheduled-downtimes';
     public const SERVICES = 'director/services';
     public const SERVICES_ADD = 'director/services_add';
+    public const SERVICE_TEMPLATES = 'director/service_templates';
     public const SERVICE_SETS = 'director/servicesets';
     public const SERVICE_SETS_ADD = 'director/servicesets_add';
     public const SERVICE_SET_APPLY = 'director/service_set/apply';
