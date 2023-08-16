@@ -24,7 +24,9 @@ class Permission
     public const SCHEDULED_DOWNTIMES = 'director/scheduled-downtimes';
     public const SERVICES = 'director/services';
     public const SERVICE_CREATE = 'director/service_create';
+    public const SERVICES_ADD = 'director/services_add';
     public const SERVICE_SETS = 'director/servicesets';
+    public const SERVICE_SETS_ADD = 'director/servicesets_add';
     public const SERVICE_SET_APPLY = 'director/service_set/apply';
     public const SHOW_CONFIG = 'director/showconfig';
     public const SHOW_SQL = 'director/showsql';
