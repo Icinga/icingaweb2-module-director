@@ -31,7 +31,9 @@ $this->providePermission(Permission::NOTIFICATIONS, $this->translate(
     'Allow to configure notifications (unrestricted)'
 ));
 $this->providePermission(Permission::SERVICES, $this->translate('Allow to configure services'));
+$this->providePermission(Permission::SERVICES_ADD, $this->translate('Allow to add services to hosts'));
 $this->providePermission(Permission::SERVICE_SETS, $this->translate('Allow to configure service sets'));
+$this->providePermission(Permission::SERVICE_SETS_ADD, $this->translate('Allow to add service sets to hosts'));
 $this->providePermission(Permission::SERVICE_SET_APPLY, $this->translate('Allow to define Service Set Apply Rules'));
 $this->providePermission(Permission::USERS, $this->translate('Allow to configure users'));
 $this->providePermission(Permission::SCHEDULED_DOWNTIMES, $this->translate(
