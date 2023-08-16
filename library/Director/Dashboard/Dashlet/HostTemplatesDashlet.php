@@ -28,6 +28,6 @@ class HostTemplatesDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return [Permission::ADMIN];
+        return [Permission::HOST_TEMPLATES];
     }
 }
