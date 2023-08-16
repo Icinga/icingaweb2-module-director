@@ -61,7 +61,7 @@ class ObjectsTabs extends Tabs
                 ]);
             }
         }
-        if ($auth->hasPermission('director/admin') && $type !== 'zone') {
+        if ($auth->hasPermission(PERMISSION::ADMIN) && $type !== 'zone') {
             if ($object->supportsGroups()) {
                 $this->add('groups', [
                     'url'   => sprintf('director/%sgroups', $typeUrl),
