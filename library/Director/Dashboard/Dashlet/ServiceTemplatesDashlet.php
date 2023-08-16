@@ -28,6 +28,6 @@ class ServiceTemplatesDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return [Permission::ADMIN];
+        return [Permission::SERVICE_TEMPLATES];
     }
 }
