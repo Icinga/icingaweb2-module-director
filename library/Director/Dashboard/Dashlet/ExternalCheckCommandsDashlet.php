@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class ExternalCheckCommandsDashlet extends CheckCommandsDashlet
 {
     protected $icon = 'download';
@@ -17,6 +19,11 @@ class ExternalCheckCommandsDashlet extends CheckCommandsDashlet
     public function getTitle()
     {
         return $this->translate('External Commands');
+    }
+
+    public function listRequiredPermissions()
+    {
+        return [Permission::COMMAND_EXTERNAL];
     }
 
     public function getUrl()

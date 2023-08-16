@@ -22,6 +22,6 @@ class CommandObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return [Permission::ADMIN];
+        return [Permission::COMMANDS];
     }
 }
