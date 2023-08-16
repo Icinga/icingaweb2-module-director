@@ -67,13 +67,15 @@ class ObjectTabs extends Tabs
                 'label'     => $this->translate(ucfirst($type))
             ]);
         }
-        if ($object->getShortTableName() === 'host') {
-            $this->add('services', [
-                'url' => 'director/host/services',
-                'urlParams' => $params,
-                'label' => $this->translate('Services')
-            ]);
+        if ($auth->hasPermission(Permission::SERVICE_HOST_TAB) || $auth->hasPermission(PERMISSION::SERVICES)) {
+            if ($object->getShortTableName() === 'host') {
+                $this->add('services', [
+                    'url' => 'director/host/services',
+                    'urlParams' => $params,
+                    'label' => $this->translate('Services')
+                ]);
         }
+    }
 
         if ($auth->hasPermission(Permission::SHOW_CONFIG)) {
             if ($object->getShortTableName() !== 'service' || $object->get('service_set_id') === null) {

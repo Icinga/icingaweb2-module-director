@@ -27,6 +27,7 @@ class Permission
     public const SERVICE_SETS = 'director/servicesets';
     public const SERVICE_SETS_ADD = 'director/servicesets_add';
     public const SERVICE_SET_APPLY = 'director/service_set/apply';
+    public const SERVICE_HOST_TAB = 'director/service_host_tab';
     public const SHOW_CONFIG = 'director/showconfig';
     public const SHOW_SQL = 'director/showsql';
     public const USERS = 'director/users';
