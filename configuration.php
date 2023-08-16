@@ -15,6 +15,10 @@ $this->providePermission(Permission::API, $this->translate('Allow to access the 
 $this->providePermission(Permission::AUDIT, $this->translate('Allow to access the full audit log'));
 $this->providePermission(Permission::CLONE, $this->translate('Allow to clone objects'));
 $this->providePermission(Permission::BASKETS, $this->translate('Allow to access the basket dashboard'));
+$this->providePermission(Permission::COMMANDS, $this->translate('Allow to access the commands section'));
+$this->providePermission(Permission::COMMAND_CHECK, $this->translate('Allow to access the check commands section'));
+$this->providePermission(Permission::COMMAND_EXTERNAL, $this->translate('Allow to access the external commands section'));
+$this->providePermission(Permission::COMMAND_TEMPLATES, $this->translate('Allow to access the command templates section'));
 $this->providePermission(Permission::DEPLOY, $this->translate('Allow to deploy configuration'));
 $this->providePermission(Permission::INSPECT, $this->translate(
     'Allow to inspect objects through the Icinga 2 API (could contain sensitive information)'
@@ -135,7 +139,7 @@ $section->add(N_('Services'))
     ->setPriority(40);
 $section->add(N_('Commands'))
     ->setUrl('director/dashboard?name=commands')
-    ->setPermission(Permission::ADMIN)
+    ->setPermission(Permission::COMMANDS)
     ->setPriority(50);
 $section->add(N_('Notifications'))
     ->setUrl('director/dashboard?name=notifications')
