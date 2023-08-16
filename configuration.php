@@ -33,6 +33,7 @@ $this->providePermission(Permission::NOTIFICATIONS, $this->translate(
 $this->providePermission(Permission::SERVICES, $this->translate('Allow to configure services'));
 $this->providePermission(Permission::SERVICE_SETS, $this->translate('Allow to configure service sets'));
 $this->providePermission(Permission::SERVICE_SET_APPLY, $this->translate('Allow to define Service Set Apply Rules'));
+$this->providePermission(Permission::SERVICE_HOST_TAB, $this->translate('Allow to show the service tab in hostview'));
 $this->providePermission(Permission::USERS, $this->translate('Allow to configure users'));
 $this->providePermission(Permission::SCHEDULED_DOWNTIMES, $this->translate(
     'Allow to configure notifications (unrestricted)'
