@@ -433,7 +433,8 @@ abstract class ObjectController extends ActionController
 
     protected function addTemplate()
     {
-        $this->assertPermission('director/admin');
+        $type = $this->getType();
+        $this->assertPermission('director/' . $type . '_templates');
         $this->addTitle(
             $this->translate('Add new Icinga %s template'),
             $this->getTranslatedType()

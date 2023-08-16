@@ -88,7 +88,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
      */
     protected function checkDirectorPermissions()
     {
-        $this->assertPermission('director/admin');
+        $this->assertPermission('director/' . $this->getPluralBaseType());
     }
 
     /**
@@ -249,5 +249,56 @@ abstract class ActionController extends Controller implements ControlsAndContent
         }
 
         return $this->monitoring;
+    }
+
+        /**
+     * @return string
+     */
+    protected function getBaseType()
+    {
+        $type = $this->getType();
+        if (substr($type, -5) === 'Group') {
+            return substr($type, 0, -5);
+        } else {
+            return $type;
+        }
+    }
+
+    protected function getBaseObjectUrl()
+    {
+        return $this->getType();
+    }
+
+    /**
+     * @return string
+     */
+    protected function getType()
+    {
+        // Strip final 's' and upcase an eventual 'group'
+        return preg_replace(
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/', '/set$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'dependency', 'Set'),
+            str_replace(
+                'template',
+                '',
+                substr($this->getRequest()->getControllerName(), 0, -1)
+            )
+        );
+    }
+
+    /**
+     * @return string
+     */
+    protected function getPluralType()
+    {
+        return preg_replace('/cys$/', 'cies', $this->getType() . 's');
+    }
+
+    /**
+     * @return string
+     */
+    protected function getPluralBaseType()
+    {
+        return preg_replace('/cys$/', 'cies', $this->getBaseType() . 's');
     }
 }
