@@ -245,6 +245,7 @@ abstract class ObjectsController extends ActionController
 
         $shortType = IcingaObject::createByType($type)->getShortTableName();
         $this
+
         ->assertPermission('director/' . $type . '_templates')
             ->addObjectsTabs()
             ->setAutorefreshInterval(10)

@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class CommandTemplatesDashlet extends CheckCommandsDashlet
 {
     protected $icon = 'cubes';
@@ -17,6 +19,11 @@ class CommandTemplatesDashlet extends CheckCommandsDashlet
     public function getTitle()
     {
         return $this->translate('Command Templates');
+    }
+
+    public function listRequiredPermissions()
+    {
+        return [Permission::COMMAND_TEMPLATES];
     }
 
     public function getUrl()
