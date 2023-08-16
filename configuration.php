@@ -34,12 +34,14 @@ $this->providePermission(Permission::GROUPS_FOR_RESTRICTED_HOSTS, $this->transla
 ));
 $this->providePermission(Permission::HOSTS, $this->translate('Allow to configure hosts'));
 $this->providePermission(Permission::HOST_CREATE, $this->translate('Allow to create hosts'));
+$this->providePermission(Permission::HOST_TEMPLATES, $this->translate('Allow to configure host templates'));
 $this->providePermission(Permission::NOTIFICATIONS, $this->translate(
     'Allow to configure notifications (unrestricted)'
 ));
 $this->providePermission(Permission::OBJECTS_DELETE, $this->translate('Allow to delete objects'));
 $this->providePermission(Permission::SERVICES, $this->translate('Allow to configure services'));
 $this->providePermission(Permission::SERVICES_ADD, $this->translate('Allow to add services to hosts'));
+$this->providePermission(Permission::SERVICE_TEMPLATES, $this->translate('Allow to configure service templates'));
 $this->providePermission(Permission::SERVICE_SETS, $this->translate('Allow to configure service sets'));
 $this->providePermission(Permission::SERVICE_SETS_ADD, $this->translate('Allow to add service sets to hosts'));
 $this->providePermission(Permission::SERVICE_SET_APPLY, $this->translate('Allow to define Service Set Apply Rules'));

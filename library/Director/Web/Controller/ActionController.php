@@ -251,7 +251,10 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return $this->monitoring;
     }
 
+                /**
+
         /**
+
      * @return string
      */
     protected function getBaseType()
