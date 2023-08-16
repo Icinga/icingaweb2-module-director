@@ -14,6 +14,7 @@ $this->providePermission(Permission::ALL_PERMISSIONS, $this->translate('Allow un
 $this->providePermission(Permission::API, $this->translate('Allow to access the director API'));
 $this->providePermission(Permission::AUDIT, $this->translate('Allow to access the full audit log'));
 $this->providePermission(Permission::CLONE, $this->translate('Allow to clone objects'));
+$this->providePermission(Permission::BASKETS, $this->translate('Allow to access the basket dashboard'));
 $this->providePermission(Permission::DEPLOY, $this->translate('Allow to deploy configuration'));
 $this->providePermission(Permission::INSPECT, $this->translate(
     'Allow to inspect objects through the Icinga 2 API (could contain sensitive information)'

@@ -35,6 +35,7 @@ use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Auth\Permission;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Html;
 use Ramsey\Uuid\Uuid;
@@ -398,6 +399,7 @@ abstract class ObjectController extends ActionController
      */
     protected function addActionBasket()
     {
+        if ($this->hasPermission(Permission::BASKETS)) {
         if ($this->hasBasketSupport()) {
             $object = $this->object;
             if ($object instanceof ExportInterface) {
@@ -430,7 +432,7 @@ abstract class ObjectController extends ActionController
                 ));
             }
         }
-
+    }
         return $this;
     }
 
