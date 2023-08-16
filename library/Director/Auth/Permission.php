@@ -8,6 +8,7 @@ class Permission
     public const ADMIN = 'director/admin'; // internal, assign ALL_PERMISSONS
     public const API = 'director/api';
     public const AUDIT = 'director/audit';
+    public const BASKETS = 'director/baskets';
     public const DEPLOY = 'director/deploy';
     public const DEPLOYMENTS = 'director/deployments'; // internal, assign ALL_PERMISSONS
     public const GROUPS_FOR_RESTRICTED_HOSTS = 'director/groups-for-restricted-hosts';

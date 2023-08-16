@@ -13,6 +13,7 @@ if ($this->getConfig()->get('frontend', 'disabled', 'no') === 'yes') {
 $this->providePermission(Permission::ALL_PERMISSIONS, $this->translate('Allow unrestricted access to Icinga Director'));
 $this->providePermission(Permission::API, $this->translate('Allow to access the director API'));
 $this->providePermission(Permission::AUDIT, $this->translate('Allow to access the full audit log'));
+$this->providePermission(Permission::BASKETS, $this->translate('Allow to access the basket dashboard'));
 $this->providePermission(Permission::DEPLOY, $this->translate('Allow to deploy configuration'));
 $this->providePermission(Permission::INSPECT, $this->translate(
     'Allow to inspect objects through the Icinga 2 API (could contain sensitive information)'
