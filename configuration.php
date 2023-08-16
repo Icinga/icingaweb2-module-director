@@ -27,10 +27,12 @@ $this->providePermission(Permission::GROUPS_FOR_RESTRICTED_HOSTS, $this->transla
     'Allow users with Hostgroup restrictions to access the Groups field'
 ));
 $this->providePermission(Permission::HOSTS, $this->translate('Allow to configure hosts'));
+$this->providePermission(Permission::HOST_TEMPLATES, $this->translate('Allow to configure host templates'));
 $this->providePermission(Permission::NOTIFICATIONS, $this->translate(
     'Allow to configure notifications (unrestricted)'
 ));
 $this->providePermission(Permission::SERVICES, $this->translate('Allow to configure services'));
+$this->providePermission(Permission::SERVICE_TEMPLATES, $this->translate('Allow to configure service templates'));
 $this->providePermission(Permission::SERVICE_SETS, $this->translate('Allow to configure service sets'));
 $this->providePermission(Permission::SERVICE_SET_APPLY, $this->translate('Allow to define Service Set Apply Rules'));
 $this->providePermission(Permission::USERS, $this->translate('Allow to configure users'));
