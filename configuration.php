@@ -34,7 +34,10 @@ $this->providePermission(Permission::NOTIFICATIONS, $this->translate(
 ));
 $this->providePermission(Permission::OBJECTS_DELETE, $this->translate('Allow to delete objects'));
 $this->providePermission(Permission::SERVICES, $this->translate('Allow to configure services'));
+<<<<<<< HEAD
 $this->providePermission(Permission::SERVICE_CREATE, $this->translate('Allow to configure services'));
+=======
+>>>>>>> 969560096c1ec7417c1fffbdb66ce5dbfa4cec82
 $this->providePermission(Permission::SERVICES_ADD, $this->translate('Allow to add services to hosts'));
 $this->providePermission(Permission::SERVICE_SETS, $this->translate('Allow to configure service sets'));
 $this->providePermission(Permission::SERVICE_SETS_ADD, $this->translate('Allow to add service sets to hosts'));
