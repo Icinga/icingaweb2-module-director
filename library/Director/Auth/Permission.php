@@ -23,10 +23,6 @@ class Permission
     public const OBJECTS_DELETE = 'director/objects_delete';
     public const SCHEDULED_DOWNTIMES = 'director/scheduled-downtimes';
     public const SERVICES = 'director/services';
-<<<<<<< HEAD
-    public const SERVICE_CREATE = 'director/service_create';
-=======
->>>>>>> 969560096c1ec7417c1fffbdb66ce5dbfa4cec82
     public const SERVICES_ADD = 'director/services_add';
     public const SERVICE_SETS = 'director/servicesets';
     public const SERVICE_SETS_ADD = 'director/servicesets_add';
