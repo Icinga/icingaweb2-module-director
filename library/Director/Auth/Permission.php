@@ -19,6 +19,7 @@ class Permission
     public const MONITORING_SERVICES = 'director/monitoring/services';
     public const MONITORING_HOSTS = 'director/monitoring/hosts';
     public const NOTIFICATIONS = 'director/notifications';
+    public const OBJECTS_DELETE = 'director/objects_delete';
     public const SCHEDULED_DOWNTIMES = 'director/scheduled-downtimes';
     public const SERVICES = 'director/services';
     public const SERVICE_SETS = 'director/servicesets';
