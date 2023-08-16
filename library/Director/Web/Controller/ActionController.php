@@ -88,7 +88,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
      */
     protected function checkDirectorPermissions()
     {
-        $this->assertPermission('director/' . $this->getPluralBaseType());
+        $this->hasPermission('director/' . $this->getPluralBaseType());
     }
 
     /**
