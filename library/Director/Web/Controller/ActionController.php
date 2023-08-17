@@ -253,7 +253,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
 
                 /**
 
-        /**
+
 
      * @return string
      */
