@@ -12,8 +12,6 @@ class Permission
     public const BASKETS = 'director/baskets';
     public const COMMANDS = 'director/commands';
     public const COMMAND_CREATE = 'director/command_create';
-    public const COMMAND_CHECK = 'director/command_check';
-    public const COMMAND_EXTERNAL = 'director/command_external';
     public const COMMAND_TEMPLATES = 'director/command_templates';
     public const DEPLOY = 'director/deploy';
     public const DEPLOYMENTS = 'director/deployments'; // internal, assign ALL_PERMISSONS

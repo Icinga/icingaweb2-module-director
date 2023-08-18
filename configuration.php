@@ -15,10 +15,8 @@ $this->providePermission(Permission::API, $this->translate('Allow to access the 
 $this->providePermission(Permission::AUDIT, $this->translate('Allow to access the full audit log'));
 $this->providePermission(Permission::CLONE, $this->translate('Allow to clone objects'));
 $this->providePermission(Permission::BASKETS, $this->translate('Allow to access the basket dashboard'));
-$this->providePermission(Permission::COMMANDS, $this->translate('Allow to access the commands section'));
+$this->providePermission(Permission::COMMANDS, $this->translate('Allow to access the commands section including check commands and external commands'));
 $this->providePermission(Permission::COMMAND_CREATE, $this->translate('Allow to create the commands'));
-$this->providePermission(Permission::COMMAND_CHECK, $this->translate('Allow to access the check commands section'));
-$this->providePermission(Permission::COMMAND_EXTERNAL, $this->translate('Allow to access the external commands section'));
 $this->providePermission(Permission::COMMAND_TEMPLATES, $this->translate('Allow to access the command templates section'));
 $this->providePermission(Permission::DEPLOY, $this->translate('Allow to deploy configuration'));
 $this->providePermission(Permission::INSPECT, $this->translate(

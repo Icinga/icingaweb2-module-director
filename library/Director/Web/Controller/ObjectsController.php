@@ -41,7 +41,7 @@ abstract class ObjectsController extends ActionController
     protected function checkDirectorPermissions()
     {
         if ($this->getRequest()->getActionName() !== 'sets') {
-            $this->assertPermission('director/' . $this->getPluralBaseType());
+            $this->hasPermission('director/' . $this->getPluralBaseType());
         }
     }
 
