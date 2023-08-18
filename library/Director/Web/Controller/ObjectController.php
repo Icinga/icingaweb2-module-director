@@ -383,7 +383,7 @@ abstract class ObjectController extends ActionController
 
     protected function addActionClone()
     {
-        if ($this->hasPermission('director/clone')) {
+        if ($this->hasPermission(PERMISSION::CLONE)) {
             $this->actions()->add(Link::create(
                 $this->translate('Clone'),
                 $this->getObjectBaseUrl() . '/clone',

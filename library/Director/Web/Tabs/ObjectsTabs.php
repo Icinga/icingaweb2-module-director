@@ -29,7 +29,8 @@ class ObjectsTabs extends Tabs
             ]);
         }
 
-        if ($object->getShortTableName() === 'command') {
+        if ($object->getShortTableName() === 'command'
+            && $auth->hasPermission(Permission::COMMANDS)) {
             $this->add('external', [
                 'url'       => sprintf('director/%s', strtolower($plType)),
                 'urlParams' => ['type' => 'external_object'],
