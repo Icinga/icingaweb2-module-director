@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Auth\Permission;
+use RuntimeException;
 
 class CommandObjectDashlet extends Dashlet
 {
@@ -22,6 +24,13 @@ class CommandObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return [Permission::COMMANDS];
+        throw new RuntimeException('This method should not be accessed, isAllowed() has been implemented');
+    }
+
+    public function isAllowed()
+    {
+        $acl = Acl::instance();
+        return $acl->hasPermission(Permission::COMMANDS)
+            || $acl->hasPermission(Permission::COMMAND_TEMPLATES);
     }
 }

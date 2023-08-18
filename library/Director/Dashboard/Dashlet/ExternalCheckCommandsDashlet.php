@@ -23,7 +23,7 @@ class ExternalCheckCommandsDashlet extends CheckCommandsDashlet
 
     public function listRequiredPermissions()
     {
-        return [Permission::COMMAND_EXTERNAL];
+        return [Permission::COMMANDS];
     }
 
     public function getUrl()

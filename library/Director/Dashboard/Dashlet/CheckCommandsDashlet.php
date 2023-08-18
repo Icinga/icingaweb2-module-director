@@ -23,7 +23,7 @@ class CheckCommandsDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return [Permission::COMMAND_CHECK];
+        return [Permission::COMMANDS];
     }
 
     public function getUrl()
