@@ -4,9 +4,12 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Field\FormFieldSuggestion;
 use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 
 class IcingaObjectFieldForm extends DirectorObjectForm
 {
@@ -107,7 +110,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             ]
         ]);
 
-        if ($filterFields = $this->formFieldSuggestion->getFilterFields($object)) {
+        if ($filterFields = $this->getFilterFields($object)) {
             $this->addFilterElement('var_filter', [
                 'description' => $this->translate(
                     'You might want to show this field only when certain conditions are met.'
@@ -159,5 +162,27 @@ class IcingaObjectFieldForm extends DirectorObjectForm
 
         $this->object()->set('var_filter', $this->getValue('var_filter'));
         parent::onSuccess();
+    }
+
+    protected static function getFilterFields(IcingaObject $object): array
+    {
+        $filterFields = [];
+        $prefix = null;
+        if ($object instanceof IcingaHost) {
+            $prefix = 'host.vars.';
+        } elseif ($object instanceof IcingaService) {
+            $prefix = 'service.vars.';
+        }
+
+        if ($prefix) {
+            $loader = new IcingaObjectFieldLoader($object);
+            $fields = $loader->getFields();
+
+            foreach ($fields as $varName => $field) {
+                $filterFields[$prefix . $field->get('varname')] = $field->get('caption');
+            }
+        }
+
+        return $filterFields;
     }
 }

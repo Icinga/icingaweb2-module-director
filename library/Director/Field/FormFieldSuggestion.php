@@ -4,10 +4,6 @@ namespace Icinga\Module\Director\Field;
 
 use gipfl\Translation\TranslationHelper;
 use Icinga\Module\Director\Objects\IcingaCommand;
-use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaService;
-use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 
 class FormFieldSuggestion
 {
@@ -89,28 +85,6 @@ class FormFieldSuggestion
             $descriptions[$val] = $description;
         }
 
-    }
-
-    public function getFilterFields(IcingaObject $object): array
-    {
-        $filterFields = [];
-        $prefix = null;
-        if ($object instanceof IcingaHost) {
-            $prefix = 'host.vars.';
-        } elseif ($object instanceof IcingaService) {
-            $prefix = 'service.vars.';
-        }
-
-        if ($prefix) {
-            $loader = new IcingaObjectFieldLoader($object);
-            $fields = $loader->getFields();
-
-            foreach ($fields as $varName => $field) {
-                $filterFields[$prefix . $field->get('varname')] = $field->get('caption');
-            }
-        }
-
-        return $filterFields;
     }
 
     protected static function extractMacroNamesFromString(?string $string): array
