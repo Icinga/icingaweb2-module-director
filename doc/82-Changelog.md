@@ -17,6 +17,7 @@ This version hasn't been released yet
 * FEATURE: Sort Template trees by name (#2691)
 * FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
 * FEATURE: Show more details for assign filter parsing errors (#2667)
+* FEATURE: Fields from set_if are now being proposed (#514)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
 * FIX: Template usage table had no header (#2780)
@@ -45,7 +46,6 @@ This version hasn't been released yet
 * FIX: complaint about overdue jobs was not correct (#2680, #2681)
 
 ### Internals
-
 * FIX: group membership is no longer resolved when not needed (#2048)
 
 ### Fixed issues

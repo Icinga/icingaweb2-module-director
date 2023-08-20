@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\DataType\DataTypeBoolean;
+use Icinga\Module\Director\DataType\DataTypeString;
 use Icinga\Module\Director\Field\FormFieldSuggestion;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -17,7 +19,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
     protected $icingaObject;
 
     /** @var FormFieldSuggestion */
-    protected $formFieldSuggestion;
+    protected $fieldSuggestion;
 
     public function setIcingaObject($object)
     {
@@ -28,7 +30,6 @@ class IcingaObjectFieldForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->formFieldSuggestion = new FormFieldSuggestion();
         $object = $this->icingaObject;
         $type = $object->getShortTableName();
         $this->addHidden($type . '_id', $object->get('id'));
@@ -52,12 +53,13 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             $command = null;
         }
 
-        $descriptions = [];
-        $fields = $command ? $this->formFieldSuggestion->getCommandFields(
-            $command,
-            $this->db->enumDatafields(),
-            $descriptions
-        ) : [];
+        if ($command) {
+            $suggestions = $this->fieldSuggestion = new FormFieldSuggestion($command, $this->db->enumDatafields());
+            $fields = $suggestions->getCommandFields();
+        } else {
+            $suggestions = null;
+            $fields = [];
+        }
 
         $this->addElement('select', 'datafield_id', [
             'label'        => 'Field',
@@ -95,7 +97,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                     . ' user puts the focus on this field'
                 ),
                 'ignore'      => true,
-                'value'       => array_key_exists($id, $descriptions) ? $descriptions[$id] : null,
+                'value'       => $suggestions ? $suggestions->getDescription($id) : null,
                 'rows'        => '3',
             ]);
         }
@@ -153,7 +155,9 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                 'varname'     => trim($fieldId, '$'),
                 'caption'     => $this->getValue('caption'),
                 'description' => $this->getValue('description'),
-                'datatype'    => 'Icinga\Module\Director\DataType\DataTypeString',
+                'datatype'    => $this->fieldSuggestion && $this->fieldSuggestion->isBoolean($fieldId)
+                    ? DataTypeBoolean::class
+                    : DataTypeString::class
             ]);
             $field->store($this->getDb());
             $this->setElementValue('datafield_id', $field->get('id'));
