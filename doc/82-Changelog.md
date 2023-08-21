@@ -33,6 +33,9 @@ This version hasn't been released yet
 * FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 
+### REST API
+* FIX: Commands give 304 w/o ghost changes for same properties (#2660)
+
 ### Permissions and Restrictions
 * FIX: monitoring-related permission checks have been refactored (#2712)
 * FIX: Hostgroup-Filters have not been applied to Overview tables (#2775)
