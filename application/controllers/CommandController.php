@@ -29,11 +29,11 @@ class CommandController extends ObjectController
             } else {
                 $urlParams = ['name' => $o->getObjectName()];
             }
-            $this->tabs()->add('arguments', [
-                'url'       => 'director/command/arguments',
-                'urlParams' => $urlParams,
-                'label'     => 'Arguments'
-            ]);
+            #$this->tabs()->add('arguments', [
+               # 'url'       => 'director/command/arguments',
+              #  'urlParams' => $urlParams,
+             #   'label'     => 'Arguments'
+            #]);
         }
     }
 

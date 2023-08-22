@@ -144,6 +144,14 @@ class ObjectTabs extends Tabs
                 'label'     => $this->translate('Agent')
             ]);
         }
+        if ($object->getShortTableName() === 'command') {
+            $this->add('arguments', [
+                'url'       => 'director/command/arguments',
+                'urlParams' => $params,
+                'label'     => 'Arguments'
+            ]);
+        }
+
     }
 
     protected function hasFields()

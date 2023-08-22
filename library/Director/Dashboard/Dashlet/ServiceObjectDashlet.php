@@ -31,6 +31,7 @@ class ServiceObjectDashlet extends Dashlet
     {
         $acl = Acl::instance();
         return $acl->hasPermission(Permission::SERVICES)
-            || $acl->hasPermission(Permission::SERVICE_SETS);
+            || $acl->hasPermission(Permission::SERVICE_SETS)
+            || $acl->hasPermission(Permission::SERVICE_TEMPLATES);
     }
 }

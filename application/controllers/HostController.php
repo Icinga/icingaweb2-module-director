@@ -46,7 +46,7 @@ class HostController extends ObjectController
         if ($mon->canModifyHost($host)) {
             return;
         }
-        $this->assertPermission(Permission::HOSTS); // complain about default hosts permission
+        $this->hasPermission(Permission::HOSTS); // complain about default hosts permission
     }
 
     protected function isServicesReadOnlyAction()

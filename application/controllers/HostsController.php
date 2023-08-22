@@ -23,7 +23,7 @@ class HostsController extends ObjectsController
 
     protected function checkDirectorPermissions()
     {
-        $this->assertPermission('director/hosts');
+        $this->hasPermission('director/hosts');
     }
 
     public function editAction()
