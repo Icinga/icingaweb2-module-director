@@ -137,24 +137,6 @@ class Sync
     }
 
     /**
-     * Transform the given value to an array
-     *
-     * @param  array|string|null $value
-     *
-     * @return array
-     */
-    protected function wantArray($value)
-    {
-        if (is_array($value)) {
-            return $value;
-        } elseif ($value === null) {
-            return [];
-        } else {
-            return [$value];
-        }
-    }
-
-    /**
      * Raise PHP resource limits
      *
      * @return self;
@@ -578,10 +560,9 @@ class Sync
                     $varName = substr($prop, 5);
                     if (substr($varName, -2) === '[]') {
                         $varName = substr($varName, 0, -2);
-                        $current = $this->wantArray($object->vars()->$varName);
                         $object->vars()->$varName = array_merge(
-                            $current,
-                            $this->wantArray($val)
+                            (array) ($object->vars()->$varName),
+                            (array) $val
                         );
                     } else {
                         if ($val === null) {
