@@ -6,6 +6,7 @@ use gipfl\Json\JsonString;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorDatalist;
 use Ramsey\Uuid\UuidInterface;
 use stdClass;
 

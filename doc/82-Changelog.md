@@ -34,6 +34,10 @@ This version hasn't been released yet
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 * FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
 
+# Configuration Baskets
+* FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
+* FIX: basket now shows where to expect changes for lists from snapshots (#2791)
+
 ### REST API
 * FIX: Commands give 304 w/o ghost changes for same properties (#2660)
 

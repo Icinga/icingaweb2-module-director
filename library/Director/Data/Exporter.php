@@ -304,16 +304,7 @@ class Exporter
     protected function exportDatalistEntries(DirectorDatalist $list)
     {
         $entries = [];
-        $id = $list->get('id');
-        if ($id === null) {
-            return $entries;
-        }
-
-        $dbEntries = DirectorDatalistEntry::loadAllForList($list);
-        // Hint: they are loaded with entry_name key
-        ksort($dbEntries);
-
-        foreach ($dbEntries as $entry) {
+        foreach ($list->getEntries() as $name => $entry) {
             if ($entry->shouldBeRemoved()) {
                 continue;
             }
