@@ -94,7 +94,7 @@ class SyncruleController extends ActionController
                 break;
             case 'in-sync':
                 $c->add(Html::tag('p', null, sprintf(
-                    $this->translate('This Sync Rule was last found to by in Sync at %s.'),
+                    $this->translate('This Sync Rule was last found to be in Sync at %s.'),
                     $rule->get('last_attempt')
                 )));
                 /*
