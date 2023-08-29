@@ -26,6 +26,8 @@ class ExtensibleSetElement extends BaseHtmlElement
 
     private $description;
 
+    private $descriptions;
+
     private $multiOptions;
 
     private $validOptions;
