@@ -10,16 +10,16 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaZone;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-abstract class BaseTestCase extends PHPUnit_Framework_TestCase
+abstract class BaseTestCase extends TestCase
 {
     private static $app;
 
     /** @var Db */
     private static $db;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->app();
     }

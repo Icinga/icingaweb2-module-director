@@ -10,7 +10,7 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
     protected $table = 'icinga_service_set';
     protected $testObjectName = '___TEST___set';
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->assertNull($this->subject, 'subject must have been taken down before!');
 

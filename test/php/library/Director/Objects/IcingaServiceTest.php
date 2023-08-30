@@ -271,7 +271,7 @@ class IcingaServiceTest extends BaseTestCase
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             $db = $this->getDb();

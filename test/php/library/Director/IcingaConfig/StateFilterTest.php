@@ -152,7 +152,7 @@ class StateFilterSetTest extends BaseTestCase
         ));
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             $users = array(
