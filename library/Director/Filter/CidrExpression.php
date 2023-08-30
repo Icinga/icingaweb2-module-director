@@ -22,7 +22,6 @@ class CidrExpression extends FilterExpression
     {
         if ($parts = static::splitOptionalCidrString($expression)) {
             list($this->networkAddress, $this->broadcastAddress) = $parts;
-
         } else {
             throw new InvalidArgumentException("'$expression' isn't valid CIDR notation");
         }
