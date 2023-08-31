@@ -106,22 +106,20 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
         $this->checkForDanglingServices();
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testCreatingSetWithoutType()
     {
+        $this->expectException(\RuntimeException::class);
+
         $set = IcingaServiceSet::create(array(
             'object_name' => '___TEST__set_BAD',
         ));
         $set->store($this->getDb());
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testCreatingServiceSetWithoutHost()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $set = IcingaServiceSet::create(array(
             'object_name' => '___TEST__set_BAD2',
             'object_type' => 'object',
