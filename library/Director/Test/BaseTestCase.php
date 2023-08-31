@@ -10,16 +10,16 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaZone;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-abstract class BaseTestCase extends PHPUnit_Framework_TestCase
+abstract class BaseTestCase extends TestCase
 {
     private static $app;
 
     /** @var Db */
     private static $db;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->app();
     }
@@ -68,6 +68,9 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
             }
             if (array_key_exists('DIRECTOR_TESTDB_HOST', $_SERVER)) {
                 $dbConfig->host = $_SERVER['DIRECTOR_TESTDB_HOST'];
+            }
+            if (array_key_exists('DIRECTOR_TESTDB_PORT', $_SERVER)) {
+                $dbConfig->port = $_SERVER['DIRECTOR_TESTDB_PORT'];
             }
             if (array_key_exists('DIRECTOR_TESTDB_USER', $_SERVER)) {
                 $dbConfig->username = $_SERVER['DIRECTOR_TESTDB_USER'];

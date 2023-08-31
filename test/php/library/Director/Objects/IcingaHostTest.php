@@ -2,6 +2,7 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -255,14 +256,14 @@ class IcingaHostTest extends BaseTestCase
         $zone->delete();
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testFailsToStoreWithMissingLazyRelations()
     {
         if ($this->skipForMissingDb()) {
             return;
         }
+
+        $this->expectException(\RuntimeException::class);
+
         $db = $this->getDb();
         $host = $this->host();
         $host->zone = '___TEST___zone';
@@ -336,14 +337,13 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testFailsToStoreWithInvalidUnresolvedDependencies()
     {
         if ($this->skipForMissingDb()) {
             return;
         }
+
+        $this->expectException(\RuntimeException::class);
 
         $host = $this->host();
         $host->zone = 'invalid';
@@ -474,14 +474,13 @@ class IcingaHostTest extends BaseTestCase
         $b->delete();
     }
 
-    /**
-     * @expectedException \Icinga\Exception\NotFoundError
-     */
     public function testWhetherInvalidApiKeyThrows404()
     {
         if ($this->skipForMissingDb()) {
             return;
         }
+
+        $this->expectException(NotFoundError::class);
 
         $db = $this->getDb();
         IcingaHost::loadWithApiKey('No___such___key', $db);
@@ -731,7 +730,7 @@ class IcingaHostTest extends BaseTestCase
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
