@@ -12,6 +12,13 @@ there is probably already someone running them from time to time. So, just
 lean back with full trust in our development toolchain and spend your time
 elsewhere ;-) Cheers!
 
+### Tests on GitHub
+
+When pushing to [GitHub](https://github.com/Icinga/icingaweb2-module-director/)
+or sending pull requests, Unit-Tests are automatically triggered.
+
+![Build Status](https://github.com/Icinga/icingaweb2-module-director/workflows/PHP%20Tests/badge.svg?branch=master)
+
 ### Tests for supported Platforms
 
 As far as we know, Director is currently mostly used on CentOS (or RHEL)
