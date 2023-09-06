@@ -371,6 +371,7 @@ class HostController extends ObjectController
                 ->setHost($host)
                 ->setBranch($this->getBranch())
                 ->setAffectedHost($affectedHost)
+                ->removeQueryLimit()
                 ->setTitle($title);
             if ($roService) {
                 $table->setReadonly()->highlightService($roService);
