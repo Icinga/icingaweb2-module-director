@@ -98,7 +98,7 @@ class ObjectSetTable extends ZfQueryBasedTable
             'object_type'    => 'os.object_type',
             'assign_filter'  => 'os.assign_filter',
             'description'    => 'os.description',
-            'service_object_name' => 'o.object_name',
+            'service_object_name' => 'os.object_name',
             'count_services' => 'COUNT(DISTINCT o.uuid)',
         ];
         if ($this->branchUuid) {
