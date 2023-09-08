@@ -83,13 +83,14 @@ $this->provideRestriction(Restriction::SERVICE_SET_FILTER_BY_NAME, $this->transl
 
 $this->provideSearchUrl($this->translate('Host configs'), 'director/hosts?limit=10', 60);
 
-/*
+
 // Disabled unless available
 $this->provideRestriction(
-    'director/hosttemplates/filter',
+    'director/host/template/filter-by-name',
     $this->translate('Allow to use only host templates matching this filter')
 );
 
+/*
 $this->provideRestriction(
     'director/db_resource',
     $this->translate('Allow to use only these db resources (comma separated list)')
