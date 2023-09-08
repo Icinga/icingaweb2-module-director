@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Web\ActionBar;
 
 use gipfl\IcingaWeb2\Link;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Util;
 
 class TemplateActionBar extends DirectorBaseActionBar
 {
@@ -25,7 +27,9 @@ class TemplateActionBar extends DirectorBaseActionBar
                     'data-base-target' => '_next'
                 ]
             )
-        )->add(
+                );
+        if ($this->hasPermission(Permission::ADMIN))
+        $this->add(
             Link::create(
                 $renderTree ? $this->translate('Table') : $this->translate('Tree'),
                 "director/$plType/templates",
@@ -38,5 +42,13 @@ class TemplateActionBar extends DirectorBaseActionBar
                 ]
             )
         );
+    }
+            /**
+     * @param  string $permission
+     * @return bool
+     */
+    public function hasPermission($permission)
+    {
+        return Util::hasPermission($permission);
     }
 }

@@ -255,7 +255,7 @@ abstract class ObjectsController extends ActionController
             )
             ->actions(new TemplateActionBar($shortType, $this->url()));
 
-        if ($this->params->get('render') === 'tree') {
+        if ($this->params->get('render') === 'tree' && $this->hasPermission('director/admin')) {
             TemplateTreeRenderer::showType($shortType, $this, $this->db());
         } else {
             $table = TemplatesTable::create($shortType, $this->db());
