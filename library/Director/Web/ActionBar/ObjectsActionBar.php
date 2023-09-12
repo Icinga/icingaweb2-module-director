@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\ActionBar;
 
 use gipfl\IcingaWeb2\Link;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Util;
 
 class ObjectsActionBar extends DirectorBaseActionBar
