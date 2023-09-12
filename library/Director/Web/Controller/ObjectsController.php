@@ -13,6 +13,7 @@ use Icinga\Module\Director\Forms\IcingaMultiEditForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\RestApi\IcingaObjectsHandler;
 use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
 use Icinga\Module\Director\Web\ActionBar\TemplateActionBar;
@@ -409,7 +410,12 @@ abstract class ObjectsController extends ActionController
                         $objects[$name] = $class::load($name, $db);
                     } elseif ($col === 'uuid') {
                         $object = $store->load($table, Uuid::fromString($ex->getExpression()));
-                        $objects[$object->getObjectName()] = $object;
+                        if ($object instanceof IcingaService) {
+                            $host = $object->getRelated('host');
+                            $objects[$host->getObjectName() . ': ' . $object->getObjectName()] = $object;
+                        } else {
+                            $objects[$object->getObjectName()] = $object;
+                        }
                     } else {
                         throw new InvalidArgumentException("'$col' is no a valid key component for '$type'");
                     }
