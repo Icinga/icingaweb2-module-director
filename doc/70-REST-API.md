@@ -560,8 +560,8 @@ Another possibility is to pass a list of checksums to fetch the status of
 specific deployments and (activity log) activities.
 Following, you can see an example of how to do it:
 
-    GET director/config/deployment-status?config_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be2,
-    617b9cbad9e141cfc3f4cb636ec684bd60073be1&activity_log_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be1,
+    GET director/config/deployment-status?configs=617b9cbad9e141cfc3f4cb636ec684bd60073be2,
+    617b9cbad9e141cfc3f4cb636ec684bd60073be1&activitiess=617b9cbad9e141cfc3f4cb636ec684bd60073be1,
     028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2
     
 ```json

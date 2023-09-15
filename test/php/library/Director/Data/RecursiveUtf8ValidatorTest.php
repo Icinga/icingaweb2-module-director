@@ -7,11 +7,10 @@ use Icinga\Module\Director\Test\BaseTestCase;
 
 class RecursiveUtf8ValidatorTest extends BaseTestCase
 {
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testDetectInvalidUtf8Character()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         RecursiveUtf8Validator::validateRows([
             (object) [
                 'name'  => 'test 1',

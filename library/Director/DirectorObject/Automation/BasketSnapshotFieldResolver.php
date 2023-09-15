@@ -4,8 +4,10 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
+use stdClass;
 
 class BasketSnapshotFieldResolver
 {
@@ -40,7 +42,7 @@ class BasketSnapshotFieldResolver
      * @return DirectorDatafield[]
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function loadCurrentFields(Db $db)
+    public function loadCurrentFields(Db $db): array
     {
         $fields = [];
         foreach ($this->getRequiredIds() as $id) {
@@ -141,15 +143,28 @@ class BasketSnapshotFieldResolver
         }
     }
 
-    /**
-     * @return int
-     */
-    protected function getNextNewId()
+    public static function fixOptionalDatalistReference(stdClass $plain, Db $db)
+    {
+        if (isset($plain->settings->datalist_uuid)) {
+            unset($plain->settings->datalist);
+            return;
+        }
+        if (isset($plain->settings->datalist)) {
+            // Just try to load the list, final import will fail if missing
+            // No modification in case we do not find the list,
+            if ($list = DirectorDatalist::loadOptional($plain->settings->datalist, $db)) {
+                unset($plain->settings->datalist);
+                $plain->settings->datalist_id = $list->get('id');
+            }
+        }
+    }
+
+    protected function getNextNewId(): int
     {
         return $this->nextNewId++;
     }
 
-    protected function getRequiredIds()
+    protected function getRequiredIds(): array
     {
         if ($this->requiredIds === null) {
             if (isset($this->objects['Datafield'])) {
@@ -177,7 +192,7 @@ class BasketSnapshotFieldResolver
      * @param $type
      * @return object[]
      */
-    protected function getObjectsByType($type)
+    protected function getObjectsByType($type): array
     {
         if (isset($this->objects->$type)) {
             return (array) $this->objects->$type;
@@ -190,7 +205,7 @@ class BasketSnapshotFieldResolver
      * @return DirectorDatafield[]
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getTargetFields()
+    protected function getTargetFields(): array
     {
         if ($this->targetFields === null) {
             $this->calculateIdMap();
@@ -202,7 +217,7 @@ class BasketSnapshotFieldResolver
     /**
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getIdMap()
+    protected function getIdMap(): array
     {
         if ($this->idMap === null) {
             $this->calculateIdMap();

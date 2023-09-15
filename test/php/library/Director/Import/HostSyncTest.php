@@ -242,7 +242,7 @@ class HostSyncTest extends SyncTest
         }
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->removeGroups(['SYNCTEST_groupa', 'SYNCTEST_groupb']);
         parent::tearDown();

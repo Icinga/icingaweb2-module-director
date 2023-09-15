@@ -894,20 +894,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $type = strtolower($this->getType());
         $query = $this->db->select()->from(
-            ['gr' => "icinga_${type}group_${type}_resolved"],
+            ['gr' => "icinga_{$type}group_{$type}_resolved"],
             ['g.object_name']
         )->join(
-            ['g' => "icinga_${type}group"],
-            "g.id = gr.${type}group_id",
+            ['g' => "icinga_{$type}group"],
+            "g.id = gr.{$type}group_id",
             []
         )->joinLeft(
-            ['go' => "icinga_${type}group_${type}"],
-            "go.${type}group_id = gr.${type}group_id AND go.${type}_id = " . (int) $id,
+            ['go' => "icinga_{$type}group_{$type}"],
+            "go.{$type}group_id = gr.{$type}group_id AND go.{$type}_id = " . (int) $id,
             []
         )->where(
-            "gr.${type}_id = ?",
+            "gr.{$type}_id = ?",
             (int) $id
-        )->where("go.${type}_id IS NULL")->order('g.object_name');
+        )->where("go.{$type}_id IS NULL")->order('g.object_name');
 
         return $this->db->fetchCol($query);
     }

@@ -142,7 +142,7 @@ class ObjectsTable extends ZfQueryBasedTable
     protected function renderObjectNameColumn($row)
     {
         $type = $this->baseObjectUrl;
-        $url = Url::fromPath("director/${type}", [
+        $url = Url::fromPath("director/{$type}", [
             'uuid' => Uuid::fromBytes($row->uuid)->toString()
         ]);
 
@@ -298,6 +298,7 @@ class ObjectsTable extends ZfQueryBasedTable
             $query->order('object_name')->limit(100);
         } else {
             $this->applyObjectTypeFilter($query);
+            $query = $this->applyRestrictions($query);
             $query->order('o.object_name')->limit(100);
         }
 

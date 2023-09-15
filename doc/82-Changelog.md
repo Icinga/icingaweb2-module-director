@@ -12,23 +12,38 @@ This version hasn't been released yet
 ### UI
 * FEATURE: allow to clone commands with fields (#2264)
 * FEATURE: Data Fields are now sorted in a case-insensitive way (#2358)
+* FEATURE: Data Field search is now case-insensitive (#2359)
 * FEATURE: Deployment Log now breaks lines (#2677)
 * FEATURE: Sort Template trees by name (#2691)
 * FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
+* FEATURE: Show more details for assign filter parsing errors (#2667)
+* FEATURE: Fields from set_if are now being proposed (#514)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
+* FIX: Template usage table had no header (#2780)
 
 ### Icinga Configuration
+* FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
 * FIX: render Set Services to individual zones where required (#1589, #2356)
+* FIX: special characters like &amp; and | caused trouble in filters (#2667)
 
 ### Import and Sync
 * FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
 * FEATURE: property modifiers can now be applied based on filters (#2756)
 * FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
+* FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
+
+# Configuration Baskets
+* FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
+* FIX: basket now shows where to expect changes for lists from snapshots (#2791)
+
+### REST API
+* FIX: Commands give 304 w/o ghost changes for same properties (#2660)
 
 ### Permissions and Restrictions
 * FIX: monitoring-related permission checks have been refactored (#2712)
+* FIX: Hostgroup-Filters have not been applied to Overview tables (#2775)
 
 ### Configuration Branches
 * FEATURE: with this release, directorbranches v1.3 supports a "default branch" (#2688)
@@ -39,7 +54,6 @@ This version hasn't been released yet
 * FIX: complaint about overdue jobs was not correct (#2680, #2681)
 
 ### Internals
-
 * FIX: group membership is no longer resolved when not needed (#2048)
 
 ### Fixed issues

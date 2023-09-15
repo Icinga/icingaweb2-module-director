@@ -141,7 +141,7 @@ class HostgroupRestriction extends ObjectRestriction
         if (empty($groups)) {
             $query->where('(1 = 0)');
         } else {
-            $query->where("${tableAlias}.object_name IN (?)", $groups);
+            $query->where("{$tableAlias}.object_name IN (?)", $groups);
         }
     }
 

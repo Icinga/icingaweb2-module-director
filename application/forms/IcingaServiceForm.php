@@ -9,6 +9,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -197,14 +198,16 @@ class IcingaServiceForm extends DirectorObjectForm
     }
 
     /**
-     * @param IcingaService $service
-     * @return IcingaService
+     * Hint: could be moved elsewhere
+     *
+     * @param IcingaService $object
+     * @return IcingaObject|IcingaService|IcingaServiceSet
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getFirstParent(IcingaService $service)
+    protected static function getFirstParent(IcingaObject $object)
     {
-        /** @var IcingaService[] $objects */
-        $objects = $service->imports()->getObjects();
+        /** @var IcingaObject[] $objects */
+        $objects = $object->imports()->getObjects();
         if (empty($objects)) {
             throw new RuntimeException('Something went wrong, got no parent');
         }
@@ -301,7 +304,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->set) {
             return $this->object;
         } else {
-            return $this->getFirstParent($this->object);
+            return self::getFirstParent($this->object);
         }
     }
 

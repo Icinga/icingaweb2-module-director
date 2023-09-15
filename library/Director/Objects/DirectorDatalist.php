@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Exception;
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 
@@ -23,16 +23,16 @@ class DirectorDatalist extends DbObject implements ExportInterface
     ];
 
     /** @var DirectorDatalistEntry[] */
-    protected $storedEntries;
+    protected $entries;
 
     public function getUniqueIdentifier()
     {
         return $this->get('list_name');
     }
 
-    public function setEntries($entries)
+    public function setEntries($entries): void
     {
-        $existing = $this->getStoredEntries();
+        $existing = $this->getEntries();
 
         $new = [];
         $seen = [];
@@ -68,15 +68,13 @@ class DirectorDatalist extends DbObject implements ExportInterface
             $this->hasBeenModified = true;
         }
 
-        $this->storedEntries = $existing;
-        ksort($this->storedEntries);
-
-        return $this;
+        $this->entries = $existing;
+        ksort($this->entries);
     }
 
     protected function beforeDelete()
     {
-        if ($this->hasBeenUsed()) {
+        if ($this->isInUse()) {
             throw new Exception(
                 sprintf(
                     "Cannot delete '%s', as the datalist '%s' is currently being used.",
@@ -87,9 +85,13 @@ class DirectorDatalist extends DbObject implements ExportInterface
         }
     }
 
-    protected function hasBeenUsed()
+    protected function isInUse(): bool
     {
-        $datalistType = 'Icinga\\Module\\Director\\DataType\\DataTypeDatalist';
+        $id = $this->get('id');
+        if ($id === null) {
+            return false;
+        }
+
         $db = $this->getDb();
 
         $dataFieldsCheck = $db->select()
@@ -104,8 +106,8 @@ class DirectorDatalist extends DbObject implements ExportInterface
                 'l.id = dfs.setting_value',
                 []
             )
-            ->where('datatype = ?', $datalistType)
-            ->where('setting_value = ?', $this->get('id'));
+            ->where('datatype = ?', DataTypeDatalist::class)
+            ->where('setting_value = ?', $id);
 
         if ($db->fetchOne($dataFieldsCheck)) {
             return true;
@@ -114,7 +116,7 @@ class DirectorDatalist extends DbObject implements ExportInterface
         $syncCheck = $db->select()
             ->from(['sp' =>'sync_property'], ['source_expression'])
             ->where('sp.destination_field = ?', 'list_id')
-            ->where('sp.source_expression = ?', $this->get('id'));
+            ->where('sp.source_expression = ?', $id);
 
         if ($db->fetchOne($syncCheck)) {
             return true;
@@ -128,41 +130,38 @@ class DirectorDatalist extends DbObject implements ExportInterface
      */
     public function onStore()
     {
-        if ($this->storedEntries) {
+        if ($this->entries) {
             $db = $this->getConnection();
             $removedKeys = [];
             $myId = $this->get('id');
 
-            foreach ($this->storedEntries as $key => $entry) {
+            foreach ($this->entries as $key => $entry) {
                 if ($entry->shouldBeRemoved()) {
                     $entry->delete();
                     $removedKeys[] = $key;
                 } else {
-                    if (! $entry->hasBeenLoadedFromDb()) {
-                        $entry->set('list_id', $myId);
-                    }
                     $entry->set('list_id', $myId);
                     $entry->store($db);
                 }
             }
 
             foreach ($removedKeys as $key) {
-                unset($this->storedEntries[$key]);
+                unset($this->entries[$key]);
             }
         }
     }
 
-    protected function getStoredEntries()
+    public function getEntries(): array
     {
-        if ($this->storedEntries === null) {
-            if ($id = $this->get('id')) {
-                $this->storedEntries = DirectorDatalistEntry::loadAllForList($this);
-                ksort($this->storedEntries);
+        if ($this->entries === null) {
+            if ($this->get('id')) {
+                $this->entries = DirectorDatalistEntry::loadAllForList($this);
+                ksort($this->entries);
             } else {
-                $this->storedEntries = [];
+                $this->entries = [];
             }
         }
 
-        return $this->storedEntries;
+        return $this->entries;
     }
 }

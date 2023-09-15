@@ -2,6 +2,8 @@
 
 namespace Tests\Icinga\Module\Director\IcingaConfig;
 
+use Icinga\Exception\InvalidPropertyException;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\Objects\IcingaUser;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -23,19 +25,17 @@ class StateFilterSetTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \Icinga\Exception\InvalidPropertyException
-     */
     public function testFailsForInvalidProperties()
     {
+        $this->expectException(InvalidPropertyException::class);
+
         $set = new StateFilterSet('bla');
     }
 
-    /**
-     * @expectedException \Icinga\Exception\ProgrammingError
-     */
     public function testCannotBeStoredForAnUnstoredUser()
     {
+        $this->expectException(ProgrammingError::class);
+
         StateFilterSet::forIcingaObject(
             $this->user1(),
             'states'
@@ -152,7 +152,7 @@ class StateFilterSetTest extends BaseTestCase
         ));
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             $users = array(

@@ -2,6 +2,7 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -255,14 +256,14 @@ class IcingaHostTest extends BaseTestCase
         $zone->delete();
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testFailsToStoreWithMissingLazyRelations()
     {
         if ($this->skipForMissingDb()) {
             return;
         }
+
+        $this->expectException(\RuntimeException::class);
+
         $db = $this->getDb();
         $host = $this->host();
         $host->zone = '___TEST___zone';
@@ -336,14 +337,13 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testFailsToStoreWithInvalidUnresolvedDependencies()
     {
         if ($this->skipForMissingDb()) {
             return;
         }
+
+        $this->expectException(\RuntimeException::class);
 
         $host = $this->host();
         $host->zone = 'invalid';
@@ -474,14 +474,13 @@ class IcingaHostTest extends BaseTestCase
         $b->delete();
     }
 
-    /**
-     * @expectedException \Icinga\Exception\NotFoundError
-     */
     public function testWhetherInvalidApiKeyThrows404()
     {
         if ($this->skipForMissingDb()) {
             return;
         }
+
+        $this->expectException(NotFoundError::class);
 
         $db = $this->getDb();
         IcingaHost::loadWithApiKey('No___such___key', $db);
@@ -694,36 +693,36 @@ class IcingaHostTest extends BaseTestCase
     protected function getDefaultHostProperties($prefix = '')
     {
         return array(
-            "${prefix}name" => "name",
-            "${prefix}action_url" => "action_url",
-            "${prefix}address" => "address",
-            "${prefix}address6" => "address6",
-            "${prefix}api_key" => "api_key",
-            "${prefix}check_command" => "check_command",
-            "${prefix}check_interval" => "check_interval",
-            "${prefix}check_period" => "check_period",
-            "${prefix}check_timeout" => "check_timeout",
-            "${prefix}command_endpoint" => "command_endpoint",
-            "${prefix}display_name" => "display_name",
-            "${prefix}enable_active_checks" => "enable_active_checks",
-            "${prefix}enable_event_handler" => "enable_event_handler",
-            "${prefix}enable_flapping" => "enable_flapping",
-            "${prefix}enable_notifications" => "enable_notifications",
-            "${prefix}enable_passive_checks" => "enable_passive_checks",
-            "${prefix}enable_perfdata" => "enable_perfdata",
-            "${prefix}event_command" => "event_command",
-            "${prefix}flapping_threshold_high" => "flapping_threshold_high",
-            "${prefix}flapping_threshold_low" => "flapping_threshold_low",
-            "${prefix}icon_image" => "icon_image",
-            "${prefix}icon_image_alt" => "icon_image_alt",
-            "${prefix}max_check_attempts" => "max_check_attempts",
-            "${prefix}notes" => "notes",
-            "${prefix}notes_url" => "notes_url",
-            "${prefix}retry_interval" => "retry_interval",
-            "${prefix}volatile" => "volatile",
-            "${prefix}zone" => "zone",
-            "${prefix}groups" => "Groups",
-            "${prefix}templates" => "templates"
+            "{$prefix}name" => "name",
+            "{$prefix}action_url" => "action_url",
+            "{$prefix}address" => "address",
+            "{$prefix}address6" => "address6",
+            "{$prefix}api_key" => "api_key",
+            "{$prefix}check_command" => "check_command",
+            "{$prefix}check_interval" => "check_interval",
+            "{$prefix}check_period" => "check_period",
+            "{$prefix}check_timeout" => "check_timeout",
+            "{$prefix}command_endpoint" => "command_endpoint",
+            "{$prefix}display_name" => "display_name",
+            "{$prefix}enable_active_checks" => "enable_active_checks",
+            "{$prefix}enable_event_handler" => "enable_event_handler",
+            "{$prefix}enable_flapping" => "enable_flapping",
+            "{$prefix}enable_notifications" => "enable_notifications",
+            "{$prefix}enable_passive_checks" => "enable_passive_checks",
+            "{$prefix}enable_perfdata" => "enable_perfdata",
+            "{$prefix}event_command" => "event_command",
+            "{$prefix}flapping_threshold_high" => "flapping_threshold_high",
+            "{$prefix}flapping_threshold_low" => "flapping_threshold_low",
+            "{$prefix}icon_image" => "icon_image",
+            "{$prefix}icon_image_alt" => "icon_image_alt",
+            "{$prefix}max_check_attempts" => "max_check_attempts",
+            "{$prefix}notes" => "notes",
+            "{$prefix}notes_url" => "notes_url",
+            "{$prefix}retry_interval" => "retry_interval",
+            "{$prefix}volatile" => "volatile",
+            "{$prefix}zone" => "zone",
+            "{$prefix}groups" => "Groups",
+            "{$prefix}templates" => "templates"
         );
     }
     protected function loadRendered($name)
@@ -731,7 +730,7 @@ class IcingaHostTest extends BaseTestCase
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             $db = $this->getDb();

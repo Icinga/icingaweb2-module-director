@@ -2,6 +2,7 @@
 
 namespace Tests\Icinga\Module\Director\PropertyModifier;
 
+use Icinga\Exception\InvalidPropertyException;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierParseURL;
 use Icinga\Module\Director\Test\BaseTestCase;
 
@@ -50,11 +51,10 @@ class PropertyModifierParseURLTest extends BaseTestCase
         $this->assertEquals('http://www.icinga.org/path/', $modifier->transform('http://www.icinga.org/path/'));
     }
 
-    /**
-     * @expectedException \Icinga\Exception\InvalidPropertyException
-     */
     public function testMissingComponentThrowsExceptionOnfailureFail()
     {
+        $this->expectException(InvalidPropertyException::class);
+
         $modifier = new PropertyModifierParseURL();
         $modifier->setSettings([
             'url_component' => 'query',
@@ -87,11 +87,10 @@ class PropertyModifierParseURLTest extends BaseTestCase
         $this->assertEquals(self::$invalidurl, $modifier->transform(self::$invalidurl));
     }
 
-    /**
-     * @expectedException \Icinga\Exception\InvalidPropertyException
-     */
     public function testInvalidUrlThrowsExceptionOnfailureFail()
     {
+        $this->expectException(InvalidPropertyException::class);
+
         $modifier = new PropertyModifierParseURL();
         $modifier->setSettings([
             'url_component' => 'host',

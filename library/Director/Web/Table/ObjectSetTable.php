@@ -57,7 +57,7 @@ class ObjectSetTable extends ZfQueryBasedTable
             'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
         ];
 
-        $url = Url::fromPath("director/${type}set", $params);
+        $url = Url::fromPath("director/{$type}set", $params);
 
         $classes = $this->getRowClasses($row);
         $tr = static::tr([
@@ -89,7 +89,7 @@ class ObjectSetTable extends ZfQueryBasedTable
     {
         $type = $this->getType();
 
-        $table = "icinga_${type}_set";
+        $table = "icinga_{$type}_set";
         $columns = [
             'id'             => 'os.id',
             'uuid'           => 'os.uuid',
@@ -111,15 +111,15 @@ class ObjectSetTable extends ZfQueryBasedTable
             ['os' => $table],
             $columns
         )->joinLeft(
-            ['o' => "icinga_${type}"],
-            "o.${type}_set_id = os.id",
+            ['o' => "icinga_{$type}"],
+            "o.{$type}_set_id = os.id",
             []
         );
 
         $nameFilter = new FilterByNameRestriction(
             $this->connection(),
             $this->auth,
-            "${type}_set"
+            "{$type}_set"
         );
         $nameFilter->applyToQuery($query, 'os');
         /** @var Db $conn */
@@ -151,13 +151,13 @@ class ObjectSetTable extends ZfQueryBasedTable
                 $right->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid');
             }
             $right->joinLeft(
-                ['bo' => "branched_icinga_${type}"],
-                "bo.${type}_set = bos.object_name",
+                ['bo' => "branched_icinga_{$type}"],
+                "bo.{$type}_set = bos.object_name",
                 []
             );
             $query->joinLeft(
-                ['bo' => "branched_icinga_${type}"],
-                "bo.${type}_set = bos.object_name",
+                ['bo' => "branched_icinga_{$type}"],
+                "bo.{$type}_set = bos.object_name",
                 []
             );
             $this->queries = [
@@ -190,12 +190,12 @@ class ObjectSetTable extends ZfQueryBasedTable
         } else {
             // Disabled for now, check for correctness:
             // $query->joinLeft(
-            //     ['osi' => "icinga_${type}_set_inheritance"],
-            //     "osi.parent_${type}_set_id = os.id",
+            //     ['osi' => "icinga_{$type}_set_inheritance"],
+            //     "osi.parent_{$type}_set_id = os.id",
             //     []
             // )->joinLeft(
-            //     ['oso' => "icinga_${type}_set"],
-            //     "oso.id = oso.${type}_set_id",
+            //     ['oso' => "icinga_{$type}_set"],
+            //     "oso.id = oso.{$type}_set_id",
             //     []
             // );
             // 'count_hosts'    => 'COUNT(DISTINCT oso.id)',

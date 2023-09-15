@@ -91,11 +91,11 @@ class CustomvarTable extends ZfQueryBasedTable
         $columns["cnt_$type"] = 'COUNT(*)';
         $columns["distinct_$type"] = 'COUNT(DISTINCT varvalue)';
         return $db->select()->from(
-            ['v' => "icinga_${type}_var"],
+            ['v' => "icinga_{$type}_var"],
             $columns
         )->join(
-            ['o' => "icinga_${type}"],
-            "o.id = v.${type}_id",
+            ['o' => "icinga_{$type}"],
+            "o.id = v.{$type}_id",
             []
         )->where('o.object_type != ?', 'external_object')->group('varname');
     }
