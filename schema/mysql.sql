@@ -177,6 +177,7 @@ CREATE TABLE director_deployment_log (
 
 CREATE TABLE director_datalist (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   list_name VARCHAR(255) NOT NULL,
   owner VARCHAR(255) NOT NULL,
   PRIMARY KEY (id),
@@ -207,6 +208,7 @@ CREATE TABLE director_datafield_category (
 
 CREATE TABLE director_datafield (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   category_id INT(10) UNSIGNED DEFAULT NULL,
   varname VARCHAR(64) NOT NULL COLLATE utf8_bin,
   caption VARCHAR(255) NOT NULL,
@@ -1260,6 +1262,8 @@ CREATE TABLE icinga_notification (
   command_id INT(10) UNSIGNED DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  users_var VARCHAR(255) DEFAULT NULL,
+  user_groups_var VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
@@ -1455,6 +1459,7 @@ CREATE TABLE import_row_modifier (
   target_property VARCHAR(255) DEFAULT NULL,
   provider_class VARCHAR(128) NOT NULL,
   priority SMALLINT UNSIGNED NOT NULL,
+  filter_expression TEXT DEFAULT NULL,
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   KEY search_idx (property_name),
@@ -2309,6 +2314,30 @@ CREATE TABLE branched_icinga_service (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE branched_icinga_service_set (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(128) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  host VARCHAR(255) DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_service_set_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE branched_icinga_notification (
   uuid VARBINARY(16) NOT NULL,
   branch_uuid VARBINARY(16) NOT NULL,
@@ -2327,6 +2356,8 @@ CREATE TABLE branched_icinga_notification (
   command VARCHAR(255) DEFAULT NULL,
   period VARCHAR(255) DEFAULT NULL,
   zone VARCHAR(255) DEFAULT NULL,
+  users_var VARCHAR(255) DEFAULT NULL,
+  user_groups_var VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
 
   states TEXT DEFAULT NULL,
@@ -2415,4 +2446,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (179, NOW());
+  VALUES (187, NOW());

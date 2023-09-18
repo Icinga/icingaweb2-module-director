@@ -10,6 +10,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -61,8 +62,11 @@ abstract class ObjectController extends ActionController
 
     public function init()
     {
-        parent::init();
         $this->enableStaticObjectLoader($this->getTableName());
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->loadOptionalObject();
+        }
+        parent::init();
         if ($this->getRequest()->isApiRequest()) {
             $this->initializeRestApi();
         } else {
@@ -97,7 +101,6 @@ abstract class ObjectController extends ActionController
 
     protected function initializeWebRequest()
     {
-        $this->loadOptionalObject();
         if ($this->getRequest()->getActionName() === 'add') {
             $this->addSingleTab(
                 sprintf($this->translate('Add %s'), ucfirst($this->getType())),
@@ -140,13 +143,6 @@ abstract class ObjectController extends ActionController
         if ($oType = $this->params->get('type', 'object')) {
             $form->setPreferredObjectType($oType);
         }
-        if ($this->getTableName() === 'icinga_service_set'
-            && $this->showNotInBranch($this->translate('Creating Service Sets'))
-        ) {
-            $this->addTitle($this->translate('Create a new Service Set'));
-            return;
-        }
-
         if ($oType === 'template') {
             if ($this->showNotInBranch($this->translate('Creating Templates'))) {
                 $this->addTitle($this->translate('Create a new Template'));
@@ -156,6 +152,13 @@ abstract class ObjectController extends ActionController
             $this->addTemplate();
         } else {
             $this->addObject();
+        }
+        $branch = $this->getBranch();
+        if (! $this->getRequest()->isApiRequest()) {
+            $hasPreferred = $this->hasPreferredBranch();
+            if ($branch->isBranch() || $hasPreferred) {
+                $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), null, $hasPreferred));
+            }
         }
 
         $form->handleRequest();
@@ -170,7 +173,11 @@ abstract class ObjectController extends ActionController
         $object = $this->requireObject();
         $this->tabs()->activate('modify');
         $this->addObjectTitle();
-        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Modifying Templates'))) {
+        // Hint: Service Sets are 'templates' (as long as not being assigned to a host
+        if ($this->getTableName() !== 'icinga_service_set'
+            && $object->isTemplate()
+            && $this->showNotInBranch($this->translate('Modifying Templates'))
+        ) {
             return;
         }
         if ($object->isApplyRule() && $this->showNotInBranch($this->translate('Modifying Apply Rules'))) {
@@ -266,7 +273,7 @@ abstract class ObjectController extends ActionController
 
         if ($id = $this->params->get('field_id')) {
             $form->loadObject([
-                "${type}_id"   => $object->id,
+                "{$type}_id"   => $object->id,
                 'datafield_id' => $id
             ]);
 
@@ -361,7 +368,7 @@ abstract class ObjectController extends ActionController
             $this->actions()->add([
                 Link::create(
                     $this->translate('Usage'),
-                    "director/${type}template/usage",
+                    "director/{$type}template/usage",
                     ['name'  => $object->getObjectName()],
                     ['class' => 'icon-sitemap']
                 )
@@ -557,8 +564,16 @@ abstract class ObjectController extends ActionController
         if (! $this->allowsObject($object)) {
             throw new NotFoundError('No such object available');
         }
-        if ($showHint && $branch->isBranch() && $object->isObject() && ! $this->getRequest()->isApiRequest()) {
-            $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), $branchedObject));
+        if ($showHint) {
+            $hasPreferredBranch = $this->hasPreferredBranch();
+            if (($hasPreferredBranch || $branch->isBranch())
+                && $object->isObject()
+                && ! $this->getRequest()->isApiRequest()
+            ) {
+                $this->content()->add(
+                    new BranchedObjectHint($branch, $this->Auth(), $branchedObject, $hasPreferredBranch)
+                );
+            }
         }
 
         return $object;

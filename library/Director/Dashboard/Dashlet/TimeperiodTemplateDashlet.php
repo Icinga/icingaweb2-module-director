@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class TimeperiodTemplateDashlet extends Dashlet
 {
     protected $icon = 'cubes';
 
-    protected $requiredStats = array('timeperiod');
+    protected $requiredStats = ['timeperiod'];
 
     public function getTitle()
     {
@@ -21,7 +23,7 @@ class TimeperiodTemplateDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 
     public function getUrl()

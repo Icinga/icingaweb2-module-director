@@ -140,8 +140,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
         $this->addElement('text', 'varname', array(
             'label'       => $this->translate('Field name'),
             'description' => $this->translate(
-                'The unique name of the field. This will be the name of the custom'
-                . ' variable in the rendered Icinga configuration.'
+                'This will be the name of the custom variable in the rendered Icinga configuration.'
             ),
             'required'    => true,
         ));
@@ -166,7 +165,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
 
         $this->addElement('select', 'category_id', [
             'label' => $this->translate('Data Field Category'),
-            'multiOptions'  => $this->optionalEnum($this->enumCategpories()),
+            'multiOptions'  => $this->optionalEnum($this->enumCategories()),
         ]);
 
         $error = false;
@@ -282,7 +281,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function enumDataTypes()
     {
         $hooks = Hook::all('Director\\DataType');
-        $enum = array(null => '- please choose -');
+        $enum = [null => $this->translate('- please choose -')];
         /** @var DataTypeHook $hook */
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();
@@ -291,7 +290,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
         return $enum;
     }
 
-    protected function enumCategpories()
+    protected function enumCategories()
     {
         $db = $this->getDb()->getDbAdapter();
         return $db->fetchPairs(

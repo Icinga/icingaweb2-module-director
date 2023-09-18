@@ -1839,7 +1839,7 @@ msgstr ""
 "essere basate sui gruppi."
 
 #: application/forms/IcingaNotificationForm.php:199
-msgid "Delay unless the first notification should be sent"
+msgid "Delay until the first notification should be sent"
 msgstr "Ritarda prima di spedire la prima notifica"
 
 #: application/forms/IcingaObjectFieldForm.php:193
@@ -1979,7 +1979,7 @@ msgid "Disable Checks"
 msgstr "Disattivare i Checks"
 
 #: application/forms/IcingaDependencyForm.php:167
-msgid "Disable Notificiations"
+msgid "Disable Notifications"
 msgstr "Disattivare le notifiche"
 
 #: application/forms/SettingsForm.php:54

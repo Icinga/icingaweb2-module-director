@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Data\Db\DbQuery;
+use Icinga\Data\Filter\Filter;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Director\Db;
@@ -249,18 +250,6 @@ class IcingaObjectQuery
 
     public function whereToSql($col, $sign, $expression)
     {
-        return $this->dummyQuery()->whereToSql($col, $sign, $expression);
-    }
-
-    /**
-     * @return DbQuery
-     */
-    protected function dummyQuery()
-    {
-        if ($this->dummyQuery === null) {
-            $this->dummyQuery = $this->connection->select();
-        }
-
-        return $this->dummyQuery;
+        return $this->connection->renderFilter(Filter::expression($col, $sign, $expression));
     }
 }

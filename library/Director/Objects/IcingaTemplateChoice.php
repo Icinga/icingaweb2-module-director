@@ -3,9 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class IcingaTemplateChoice extends IcingaObject implements ExportInterface
@@ -34,63 +32,6 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
     public function getUniqueIdentifier()
     {
         return $this->getObjectName();
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return IcingaTemplateChoice
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            unset($properties['originalId']);
-        }
-        $name = $properties['object_name'];
-        $key = $name;
-
-        if ($replace && static::exists($key, $db)) {
-            $object = static::load($key, $db);
-        } elseif (static::exists($key, $db)) {
-            throw new DuplicateKeyException(
-                'Template Choice "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
-    /**
-     * @deprecated please use \Icinga\Module\Director\Data\Exporter
-     * @return array|object|\stdClass
-     */
-    public function export()
-    {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
-        $requiredId = $plain->required_template_id;
-        unset($plain->required_template_id);
-        if ($requiredId) {
-            $db = $this->getDb();
-            $query = $db->select()
-                ->from(['o' => $this->getObjectTableName()], 'o.object_name')->where("o.object_type = 'template'")
-                ->where('o.id = ?', $this->get('id'));
-            $plain->required_template = $db->fetchOne($query);
-        }
-
-        $plain->members = array_values($this->getMembers());
-
-        return $plain;
     }
 
     public function isMainChoice()
@@ -155,7 +96,7 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
 
     public function hasBeenModified()
     {
-        if ($this->newChoices !== null && $this->choices !== $this->newChoices) {
+        if ($this->newChoices !== null && ($this->choices ?? $this->fetchChoices()) !== $this->newChoices) {
             return true;
         }
 

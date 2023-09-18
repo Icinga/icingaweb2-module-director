@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Core\DeploymentApiInterface;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
@@ -100,7 +101,7 @@ class DeploymentLinkForm extends DirectorForm
 
     protected function canDeploy()
     {
-        return $this->auth->hasPermission('director/deploy');
+        return $this->auth->hasPermission(Permission::DEPLOY);
     }
 
     public function render(Zend_View_Interface $view = null)

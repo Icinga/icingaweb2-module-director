@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use Icinga\Module\Director\Auth\Permission;
 use ipl\Html\HtmlDocument;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -55,7 +56,7 @@ class DeploymentInfo extends HtmlDocument
             'url'   => $request->getUrl()
         ))->activate('deployment');
 
-        if ($dep->config_checksum !== null && $auth->hasPermission('director/showconfig')) {
+        if ($dep->config_checksum !== null && $auth->hasPermission(Permission::SHOW_CONFIG)) {
             $tabs->add('config', array(
                 'label'     => $this->translate('Config'),
                 'url'       => 'director/config/files',

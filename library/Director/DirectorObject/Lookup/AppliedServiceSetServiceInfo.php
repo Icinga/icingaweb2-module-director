@@ -7,6 +7,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -96,6 +97,7 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
         $query = $db->select()
             ->from(['s' => 'icinga_service'], [
                 'id'            => 's.id',
+                'uuid'          => 'ss.uuid',
                 'name'          => 's.object_name',
                 'assign_filter' => 'ss.assign_filter',
                 'service_set_name' => 'ss.object_name',
@@ -116,6 +118,7 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
 
         $allRules = $db->fetchAll($query);
         foreach ($allRules as $rule) {
+            $rule->uuid = Uuid::fromBytes(Db\DbUtil::binaryResult($rule->uuid));
             $rule->filter = Filter::fromQueryString($rule->assign_filter);
         }
 

@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Restriction;
 
-use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
@@ -11,7 +11,7 @@ use Zend_Db_Select as ZfSelect;
 
 class HostgroupRestriction extends ObjectRestriction
 {
-    protected $name = 'director/filter/hostgroups';
+    protected $name = Restriction::FILTER_HOSTGROUPS;
 
     public function allows(IcingaObject $object)
     {
@@ -141,7 +141,7 @@ class HostgroupRestriction extends ObjectRestriction
         if (empty($groups)) {
             $query->where('(1 = 0)');
         } else {
-            $query->where("${tableAlias}.object_name IN (?)", $groups);
+            $query->where("{$tableAlias}.object_name IN (?)", $groups);
         }
     }
 

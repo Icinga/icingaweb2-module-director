@@ -43,6 +43,10 @@ class SyncRule extends DbObject implements ExportInterface
         'last_attempt',
     ];
 
+    protected $booleans = [
+        'purge_existing' => 'purge_existing',
+    ];
+
     private $sync;
 
     private $purgeStrategy;
@@ -59,8 +63,6 @@ class SyncRule extends DbObject implements ExportInterface
     private $destinationKeyPattern;
 
     private $newSyncProperties;
-
-    private $originalId;
 
     public function listInvolvedSourceIds()
     {
@@ -257,61 +259,13 @@ class SyncRule extends DbObject implements ExportInterface
     }
 
     /**
-     * @deprecated please use \Icinga\Module\Director\Data\Exporter
-     * @return object
+     * Flat object has 'properties', but setProperties() is not available in DbObject
+     *
+     * @return void
      */
-    public function export()
+    public function setSyncProperties(?array $value)
     {
-        $plain = $this->getProperties();
-        $plain['originalId'] = $plain['id'];
-        unset($plain['id']);
-
-        foreach ($this->stateProperties as $key) {
-            unset($plain[$key]);
-        }
-        $plain['properties'] = $this->exportSyncProperties();
-        ksort($plain);
-
-        return (object) $plain;
-    }
-
-    /**
-     * @param object $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return static
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-        $name = $properties['rule_name'];
-
-        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
-            $object = static::loadWithAutoIncId($id, $db);
-        } elseif ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::existsWithName($name, $db)) {
-            throw new DuplicateKeyException(
-                'Sync Rule %s already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        $object->newSyncProperties = $properties['properties'];
-        unset($properties['properties']);
-        $object->setProperties($properties);
-
-        return $object;
+        $this->newSyncProperties = $value;
     }
 
     public function getUniqueIdentifier()
@@ -329,12 +283,6 @@ class SyncRule extends DbObject implements ExportInterface
             $connection = $this->getConnection();
             $db = $connection->getDbAdapter();
             $myId = $this->get('id');
-            if ($this->originalId === null) {
-                $originalId = $myId;
-            } else {
-                $originalId = $this->originalId;
-                $this->originalId = null;
-            }
             if ($this->hasBeenLoadedFromDb()) {
                 $db->delete(
                     'sync_property',

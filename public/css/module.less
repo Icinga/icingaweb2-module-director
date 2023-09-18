@@ -49,6 +49,14 @@ div.action-bar > a {
   margin-right: 1em;
 }
 
+.controls > .pagination-control li > a {
+  padding: 0.5em 0 0.5em 0;
+}
+
+.controls > .pagination-control > ul {
+  float: right;
+}
+
 div.action-bar {
   .pagination-control {
     float: none;
@@ -235,7 +243,7 @@ pre.logfile {
   background: @gray-lighter;
   color: @gray;
   overflow: auto;
-  white-space: pre;
+  white-space: pre-wrap;
 
   a {
     color: @link-color;

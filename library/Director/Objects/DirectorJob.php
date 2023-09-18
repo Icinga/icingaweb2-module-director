@@ -122,6 +122,10 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
             return false;
         }
 
+        if ($this->get('ts_last_attempt') === null) {
+            return true;
+        }
+
         return (
             strtotime($this->get('ts_last_attempt')) + $this->get('run_interval') * 2
         ) < time();
@@ -191,72 +195,6 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
         $this->set('timeperiod_id', $timeperiod->get('id'));
 
         return $this;
-    }
-
-    /**
-     * @return object
-     * @deprecated please use \Icinga\Module\Director\Data\Exporter
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
-    {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
-        unset($plain->timeperiod_id);
-        if ($this->hasTimeperiod()) {
-            $plain->timeperiod = $this->timeperiod()->getObjectName();
-        }
-
-        foreach ($this->stateProperties as $key) {
-            unset($plain->$key);
-        }
-        $plain->settings = $this->getInstance()->exportSettings();
-
-        return $plain;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return DirectorJob
-     * @throws DuplicateKeyException
-     * @throws NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $dummy = new static;
-        $idCol = $dummy->autoincKeyName;
-        $keyCol = $dummy->keyName;
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-        $name = $properties[$keyCol];
-
-        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
-            $object = static::loadWithAutoIncId($id, $db);
-        } elseif ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::exists($name, $db)) {
-            throw new DuplicateKeyException(
-                'Director Job "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        $object->setProperties($properties);
-        if ($id !== null) {
-            $object->reallySet($idCol, $id);
-        }
-
-        return $object;
     }
 
     /**

@@ -85,7 +85,8 @@ class BranchMerger
      */
     public function merge($comment = null)
     {
-        $this->connection->runFailSafeTransaction(function () use ($comment) {
+        $username = DirectorActivityLog::username();
+        $this->connection->runFailSafeTransaction(function () use ($comment, $username) {
             $formerActivityId = (int) DirectorActivityLog::loadLatest($this->connection)->get('id');
             $query = $this->db->select()
                 ->from(BranchActivity::DB_TABLE)
@@ -94,6 +95,10 @@ class BranchMerger
             $rows = $this->db->fetchAll($query);
             foreach ($rows as $row) {
                 $activity = BranchActivity::fromDbRow($row);
+                $author = $activity->getAuthor();
+                if ($username !== $author) {
+                    DirectorActivityLog::overrideUsername("$author/$username");
+                }
                 $this->applyModification($activity);
             }
             (new BranchStore($this->connection))->deleteByUuid($this->branchUuid);
@@ -109,6 +114,7 @@ class BranchMerger
                 ]);
             }
         });
+        DirectorActivityLog::restoreUsername();
     }
 
     /**

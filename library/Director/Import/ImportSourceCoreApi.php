@@ -30,7 +30,7 @@ class ImportSourceCoreApi extends ImportSourceHook
     public function listColumns()
     {
         $res = $this->fetchData();
-        if (empty($data)) {
+        if (empty($res)) {
             return array('object_name');
         }
 

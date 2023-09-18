@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
@@ -125,8 +126,9 @@ class ImportExport
     {
         $count = 0;
         $this->connection->runFailSafeTransaction(function () use ($objects, &$count) {
+            $importer = new ObjectImporter($this->connection);
             foreach ($objects as $object) {
-                ImportSource::import($object, $this->connection)->store();
+                $importer->import(ImportSource::class, $object)->store();
                 $count++;
             }
         });
@@ -138,8 +140,9 @@ class ImportExport
     {
         $count = 0;
         $this->connection->runFailSafeTransaction(function () use ($objects, &$count) {
+            $importer = new ObjectImporter($this->connection);
             foreach ($objects as $object) {
-                SyncRule::import($object, $this->connection)->store();
+                $importer->import(SyncRule::class, $object)->store();
             }
             $count++;
         });

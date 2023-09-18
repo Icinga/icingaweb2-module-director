@@ -3,9 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Exception\ConfigurationError;
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
@@ -78,49 +76,6 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     public function getUniqueIdentifier()
     {
         return $this->getObjectName();
-    }
-
-    /**
-     * @return object
-     * @deprecated please use \Icinga\Module\Director\Data\Exporter
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
-    {
-        $props = (array) $this->toPlainObject();
-        ksort($props);
-
-        return (object) $props;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return static
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        $name = $properties['object_name'];
-        $key = $name;
-
-        if ($replace && static::exists($key, $db)) {
-            $object = static::load($key, $db);
-        } elseif (static::exists($key, $db)) {
-            throw new DuplicateKeyException(
-                'Dependency "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        $object->setProperties($properties);
-
-        return $object;
     }
 
     public function parentHostIsVar()
@@ -506,7 +461,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     protected function resolveUnresolvedRelatedProperty($name)
     {
         $short = substr($name, 0, -3);
-        /** @var IcingaObject $class */
+        /** @var IcingaObject|string $class */
         $class = $this->getRelationClass($short);
         $objKey = $this->unresolvedRelatedProperties[$name];
 
@@ -589,7 +544,25 @@ class IcingaDependency extends IcingaObject implements ExportInterface
             $this->reallySet($name, $object->get('id'));
             unset($this->unresolvedRelatedProperties[$name]);
         } else {
-            throw new NotFoundError('Unable to resolve related property: "%s"', $name);
+            // Depend on a single service on a single host. Rare case, as usually you want to
+            // depend on a service on the very same host - and leave the Host field empty. The
+            // latter is already being handled above. This duplicates some code, but I'll leave
+            // it this way for now. There might have been a reason for the parent_host_id = null
+            // check in that code.
+            if ($name === 'parent_service_id' && $this->get('object_type') === 'apply') {
+                $this->reallySet(
+                    'parent_service_by_name',
+                    $this->unresolvedRelatedProperties[$name]
+                );
+                $this->reallySet('parent_service_id', null);
+                unset($this->unresolvedRelatedProperties[$name]);
+                return;
+            }
+            throw new NotFoundError(sprintf(
+                'Unable to resolve related property: %s "%s"',
+                $name,
+                $this->unresolvedRelatedProperties[$name]
+            ));
         }
     }
 

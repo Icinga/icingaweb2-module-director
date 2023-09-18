@@ -14,11 +14,12 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable
 {
+    use TableWithBranchSupport;
+
     /** @var ObjectRestriction[] */
     protected $objectRestrictions;
 
@@ -36,9 +37,6 @@ class ObjectsTable extends ZfQueryBasedTable
     protected $filterObjectType = 'object';
 
     protected $type;
-
-    /** @var UuidInterface|null */
-    protected $branchUuid;
 
     protected $baseObjectUrl;
 
@@ -112,13 +110,6 @@ class ObjectsTable extends ZfQueryBasedTable
         return $this;
     }
 
-    public function setBranchUuid(UuidInterface $uuid = null)
-    {
-        $this->branchUuid = $uuid;
-
-        return $this;
-    }
-
     public function getColumns()
     {
         return $this->columns;
@@ -151,7 +142,7 @@ class ObjectsTable extends ZfQueryBasedTable
     protected function renderObjectNameColumn($row)
     {
         $type = $this->baseObjectUrl;
-        $url = Url::fromPath("director/${type}", [
+        $url = Url::fromPath("director/{$type}", [
             'uuid' => Uuid::fromBytes($row->uuid)->toString()
         ]);
 
@@ -256,36 +247,6 @@ class ObjectsTable extends ZfQueryBasedTable
         return $this->dummyObject;
     }
 
-    protected function branchifyColumns($columns)
-    {
-        $result = [
-            'uuid' => 'COALESCE(o.uuid, bo.uuid)'
-        ];
-        $ignore = ['o.id'];
-        foreach ($columns as $alias => $column) {
-            if (substr($column, 0, 2) === 'o.' && ! in_array($column, $ignore)) {
-                // bo.column, o.column
-                $column = "COALESCE(b$column, $column)";
-            }
-
-            // Used in Service Tables:
-            if ($column === 'h.object_name' && $alias = 'host') {
-                $column = "COALESCE(bo.host, $column)";
-            }
-
-            $result[$alias] = $column;
-        }
-
-        return $result;
-    }
-
-    protected function stripSearchColumnAliases()
-    {
-        foreach ($this->searchColumns as &$column) {
-            $column = preg_replace('/^[a-z]+\./', '', $column);
-        }
-    }
-
     protected function prepareQuery()
     {
         $table = $this->getDummyObject()->getTableName();
@@ -337,9 +298,19 @@ class ObjectsTable extends ZfQueryBasedTable
             $query->order('object_name')->limit(100);
         } else {
             $this->applyObjectTypeFilter($query);
+            $query = $this->applyRestrictions($query);
             $query->order('o.object_name')->limit(100);
         }
 
         return $query;
+    }
+
+    public function removeQueryLimit()
+    {
+        $query = $this->getQuery();
+        $query->reset($query::LIMIT_OFFSET);
+        $query->reset($query::LIMIT_COUNT);
+
+        return $this;
     }
 }

@@ -64,6 +64,41 @@ class ImportRowModifierForm extends DirectorObjectForm
             $error = $e->getMessage();
             $mods = $this->optionalEnum([]);
         }
+        $this->addElement('YesNo', 'use_filter', [
+            'label'        => $this->translate('Set based on filter'),
+            'ignore'       => true,
+            'class'        => 'autosubmit',
+            'required'     => true,
+        ]);
+
+        if ($this->hasBeenSent()) {
+            $useFilter = $this->getSentValue('use_filter');
+            if ($useFilter === null) {
+                $this->setElementValue('use_filter', $useFilter = 'n');
+            }
+        } elseif ($object = $this->getObject()) {
+            $expression = $object->get('filter_expression');
+            $useFilter = ($expression === null || strlen($expression) === 0) ? 'n' : 'y';
+            $this->setElementValue('use_filter', $useFilter);
+        } else {
+            $this->setElementValue('use_filter', $useFilter = 'n');
+        }
+
+        if ($useFilter === 'y') {
+            $this->addElement('text', 'filter_expression', [
+                'label'       => $this->translate('Filter Expression'),
+                'description' => $this->translate(
+                    'This allows to filter for specific parts within the given source expression.'
+                    . ' You are allowed to refer all imported columns. Examples: host=www* would'
+                    . ' set this property only for rows imported with a host property starting'
+                    . ' with "www". Complex example: host=www*&!(address=127.*|address6=::1).'
+                    . ' Please note, that CIDR notation based matches are also supported: '
+                    . ' address=192.0.2.128/25| address=2001:db8::/32| address=::ffff:192.0.2.0/96'
+                ),
+                'required'    => true,
+                // TODO: validate filter
+            ]);
+        }
 
         $this->addElement('select', 'provider_class', [
             'label'        => $this->translate('Modifier'),

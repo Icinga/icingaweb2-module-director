@@ -146,7 +146,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
         $links = [];
         $links[] = Link::create(
             Icon::create('sitemap'),
-            "${baseUrl}template/applytargets",
+            "{$baseUrl}template/applytargets",
             ['id' => $row->id],
             ['title' => $this->translate('Show affected Objects')]
         );

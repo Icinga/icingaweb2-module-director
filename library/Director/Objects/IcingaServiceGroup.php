@@ -31,12 +31,8 @@ class IcingaServiceGroup extends IcingaObjectGroup
         return $this;
     }
 
-    protected function notifyResolvers()
+    protected function getMemberShipResolver()
     {
-        $resolver = $this->getServiceGroupMembershipResolver();
-        $resolver->addGroup($this);
-        $resolver->refreshDb();
-
-        return $this;
+        return $this->getServiceGroupMembershipResolver();
     }
 }

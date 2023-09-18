@@ -4,11 +4,10 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
-use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -30,10 +29,11 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->hasPermission('director/monitoring/services')) {
-            $monitoring = new Monitoring();
-            if ($monitoring->authCanEditService($this->Auth(), $this->getParam('host'), $this->getParam('name'))) {
-                return;
+        if ($this->hasPermission(Permission::MONITORING_SERVICES)) {
+            if ($this->host && $service = $this->object) {
+                if ($this->monitoring()->canModifyService($this->host, $service->getObjectName())) {
+                    return;
+                }
             }
         }
         $this->assertPermission('director/hosts');
@@ -41,6 +41,9 @@ class ServiceController extends ObjectController
 
     public function init()
     {
+        // This happens in parent::init() too, but is required to take place before the next two lines
+        $this->enableStaticObjectLoader($this->getTableName());
+
         // Hint: having Host and Set loaded first is important for UUID lookups with legacy URLs
         $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
         $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');
@@ -59,7 +62,7 @@ class ServiceController extends ObjectController
 
     protected function getOptionalRelatedObjectFromParams($type, $parameter)
     {
-        if ($id = $this->params->get("${parameter}_id")) {
+        if ($id = $this->params->get("{$parameter}_id")) {
             $key = (int) $id;
         } else {
             $key = $this->params->get($parameter);
@@ -77,7 +80,7 @@ class ServiceController extends ObjectController
     {
         $key = $object->getUnresolvedRelated($relation);
         if ($key === null) {
-            if ($key = $object->get("${relation}_id")) {
+            if ($key = $object->get("{$relation}_id")) {
                 $key = (int) $key;
             } else {
                 $key = $object->get($relation);

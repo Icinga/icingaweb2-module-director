@@ -110,7 +110,7 @@ abstract class ObjectsController extends ActionController
         $type = $this->getType();
         if ($this->params->get('format') === 'json') {
             $filename = sprintf(
-                "director-${type}_%s.json",
+                "director-{$type}_%s.json",
                 date('YmdHis')
             );
             $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
@@ -124,7 +124,7 @@ abstract class ObjectsController extends ActionController
             ->addTitle($this->translate(ucfirst($this->getPluralType())))
             ->actions(new ObjectsActionBar($this->getBaseObjectUrl(), $this->url()));
 
-        $this->content()->add(new BranchedObjectsHint($this->getBranch(), $this->Auth()));
+        $this->content()->add(new BranchedObjectsHint($this->getBranch(), $this->Auth(), $this->hasPreferredBranch()));
 
         if ($type === 'command' && $this->params->get('type') === 'external_object') {
             $this->tabs()->activate('external');
@@ -235,7 +235,7 @@ abstract class ObjectsController extends ActionController
 
         if ($this->params->get('format') === 'json') {
             $filename = sprintf(
-                "director-${type}-templates_%s.json",
+                "director-{$type}-templates_%s.json",
                 date('YmdHis')
             );
             $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
@@ -290,7 +290,7 @@ abstract class ObjectsController extends ActionController
 
         if ($this->params->get('format') === 'json') {
             $filename = sprintf(
-                "director-${type}-applyrules_%s.json",
+                "director-{$type}-applyrules_%s.json",
                 date('YmdHis')
             );
             $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
@@ -313,7 +313,7 @@ abstract class ObjectsController extends ActionController
             ->add(
                 Link::create(
                     $this->translate('Add'),
-                    "${baseUrl}/add",
+                    "{$baseUrl}/add",
                     ['type' => 'apply'],
                     [
                         'title' => sprintf(
@@ -354,7 +354,7 @@ abstract class ObjectsController extends ActionController
         $this->actions()->add(
             Link::create(
                 $this->translate('Add'),
-                "director/${type}set/add",
+                "director/{$type}set/add",
                 null,
                 [
                     'title' => sprintf(
@@ -367,7 +367,9 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        ObjectSetTable::create($type, $this->db(), $this->getAuth())->renderTo($this);
+        ObjectSetTable::create($type, $this->db(), $this->getAuth())
+            ->setBranch($this->getBranch())
+            ->renderTo($this);
     }
 
     /**

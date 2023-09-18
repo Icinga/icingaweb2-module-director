@@ -30,7 +30,7 @@ class FilterByNameRestriction extends ObjectRestriction
 
     protected function setNameForType($type)
     {
-        $this->name = "director/${type}/filter-by-name";
+        $this->name = "director/{$type}/filter-by-name";
     }
 
     public function allows(IcingaObject $object)

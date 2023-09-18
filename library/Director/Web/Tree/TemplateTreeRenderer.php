@@ -71,7 +71,7 @@ class TemplateTreeRenderer extends BaseHtmlElement
         } else {
             $li->add(Link::create(
                 $tree['name'],
-                "director/${type}template/usage",
+                "director/{$type}template/usage",
                 array('name' => $tree['name']),
                 array('class' => 'icon-' .$type)
             ));

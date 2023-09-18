@@ -18,13 +18,14 @@ class ImportRowModifier extends DbObjectWithSettings implements InstantiatedViaH
     protected $autoincKeyName = 'id';
 
     protected $defaultProperties = [
-        'id'              => null,
-        'source_id'       => null,
-        'property_name'   => null,
-        'provider_class'  => null,
-        'target_property' => null,
-        'priority'        => null,
-        'description'     => null,
+        'id'                => null,
+        'source_id'         => null,
+        'property_name'     => null,
+        'provider_class'    => null,
+        'target_property'   => null,
+        'filter_expression' => null,
+        'priority'          => null,
+        'description'       => null,
     ];
 
     protected $settingsTable = 'import_row_modifier_setting';
