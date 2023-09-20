@@ -296,6 +296,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'argument_name');
         $this->cloneStored();
         $this->refreshIndex();
+        $this->modified = false;
 
         return $this;
     }
@@ -360,6 +361,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         }
         $this->refreshIndex();
         $this->cloneStored();
+        $this->modified = false;
     }
 
     /**
@@ -393,7 +395,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             unset($this->arguments[$key]);
         }
 
+        $this->refreshIndex();
         $this->cloneStored();
+        $this->modified = false;
 
         return $this;
     }

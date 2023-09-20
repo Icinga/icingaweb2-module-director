@@ -17,6 +17,7 @@ This version hasn't been released yet
 * FEATURE: Sort Template trees by name (#2691)
 * FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
 * FEATURE: Show more details for assign filter parsing errors (#2667)
+* FEATURE: Fields from set_if are now being proposed (#514)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
 * FIX: Template usage table had no header (#2780)
@@ -31,6 +32,14 @@ This version hasn't been released yet
 * FEATURE: property modifiers can now be applied based on filters (#2756)
 * FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
+* FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
+
+# Configuration Baskets
+* FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
+* FIX: basket now shows where to expect changes for lists from snapshots (#2791)
+
+### REST API
+* FIX: Commands give 304 w/o ghost changes for same properties (#2660)
 
 ### Permissions and Restrictions
 * FIX: monitoring-related permission checks have been refactored (#2712)
@@ -45,7 +54,6 @@ This version hasn't been released yet
 * FIX: complaint about overdue jobs was not correct (#2680, #2681)
 
 ### Internals
-
 * FIX: group membership is no longer resolved when not needed (#2048)
 
 ### Fixed issues
