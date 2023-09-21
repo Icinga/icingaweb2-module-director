@@ -1,0 +1,711 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: application/controllers/BranchController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/BranchController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Table\\\\ObjectsTable\\:\\:setType\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/CommandsController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: application/controllers/ConfigController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/ConfigController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Web\\\\View\\:\\:formSelect\\(\\)\\.$#"
+			count: 2
+			path: application/controllers/ConfigController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Data\\\\Filter\\\\Filter\\:\\:filters\\(\\)\\.$#"
+			count: 2
+			path: application/controllers/HostsController.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(\\$filter FilterChain\\)\\: Unexpected token \"\\$filter\", expected type at offset 9$#"
+			count: 2
+			path: application/controllers/HostsController.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(\\$sub FilterChain\\)\\: Unexpected token \"\\$sub\", expected type at offset 9$#"
+			count: 2
+			path: application/controllers/HostsController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: application/controllers/ImportsourceController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/ImportsourceController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: application/controllers/JobController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/JobController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: application/controllers/KickstartController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/KickstartController.php
+
+		-
+			message: "#^Variable \\$tab in PHPDoc tag @var does not exist\\.$#"
+			count: 1
+			path: application/controllers/NotificationController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\DirectorObjectForm\\:\\:createApplyRuleFor\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/ServiceController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: application/controllers/SyncruleController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/SyncruleController.php
+
+		-
+			message: "#^Variable \\$after might not be defined\\.$#"
+			count: 3
+			path: application/controllers/SyncruleController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: application/controllers/TemplatechoiceController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: application/controllers/TemplatechoiceController.php
+
+		-
+			message: "#^Call to an undefined method Zend_View_Interface\\:\\:icon\\(\\)\\.$#"
+			count: 1
+			path: application/forms/DeployConfigForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getSettings\\(\\)\\.$#"
+			count: 2
+			path: application/forms/DirectorDatafieldForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getSettings\\(\\)\\.$#"
+			count: 1
+			path: application/forms/DirectorJobForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getObjectName\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaAddServiceSetForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getResolvedProperty\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaAddServiceSetForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:setImports\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaDependencyForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getAppliedGroups\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaHostForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getGroups\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaHostForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Forms\\\\IcingaImportObjectForm\\:\\:addNote\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaImportObjectForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getUrlParams\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaScheduledDowntimeForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:isApplyRule\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaScheduledDowntimeForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:isApplyRule\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaServiceDictionaryMemberForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:isApplyRule\\(\\)\\.$#"
+			count: 2
+			path: application/forms/IcingaServiceForm.php
+
+		-
+			message: "#^Cannot cast Icinga\\\\Data\\\\Filter\\\\Filter to string\\.$#"
+			count: 1
+			path: application/forms/IcingaServiceForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getResolvedProperty\\(\\)\\.$#"
+			count: 1
+			path: application/forms/IcingaServiceSetForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getSetting\\(\\)\\.$#"
+			count: 1
+			path: application/forms/ImportRowModifierForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getSettings\\(\\)\\.$#"
+			count: 1
+			path: application/forms/ImportRowModifierForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getSettings\\(\\)\\.$#"
+			count: 1
+			path: application/forms/ImportSourceForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Forms\\\\RestoreBasketForm\\:\\:Window\\(\\)\\.$#"
+			count: 1
+			path: application/forms/RestoreBasketForm.php
+
+		-
+			message: "#^Function translate not found\\.$#"
+			count: 8
+			path: application/locale/translateMe.php
+
+		-
+			message: "#^Call to an undefined method Zend_View_Interface\\:\\:formIplExtensibleSet\\(\\)\\.$#"
+			count: 1
+			path: application/views/helpers/FormDataFilter.php
+
+		-
+			message: "#^Call to an undefined method Zend_View_Interface\\:\\:formSelect\\(\\)\\.$#"
+			count: 1
+			path: application/views/helpers/FormDataFilter.php
+
+		-
+			message: "#^Call to an undefined method Zend_View_Interface\\:\\:formSubmit\\(\\)\\.$#"
+			count: 1
+			path: application/views/helpers/FormDataFilter.php
+
+		-
+			message: "#^Call to an undefined method Zend_View_Interface\\:\\:formText\\(\\)\\.$#"
+			count: 4
+			path: application/views/helpers/FormDataFilter.php
+
+		-
+			message: "#^Call to an undefined method Zend_View_Interface\\:\\:translate\\(\\)\\.$#"
+			count: 1
+			path: application/views/helpers/FormDataFilter.php
+
+		-
+			message: "#^Variable \\$id might not be defined\\.$#"
+			count: 1
+			path: application/views/helpers/FormStoredPassword.php
+
+		-
+			message: "#^Binary operation \"\\*\\=\" between string and 1024 results in an error\\.$#"
+			count: 1
+			path: library/Director/Application/MemoryLimit.php
+
+		-
+			message: "#^Constructor of class Icinga\\\\Module\\\\Director\\\\Core\\\\RestApiClient has an unused parameter \\$cn\\.$#"
+			count: 1
+			path: library/Director/Core/RestApiClient.php
+
+		-
+			message: "#^Binary operation \"\\*\" between string and 1000 results in an error\\.$#"
+			count: 1
+			path: library/Director/Daemon/DaemonUtil.php
+
+		-
+			message: "#^Anonymous function has an unused use \\$id\\.$#"
+			count: 2
+			path: library/Director/Daemon/JobRunner.php
+
+		-
+			message: "#^Variable \\$hook in PHPDoc tag @var does not exist\\.$#"
+			count: 1
+			path: library/Director/Dashboard/BranchesDashboard.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Restriction\\\\HostgroupRestriction\\:\\:applyToHostGroupsQuery\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Dashboard/Dashboard.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbConnection\\:\\:db\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Data/Db/DbConnection.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Data\\\\Filter\\\\Filter\\:\\:filters\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Data/Db/IcingaObjectFilterRenderer.php
+
+		-
+			message: "#^Variable \\$filter in PHPDoc tag @var does not match any variable in the foreach loop\\: \\$sub$#"
+			count: 1
+			path: library/Director/Data/Db/IcingaObjectFilterRenderer.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\IcingaObjectQuery\\:\\:tableAliases\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Data/Db/IcingaObjectQuery.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getObjectName\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Data/Db/ServiceSetQueryBuilder.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$datalist\\.$#"
+			count: 1
+			path: library/Director/Data/Exporter.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$id$#"
+			count: 1
+			path: library/Director/Data/FieldReferenceLoader.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:toPlainObject\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Data/HostServiceLoader.php
+
+		-
+			message: "#^Call to an undefined static method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:fromPlainObject\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Data/HostServiceLoader.php
+
+		-
+			message: "#^PHPDoc tag @param for parameter \\$implementation with type class\\-string\\|Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject is not subtype of native type string\\.$#"
+			count: 1
+			path: library/Director/Data/ObjectImporter.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$format\\.$#"
+			count: 1
+			path: library/Director/Data/PropertiesFilter/ArrayCustomVariablesFilter.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$object$#"
+			count: 1
+			path: library/Director/Data/SerializableValue.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\QuickForm\\:\\:getDb\\(\\)\\.$#"
+			count: 1
+			path: library/Director/DataType/DataTypeDatalist.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getRequest\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Db/Branch/Branch.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$db$#"
+			count: 1
+			path: library/Director/Db/Branch/Branch.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(@var string\\)\\: Unexpected token \"@var\", expected type at offset 9$#"
+			count: 1
+			path: library/Director/Db/Branch/Branch.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Db\\\\Branch\\\\Branch\\:\\:getBytes\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Db/Branch/BranchMerger.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:toPlainObject\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Db/Branch/BranchedObject.php
+
+		-
+			message: "#^Call to an undefined method Zend_Db_Adapter_Abstract\\:\\:exec\\(\\)\\.$#"
+			count: 4
+			path: library/Director/Db/Housekeeping.php
+
+		-
+			message: "#^Variable \\$helper in PHPDoc tag @var does not exist\\.$#"
+			count: 1
+			path: library/Director/Db/MembershipHousekeeping.php
+
+		-
+			message: "#^Variable \\$object in PHPDoc tag @var does not exist\\.$#"
+			count: 2
+			path: library/Director/DirectorObject/Automation/BasketSnapshot.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$datalist_id\\.$#"
+			count: 1
+			path: library/Director/DirectorObject/Automation/BasketSnapshotFieldResolver.php
+
+		-
+			message: "#^Binary operation \"\\|\" between string\\|false and string results in an error\\.$#"
+			count: 1
+			path: library/Director/Filter/CidrExpression.php
+
+		-
+			message: "#^Class Icinga\\\\Module\\\\Director\\\\Db\\\\Branch\\\\BranchStore referenced with incorrect case\\: Icinga\\\\Module\\\\Director\\\\Db\\\\Branch\\\\BranchSTore\\.$#"
+			count: 3
+			path: library/Director/Hook/BranchSupportHook.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getRequest\\(\\)\\.$#"
+			count: 1
+			path: library/Director/IcingaConfig/AgentWizard.php
+
+		-
+			message: "#^Binary operation \"\\*\" between string and 3600 results in an error\\.$#"
+			count: 1
+			path: library/Director/IcingaConfig/IcingaConfigHelper.php
+
+		-
+			message: "#^Binary operation \"\\*\" between string and 60 results in an error\\.$#"
+			count: 1
+			path: library/Director/IcingaConfig/IcingaConfigHelper.php
+
+		-
+			message: "#^Binary operation \"\\*\" between string and 86400 results in an error\\.$#"
+			count: 1
+			path: library/Director/IcingaConfig/IcingaConfigHelper.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\QuickForm\\:\\:getSentOrObjectSetting\\(\\)\\.$#"
+			count: 3
+			path: library/Director/Import/ImportSourceRestApi.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$order\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaCommandArgument.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Objects\\\\IcingaService\\:\\:assignments\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaDependency.php
+
+		-
+			message: "#^Call to an undefined static method Icinga\\\\Module\\\\Director\\\\Objects\\\\IcingaObject\\:\\:renderAssignments\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaDependency.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$preserve \\(array\\) of method Icinga\\\\Module\\\\Director\\\\Objects\\\\IcingaObject\\:\\:replaceWith\\(\\) is incompatible with type null\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaObject.php
+
+		-
+			message: "#^Static call to instance method stdClass\\:\\:getKeyColumnName\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaObject.php
+
+		-
+			message: "#^Variable \\$imports in PHPDoc tag @var does not exist\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaObject.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$filter$#"
+			count: 1
+			path: library/Director/Objects/IcingaObjectField.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Objects\\\\IcingaRanges\\:\\:\\$objectIdColumn\\.$#"
+			count: 3
+			path: library/Director/Objects/IcingaRanges.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Objects\\\\IcingaRanges\\:\\:\\$rangeClass\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaRanges.php
+
+		-
+			message: "#^Call to protected method getRelationObjectClass\\(\\) of class Icinga\\\\Module\\\\Director\\\\Objects\\\\IcingaObject\\.$#"
+			count: 1
+			path: library/Director/Objects/IcingaRelatedObject.php
+
+		-
+			message: "#^Undefined variable\\: \\$object$#"
+			count: 2
+			path: library/Director/Objects/IcingaRelatedObject.php
+
+		-
+			message: "#^Undefined variable\\: \\$name$#"
+			count: 1
+			path: library/Director/Objects/IcingaTemplateResolver.php
+
+		-
+			message: "#^Undefined variable\\: \\$type$#"
+			count: 2
+			path: library/Director/Objects/IcingaTemplateResolver.php
+
+		-
+			message: "#^Variable \\$obj in PHPDoc tag @var does not exist\\.$#"
+			count: 1
+			path: library/Director/Objects/ImportRowModifier.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Data\\\\Filter\\\\Filter\\:\\:filters\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Objects/ObjectApplyMatches.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\QuickForm\\:\\:getDb\\(\\)\\.$#"
+			count: 1
+			path: library/Director/PropertyModifier/PropertyModifierMap.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\QuickForm\\:\\:getSetting\\(\\)\\.$#"
+			count: 1
+			path: library/Director/PropertyModifier/PropertyModifierMap.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\QuickForm\\:\\:getSetting\\(\\)\\.$#"
+			count: 1
+			path: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php
+
+		-
+			message: "#^Call to an undefined method ipl\\\\Stdlib\\\\Filter\\\\Rule\\:\\:getValue\\(\\)\\.$#"
+			count: 3
+			path: library/Director/ProvidedHook/IcingaDbCubeLinks.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Test\\\\TestSuiteUnit\\:\\:newTempfile\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Test/TestSuiteUnit.php
+
+		-
+			message: "#^Access to an undefined property Zend_Controller_Action_HelperBroker\\:\\:\\$viewRenderer\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ActionController.php
+
+		-
+			message: "#^Access to an undefined property Zend_View_Interface\\:\\:\\$compact\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ActionController.php
+
+		-
+			message: "#^Access to an undefined property Zend_View_Interface\\:\\:\\$controls\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ActionController.php
+
+		-
+			message: "#^Call to an undefined method Zend_Controller_Action_HelperBroker\\:\\:layout\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ActionController.php
+
+		-
+			message: "#^Call to an undefined method Zend_Controller_Request_Abstract\\:\\:getHeader\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ActionController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectController.php
+
+		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectsController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Data\\\\Filter\\\\Filter\\:\\:filters\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectsController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getObjectName\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectsController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectsController.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(\\$ex FilterChain\\|FilterExpression\\)\\: Unexpected token \"\\$ex\", expected type at offset 9$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectsController.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(\\$filter FilterChain\\)\\: Unexpected token \"\\$filter\", expected type at offset 9$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectsController.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(\\$sub FilterChain\\)\\: Unexpected token \"\\$sub\", expected type at offset 9$#"
+			count: 1
+			path: library/Director/Web/Controller/ObjectsController.php
+
+		-
+			message: "#^Undefined variable\\: \\$elementValue$#"
+			count: 1
+			path: library/Director/Web/Form/CsrfToken.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getShortTableName\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Form/DirectorObjectForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:listImportNames\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Form/DirectorObjectForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:ranges\\(\\)\\.$#"
+			count: 2
+			path: library/Director/Web/Form/DirectorObjectForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:supportsApplyRules\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Form/DirectorObjectForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:supportsImports\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Form/DirectorObjectForm.php
+
+		-
+			message: "#^Class Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\Element\\\\Boolean referenced with incorrect case\\: Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\Element\\\\boolean\\.$#"
+			count: 1
+			path: library/Director/Web/Form/Element/InstanceSummary.php
+
+		-
+			message: "#^Class Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\Element\\\\Boolean referenced with incorrect case\\: Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\Element\\\\boolean\\.$#"
+			count: 1
+			path: library/Director/Web/Form/Element/SimpleNote.php
+
+		-
+			message: "#^Variable \\$file might not be defined\\.$#"
+			count: 1
+			path: library/Director/Web/Form/FormLoader.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(\\$filter FilterChain\\|FilterExpression\\)\\: Unexpected token \"\\$filter\", expected type at offset 9$#"
+			count: 1
+			path: library/Director/Web/Form/IcingaObjectFieldLoader.php
+
+		-
+			message: "#^Variable \\$hook in PHPDoc tag @var does not match assigned variable \\$type\\.$#"
+			count: 1
+			path: library/Director/Web/Form/IcingaObjectFieldLoader.php
+
+		-
+			message: "#^PHPDoc tag @var above assignment does not specify variable name\\.$#"
+			count: 1
+			path: library/Director/Web/Form/QuickBaseForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getFrontController\\(\\)\\.$#"
+			count: 4
+			path: library/Director/Web/Form/QuickForm.php
+
+		-
+			message: "#^Variable \\$req in PHPDoc tag @var does not exist\\.$#"
+			count: 1
+			path: library/Director/Web/Form/QuickForm.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getRequest\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php
+
+		-
+			message: "#^PHPDoc tag @var has invalid value \\(\\$app Web\\)\\: Unexpected token \"\\$app\", expected type at offset 9$#"
+			count: 1
+			path: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php
+
+		-
+			message: "#^Method gipfl\\\\IcingaWeb2\\\\Widget\\\\ControlsAndContent\\:\\:addTitle\\(\\) invoked with 2 parameters, 1 required\\.$#"
+			count: 1
+			path: library/Director/Web/ObjectPreview.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$object_name\\.$#"
+			count: 2
+			path: library/Director/Web/Table/GroupMemberTable.php
+
+		-
+			message: "#^Comparison operation \"\\<\" between \\(array\\|float\\|int\\) and int\\<1, max\\> results in an error\\.$#"
+			count: 1
+			path: library/Director/Web/Table/JobTable.php
+
+		-
+			message: "#^Method ipl\\\\Html\\\\BaseHtmlElement\\:\\:tag\\(\\) invoked with 3 parameters, 0 required\\.$#"
+			count: 1
+			path: library/Director/Web/Table/PropertymodifierTable.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getViewRenderer\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Table/QuickTable.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Table\\\\QuickTable\\:\\:renderAdditionalActions\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Table/QuickTable.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Web\\\\Widget\\\\AbstractWidget\\:\\:setColumns\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Table/QuickTable.php
+
+		-
+			message: "#^Variable \\$file might not be defined\\.$#"
+			count: 1
+			path: library/Director/Web/Table/TableLoader.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Widget\\\\IcingaObjectInspection\\:\\:db\\(\\)\\.$#"
+			count: 2
+			path: library/Director/Web/Widget/IcingaObjectInspection.php
