@@ -22,7 +22,7 @@ class ObjectSetTable extends ZfQueryBasedTable
         'os.object_name',
         'os.description',
         'os.assign_filter',
-        'service_object_name',
+        'o.object_name',
     ];
 
     private $type;
@@ -98,7 +98,6 @@ class ObjectSetTable extends ZfQueryBasedTable
             'object_type'    => 'os.object_type',
             'assign_filter'  => 'os.assign_filter',
             'description'    => 'os.description',
-            'service_object_name' => 'o.object_name',
             'count_services' => 'COUNT(DISTINCT o.uuid)',
         ];
         if ($this->branchUuid) {
@@ -185,7 +184,6 @@ class ObjectSetTable extends ZfQueryBasedTable
                     ->group('object_type')
                     ->group('assign_filter')
                     ->group('description')
-                    ->group('service_object_name')
                     ->group('count_services');
             }
         } else {
