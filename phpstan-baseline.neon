@@ -31,11 +31,6 @@ parameters:
 			path: application/controllers/ConfigController.php
 
 		-
-			message: "#^Variable \\$config might not be defined\\.$#"
-			count: 1
-			path: application/controllers/ConfigController.php
-
-		-
 			message: "#^Call to an undefined method Icinga\\\\Data\\\\Filter\\\\Filter\\:\\:filters\\(\\)\\.$#"
 			count: 2
 			path: application/controllers/HostsController.php
