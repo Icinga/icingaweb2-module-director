@@ -26,6 +26,7 @@ This version hasn't been released yet
 
 ### Icinga Configuration
 * FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
+* FEATURE: render host templates to all non-global zones per default (#2410)
 * FIX: render Set Services to individual zones where required (#1589, #2356)
 * FIX: special characters like &amp; and | caused trouble in filters (#2667)
 

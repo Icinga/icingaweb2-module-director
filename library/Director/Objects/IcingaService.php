@@ -384,6 +384,11 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
     }
 
+    protected function rendersConditionalTemplate(): bool
+    {
+        return $this->getRenderingZone() === self::ALL_NON_GLOBAL_ZONES;
+    }
+
     /**
      * @return bool
      */
@@ -578,11 +583,22 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     protected function getDefaultZone(IcingaConfig $config = null)
     {
+        // Hint: this isn't possible yet, as we're unable to render dependent apply rules to multiple zones as well
+        // if ($this->isTemplate()) {
+        //     return self::ALL_NON_GLOBAL_ZONES;
+        // }
         if ($this->get('host_id') === null) {
             return parent::getDefaultZone();
         } else {
-            return $this->getRelatedObject('host', $this->get('host_id'))
+            $zone = $this->getRelatedObject('host', $this->get('host_id'))
                 ->getRenderingZone($config);
+
+            // Hint: this avoids problems with host templates rendered to all non-global zones
+            if ($zone === self::ALL_NON_GLOBAL_ZONES) {
+                $zone = $this->connection->getDefaultGlobalZoneName();
+            }
+
+            return $zone;
         }
     }
 

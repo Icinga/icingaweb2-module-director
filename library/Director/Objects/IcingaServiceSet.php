@@ -264,9 +264,10 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             }
 
             $this->copyVarsToService($service);
-            $zone = $service->getRenderingZone($config);
-            $file = $this->getConfigFileWithHeader($config, $zone, $files);
-            $file->addObject($service);
+            foreach ($service->getRenderingZones($config) as $serviceZone) {
+                $file = $this->getConfigFileWithHeader($config, $serviceZone, $files);
+                $file->addObject($service);
+            }
         }
 
         if (empty($files)) {

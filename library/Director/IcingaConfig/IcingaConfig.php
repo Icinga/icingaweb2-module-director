@@ -25,6 +25,9 @@ class IcingaConfig
 
     protected $zoneMap = array();
 
+    /** @var ?array Exists for caching reasons at rendering time */
+    protected $nonGlobalZones = null;
+
     protected $lastActivityChecksum;
 
     /** @var \Zend_Db_Adapter_Abstract */
@@ -347,6 +350,15 @@ class IcingaConfig
         }
 
         return $this->zoneMap[$id];
+    }
+
+    public function listNonGlobalZones(): array
+    {
+        if ($this->nonGlobalZones === null) {
+            $this->nonGlobalZones = array_values($this->connection->enumNonglobalZones());
+        }
+
+        return $this->nonGlobalZones;
     }
 
     /**
