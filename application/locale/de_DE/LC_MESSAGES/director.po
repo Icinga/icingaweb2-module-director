@@ -1,5 +1,5 @@
 # Director - Config tool for Icinga 2.
-# Copyright (C) 2023 TEAM NAME
+# Copyright (C) 2023 Icinga
 # This file is distributed under the same license as Director Module.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
