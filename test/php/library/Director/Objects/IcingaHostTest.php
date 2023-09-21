@@ -396,10 +396,16 @@ class IcingaHostTest extends BaseTestCase
         $host->object_type = 'template';
         $host->zone_id = null;
 
+        $zone = $this->newObject('zone', '___TEST___zone2');
+        $zone->store($db);
+
         $config = new IcingaConfig($db);
         $host->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/director-global/host_templates.conf'),
+            [
+                'zones.d/___TEST___zone/host_templates.conf',
+                'zones.d/___TEST___zone2/host_templates.conf',
+            ],
             $config->getFileNames()
         );
     }

@@ -27,6 +27,7 @@ use RuntimeException;
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
     const RESOLVE_ERROR = '(unable to resolve)';
+    const ALL_NON_GLOBAL_ZONES = '(all non-global zones)';
 
     protected $keyName = 'object_name';
 
@@ -1800,9 +1801,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return;
         }
 
-        $config->configFile(
-            'zones.d/' . $this->getRenderingZone($config) . '/' . $this->getRenderingFilename()
-        )->addObject($this);
+        foreach ($this->getRenderingZones($config) as $zone) {
+            $config->configFile(
+                'zones.d/' . $zone . '/' . $this->getRenderingFilename()
+            )->addObject($this);
+        }
+    }
+
+    protected function getRenderingZones(IcingaConfig $config): array
+    {
+        $zone = $this->getRenderingZone($config);
+        if ($zone === self::ALL_NON_GLOBAL_ZONES) {
+            return $config->listNonGlobalZones();
+        }
+
+        return [$zone];
     }
 
     public function getRenderingFilename()
@@ -2181,7 +2194,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderSuffix()
     {
-        return "}\n\n";
+        $prefix = '';
+        if ($this->rendersConditionalTemplate()) {
+            $prefix = '} ';
+        }
+
+        return "$prefix}\n\n";
     }
 
     protected function renderLegacySuffix()
@@ -2406,12 +2424,23 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderObjectHeader()
     {
+        $prefix = '';
+        $renderedName = c::renderString($this->getObjectName());
+        if ($this->rendersConditionalTemplate()) {
+            $prefix = sprintf('if (! get_template(%s, %s)) { ', $this->getType(), $renderedName);
+        }
         return sprintf(
-            "%s %s %s {\n",
+            "%s%s %s %s {\n",
+            $prefix,
             $this->getObjectTypeName(),
             $this->getType(),
-            c::renderString($this->getObjectName())
+            $renderedName
         );
+    }
+
+    protected function rendersConditionalTemplate(): bool
+    {
+        return false;
     }
 
     public function getLegacyObjectType()

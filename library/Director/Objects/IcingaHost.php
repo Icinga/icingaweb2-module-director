@@ -309,6 +309,20 @@ class IcingaHost extends IcingaObject implements ExportInterface
         }
     }
 
+    protected function rendersConditionalTemplate(): bool
+    {
+        return $this->getRenderingZone() === self::ALL_NON_GLOBAL_ZONES;
+    }
+
+    protected function getDefaultZone(IcingaConfig $config = null)
+    {
+        if ($this->isTemplate()) {
+            return self::ALL_NON_GLOBAL_ZONES;
+        }
+
+        return parent::getDefaultZone();
+    }
+
     public function beforeDelete()
     {
         foreach ($this->fetchServices() as $service) {
