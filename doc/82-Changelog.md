@@ -21,6 +21,7 @@ This version hasn't been released yet
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
 * FIX: Template usage table had no header (#2780)
+* FIX: Strikethrough for deactivated services in applied Service Set (#2746, #2766)
 
 ### Icinga Configuration
 * FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
@@ -33,6 +34,7 @@ This version hasn't been released yet
 * FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 * FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
+* FIX: Import Source shows available columns for Core API Import (#2763)
 
 # Configuration Baskets
 * FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
@@ -55,6 +57,7 @@ This version hasn't been released yet
 
 ### Internals
 * FIX: group membership is no longer resolved when not needed (#2048)
+* FEATURE: support PHP 8.2 (#2777, #2792)
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
