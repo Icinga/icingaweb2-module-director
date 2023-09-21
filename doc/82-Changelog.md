@@ -22,6 +22,7 @@ This version hasn't been released yet
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
 * FIX: Template usage table had no header (#2780)
 * FIX: Strikethrough for deactivated services in applied Service Set (#2746, #2766)
+* FIX: editing multi-selected services with the same name has been fixed (#2798)
 
 ### Icinga Configuration
 * FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
