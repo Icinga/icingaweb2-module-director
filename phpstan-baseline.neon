@@ -586,6 +586,16 @@ parameters:
 			path: library/Director/Web/Controller/ObjectsController.php
 
 		-
+			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/TemplateController.php
+
+		-
+			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
+			count: 1
+			path: library/Director/Web/Controller/TemplateController.php
+
+		-
 			message: "#^Undefined variable\\: \\$elementValue$#"
 			count: 1
 			path: library/Director/Web/Form/CsrfToken.php
