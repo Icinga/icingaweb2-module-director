@@ -6,6 +6,7 @@ use Icinga\Authentication\Auth;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Table;
@@ -119,12 +120,19 @@ class TemplateUsageTable extends Table
         $templateType = $template->getShortTableName();
 
         foreach ($this->getSummaryTables($templateType, $connection) as $type => $summaryTable) {
-            $direct[$type] = $db
-                ->query($summaryTable->filterTemplate($template, 'direct')->getQuery())
-                ->rowCount();
-            $indirect[$type] = $db
-                ->query($summaryTable->filterTemplate($template, 'indirect')->getQuery())
-                ->rowCount();
+            $directTable = clone $summaryTable;
+            $inDirectTable = clone $summaryTable;
+
+            $direct[$type] = $db->query(
+                $directTable
+                    ->filterTemplate($template, IcingaObjectFilterHelper::INHERIT_DIRECT)
+                    ->getQuery()
+            )->rowCount();
+            $indirect[$type] = $db->query(
+                $inDirectTable
+                    ->filterTemplate($template, IcingaObjectFilterHelper::INHERIT_INDIRECT)
+                    ->getQuery()
+            )->rowCount();
         }
 
         $total = [];
