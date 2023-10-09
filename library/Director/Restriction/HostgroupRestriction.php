@@ -131,7 +131,7 @@ class HostgroupRestriction extends ObjectRestriction
      * @param ZfSelect $query
      * @param string $tableAlias
      */
-    protected function filterHostGroupsQuery(ZfSelect $query, $tableAlias = 'o')
+    protected function filterHostGroupsQuery(ZfSelect $query, $tableAlias = 'h')
     {
         if (! $this->isRestricted()) {
             return;
