@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use gipfl\Web\Widget\Hint;
+use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
@@ -84,7 +85,7 @@ class ImportsourceController extends ActionController
         $this->addMainActions();
         $source = $this->getImportSource();
         if ($this->params->get('format') === 'json') {
-            $this->sendJson($this->getResponse(), $source->export());
+            $this->sendJson($this->getResponse(), (new Exporter($this->db()))->export($source));
             return;
         }
         $this->addTitle(
@@ -104,12 +105,16 @@ class ImportsourceController extends ActionController
 
     public function addAction()
     {
-        $this->addTitle($this->translate('Add import source'))
-            ->content()->add(
-                ImportSourceForm::load()->setDb($this->db())
-                    ->setSuccessUrl('director/importsources')
-                    ->handleRequest()
-            );
+        $this->addTitle($this->translate('Add import source'));
+        if ($this->showNotInBranch($this->translate('Creating Import Sources'))) {
+            return;
+        }
+
+        $this->content()->add(
+            ImportSourceForm::load()->setDb($this->db())
+                ->setSuccessUrl('director/importsources')
+                ->handleRequest()
+        );
     }
 
     /**
@@ -119,6 +124,9 @@ class ImportsourceController extends ActionController
     {
         $this->addMainActions();
         $this->activateTabWithPostfix($this->translate('Modify'));
+        if ($this->showNotInBranch($this->translate('Modifying Import Sources'))) {
+            return;
+        }
         $form = ImportSourceForm::load()
             ->setObject($this->getImportSource())
             ->setListUrl('director/importsources')
@@ -138,6 +146,9 @@ class ImportsourceController extends ActionController
     {
         $this->addMainActions();
         $this->activateTabWithPostfix($this->translate('Clone'));
+        if ($this->showNotInBranch($this->translate('Cloning Import Sources'))) {
+            return;
+        }
         $source = $this->getImportSource();
         $this->addTitle('Clone: %s', $source->get('source_name'));
         $form = new CloneImportSourceForm($source);
@@ -220,9 +231,13 @@ class ImportsourceController extends ActionController
     protected function requireImportSourceAndAddModifierTable()
     {
         $source = $this->getImportSource();
-        PropertymodifierTable::load($source, $this->url())
-            ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
-            ->renderTo($this);
+        $table = PropertymodifierTable::load($source, $this->url());
+        if ($this->getBranch()->isBranch()) {
+            $table->setReadOnly();
+        } else {
+            $table->handleSortPriorityActions($this->getRequest(), $this->getResponse());
+        }
+        $table->renderTo($this);
 
         return $source;
     }
@@ -267,6 +282,10 @@ class ImportsourceController extends ActionController
         )->addBackToModifiersLink($source);
         $this->tabs()->activate('modifier');
 
+        if ($this->showNotInBranch($this->translate('Modifying Import Sources'))) {
+            return;
+        }
+
         $this->content()->prepend(
             ImportRowModifierForm::load()->setDb($this->db())
                 ->setSource($source)
@@ -293,6 +312,9 @@ class ImportsourceController extends ActionController
         )->addBackToModifiersLink($source);
         $source = $this->requireImportSourceAndAddModifierTable();
         $this->tabs()->activate('modifier');
+        if ($this->showNotInBranch($this->translate('Modifying Import Sources'))) {
+            return;
+        }
 
         $listUrl = 'director/importsource/modifier?source_id='
             . (int) $source->get('id');

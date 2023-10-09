@@ -2,11 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use gipfl\Translation\StaticTranslator;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Director\Monitoring;
+use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
@@ -17,7 +18,6 @@ use Icinga\Web\UrlParams;
 use InvalidArgumentException;
 use gipfl\IcingaWeb2\Translator;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\ControlsAndContent;
 use gipfl\IcingaWeb2\Controller\Extension\ControlsAndContentHelper;
 use gipfl\IcingaWeb2\Zf1\SimpleViewRenderer;
@@ -60,7 +60,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
 
     protected function initializeTranslator()
     {
-        TranslationHelper::setTranslator(new Translator('director'));
+        StaticTranslator::set(new Translator('director'));
     }
 
     public function getAuth()
@@ -245,7 +245,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
     protected function monitoring()
     {
         if ($this->monitoring === null) {
-            $this->monitoring = new Monitoring;
+            $this->monitoring = new Monitoring($this->Auth());
         }
 
         return $this->monitoring;

@@ -2,17 +2,20 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\SyncRun;
-use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
+use function sprintf;
 
 class SyncRunDetails extends NameValueTable
 {
     use TranslationHelper;
+
+    const URL_ACTIVITIES = 'director/config/activities';
 
     /** @var SyncRun */
     protected $run;
@@ -22,22 +25,20 @@ class SyncRunDetails extends NameValueTable
         $this->run = $run;
         $this->getAttributes()->add('data-base-target', '_next'); // eigentlich nur runSummary
         $this->addNameValuePairs([
-            $this->translate('Start time') => $run->start_time,
-            $this->translate('Duration') => sprintf('%.2fs', $run->duration_ms / 1000),
-            $this->translate('Activity') => $this->runSummary($run)
+            $this->translate('Start time') => $run->get('start_time'),
+            $this->translate('Duration')   => sprintf('%.2fs', $run->get('duration_ms') / 1000),
+            $this->translate('Activity')   => $this->runSummary($run)
         ]);
     }
 
     /**
      * @param SyncRun $run
      * @return array
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function runSummary(SyncRun $run)
     {
         $html = [];
-        $total = $run->objects_deleted + $run->objects_created + $run->objects_modified;
+        $total = $run->countActivities();
         if ($total === 0) {
             $html[] = $this->translate('No changes have been made');
         } else {
@@ -52,47 +53,49 @@ class SyncRunDetails extends NameValueTable
 
             /** @var Db $db */
             $db = $run->getConnection();
-            if ($run->last_former_activity === null) {
+            $formerId = $db->fetchActivityLogIdByChecksum($run->get('last_former_activity'));
+            if ($formerId === null) {
                 return $html;
             }
-            $formerId = $db->fetchActivityLogIdByChecksum($run->last_former_activity);
-            $lastId = $db->fetchActivityLogIdByChecksum($run->last_related_activity);
+            $lastId = $db->fetchActivityLogIdByChecksum($run->get('last_related_activity'));
 
-            $idRangeEx = sprintf(
-                'id>%d&id<=%d',
-                $formerId,
-                $lastId
-            );
-            $activityUrl = 'director/config/activities';
+            if ($formerId !== $lastId) {
+                $idRangeEx = sprintf(
+                    'id>%d&id<=%d',
+                    $formerId,
+                    $lastId
+                );
+            } else {
+                $idRangeEx = null;
+            }
 
             $links = new HtmlDocument();
             $links->setSeparator(', ');
-            if ($run->objects_created > 0) {
-                $links->add(new Link(
-                    sprintf('%d created', $run->objects_created),
-                    $activityUrl,
-                    ['action' => 'create', 'idRangeEx' => $idRangeEx]
-                ));
-            }
-            if ($run->objects_modified > 0) {
-                $links->add(new Link(
-                    sprintf('%d modified', $run->objects_modified),
-                    $activityUrl,
-                    ['action' => 'modify', 'idRangeEx' => $idRangeEx]
-                ));
-            }
-            if ($run->objects_deleted > 0) {
-                $links->add(new Link(
-                    sprintf('%d deleted', $run->objects_deleted),
-                    $activityUrl,
-                    ['action' => 'delete', 'idRangeEx' => $idRangeEx]
-                ));
-            }
+            $links->add([
+                $this->activitiesLink(
+                    'objects_created',
+                    $this->translate('%d created'),
+                    DirectorActivityLog::ACTION_CREATE,
+                    $idRangeEx
+                ),
+                $this->activitiesLink(
+                    'objects_modified',
+                    $this->translate('%d modified'),
+                    DirectorActivityLog::ACTION_MODIFY,
+                    $idRangeEx
+                ),
+                $this->activitiesLink(
+                    'objects_deleted',
+                    $this->translate('%d deleted'),
+                    DirectorActivityLog::ACTION_DELETE,
+                    $idRangeEx
+                ),
+            ]);
 
-            if (count($links) > 1) {
+            if ($idRangeEx && count($links) > 1) {
                 $links->add(new Link(
-                    'Show all actions',
-                    $activityUrl,
+                    $this->translate('Show all actions'),
+                    self::URL_ACTIVITIES,
                     ['idRangeEx' => $idRangeEx]
                 ));
             }
@@ -104,5 +107,23 @@ class SyncRunDetails extends NameValueTable
         }
 
         return $html;
+    }
+
+    protected function activitiesLink($key, $label, $action, $rangeFilter)
+    {
+        $count = $this->run->get($key);
+        if ($count > 0) {
+            if ($rangeFilter) {
+                return new Link(
+                    sprintf($label, $count),
+                    self::URL_ACTIVITIES,
+                    ['action' => $action, 'idRangeEx' => $rangeFilter]
+                );
+            }
+
+            return sprintf($label, $count);
+        }
+
+        return null;
     }
 }

@@ -34,13 +34,21 @@ class DeploymentStatus
         $configChecksum = null;
         if ($stageName = $this->api->getActiveStageName()) {
             $activityLogChecksum = DirectorDeploymentLog::getRelatedToActiveStage($this->api, $this->db);
-            $lastActivityLogChecksum = bin2hex($activityLogChecksum->last_activity_checksum);
-            $configChecksum = $this->getConfigChecksumForStageName($stageName);
-            $activeConfiguration = [
-                'stage_name' => $stageName,
-                'config'   => ($configChecksum) ? : null,
-                'activity' => $lastActivityLogChecksum
-            ];
+            if ($activityLogChecksum === null) {
+                $activeConfiguration = [
+                    'stage_name' => $stageName,
+                    'config'   => null,
+                    'activity' => null
+                ];
+            } else {
+                $lastActivityLogChecksum = bin2hex($activityLogChecksum->get('last_activity_checksum'));
+                $configChecksum = $this->getConfigChecksumForStageName($stageName);
+                $activeConfiguration = [
+                    'stage_name' => $stageName,
+                    'config'   => ($configChecksum) ? : null,
+                    'activity' => $lastActivityLogChecksum
+                ];
+            }
         }
         $result = [
             'active_configuration' => (object) $activeConfiguration,
@@ -66,8 +74,8 @@ class DeploymentStatus
     {
         $db = $this->db->getDbAdapter();
         $query = $db->select()->from(
-            array('l' => 'director_deployment_log'),
-            array('checksum' => $this->db->dbHexFunc('l.config_checksum'))
+            ['l' => 'director_deployment_log'],
+            ['checksum' => $this->db->dbHexFunc('l.config_checksum')]
         )->where('l.stage_name = ?', $stageName);
 
         return $db->fetchOne($query);
@@ -81,7 +89,7 @@ class DeploymentStatus
         }, $configChecksums));
         $binaryConfigChecksums = [];
         foreach ($configChecksums as $singleConfigChecksum) {
-            $binaryConfigChecksums[$singleConfigChecksum] = hex2bin($singleConfigChecksum);
+            $binaryConfigChecksums[$singleConfigChecksum] = $this->db->quoteBinary(hex2bin($singleConfigChecksum));
         }
         $deployedConfigs = $this->getDeployedConfigs(array_values($binaryConfigChecksums));
 
@@ -95,8 +103,8 @@ class DeploymentStatus
                 } else {
                     // check if it's in generated_config table it is undeployed
                     $generatedConfigQuery = $db->select()->from(
-                        array('g' => 'director_generated_config'),
-                        array('checksum' => 'g.checksum')
+                        ['g' => 'director_generated_config'],
+                        ['checksum' => 'g.checksum']
                     )->where('g.checksum = ?', $binaryConfigChecksums[$singleChecksum]);
                     if ($db->fetchOne($generatedConfigQuery)) {
                         $status = 'undeployed';
@@ -123,12 +131,12 @@ class DeploymentStatus
             } else {
                 // get last deployed activity id and check if it's less than the passed one
                 $generatedConfigQuery = $db->select()->from(
-                    array('a' => 'director_activity_log'),
-                    array('id' => 'a.id')
-                )->where('a.checksum = ?', hex2bin($singleActivityLogChecksum));
+                    ['a' => 'director_activity_log'],
+                    ['id' => 'a.id']
+                )->where('a.checksum = ?', $this->db->quoteBinary(hex2bin($singleActivityLogChecksum)));
                 if ($singleActivityLogData = $db->fetchOne($generatedConfigQuery)) {
-                    if ($lastDeploymentActivityLogId = $db->getLastDeploymentActivityLogId()) {
-                        if ($singleActivityLogData->id > $lastDeploymentActivityLogId) {
+                    if ($lastDeploymentActivityLogId = $this->db->getLastDeploymentActivityLogId()) {
+                        if ((int) $singleActivityLogData > $lastDeploymentActivityLogId) {
                             $status = 'undeployed';
                         } else {
                             $status = 'deployed';
@@ -141,20 +149,16 @@ class DeploymentStatus
     }
 
     /**
-     * @param $db
      * @param array $binaryConfigChecksums
-     * @return mixed
+     * @return array
      */
     public function getDeployedConfigs(array $binaryConfigChecksums)
     {
         $db = $this->db->getDbAdapter();
-        $deploymentLogQuery = $db->select()->from(
-            array('l' => 'director_deployment_log'),
-            array(
-                'checksum' => $this->db->dbHexFunc('l.config_checksum'),
-                'deployed' => 'l.startup_succeeded'
-            )
-        )->where('l.config_checksum IN (?)', $binaryConfigChecksums);
+        $deploymentLogQuery = $db->select()->from(['l' => 'director_deployment_log'], [
+            'checksum' => $this->db->dbHexFunc('l.config_checksum'),
+            'deployed' => 'l.startup_succeeded'
+        ])->where('l.config_checksum IN (?)', $binaryConfigChecksums);
         return $db->fetchPairs($deploymentLogQuery);
     }
 }

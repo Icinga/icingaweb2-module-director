@@ -14,11 +14,13 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
+use Zend_Db_Adapter_Pdo_Pgsql;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable
 {
+    use TableWithBranchSupport;
+
     /** @var ObjectRestriction[] */
     protected $objectRestrictions;
 
@@ -36,9 +38,6 @@ class ObjectsTable extends ZfQueryBasedTable
     protected $filterObjectType = 'object';
 
     protected $type;
-
-    /** @var UuidInterface|null */
-    protected $branchUuid;
 
     protected $baseObjectUrl;
 
@@ -112,13 +111,6 @@ class ObjectsTable extends ZfQueryBasedTable
         return $this;
     }
 
-    public function setBranchUuid(UuidInterface $uuid = null)
-    {
-        $this->branchUuid = $uuid;
-
-        return $this;
-    }
-
     public function getColumns()
     {
         return $this->columns;
@@ -133,11 +125,17 @@ class ObjectsTable extends ZfQueryBasedTable
         IcingaObject $template,
         $inheritance = Db\IcingaObjectFilterHelper::INHERIT_DIRECT
     ) {
+        if ($this->branchUuid) {
+            $tableAlias = 'u';
+        } else {
+            $tableAlias = 'o';
+        }
         IcingaObjectFilterHelper::filterByTemplate(
             $this->getQuery(),
             $template,
-            'o',
-            $inheritance
+            $tableAlias,
+            $inheritance,
+            $this->branchUuid
         );
 
         return $this;
@@ -151,7 +149,7 @@ class ObjectsTable extends ZfQueryBasedTable
     protected function renderObjectNameColumn($row)
     {
         $type = $this->baseObjectUrl;
-        $url = Url::fromPath("director/${type}", [
+        $url = Url::fromPath("director/{$type}", [
             'uuid' => Uuid::fromBytes($row->uuid)->toString()
         ]);
 
@@ -256,36 +254,6 @@ class ObjectsTable extends ZfQueryBasedTable
         return $this->dummyObject;
     }
 
-    protected function branchifyColumns($columns)
-    {
-        $result = [
-            'uuid' => 'COALESCE(o.uuid, bo.uuid)'
-        ];
-        $ignore = ['o.id'];
-        foreach ($columns as $alias => $column) {
-            if (substr($column, 0, 2) === 'o.' && ! in_array($column, $ignore)) {
-                // bo.column, o.column
-                $column = "COALESCE(b$column, $column)";
-            }
-
-            // Used in Service Tables:
-            if ($column === 'h.object_name' && $alias = 'host') {
-                $column = "COALESCE(bo.host, $column)";
-            }
-
-            $result[$alias] = $column;
-        }
-
-        return $result;
-    }
-
-    protected function stripSearchColumnAliases()
-    {
-        foreach ($this->searchColumns as &$column) {
-            $column = preg_replace('/^[a-z]+\./', '', $column);
-        }
-    }
-
     protected function prepareQuery()
     {
         $table = $this->getDummyObject()->getTableName();
@@ -298,17 +266,16 @@ class ObjectsTable extends ZfQueryBasedTable
             $columns = $this->branchifyColumns($columns);
             $this->stripSearchColumnAliases();
         }
-        $query = $this->applyRestrictions(
-            $this->db()
-                ->select()
-                ->from(
-                    ['o' => $table],
-                    $columns
-                )
-        );
+        $query = $this->db()->select()->from(['o' => $table], $columns);
 
         if ($this->branchUuid) {
             $right = clone($query);
+            // Hint: Right part has only those with object = null
+            //       This means that restrictions on $right would hide all
+            //       new rows. Dedicated restriction logic for the branch-only
+            //       part of thw union are not required, we assume that restrictions
+            //       for new objects have been checked once they have been created
+            $query = $this->applyRestrictions($query);
             /** @var Db $conn */
             $conn = $this->connection();
             $query->joinLeft(
@@ -319,7 +286,39 @@ class ObjectsTable extends ZfQueryBasedTable
                     $conn->quoteBinary($this->branchUuid->getBytes())
                 ),
                 []
-            )->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
+            );
+
+            // keep the imported templates as columns
+            $leftColumns = $columns;
+            $rightColumns = $columns;
+
+            if ($this->db() instanceof Zend_Db_Adapter_Pdo_Pgsql) {
+                $leftColumns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
+                    . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
+            } else {
+                $leftColumns['imports'] = 'CONCAT(\'[\', '
+                    . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
+            }
+
+            $query->reset('columns');
+
+            $query->columns($leftColumns)
+                ->joinLeft(
+                    ['oi' => $table . '_inheritance'],
+                    'o.id = oi.' . $this->getType() . '_id',
+                    []
+                )->joinLeft(
+                    ['sub_o' => $table],
+                    'sub_o.id = oi.parent_' . $this->getType() . '_id',
+                    []
+                )->group(['o.id', 'bo.uuid', 'bo.branch_uuid']);
+
+            $rightColumns['imports'] = 'bo.imports';
+
+            $right->reset('columns');
+            $right->columns($rightColumns);
+
+            $query->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
             $this->applyObjectTypeFilter($query, $right);
             $right->joinRight(
                 ['bo' => "branched_$table"],
@@ -338,9 +337,19 @@ class ObjectsTable extends ZfQueryBasedTable
             $query->order('object_name')->limit(100);
         } else {
             $this->applyObjectTypeFilter($query);
+            $query = $this->applyRestrictions($query);
             $query->order('o.object_name')->limit(100);
         }
 
         return $query;
+    }
+
+    public function removeQueryLimit()
+    {
+        $query = $this->getQuery();
+        $query->reset($query::LIMIT_OFFSET);
+        $query->reset($query::LIMIT_COUNT);
+
+        return $this;
     }
 }

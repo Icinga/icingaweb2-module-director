@@ -2,28 +2,30 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Resolver\OverriddenVarsResolver;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
+use stdClass;
 use Zend_Form_Element as ZfElement;
 
 class DirectorDatafield extends DbObjectWithSettings
 {
     protected $table = 'director_datafield';
-
     protected $keyName = 'id';
-
     protected $autoincKeyName = 'id';
+    protected $uuidColumn = 'uuid';
+    protected $settingsTable = 'director_datafield_setting';
+    protected $settingsRemoteId = 'datafield_id';
 
     protected $defaultProperties = [
         'id'            => null,
+        'uuid'          => null,
         'category_id'   => null,
         'varname'       => null,
         'caption'       => null,
@@ -33,16 +35,11 @@ class DirectorDatafield extends DbObjectWithSettings
     ];
 
     protected $relations = [
-        'category'      => 'DirectorDatafieldCategory'
+        'category' => 'DirectorDatafieldCategory'
     ];
 
-    protected $settingsTable = 'director_datafield_setting';
-
-    protected $settingsRemoteId = 'datafield_id';
-
-    /** @var DirectorDatafieldCategory|null */
+    /** @var ?DirectorDatafieldCategory */
     private $category;
-
     private $object;
 
     public static function fromDbRow($row, Db $connection)
@@ -70,10 +67,9 @@ class DirectorDatafield extends DbObjectWithSettings
     }
 
     /**
-     * @return DirectorDatafieldCategory|null
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function getCategory()
+    public function getCategory(): ?DirectorDatafieldCategory
     {
         if ($this->category) {
             return $this->category;
@@ -84,10 +80,10 @@ class DirectorDatafield extends DbObjectWithSettings
         }
     }
 
-    public function getCategoryName()
+    public function getCategoryName(): ?string
     {
         $category = $this->getCategory();
-        if ($this->category === null) {
+        if ($category === null) {
             return null;
         } else {
             return $category->get('category_name');
@@ -105,21 +101,26 @@ class DirectorDatafield extends DbObjectWithSettings
             }
             $this->category = $category;
         } else {
-            $this->setCategory(DirectorDatafieldCategory::load($category, $this->getConnection()));
+            if ($category = DirectorDatafieldCategory::loadOptional($category, $this->getConnection())) {
+                $this->setCategory($category);
+            } else {
+                $this->setCategory(DirectorDatafieldCategory::create([
+                    'category_name' => $category
+                ], $this->getConnection()));
+            }
         }
-
-        return $this;
     }
 
     /**
-     * @return object
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function export()
+    public function export(): stdClass
     {
         $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
         unset($plain->id);
+        if ($uuid = $this->get('uuid')) {
+            $plain->uuid = Uuid::fromBytes($uuid)->toString();
+        }
         $plain->settings = (object) $this->getSettings();
 
         if (property_exists($plain->settings, 'datalist_id')) {
@@ -129,68 +130,54 @@ class DirectorDatafield extends DbObjectWithSettings
             )->get('list_name');
             unset($plain->settings->datalist_id);
         }
+        if (property_exists($plain, 'category_id')) {
+            $plain->category = $this->getCategoryName();
+            unset($plain->category_id);
+        }
 
         return $plain;
     }
 
     /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return DirectorDatafield
      * @throws \Icinga\Exception\NotFoundError
      */
-    public static function import($plain, Db $db, $replace = false)
+    public static function import(stdClass $plain, Db $db): DirectorDatafield
     {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-
-        if (isset($properties['settings']->datalist)) {
-            // Just try to load the list, import should fail if missing
-            $list = DirectorDatalist::load(
-                $properties['settings']->datalist,
-                $db
-            );
-        } else {
-            $list = null;
-        }
-
-        $compare = Json::decode(Json::encode($properties));
-        if ($id && static::exists($id, $db)) {
-            $existing = static::loadWithAutoIncId($id, $db);
-            $existingProperties = (array) $existing->export();
-            unset($existingProperties['originalId']);
-            if (CompareBasketObject::equals((object) $compare, (object) $existingProperties)) {
-                return $existing;
+        $dba = $db->getDbAdapter();
+        if ($uuid = $plain->uuid ?? null) {
+            $uuid = Uuid::fromString($uuid);
+            if ($candidate = DirectorDatafield::loadWithUniqueId($uuid, $db)) {
+                BasketSnapshotFieldResolver::fixOptionalDatalistReference($plain, $db);
+                assert($candidate instanceof DirectorDatafield);
+                $candidate->setProperties((array) $plain);
+                return $candidate;
             }
         }
-
-        if ($list) {
-            unset($properties['settings']->datalist);
-            $properties['settings']->datalist_id = $list->get('id');
-        }
-
-        $dba = $db->getDbAdapter();
-        $query = $dba->select()
-            ->from('director_datafield')
-            ->where('varname = ?', $plain->varname);
+        $query = $dba->select()->from('director_datafield')->where('varname = ?', $plain->varname);
         $candidates = DirectorDatafield::loadAll($db, $query);
 
         foreach ($candidates as $candidate) {
             $export = $candidate->export();
-            unset($export->originalId);
             CompareBasketObject::normalize($export);
-            if (CompareBasketObject::equals($export, $compare)) {
+            unset($export->uuid);
+            unset($plain->originalId);
+            if (CompareBasketObject::equals($export, $plain)) {
                 return $candidate;
             }
         }
+        BasketSnapshotFieldResolver::fixOptionalDatalistReference($plain, $db);
 
-        return static::create($properties, $db);
+        return static::create((array) $plain, $db);
+    }
+
+    protected function beforeStore()
+    {
+        if ($this->category) {
+            if (!$this->category->hasBeenLoadedFromDb()) {
+                throw new \RuntimeException('Trying to store a datafield with an unstored Category');
+            }
+            $this->set('category_id', $this->category->get('id'));
+        }
     }
 
     protected function setObject(IcingaObject $object)
@@ -203,7 +190,7 @@ class DirectorDatafield extends DbObjectWithSettings
         return $this->object;
     }
 
-    public function getFormElement(DirectorObjectForm $form, $name = null)
+    public function getFormElement(DirectorObjectForm $form, $name = null): ?ZfElement
     {
         $className = $this->get('datatype');
 
@@ -285,7 +272,7 @@ class DirectorDatafield extends DbObjectWithSettings
         }
     }
 
-    protected function eventuallyGetResolvedCommandVar(IcingaObject $object, $varName)
+    protected function eventuallyGetResolvedCommandVar(IcingaObject $object, $varName): ?array
     {
         if (! $object->hasRelation('check_command')) {
             return null;

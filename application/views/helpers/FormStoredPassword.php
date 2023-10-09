@@ -8,8 +8,8 @@ use ipl\Html\HtmlDocument;
  *
  * We're rendering the following fields:
  *
- * - ${name}[_value]:
- * - ${name}[_sent]:
+ * - {$name}[_value]:
+ * - {$name}[_sent]:
  *
  * Avoid complaints about class names:
  * @codingStandardsIgnoreStart
@@ -26,20 +26,20 @@ class Zend_View_Helper_FormStoredPassword extends Zend_View_Helper_FormElement
         $res = new HtmlDocument();
         $el = Html::tag('input', [
             'type' => 'password',
-            'name' => "${name}[_value]",
+            'name' => "{$name}[_value]",
             'id'   => $id,
         ]);
         $res->add($el);
 
         $res->add(Html::tag('input', [
             'type'  => 'hidden',
-            'name'  => "${name}[_sent]",
+            'name'  => "{$name}[_sent]",
             'value' => 'y'
         ]));
 
-        if (\strlen($sentValue)) {
+        if ($sentValue !== null && \strlen($sentValue)) {
             $el->getAttributes()->set('value', $sentValue);
-        } elseif (\strlen($value) > 0) {
+        } elseif ($value !== null && \strlen($value) > 0) {
             $el->getAttributes()->set('value', '__UNCHANGED_VALUE__');
         }
 

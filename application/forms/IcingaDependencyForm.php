@@ -164,7 +164,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         ], null);
 
         $this->addBoolean('disable_notifications', [
-            'label'       => $this->translate('Disable Notificiations'),
+            'label'       => $this->translate('Disable Notifications'),
             'description' => $this->translate(
                 'Whether to disable notifications when this dependency fails.'
                 . ' Defaults to true.'
@@ -192,7 +192,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         $parentHost = $dependency->get('parent_host');
         if ($parentHost === null) {
             $parentHostVar = $dependency->get('parent_host_var');
-            if (\strlen($parentHostVar) > 0) {
+            if ($parentHostVar !== null && \strlen($parentHostVar) > 0) {
                 $parentHost = '$' . $dependency->get('parent_host_var') . '$';
             }
         }

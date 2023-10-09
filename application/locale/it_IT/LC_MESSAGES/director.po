@@ -1839,7 +1839,7 @@ msgstr ""
 "essere basate sui gruppi."
 
 #: application/forms/IcingaNotificationForm.php:199
-msgid "Delay unless the first notification should be sent"
+msgid "Delay until the first notification should be sent"
 msgstr "Ritarda prima di spedire la prima notifica"
 
 #: application/forms/IcingaObjectFieldForm.php:193
@@ -1979,7 +1979,7 @@ msgid "Disable Checks"
 msgstr "Disattivare i Checks"
 
 #: application/forms/IcingaDependencyForm.php:167
-msgid "Disable Notificiations"
+msgid "Disable Notifications"
 msgstr "Disattivare le notifiche"
 
 #: application/forms/SettingsForm.php:54
@@ -3429,7 +3429,7 @@ msgstr "Regole su Unisci"
 #: application/forms/IcingaScheduledDowntimeRangeForm.php:24
 #, fuzzy
 msgid ""
-"Might be, monday, tuesday, 2016-01-28 - have a look at the documentation for "
+"Might be monday, tuesday or 2016-01-28 - have a look at the documentation for "
 "more examples"
 msgstr ""
 "Per esempio lunedí, martedí, 2020-01-28 - consulta la documentazione per "

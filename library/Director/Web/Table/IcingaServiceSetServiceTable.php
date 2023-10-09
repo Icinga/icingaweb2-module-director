@@ -2,18 +2,22 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Data\Db\ServiceSetQueryBuilder;
+use Icinga\Module\Director\Db;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use Icinga\Module\Director\Forms\RemoveLinkForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use ipl\Html\HtmlElement;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
+use Ramsey\Uuid\Uuid;
 
 class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 {
+    use TableWithBranchSupport;
+
     /** @var IcingaServiceSet */
     protected $set;
 
@@ -113,15 +117,18 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 
         if ($this->affectedHost) {
             $params = [
-                'name'    => $this->affectedHost->getObjectName(),
+                'uuid'    => $this->affectedHost->getUniqueId()->toString(),
                 'service' => $row->service,
                 'set'     => $row->service_set
             ];
             $url = 'director/host/servicesetservice';
         } else {
+            if (is_resource($row->uuid)) {
+                $row->uuid =stream_get_contents($row->uuid);
+            }
+
             $params = [
-                'name' => $row->service,
-                'set'  => $row->service_set
+                'uuid' => Uuid::fromBytes($row->uuid)->toString(),
             ];
             $url = 'director/service';
         }
@@ -138,15 +145,26 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         $tr = $this::row([
             $this->getServiceLink($row)
         ]);
-
+        $classes = $this->getRowClasses($row);
         if ($row->disabled === 'y') {
-            $tr->getAttributes()->add('class', 'disabled');
+            $classes[] = 'disabled';
         }
         if ($row->blacklisted === 'y') {
-            $tr->getAttributes()->add('class', 'strike-links');
+            $classes[] = 'strike-links';
+        }
+        if (! empty($classes)) {
+            $tr->getAttributes()->add('class', $classes);
         }
 
         return $tr;
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->branch_uuid !== null) {
+            return ['branch_modified'];
+        }
+        return [];
     }
 
     protected function getTitle()
@@ -154,73 +172,21 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this->title ?: $this->translate('Servicename');
     }
 
-    /**
-     * @param HtmlElement $parent
-     */
     protected function renderTitleColumns()
     {
         if (! $this->host || ! $this->affectedHost) {
             return Html::tag('th', $this->getTitle());
         }
 
-        if (! $this->host) {
-            $deleteLink = '';
-        } elseif ($this->readonly) {
-            $deleteLink = Html::tag('span', [
-                'class' => 'icon-paste',
-                'style' => 'float: right; font-weight: normal',
-            ], $this->host->getObjectName());
+        if ($this->readonly) {
+            $link = $this->createFakeRemoveLinkForReadonlyView();
         } elseif ($this->affectedHost->get('id') !== $this->host->get('id')) {
-            $host = $this->host;
-            $deleteLink = Link::create(
-                $host->getObjectName(),
-                'director/host/services',
-                ['name' => $host->getObjectName()],
-                [
-                    'class' => 'icon-paste',
-                    'style' => 'float: right; font-weight: normal',
-                    'data-base-target' => '_next',
-                    'title' => sprintf(
-                        $this->translate('This set has been inherited from %s'),
-                        $host->getObjectName()
-                    )
-                ]
-            );
+            $link = $this->linkToHost($this->host);
         } else {
-            $deleteLink = new RemoveLinkForm(
-                $this->translate('Remove'),
-                sprintf(
-                    $this->translate('Remove "%s" from this host'),
-                    $this->getTitle()
-                ),
-                Url::fromPath('director/host/services', [
-                    'name' => $this->host->getObjectName()
-                ]),
-                ['title' => $this->getTitle()]
-            );
-            $deleteLink->runOnSuccess(function () {
-                $conn = $this->set->getConnection();
-                $db = $conn->getDbAdapter();
-                $query = $db->select()->from(
-                    ['ss' => 'icinga_service_set'],
-                    'ss.id'
-                )->join(
-                    ['ssih' => 'icinga_service_set_inheritance'],
-                    'ssih.service_set_id = ss.id',
-                    []
-                )->where(
-                    'ssih.parent_service_set_id = ?',
-                    $this->set->get('id')
-                )->where('ss.host_id = ?', $this->host->get('id'));
-                IcingaServiceSet::loadWithAutoIncId(
-                    $db->fetchOne($query),
-                    $conn
-                )->delete();
-            });
-            $deleteLink->handleRequest();
+            $link = $this->createRemoveLinkForm();
         }
 
-        return $this::th([$this->getTitle(), $deleteLink]);
+        return $this::th([$this->getTitle(), $link]);
     }
 
     /**
@@ -229,42 +195,84 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
      */
     public function prepareQuery()
     {
-        $db = $this->db();
-        $query = $db->select()->from(
-            ['s' => 'icinga_service'],
-            [
-                'id'             => 's.id',
-                'service_set_id' => 's.service_set_id',
-                'host_id'        => 'ss.host_id',
-                'service_set'    => 'ss.object_name',
-                'service'        => 's.object_name',
-                'disabled'       => 's.disabled',
-                'object_type'    => 's.object_type',
-            ]
-        )->joinLeft(
-            ['ss' => 'icinga_service_set'],
-            'ss.id = s.service_set_id',
-            []
-        )->where(
-            's.service_set_id = ?',
-            $this->set->get('id')
-        )->order('s.object_name');
+        $connection = $this->connection();
+        assert($connection instanceof Db);
+        $builder = new ServiceSetQueryBuilder($connection, $this->branchUuid);
+        $query = $builder->selectServicesForSet($this->set);
+        $alias = $this->branchUuid ? 'u' : 'o';
 
         if ($this->affectedHost) {
-            $query->joinLeft(
-                ['hsb' => 'icinga_host_service_blacklist'],
-                $db->quoteInto(
-                    's.id = hsb.service_id AND hsb.host_id = ?',
-                    $this->affectedHost->get('id')
-                ),
-                []
-            )->columns([
-                'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
-            ]);
-        } else {
-            $query->columns(['blacklisted' => "('n')"]);
+            if ($hostId = $this->affectedHost->get('id')) {
+                $query->joinLeft(
+                    ['hsb' => 'icinga_host_service_blacklist'],
+                    $this->db()->quoteInto("$alias.id = hsb.service_id AND hsb.host_id = ?", $hostId),
+                    []
+                )->columns([
+                    'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"
+                ]);
+            }
         }
 
-        return $query;
+        return $query->limit(100);
+    }
+
+    protected function createFakeRemoveLinkForReadonlyView()
+    {
+        return Html::tag('span', [
+            'class' => 'icon-paste',
+            'style' => 'float: right; font-weight: normal',
+        ], $this->host->getObjectName());
+    }
+
+    protected function linkToHost(IcingaHost $host)
+    {
+        $hostname = $host->getObjectName();
+        return Link::create($hostname, 'director/host/services', ['name' => $hostname], [
+            'class' => 'icon-paste',
+            'style' => 'float: right; font-weight: normal',
+            'data-base-target' => '_next',
+            'title' => sprintf(
+                $this->translate('This set has been inherited from %s'),
+                $hostname
+            )
+        ]);
+    }
+
+    protected function createRemoveLinkForm()
+    {
+        $deleteLink = new RemoveLinkForm(
+            $this->translate('Remove'),
+            sprintf(
+                $this->translate('Remove "%s" from this host'),
+                $this->getTitle()
+            ),
+            Url::fromPath('director/host/services', [
+                'name' => $this->host->getObjectName()
+            ]),
+            ['title' => $this->getTitle()]
+        );
+        $deleteLink->runOnSuccess(function () {
+            $conn = $this->set->getConnection();
+            $db = $conn->getDbAdapter();
+            $query = $db->select()->from(['ss' => 'icinga_service_set'], 'ss.id')
+                ->join(['ssih' => 'icinga_service_set_inheritance'], 'ssih.service_set_id = ss.id', [])
+                ->where('ssih.parent_service_set_id = ?', $this->set->get('id'))
+                ->where('ss.host_id = ?', $this->host->get('id'));
+            IcingaServiceSet::loadWithAutoIncId(
+                $db->fetchOne($query),
+                $conn
+            )->delete();
+        });
+        $deleteLink->handleRequest();
+        return $deleteLink;
+    }
+
+    public function removeQueryLimit()
+    {
+        $query = $this->getQuery();
+        $query->reset($query::LIMIT_OFFSET);
+        $query->reset($query::LIMIT_COUNT);
+
+        return $this;
     }
 }

@@ -2,69 +2,37 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Exception;
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 
 class DirectorDatalist extends DbObject implements ExportInterface
 {
     protected $table = 'director_datalist';
-
     protected $keyName = 'list_name';
-
     protected $autoincKeyName = 'id';
+    protected $uuidColumn = 'uuid';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'            => null,
+        'uuid'          => null,
         'list_name'     => null,
         'owner'         => null
-    );
+    ];
 
     /** @var DirectorDatalistEntry[] */
-    protected $storedEntries;
+    protected $entries;
 
     public function getUniqueIdentifier()
     {
         return $this->get('list_name');
     }
 
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return static
-     * @throws \Icinga\Exception\NotFoundError
-     * @throws DuplicateKeyException
-     */
-    public static function import($plain, Db $db, $replace = false)
+    public function setEntries($entries): void
     {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-        $name = $properties['list_name'];
-
-        if ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::exists($name, $db)) {
-            throw new DuplicateKeyException(
-                'Data List %s already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
-    public function setEntries($entries)
-    {
-        $existing = $this->getStoredEntries();
+        $existing = $this->getEntries();
 
         $new = [];
         $seen = [];
@@ -100,10 +68,61 @@ class DirectorDatalist extends DbObject implements ExportInterface
             $this->hasBeenModified = true;
         }
 
-        $this->storedEntries = $existing;
-        ksort($this->storedEntries);
+        $this->entries = $existing;
+        ksort($this->entries);
+    }
 
-        return $this;
+    protected function beforeDelete()
+    {
+        if ($this->isInUse()) {
+            throw new Exception(
+                sprintf(
+                    "Cannot delete '%s', as the datalist '%s' is currently being used.",
+                    $this->get('list_name'),
+                    $this->get('list_name')
+                )
+            );
+        }
+    }
+
+    protected function isInUse(): bool
+    {
+        $id = $this->get('id');
+        if ($id === null) {
+            return false;
+        }
+
+        $db = $this->getDb();
+
+        $dataFieldsCheck = $db->select()
+            ->from(['df' =>'director_datafield'], ['varname'])
+            ->join(
+                ['dfs' => 'director_datafield_setting'],
+                'dfs.datafield_id = df.id AND dfs.setting_name = \'datalist_id\'',
+                []
+            )
+            ->join(
+                ['l' => 'director_datalist'],
+                'l.id = dfs.setting_value',
+                []
+            )
+            ->where('datatype = ?', DataTypeDatalist::class)
+            ->where('setting_value = ?', $id);
+
+        if ($db->fetchOne($dataFieldsCheck)) {
+            return true;
+        }
+
+        $syncCheck = $db->select()
+            ->from(['sp' =>'sync_property'], ['source_expression'])
+            ->where('sp.destination_field = ?', 'list_id')
+            ->where('sp.source_expression = ?', $id);
+
+        if ($db->fetchOne($syncCheck)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -111,61 +130,38 @@ class DirectorDatalist extends DbObject implements ExportInterface
      */
     public function onStore()
     {
-        if ($this->storedEntries) {
+        if ($this->entries) {
             $db = $this->getConnection();
             $removedKeys = [];
             $myId = $this->get('id');
 
-            foreach ($this->storedEntries as $key => $entry) {
+            foreach ($this->entries as $key => $entry) {
                 if ($entry->shouldBeRemoved()) {
                     $entry->delete();
                     $removedKeys[] = $key;
                 } else {
-                    if (! $entry->hasBeenLoadedFromDb()) {
-                        $entry->set('list_id', $myId);
-                    }
                     $entry->set('list_id', $myId);
                     $entry->store($db);
                 }
             }
 
             foreach ($removedKeys as $key) {
-                unset($this->storedEntries[$key]);
+                unset($this->entries[$key]);
             }
         }
     }
 
-    public function export()
+    public function getEntries(): array
     {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
-
-        $plain->entries = [];
-        foreach ($this->getStoredEntries() as $key => $entry) {
-            if ($entry->shouldBeRemoved()) {
-                continue;
-            }
-            $plainEntry = (object) $entry->getProperties();
-            unset($plainEntry->list_id);
-
-            $plain->entries[] = $plainEntry;
-        }
-
-        return $plain;
-    }
-
-    protected function getStoredEntries()
-    {
-        if ($this->storedEntries === null) {
-            if ($id = $this->get('id')) {
-                $this->storedEntries = DirectorDatalistEntry::loadAllForList($this);
-                ksort($this->storedEntries);
+        if ($this->entries === null) {
+            if ($this->get('id')) {
+                $this->entries = DirectorDatalistEntry::loadAllForList($this);
+                ksort($this->entries);
             } else {
-                $this->storedEntries = [];
+                $this->entries = [];
             }
         }
 
-        return $this->storedEntries;
+        return $this->entries;
     }
 }

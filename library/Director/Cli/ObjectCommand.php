@@ -4,6 +4,11 @@ namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Params;
 use Icinga\Exception\MissingParameterException;
+use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Data\PropertyMangler;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
 
@@ -34,28 +39,58 @@ class ObjectCommand extends Command
      *
      * OPTIONS
      *
-     *   --resolved    Resolve all inherited properties and show a flat
-     *                 object
-     *   --json        Use JSON format
-     *   --no-pretty   JSON is pretty-printed per default (for PHP >= 5.4)
-     *                 Use this flag to enforce unformatted JSON
-     *   --no-defaults Per default JSON output ships null or default values
-     *                 With this flag you will skip those properties
+     *   --resolved          Resolve all inherited properties and show a flat
+     *                       object
+     *   --json              Use JSON format
+     *   --no-pretty         JSON is pretty-printed per default. Use this flag
+     *                       to enforce un-formatted JSON
+     *   --no-defaults       Per default JSON output ships null or default
+     *                       values. This flag skips those properties
+     *   --with-services     For hosts only, also shows attached services
+     *   --all-services      For hosts only, show applied and inherited services
+     *                       too
      */
     public function showAction()
     {
         $db = $this->db();
         $object = $this->getObject();
-        if ($this->params->shift('resolved')) {
-            $object = $object::fromPlainObject($object->toPlainObject(true), $db);
+        $exporter = new Exporter($db);
+        $resolve = (bool) $this->params->shift('resolved');
+        $withServices = (bool) $this->params->get('with-services');
+        $allServices = (bool) $this->params->get('all-services');
+        if ($withServices) {
+            if (!$object instanceof IcingaHost) {
+                $this->fail('--with-services is available for Hosts only');
+            }
+            $exporter->enableHostServices();
+        }
+        if ($allServices) {
+            if (!$object instanceof IcingaHost) {
+                $this->fail('--all-services is available for Hosts only');
+            }
+            $exporter->serviceLoader()->resolveHostServices();
         }
 
+        $exporter->resolveObjects($resolve);
+        $exporter->showDefaults($this->params->shift('no-defaults', false));
+
         if ($this->params->shift('json')) {
-            $noDefaults = $this->params->shift('no-defaults', false);
-            $data = $object->toPlainObject(false, $noDefaults);
-            echo $this->renderJson($data, !$this->params->shift('no-pretty'));
+            echo $this->renderJson($exporter->export($object), !$this->params->shift('no-pretty'));
         } else {
-            echo $object;
+            $config = new IcingaConfig($db);
+            if ($resolve) {
+                $object = $object::fromPlainObject($object->toPlainObject(true, false, null, false), $db);
+            }
+            $object->renderToConfig($config);
+            if ($withServices) {
+                foreach ($exporter->serviceLoader()->fetchServicesForHost($object) as $service) {
+                    $service->renderToConfig($config);
+                }
+            }
+            foreach ($config->getFiles() as $filename => $content) {
+                printf("/** %s **/\n\n", $filename);
+                echo $content;
+            }
         }
     }
 
@@ -87,36 +122,9 @@ class ObjectCommand extends Command
     public function createAction()
     {
         $type = $this->getType();
-        $name = $this->params->shift();
-
-        $props = $this->remainingParams();
-        if (! array_key_exists('object_type', $props)) {
-            $props['object_type'] = 'object';
-        }
-
-        if ($name) {
-            if (array_key_exists('object_name', $props)) {
-                if ($name !== $props['object_name']) {
-                    $this->fail(sprintf(
-                        "Name '%s' conflicts with object_name '%s'\n",
-                        $name,
-                        $props['object_name']
-                    ));
-                }
-            } else {
-                $props['object_name'] = $name;
-            }
-        }
-
-        if (! array_key_exists('object_name', $props)) {
-            $this->fail('Cannot create an object with at least an object name');
-        }
-
-        $object = IcingaObject::createByType(
-            $type,
-            $props,
-            $this->db()
-        );
+        $props = $this->getObjectProperties();
+        $name = $props['object_name'];
+        $object = IcingaObject::createByType($type, $props, $this->db());
 
         if ($object->store()) {
             printf("%s '%s' has been created\n", $type, $name);
@@ -181,33 +189,38 @@ class ObjectCommand extends Command
     public function setAction()
     {
         $name = $this->getName();
+        $type = $this->getType();
 
         if ($this->params->shift('auto-create') && ! $this->exists($name)) {
             $action = 'created';
-            $object = $this->create($name);
+            $object = $this->create($type, $name);
         } else {
             $action = 'modified';
             $object = $this->getObject();
         }
 
-        $appends = $this->stripPrefixedProperties($this->params, 'append-');
-        $remove = $this->stripPrefixedProperties($this->params, 'remove-');
+        $appends = self::stripPrefixedProperties($this->params, 'append-');
+        $remove = self::stripPrefixedProperties($this->params, 'remove-');
 
         if ($this->params->shift('replace')) {
-            $new = $this->create($name)->setProperties($this->remainingParams());
-            $object->replaceWith($new);
+            $object->replaceWith($this->create($type, $name, $this->remainingParams()));
         } else {
             $object->setProperties($this->remainingParams());
         }
 
-        $this->appendToArrayProperties($object, $appends);
-        $this->removeProperties($object, $remove);
+        PropertyMangler::appendToArrayProperties($object, $appends);
+        PropertyMangler::removeProperties($object, $remove);
+        $this->persistChanges($object, $type, $name, $action);
+    }
+
+    protected function persistChanges(DbObject $object, $type, $name, $action)
+    {
         if ($object->hasBeenModified() && $object->store()) {
-            printf("%s '%s' has been %s\n", $this->getType(), $this->name, $action);
+            printf("%s '%s' has been %s\n", $type, $name, $action);
             exit(0);
         }
 
-        printf("%s '%s' has not been modified\n", $this->getType(), $name);
+        printf("%s '%s' has not been modified\n", $type, $name);
         exit(0);
     }
 
@@ -326,58 +339,7 @@ class ObjectCommand extends Command
         exit(0);
     }
 
-    protected function appendToArrayProperties(IcingaObject $object, $properties)
-    {
-        foreach ($properties as $key => $value) {
-            $current = $object->$key;
-            if ($current === null) {
-                $current = [$value];
-            } elseif (is_array($current)) {
-                $current[] = $value;
-            } else {
-                throw new InvalidArgumentException(sprintf(
-                    'I can only append to arrays, %s is %s',
-                    $key,
-                    var_export($current, 1)
-                ));
-            }
-
-            $object->$key = $current;
-        }
-    }
-
-    protected function removeProperties(IcingaObject $object, $properties)
-    {
-        foreach ($properties as $key => $value) {
-            if ($value === true) {
-                $object->$key = null;
-            }
-            $current = $object->$key;
-            if ($current === null) {
-                continue;
-            } elseif (is_array($current)) {
-                $new = [];
-                foreach ($current as $item) {
-                    if ($item !== $value) {
-                        $new[] = $item;
-                    }
-                }
-                $object->$key = $new;
-            } elseif (is_string($current)) {
-                if ($current === $value) {
-                    $object->$key = null;
-                }
-            } else {
-                throw new InvalidArgumentException(sprintf(
-                    'I can only remove strings or from arrays, %s is %s',
-                    $key,
-                    var_export($current, 1)
-                ));
-            }
-        }
-    }
-
-    protected function stripPrefixedProperties(Params $params, $prefix = 'append-')
+    protected static function stripPrefixedProperties(Params $params, $prefix = 'append-')
     {
         $appends = [];
         $len = strlen($prefix);
@@ -393,6 +355,37 @@ class ObjectCommand extends Command
         }
 
         return $appends;
+    }
+
+    protected function getObjectProperties()
+    {
+        $name = $this->params->shift();
+
+        $props = $this->remainingParams();
+        if (! array_key_exists('object_type', $props)) {
+            $props['object_type'] = 'object';
+        }
+
+        // Normalize object_name, compare to given name
+        if ($name) {
+            if (array_key_exists('object_name', $props)) {
+                if ($name !== $props['object_name']) {
+                    $this->fail(sprintf(
+                        "Name '%s' conflicts with object_name '%s'\n",
+                        $name,
+                        $props['object_name']
+                    ));
+                }
+            } else {
+                $props['object_name'] = $name;
+            }
+        } else {
+            if (! array_key_exists('object_name', $props)) {
+                $this->fail('Cannot create an object with at least an object name');
+            }
+        }
+
+        return $props;
     }
 
     protected function shiftOneOrMoreNames()
@@ -412,10 +405,34 @@ class ObjectCommand extends Command
     protected function remainingParams()
     {
         if ($json = $this->params->shift('json')) {
+            if ($json === true) {
+                $json = $this->readFromStdin();
+                if ($json === null) {
+                    $this->fail('Please pass JSON either via STDIN or via --json');
+                }
+            }
             return (array) $this->parseJson($json);
         } else {
             return $this->params->getParams();
         }
+    }
+
+    protected function readFromStdin()
+    {
+        if (!defined('STDIN')) {
+            define('STDIN', fopen('php://stdin', 'r'));
+        }
+        $inputIsTty = function_exists('posix_isatty') && posix_isatty(STDIN);
+        if ($inputIsTty) {
+            return null;
+        }
+
+        $stdin = file_get_contents('php://stdin');
+        if (strlen($stdin) === 0) {
+            return null;
+        }
+
+        return $stdin;
     }
 
     protected function exists($name)
@@ -436,16 +453,12 @@ class ObjectCommand extends Command
         );
     }
 
-    protected function create($name)
+    protected function create($type, $name, $properties = [])
     {
-        return IcingaObject::createByType(
-            $this->getType(),
-            array(
-                'object_type' => 'object',
-                'object_name' => $name
-            ),
-            $this->db()
-        );
+        return IcingaObject::createByType($type, $properties + [
+            'object_type' => 'object',
+            'object_name' => $name
+        ], $this->db());
     }
 
     /**

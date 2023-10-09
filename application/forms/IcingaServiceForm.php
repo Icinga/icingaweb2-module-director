@@ -6,12 +6,15 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Web\Table\ObjectsTableHost;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use RuntimeException;
@@ -127,6 +130,8 @@ class IcingaServiceForm extends DirectorObjectForm
         if (! $this->providesOverrides()) {
             return;
         }
+        $hasDeleteButton = false;
+        $isBranch = $this->branch && $this->branch->isBranch();
 
         if ($this->hasBeenBlacklisted()) {
             $this->addHtml(
@@ -134,7 +139,10 @@ class IcingaServiceForm extends DirectorObjectForm
                 ['name' => 'HINT_blacklisted']
             );
             $group = null;
-            $this->addDeleteButton($this->translate('Reactivate'));
+            if (! $isBranch) {
+                $this->addDeleteButton($this->translate('Reactivate'));
+                $hasDeleteButton = true;
+            }
             $this->setSubmitLabel(false);
         } else {
             $this->addOverrideHint();
@@ -163,10 +171,13 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->setSubmitLabel(false);
             }
 
-            $this->addDeleteButton($this->translate('Deactivate'));
+            if (! $isBranch) {
+                $this->addDeleteButton($this->translate('Deactivate'));
+                $hasDeleteButton = true;
+            }
         }
 
-        if (! $this->hasSubmitButton()) {
+        if (! $this->hasSubmitButton() && $hasDeleteButton) {
             $this->addDisplayGroup([$this->deleteButtonName], 'buttons', [
                 'decorators' => [
                     'FormElements',
@@ -187,14 +198,16 @@ class IcingaServiceForm extends DirectorObjectForm
     }
 
     /**
-     * @param IcingaService $service
-     * @return IcingaService
+     * Hint: could be moved elsewhere
+     *
+     * @param IcingaService $object
+     * @return IcingaObject|IcingaService|IcingaServiceSet
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getFirstParent(IcingaService $service)
+    protected static function getFirstParent(IcingaObject $object)
     {
-        /** @var IcingaService[] $objects */
-        $objects = $service->imports()->getObjects();
+        /** @var IcingaObject[] $objects */
+        $objects = $object->imports()->getObjects();
         if (empty($objects)) {
             throw new RuntimeException('Something went wrong, got no parent');
         }
@@ -215,13 +228,19 @@ class IcingaServiceForm extends DirectorObjectForm
 
         if ($this->blacklisted === null) {
             $host = $this->host;
+            // Safety check, branches
+            $hostId = $host->get('id');
             $service = $this->getServiceToBeBlacklisted();
+            $serviceId = $service->get('id');
+            if (! $hostId || ! $serviceId) {
+                return false;
+            }
             $db = $this->db->getDbAdapter();
             if ($this->providesOverrides()) {
                 $this->blacklisted = 1 === (int)$db->fetchOne(
                     $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
-                        ->where('host_id = ?', $host->get('id'))
-                        ->where('service_id = ?', $service->get('id'))
+                        ->where('host_id = ?', $hostId)
+                        ->where('service_id = ?', $serviceId)
                 );
             } else {
                 $this->blacklisted = false;
@@ -285,7 +304,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->set) {
             return $this->object;
         } else {
-            return $this->getFirstParent($this->object);
+            return self::getFirstParent($this->object);
         }
     }
 
@@ -333,14 +352,14 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function setupServiceElements()
     {
         if ($this->object) {
-            $objectType = $this->object->object_type;
+            $objectType = $this->object->get('object_type');
         } elseif ($this->preferredObjectType) {
             $objectType = $this->preferredObjectType;
         } else {
             $objectType = 'template';
         }
         $this->addHidden('object_type', $objectType);
-        $forceCommandElements = $this->hasPermission('director/admin');
+        $forceCommandElements = $this->hasPermission(Permission::ADMIN);
 
         $this->addNameElement()
              ->addHostObjectElement()
@@ -422,10 +441,6 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addHtmlHint($hint, ['name' => 'inheritance_hint']);
     }
 
-    /**
-     * @throws IcingaException
-     * @throws ProgrammingError
-     */
     protected function setupOnHostForSet()
     {
         $msg = $this->translate(
@@ -478,7 +493,7 @@ class IcingaServiceForm extends DirectorObjectForm
      */
     protected function setupHostRelatedElements()
     {
-        $this->addHidden('host_id', $this->host->id);
+        $this->addHidden('host', $this->host->getObjectName());
         $this->addHidden('object_type', 'object');
         $this->addImportsElement();
         $imports = $this->getSentOrObjectValue('imports');
@@ -501,13 +516,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addExtraInfoElements()
              ->setButtons();
 
-        if ($this->hasBeenSent()) {
-            $name = $this->getSentOrObjectValue('object_name');
-            if (!strlen($name)) {
-                $this->setElementValue('object_name', end($imports));
-                $this->object->object_name = end($imports);
-            }
-        }
+        $this->setDefaultNameFromTemplate($imports);
     }
 
     /**
@@ -525,7 +534,7 @@ class IcingaServiceForm extends DirectorObjectForm
      */
     protected function setupSetRelatedElements()
     {
-        $this->addHidden('service_set_id', $this->set->id);
+        $this->addHidden('service_set', $this->set->getObjectName());
         $this->addHidden('object_type', 'apply');
         $this->addImportsElement();
         $this->setButtons();
@@ -545,19 +554,13 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addGroupsElement()
              ->groupMainProperties();
 
-        if ($this->hasPermission('director/admin')) {
+        if ($this->hasPermission(Permission::ADMIN)) {
             $this->addCheckCommandElements(true)
                 ->addCheckExecutionElements(true)
                 ->addExtraInfoElements();
         }
 
-        if ($this->hasBeenSent()) {
-            $name = $this->getSentOrObjectValue('object_name');
-            if (!strlen($name)) {
-                $this->setElementValue('object_name', end($imports));
-                $this->object->object_name = end($imports);
-            }
-        }
+        $this->setDefaultNameFromTemplate($imports);
     }
 
     public function setServiceSet(IcingaServiceSet $set)
@@ -594,14 +597,14 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function addHostObjectElement()
     {
         if ($this->isObject()) {
-            $this->addElement('select', 'host_id', array(
+            $this->addElement('select', 'host', [
                 'label'       => $this->translate('Host'),
                 'required'    => true,
                 'multiOptions' => $this->optionalEnum($this->enumHostsAndTemplates()),
                 'description' => $this->translate(
                     'Choose the host this single service should be assigned to'
                 )
-            ));
+            ]);
         }
 
         return $this;
@@ -703,10 +706,36 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function enumHostsAndTemplates()
     {
-        return array(
-            $this->translate('Templates') => $this->db->enumHostTemplates(),
-            $this->translate('Hosts')     => $this->db->enumHosts(),
-        );
+        if ($this->branch && $this->branch->isBranch()) {
+            return $this->enumHosts();
+        }
+
+        return [
+            $this->translate('Templates') => $this->enumHostTemplates(),
+            $this->translate('Hosts')     => $this->enumHosts(),
+        ];
+    }
+
+    protected function enumHostTemplates()
+    {
+        $names = array_values($this->db->enumHostTemplates());
+        return array_combine($names, $names);
+    }
+
+    protected function enumHosts()
+    {
+        $db = $this->db->getDbAdapter();
+        $table = new ObjectsTableHost($this->db);
+        $table->setAuth($this->getAuth());
+        if ($this->branch && $this->branch->isBranch()) {
+            $table->setBranchUuid($this->branch->getUuid());
+        }
+        $result = [];
+        foreach ($db->fetchAll($table->getQuery()->reset(\Zend_Db_Select::LIMIT_COUNT)) as $row) {
+            $result[$row->object_name] = $row->object_name;
+        }
+
+        return $result;
     }
 
     protected function enumServicegroups()
@@ -723,10 +752,6 @@ class IcingaServiceForm extends DirectorObjectForm
         return $db->fetchPairs($select);
     }
 
-    /**
-     * @throws IcingaException
-     * @throws ProgrammingError
-     */
     protected function succeedForOverrides()
     {
         $vars = array();
@@ -747,7 +772,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->translate($host->getObjectName())
             );
 
-            $host->store();
+            $this->getDbObjectStore()->store($host);
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -759,16 +784,27 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->redirectOnSuccess($msg);
     }
 
-    /**
-     * @throws IcingaException
-     * @throws ProgrammingError
-     */
     public function onSuccess()
     {
         if ($this->providesOverrides()) {
-            return $this->succeedForOverrides();
+            $this->succeedForOverrides();
+            return;
         }
 
-        return parent::onSuccess();
+        parent::onSuccess();
+    }
+
+    /**
+     * @param array $imports
+     */
+    protected function setDefaultNameFromTemplate($imports)
+    {
+        if ($this->hasBeenSent()) {
+            $name = $this->getSentOrObjectValue('object_name');
+            if ($name === null || !strlen($name)) {
+                $this->setElementValue('object_name', end($imports));
+                $this->object->set('object_name', end($imports));
+            }
+        }
     }
 }

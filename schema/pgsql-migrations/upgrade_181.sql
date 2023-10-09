@@ -1,0 +1,19 @@
+ALTER TABLE branched_icinga_host DROP CONSTRAINT branched_icinga_host_uuid_key;
+ALTER TABLE branched_icinga_hostgroup DROP CONSTRAINT branched_icinga_hostgroup_uuid_key;
+ALTER TABLE branched_icinga_servicegroup DROP CONSTRAINT branched_icinga_servicegroup_uuid_key;
+ALTER TABLE branched_icinga_usergroup DROP CONSTRAINT branched_icinga_usergroup_uuid_key;
+ALTER TABLE branched_icinga_user DROP CONSTRAINT branched_icinga_user_uuid_key;
+ALTER TABLE branched_icinga_zone DROP CONSTRAINT branched_icinga_zone_uuid_key;
+ALTER TABLE branched_icinga_timeperiod DROP CONSTRAINT branched_icinga_timeperiod_uuid_key;
+ALTER TABLE branched_icinga_command DROP CONSTRAINT branched_icinga_command_uuid_key;
+ALTER TABLE branched_icinga_apiuser DROP CONSTRAINT branched_icinga_apiuser_uuid_key;
+ALTER TABLE branched_icinga_endpoint DROP CONSTRAINT branched_icinga_endpoint_uuid_key;
+ALTER TABLE branched_icinga_service DROP CONSTRAINT branched_icinga_service_uuid_key;
+ALTER TABLE branched_icinga_service_set DROP CONSTRAINT branched_icinga_service_set_uuid_key;
+ALTER TABLE branched_icinga_notification DROP CONSTRAINT branched_icinga_notification_uuid_key;
+ALTER TABLE branched_icinga_scheduled_downtime DROP CONSTRAINT branched_icinga_scheduled_downtime_uuid_key;
+ALTER TABLE branched_icinga_dependency DROP CONSTRAINT branched_icinga_dependency_uuid_key;
+
+INSERT INTO director_schema_migration
+  (schema_version, migration_time)
+  VALUES (181, NOW());

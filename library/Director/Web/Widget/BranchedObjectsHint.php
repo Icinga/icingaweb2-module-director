@@ -13,9 +13,14 @@ class BranchedObjectsHint extends HtmlDocument
 {
     use TranslationHelper;
 
-    public function __construct(Branch $branch, Auth $auth)
+    public function __construct(Branch $branch, Auth $auth, $hasPreferredBranch = false)
     {
         if (! $branch->isBranch()) {
+            if ($hasPreferredBranch) {
+                $this->add(Hint::warning($this->translate(
+                    "You're currently in the master branch, your changes will make part of the next Deployment"
+                )));
+            }
             return;
         }
         $hook = Branch::requireHook();

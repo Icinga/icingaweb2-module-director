@@ -59,7 +59,9 @@ class DataTypeDatalist extends DataTypeHook
 
                 $db = $form->getDb();
                 foreach ($value as $entry) {
-                    $this->createEntryIfNotExists($db, $listId, $entry);
+                    if ($entry !== '') {
+                        $this->createEntryIfNotExists($db, $listId, $entry);
+                    }
                 }
             });
         }

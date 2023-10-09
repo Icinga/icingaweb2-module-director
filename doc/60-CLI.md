@@ -75,6 +75,12 @@ icingacli director host create localhost \
     --json '{ "address": "127.0.0.1", "vars": { "test": [ "one", "two" ] } }'
 ```
 
+Passing JSON via STDIN is also possible:
+
+```shell
+icingacli director host create localhost --json < my-host.json
+```
+
 
 ### Delete a specific object
 
@@ -126,17 +132,18 @@ Use this command to modify specific properties of an existing Icinga object.
 
 #### Options
 
-| Option            | Description                                           |
-|-------------------|-------------------------------------------------------|
-| `--<key> <value>` | Provide all properties as single command line options |
-| `--append-<key> <value>` | Appends to array values, like `imports`,       |
-|                   | `groups` or `vars.system_owners`                      |
-| `--remove-<key> [<value>]` | Remove a specific property, eventually only  |
-|                   | when matching `value`. In case the property is an     |
-|                   | array it will remove just `value` when given          |
-| `--json`          | Otherwise provide all options as a JSON string        |
-| `--replace`       | Replace all object properties with the given ones     |
-| `--auto-create`   | Create the object in case it does not exist           |
+| Option                     | Description                                           |
+|----------------------------|-------------------------------------------------------|
+| `--<key> <value>`          | Provide all properties as single command line options |
+| `--append-<key> <value>`   | Appends to array values, like `imports`,              |
+|                            | `groups` or `vars.system_owners`                      |
+| `--remove-<key> [<value>]` | Remove a specific property, eventually only           |
+|                            | when matching `value`. In case the property is an     |
+|                            | array it will remove just `value` when given          |
+| `--json`                   | Otherwise provide all options as a JSON string        |
+| `--replace`                | Replace all object properties with the given ones     |
+| `--auto-create`            | Create the object in case it does not exist           |
+| `--allow-overrides`        | Set variable overrides for virtual Services           |
 
 
 #### Examples
@@ -184,16 +191,16 @@ in JSON format.
 
 #### Options
 
-| Option          | Description                                             |
-|-----------------|---------------------------------------------------------|
-| `--resolved`    | Resolve all inherited properties and show a flat object |
-|                 | object                                                  |
-| `--json`        | Use JSON format                                         |
-| `--no-pretty`   | JSON is pretty-printed per default (for PHP >= 5.4)     |
-|                 | Use this flag to enforce unformatted JSON               |
-| `--no-defaults` | Per default JSON output skips null or default values    |
-|                 | With this flag you will get all properties              |
-
+| Option            | Description                                          |
+|-------------------|------------------------------------------------------|
+| `--resolved`      | Resolve all inherited properties and show a flat     |
+|                   | object                                               |
+| `--json`          | Use JSON format                                      |
+| `--no-pretty`     | JSON is pretty-printed per default (for PHP >= 5.4)  |
+|                   | Use this flag to enforce unformatted JSON            |
+| `--no-defaults`   | Per default JSON output skips null or default values |
+|                   | With this flag you will get all properties           |
+| `--with-services` | For hosts only, also shows attached services         |
 
 ### Clone an existing object
 
@@ -281,7 +288,7 @@ on this object would have been removed.
 
 The Icinga Director distincts between the following object types:
 
-| Type              | Description
+| Type              | Description                                                 |
 |-------------------|-------------------------------------------------------------|
 | `object`          | The default object type. A host, a command and similar      |
 | `template`        | An Icinga template                                          |
@@ -456,7 +463,22 @@ Config with checksum b330febd0820493fb12921ad8f5ea42102a5c871 already exists
 
 ### Config deployment
 
-You do not need to explicitely render your config before deploying it to your
+#### Usage
+
+`icingacli director config deploy [options]`
+
+#### Options
+
+| Option                     | Description                                                      |
+|----------------------------|------------------------------------------------------------------|
+| `--checksum <checksum>`    | Optionally deploy a specific configuration                       |
+| `--force`                  | Force a deployment, even when the configuration hasn't changed   |
+| `--wait <seconds>`         | Optionally wait until Icinga completed it's restart              |
+| `--grace-period <seconds>` | Do not deploy if a deployment took place less than <seconds> ago |
+
+#### Examples
+
+You do not need to explicitly render your config before deploying it to your
 Icinga 2 master node. Just trigger a deployment, it will re-render the current
 config:
 
@@ -488,6 +510,13 @@ version the `deploy` command allows you to provide a specific checksum:
 
 ```shell
 icingacli director config deploy --checksum b330febd0820493fb12921ad8f5ea42102a5c871
+```
+
+When using `icingacli` deployments in an automated way, and want to avoid fast
+consecutive deployments, you can provide a grace period:
+
+```shell
+icingacli director config deploy --grace-period 300
 ```
 
 ### Deployments status

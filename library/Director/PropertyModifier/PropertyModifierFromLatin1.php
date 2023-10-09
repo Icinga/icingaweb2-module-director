@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\PropertyModifier;
 
 use Icinga\Module\Director\Hook\PropertyModifierHook;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use function iconv;
 
 class PropertyModifierFromLatin1 extends PropertyModifierHook
 {
@@ -18,6 +18,6 @@ class PropertyModifierFromLatin1 extends PropertyModifierHook
             return null;
         }
 
-        return utf8_encode($value);
+        return iconv('ISO-8859-15', 'UTF-8', $value);
     }
 }

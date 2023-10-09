@@ -36,4 +36,11 @@ class SyncRun extends DbObject
             $rule->getConnection()
         );
     }
+
+    public function countActivities()
+    {
+        return (int) $this->get('objects_deleted')
+            + (int) $this->get('objects_created')
+            + (int) $this->get('objects_modified');
+    }
 }

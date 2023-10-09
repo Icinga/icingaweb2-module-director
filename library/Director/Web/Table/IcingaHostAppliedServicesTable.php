@@ -149,6 +149,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         $ds = new ArrayDatasource($services);
         return $ds->select()->columns([
             'id'            => 'id',
+            'uuid'          => 'uuid',
             'name'          => 'name',
             'filter'        => 'filter',
             'disabled'      => 'disabled',
@@ -179,22 +180,27 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
     protected function fetchAllApplyRules()
     {
         $db = $this->db;
+        $hostId = $this->host->get('id');
         $query = $db->select()->from(
             ['s' => 'icinga_service'],
             [
                 'id'            => 's.id',
+                'uuid'          => 's.uuid',
                 'name'          => 's.object_name',
                 'assign_filter' => 's.assign_filter',
                 'apply_for'     => 's.apply_for',
                 'disabled'      => 's.disabled',
-                'blacklisted'   => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
+                'blacklisted'   => $hostId ? "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END" : "('n')",
             ]
-        )->joinLeft(
-            ['hsb' => 'icinga_host_service_blacklist'],
-            $db->quoteInto('s.id = hsb.service_id AND hsb.host_id = ?', $this->host->get('id')),
-            []
         )->where('object_type = ? AND assign_filter IS NOT NULL', 'apply')
          ->order('s.object_name');
+        if ($hostId) {
+            $query->joinLeft(
+                ['hsb' => 'icinga_host_service_blacklist'],
+                $db->quoteInto('s.id = hsb.service_id AND hsb.host_id = ?', $hostId),
+                []
+            );
+        }
 
         return $db->fetchAll($query);
     }

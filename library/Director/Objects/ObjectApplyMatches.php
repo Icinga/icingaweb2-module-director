@@ -172,7 +172,7 @@ abstract class ObjectApplyMatches
         $col = $filter->getColumn();
         $type = static::$type;
 
-        if (substr($col, 0, strlen($type) + 1) === "${type}.") {
+        if ($type && substr($col, 0, strlen($type) + 1) === "{$type}.") {
             $filter->setColumn($col = substr($col, strlen($type) + 1));
         }
 

@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Form;
 use Exception;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -141,9 +142,6 @@ abstract class DirectorObjectForm extends DirectorForm
             }
 
             $this->object = $class::create($values, $this->db);
-            foreach ($values as $key => $value) {
-                $this->object->$key = $value;
-            }
         } else {
             if (! $this->object->hasConnection()) {
                 $this->object->setConnection($this->db);
@@ -446,24 +444,12 @@ abstract class DirectorObjectForm extends DirectorForm
                         $this->setInheritedValue(
                             $el,
                             $object->getRelatedObjectName($k, $v),
-                            $origins->{"${k}_id"}
+                            $origins->{"{$k}_id"}
                         );
                     }
                 }
             }
         }
-    }
-
-    protected function removeEmptyProperties($props)
-    {
-        $result = array();
-        foreach ($props as $k => $v) {
-            if ($v !== null && $v !== '' && $v !== array()) {
-                $result[$k] = $v;
-            }
-        }
-
-        return $result;
     }
 
     protected function prepareFields($object)
@@ -547,6 +533,7 @@ abstract class DirectorObjectForm extends DirectorForm
         }
         $elements = array_merge($elements, [
             'display_name',
+            'host',
             'host_id',
             'address',
             'address6',
@@ -554,7 +541,9 @@ abstract class DirectorObjectForm extends DirectorForm
             'inherited_groups',
             'applied_groups',
             'users',
+            'users_var',
             'user_groups',
+            'user_groups_var',
             'apply_to',
             'command_id', // Notification
             'notification_interval',
@@ -602,7 +591,7 @@ abstract class DirectorObjectForm extends DirectorForm
             }
         }
 
-        return $this->setElementValue($name, $value);
+        $this->setElementValue($name, $value);
     }
 
     public function setElementValue($name, $value = null)
@@ -1253,7 +1242,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 if ($this->hasBeenSent()) {
                     $this->addError($this->translate('No template has been chosen'));
                 } else {
-                    if ($this->hasPermission('director/admin')) {
+                    if ($this->hasPermission(Permission::ADMIN)) {
                         $html = $this->translate('Please define a related template first');
                     } else {
                         $html = $this->translate('No related template has been provided yet');
@@ -1288,7 +1277,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'required'     => $required,
             'spellcheck'   => 'false',
             'hideOptions'  => $choiceNames,
-            'suggest'      => "${type}templates",
+            'suggest'      => "{$type}templates",
             // 'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'value'        => $this->presetImports,

@@ -2,9 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Authentication\Auth;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Resolver\TemplateTree;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Table;
 use gipfl\Translation\TranslationHelper;
@@ -13,9 +16,13 @@ class TemplateUsageTable extends Table
 {
     use TranslationHelper;
 
+    use TableWithBranchSupport;
+
     protected $defaultAttributes = ['class' => 'pivot'];
 
     protected $objectType;
+
+    protected $searchColumns = [];
 
     public function getTypes()
     {
@@ -25,26 +32,22 @@ class TemplateUsageTable extends Table
         ];
     }
 
-    protected function getTypeSummaryDefinitions()
-    {
-        return [
-            'templates'  => $this->getSummaryLine('template'),
-            'objects'    => $this->getSummaryLine('object'),
-        ];
-    }
-
     /**
      * @param IcingaObject $template
+     * @param Branch|null $branch
+     *
      * @return TemplateUsageTable
+     *
+     * @throws ProgrammingError
      */
-    public static function forTemplate(IcingaObject $template)
+    public static function forTemplate(IcingaObject $template, Branch $branch = null)
     {
         $type = ucfirst($template->getShortTableName());
-        $class = __NAMESPACE__ . "\\${type}TemplateUsageTable";
+        $class = __NAMESPACE__ . "\\{$type}TemplateUsageTable";
         if (class_exists($class)) {
-            return new $class($template);
+            return new $class($template, $branch);
         } else {
-            return new static($template);
+            return new static($template, $branch);
         }
     }
 
@@ -58,7 +61,7 @@ class TemplateUsageTable extends Table
         ];
     }
 
-    protected function __construct(IcingaObject $template)
+    protected function __construct(IcingaObject $template, Branch $branch = null)
     {
 
         if ($template->get('object_type') !== 'template') {
@@ -68,6 +71,7 @@ class TemplateUsageTable extends Table
             );
         }
 
+        $this->setBranch($branch);
         $this->objectType = $objectType = $template->getShortTableName();
         $types = $this->getTypes();
         $usage = $this->getUsageSummary($template);
@@ -85,7 +89,7 @@ class TemplateUsageTable extends Table
                     Table::td(
                         Link::create(
                             $count,
-                            "director/${objectType}template/$type",
+                            "director/{$objectType}template/$type",
                             [
                                 'name' => $template->getObjectName(),
                                 'inheritance' => $inheritance
@@ -98,6 +102,7 @@ class TemplateUsageTable extends Table
         }
 
         if ($used) {
+            $this->getHeader()->add(Table::row($this->getColumnsToBeRendered(), null, 'th'));
             $this->add($rows);
         } else {
             $this->add($this->translate('This template is not in use'));
@@ -106,52 +111,52 @@ class TemplateUsageTable extends Table
 
     protected function getUsageSummary(IcingaObject $template)
     {
-        $id = $template->getAutoincId();
         $connection = $template->getConnection();
         $db = $connection->getDbAdapter();
-        $oType = $this->objectType;
-        $tree = new TemplateTree($oType, $connection);
-        $ids = $tree->listDescendantIdsFor($template);
-        if (empty($ids)) {
-            $ids = [0];
+
+        $types = array_keys($this->getTypes());
+        $direct = [];
+        $indirect = [];
+        $templateType = $template->getShortTableName();
+
+        foreach ($this->getSummaryTables($templateType, $connection) as $type => $summaryTable) {
+            $directTable = clone $summaryTable;
+            $inDirectTable = clone $summaryTable;
+
+            $direct[$type] = $db->query(
+                $directTable
+                    ->filterTemplate($template, IcingaObjectFilterHelper::INHERIT_DIRECT)
+                    ->getQuery()
+            )->rowCount();
+            $indirect[$type] = $db->query(
+                $inDirectTable
+                    ->filterTemplate($template, IcingaObjectFilterHelper::INHERIT_INDIRECT)
+                    ->getQuery()
+            )->rowCount();
         }
 
-        $baseQuery = $db->select()->from(
-            ['o' => 'icinga_' . $oType],
-            $this->getTypeSummaryDefinitions()
-        )->joinLeft(
-            ['oi' => "icinga_${oType}_inheritance"],
-            "oi.${oType}_id = o.id",
-            []
-        );
-
-        $query = clone($baseQuery);
-        $direct = $db->fetchRow(
-            $query->where("oi.parent_${oType}_id = ?", $id)
-        );
-        $query = clone($baseQuery);
-        $indirect = $db->fetchRow(
-            $query->where("oi.parent_${oType}_id IN (?)", $ids)
-        );
-        //$indirect->templates = count($ids) - 1;
         $total = [];
-        $types = array_keys($this->getTypes());
         foreach ($types as $type) {
-            $total[$type] = $direct->$type + $indirect->$type;
+            $total[$type] = $direct[$type] + $indirect[$type];
         }
 
         return (object) [
-            'direct'   => $direct,
-            'indirect' => $indirect,
+            'direct'   => (object) $direct,
+            'indirect' => (object) $indirect,
             'total'    => (object) $total
         ];
     }
 
-    protected function getSummaryLine($type, $extra = null)
+    protected function getSummaryTables(string $templateType, Db $connection)
     {
-        if ($extra !== null) {
-            $extra = " AND $extra";
-        }
-        return "COALESCE(SUM(CASE WHEN o.object_type = '${type}'${extra} THEN 1 ELSE 0 END), 0)";
+        return [
+            'templates' => TemplatesTable::create(
+                $templateType,
+                $connection
+            ),
+            'objects'   => ObjectsTable::create($templateType, $connection)
+                ->setAuth(Auth::getInstance())
+                ->setBranchUuid($this->branchUuid)
+        ];
     }
 }

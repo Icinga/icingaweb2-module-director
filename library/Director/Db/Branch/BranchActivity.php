@@ -9,6 +9,7 @@ use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Data\Json;
 use Icinga\Module\Director\Data\SerializableValue;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
@@ -19,9 +20,9 @@ class BranchActivity
 {
     const DB_TABLE = 'director_branch_activity';
 
-    const ACTION_CREATE = 'create';
-    const ACTION_MODIFY = 'modify';
-    const ACTION_DELETE = 'delete';
+    const ACTION_CREATE = DirectorActivityLog::ACTION_CREATE;
+    const ACTION_MODIFY = DirectorActivityLog::ACTION_MODIFY;
+    const ACTION_DELETE = DirectorActivityLog::ACTION_DELETE;
 
     /** @var int */
     protected $timestampNs;
@@ -120,6 +121,16 @@ class BranchActivity
         );
     }
 
+    public static function fixFakeTimestamp($timestampNs)
+    {
+        if ($timestampNs < 1600000000 * 1000000) {
+            // fake TS for cloned branch in sync preview
+            return (int) $timestampNs * 1000000;
+        }
+
+        return $timestampNs;
+    }
+
     public function applyToDbObject(DbObject $object)
     {
         if (!$this->isActionModify()) {
@@ -133,14 +144,21 @@ class BranchActivity
         return $object;
     }
 
-    public function createDbObject()
+    /**
+     * Hint: $connection is required, because setting groups triggered loading them.
+     *       Should be investigated, as in theory $hostWithoutConnection->groups = 'group'
+     *       is expected to work
+     * @param Db $connection
+     * @return DbObject|string
+     */
+    public function createDbObject(Db $connection)
     {
         if (!$this->isActionCreate()) {
             throw new RuntimeException('Only BranchActivity instances with action=create can create objects');
         }
 
         $class = DbObjectTypeRegistry::classByType($this->getObjectTable());
-        $object = $class::create();
+        $object = $class::create([], $connection);
         $object->setUniqueId($this->getObjectUuid());
         foreach ($this->getModifiedProperties()->jsonSerialize() as $key => $value) {
             $object->set($key, $value);
@@ -149,17 +167,13 @@ class BranchActivity
         return $object;
     }
 
-    public function deleteDbObject(Db $connection)
+    public function deleteDbObject(DbObject $object)
     {
         if (!$this->isActionDelete()) {
             throw new RuntimeException('Only BranchActivity instances with action=delete can delete objects');
         }
 
-        $db = $connection->getDbAdapter();
-        return $db->delete($this->getObjectTable(), $db->quoteInto(
-            'uuid = ?',
-            $connection->quoteBinary($this->getObjectUuid()->getBytes())
-        ));
+        return $object->delete();
     }
 
     public static function load($ts, Db $connection)
@@ -256,7 +270,7 @@ class BranchActivity
      */
     public function getTimestamp()
     {
-        return (int) floor($this->timestampNs / 1000000);
+        return (int) floor(BranchActivity::fixFakeTimestamp($this->timestampNs) / 1000000);
     }
 
     /**
@@ -280,7 +294,13 @@ class BranchActivity
      */
     public function getObjectName()
     {
-        return $this->getProperty('object_name', 'unknown object name');
+        if ($this->objectTable === BranchSupport::TABLE_ICINGA_SERVICE && $host = $this->getProperty('host')) {
+            $suffix = " ($host)";
+        } else {
+            $suffix = '';
+        }
+
+        return $this->getProperty('object_name', 'unknown object name') . $suffix;
     }
 
     /**

@@ -2,44 +2,66 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\Translation\TranslationHelper;
+use gipfl\Web\Form;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Import\Sync;
 use Icinga\Module\Director\Objects\SyncRule;
-use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class SyncRunForm extends DirectorForm
+class SyncRunForm extends Form
 {
+    use TranslationHelper;
+
+    protected $defaultDecoratorClass = null;
+
+    /** @var ?string */
+    protected $successMessage = null;
+
     /** @var SyncRule */
     protected $rule;
 
-    public function setSyncRule(SyncRule $rule)
+    /** @var DbObjectStore */
+    protected $store;
+
+    public function __construct(SyncRule $rule, DbObjectStore $store)
     {
         $this->rule = $rule;
-        return $this;
+        $this->store = $store;
     }
 
-    public function setup()
+    public function assemble()
     {
-        $this->submitLabel = false;
-        $this->addElement('submit', 'submit', array(
-            'label' => $this->translate('Trigger this Sync'),
-            'decorators' => array('ViewHelper')
-        ));
+        if ($this->store->getBranch()->isBranch()) {
+            $label = sprintf($this->translate('Sync to Branch: %s'), $this->store->getBranch()->getName());
+        } else {
+            $label = $this->translate('Trigger this Sync');
+        }
+        $this->addElement('submit', 'submit', [
+            'label' => $label,
+        ]);
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getSuccessMessage()
+    {
+        return $this->successMessage;
     }
 
     public function onSuccess()
     {
-        $rule = $this->rule;
-        $changed = $rule->applyChanges();
-
-        if ($changed) {
-            $this->setSuccessMessage(
-                $this->translate(('Source has successfully been synchronized'))
-            );
-        } elseif ($rule->get('sync_state') === 'in-sync') {
-            $this->notifySuccess(
-                $this->translate('Nothing changed, rule is in sync')
-            );
+        $sync = new Sync($this->rule, $this->store);
+        if ($sync->hasModifications()) {
+            if ($sync->apply()) {
+                // and changed
+                $this->successMessage = $this->translate(('Source has successfully been synchronized'));
+            } else {
+                $this->successMessage = $this->translate('Nothing changed, rule is in sync');
+            }
         } else {
-            $this->addError($this->translate('Synchronization failed'));
+            // Used to be $rule->get('sync_state') === 'in-sync', $changed = $rule->applyChanges();
+            $this->successMessage = $this->translate('Nothing to do, rule is in sync');
         }
     }
 }

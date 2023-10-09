@@ -89,6 +89,7 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         return $keys;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->value);

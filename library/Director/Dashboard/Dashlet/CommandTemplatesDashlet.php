@@ -10,7 +10,7 @@ class CommandTemplatesDashlet extends CheckCommandsDashlet
     {
         return $this->translate(
             'External Notification Commands have been defined in your local Icinga 2'
-            . ' Configuration. '
+            . ' Configuration.'
         );
     }
 

@@ -46,7 +46,11 @@ class DirectorDeploymentLog extends DbObject
 
     public function getConfigHexChecksum()
     {
-        return bin2hex($this->config_checksum);
+        $checksum = $this->get('config_checksum');
+        if ($checksum === null) {
+            return null;
+        }
+        return bin2hex($checksum);
     }
 
     public function getConfig()
@@ -91,6 +95,9 @@ class DirectorDeploymentLog extends DbObject
 
     public static function getConfigChecksumForStageName(Db $connection, $stage)
     {
+        if ($stage === null) {
+            return null;
+        }
         $db = $connection->getDbAdapter();
         $query = $db->select()
             ->from(
@@ -115,6 +122,19 @@ class DirectorDeploymentLog extends DbObject
         );
 
         return static::load($db->fetchOne($query), $connection);
+    }
+
+    /**
+     * @param Db $connection
+     * @return ?DirectorDeploymentLog
+     */
+    public static function optionalLatest(Db $connection)
+    {
+        try {
+            return static::loadLatest($connection);
+        } catch (NotFoundError $exception) {
+            return null;
+        }
     }
 
     /**

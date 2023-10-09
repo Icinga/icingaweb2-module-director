@@ -15,7 +15,7 @@ class HostGroupMembershipResolverTest extends BaseTestCase
     const PREFIX = '__groupmembership';
     const TYPE = 'host';
 
-    public function setUp()
+    public function setUp(): void
     {
         IcingaTemplateRepository::clear();
     }
@@ -32,12 +32,12 @@ class HostGroupMembershipResolverTest extends BaseTestCase
         $db->delete('icinga_' . self::TYPE, $where);
     }
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         static::cleanArtifacts();
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         static::cleanArtifacts();
     }

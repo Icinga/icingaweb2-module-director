@@ -8,6 +8,7 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
@@ -186,7 +187,7 @@ class ConfigController extends ActionController
                 ['class' => 'icon-user', 'data-base-target' => '_self']
             ));
         }
-        if ($this->hasPermission('director/deploy') && ! $this->getBranch()->isBranch()) {
+        if ($this->hasPermission(Permission::DEPLOY) && ! $this->getBranch()->isBranch()) {
             if ($this->db()->hasDeploymentEndpoint()) {
                 $this->actions()->add(DeployConfigForm::load()
                     ->setDb($this->db())
@@ -395,7 +396,7 @@ class ConfigController extends ActionController
             )),
         ]));
 
-        if (! strlen($rightSum) || ! strlen($leftSum)) {
+        if ($rightSum === null || $leftSum === null || ! strlen($rightSum) || ! strlen($leftSum)) {
             return;
         }
         ConfigFileDiffTable::load($leftSum, $rightSum, $this->db())->renderTo($this);
@@ -500,7 +501,7 @@ class ConfigController extends ActionController
     {
         $tabs = $this->tabs();
 
-        if ($this->hasPermission('director/deploy')
+        if ($this->hasPermission(Permission::DEPLOY)
             && $deploymentId = $this->params->get('deployment_id')
         ) {
             $tabs->add('deployment', [
@@ -510,7 +511,7 @@ class ConfigController extends ActionController
             ]);
         }
 
-        if ($this->hasPermission('director/showconfig')) {
+        if ($this->hasPermission(Permission::SHOW_CONFIG)) {
             $tabs->add('config', [
                 'label'     => $this->translate('Config'),
                 'url'       => 'director/config/files',

@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use gipfl\IcingaWeb2\Link;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -82,7 +83,7 @@ class IcingaAddServiceForm extends DirectorObjectForm
                 if ($this->hasBeenSent()) {
                     $this->addError($this->translate('No service has been chosen'));
                 } else {
-                    if ($this->hasPermission('director/admin')) {
+                    if ($this->hasPermission(Permission::ADMIN)) {
                         $html = sprintf(
                             $this->translate('Please define a %s first'),
                             Link::create(
@@ -153,7 +154,11 @@ class IcingaAddServiceForm extends DirectorObjectForm
     public function onSuccess()
     {
         if ($this->host !== null) {
-            $this->object->set('host_id', $this->host->get('id'));
+            if ($id = $this->host->get('id')) {
+                $this->object->set('host_id', $id);
+            } else {
+                $this->object->set('host', $this->host->getObjectName());
+            }
             parent::onSuccess();
             return;
         }

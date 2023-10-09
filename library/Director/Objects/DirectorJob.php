@@ -12,7 +12,7 @@ use Icinga\Module\Director\Hook\JobHook;
 use Exception;
 use InvalidArgumentException;
 
-class DirectorJob extends DbObjectWithSettings implements ExportInterface
+class DirectorJob extends DbObjectWithSettings implements ExportInterface, InstantiatedViaHook
 {
     /** @var JobHook */
     protected $job;
@@ -55,9 +55,18 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
     }
 
     /**
+     * @deprecated please use JobHook::getInstance()
      * @return JobHook
      */
     public function job()
+    {
+        return $this->getInstance();
+    }
+
+    /**
+     * @return JobHook
+     */
+    public function getInstance()
     {
         if ($this->job === null) {
             $class = $this->get('job_class');
@@ -74,7 +83,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
      */
     public function run()
     {
-        $job = $this->job();
+        $job = $this->getInstance();
         $this->set('ts_last_attempt', date('Y-m-d H:i:s'));
 
         try {
@@ -111,6 +120,10 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
     {
         if (! $this->shouldRun()) {
             return false;
+        }
+
+        if ($this->get('ts_last_attempt') === null) {
+            return true;
         }
 
         return (
@@ -185,71 +198,6 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
     }
 
     /**
-     * @return object
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
-    {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
-        unset($plain->timeperiod_id);
-        if ($this->hasTimeperiod()) {
-            $plain->timeperiod = $this->timeperiod()->getObjectName();
-        }
-
-        foreach ($this->stateProperties as $key) {
-            unset($plain->$key);
-        }
-        $plain->settings = $this->job()->exportSettings();
-
-        return $plain;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return DirectorJob
-     * @throws DuplicateKeyException
-     * @throws NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $dummy = new static;
-        $idCol = $dummy->autoincKeyName;
-        $keyCol = $dummy->keyName;
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-        $name = $properties[$keyCol];
-
-        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
-            $object = static::loadWithAutoIncId($id, $db);
-        } elseif ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::exists($name, $db)) {
-            throw new DuplicateKeyException(
-                'Director Job "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        $object->setProperties($properties);
-        if ($id !== null) {
-            $object->reallySet($idCol, $id);
-        }
-
-        return $object;
-    }
-
-    /**
      * @param string $name
      * @param int $id
      * @param Db $connection
@@ -272,9 +220,10 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
     }
 
     /**
+     * @api internal Exporter only
      * @return IcingaTimePeriod
      */
-    protected function timeperiod()
+    public function timeperiod()
     {
         try {
             return IcingaTimePeriod::loadWithAutoIncId($this->get('timeperiod_id'), $this->connection);

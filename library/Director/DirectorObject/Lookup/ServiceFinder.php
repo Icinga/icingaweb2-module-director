@@ -4,15 +4,18 @@ namespace Icinga\Module\Director\DirectorObject\Lookup;
 
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
+use RuntimeException;
 
 class ServiceFinder
 {
     /** @var IcingaHost */
     protected $host;
 
-    /** @var Auth */
+    /** @var ?Auth */
     protected $auth;
 
     /** @var IcingaHost[] */
@@ -24,7 +27,7 @@ class ServiceFinder
     /** @var \Icinga\Module\Director\Db */
     protected $db;
 
-    public function __construct(IcingaHost $host, Auth $auth)
+    public function __construct(IcingaHost $host, Auth $auth = null)
     {
         $this->host = $host;
         $this->auth = $auth;
@@ -55,12 +58,22 @@ class ServiceFinder
      */
     public function getRedirectionUrl($serviceName)
     {
-        if ($this->auth->hasPermission('director/host')) {
+        if ($this->auth === null) {
+            throw new RuntimeException('Auth is required for ServiceFinder when dealing when asking for URLs');
+        }
+        if ($this->auth->hasPermission(Permission::HOSTS)) {
             if ($info = $this::find($this->host, $serviceName)) {
                 return $info->getUrl();
             }
         }
-        if ($this->auth->hasPermission('director/monitoring/services-ro')) {
+        if ($this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
+            if ($info = $this::find($this->host, $serviceName)) {
+                if ((new Monitoring($this->auth))->canModifyServiceByName($this->host->getObjectName(), $serviceName)) {
+                    return $info->getUrl();
+                }
+            }
+        }
+        if ($this->auth->hasPermission(Permission::MONITORING_SERVICES_RO)) {
             return Url::fromPath('director/host/servicesro', [
                 'name'    => $this->host->getObjectName(),
                 'service' => $serviceName

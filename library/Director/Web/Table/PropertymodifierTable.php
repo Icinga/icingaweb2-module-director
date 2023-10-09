@@ -30,6 +30,8 @@ class PropertymodifierTable extends ZfQueryBasedTable
 
     protected $priorityColumn = 'priority';
 
+    protected $readOnly = false;
+
     public static function load(ImportSource $source, Url $url)
     {
         $table = new static($source->getConnection());
@@ -38,8 +40,17 @@ class PropertymodifierTable extends ZfQueryBasedTable
         return $table;
     }
 
+    public function setReadOnly($readOnly = true)
+    {
+        $this->readOnly = $readOnly;
+        return $this;
+    }
+
     public function render()
     {
+        if ($this->readOnly) {
+            return parent::render();
+        }
         return $this->renderWithSortableForm();
     }
 
@@ -82,13 +93,18 @@ class PropertymodifierTable extends ZfQueryBasedTable
             $caption .= ': ' . $row->description;
         }
 
-        return $this->addSortPriorityButtons(
-            $this::row([
-                Link::create($caption, 'director/importsource/editmodifier', [
-                    'id'        => $row->id,
-                    'source_id' => $row->source_id,
-                ]),
+        $renderedRow = $this::row([
+            Link::create($caption, 'director/importsource/editmodifier', [
+                'id'        => $row->id,
+                'source_id' => $row->source_id,
             ]),
+        ]);
+        if ($this->readOnly) {
+            return $renderedRow;
+        }
+
+        return $this->addSortPriorityButtons(
+            $renderedRow,
             $row
         );
     }
@@ -109,6 +125,9 @@ class PropertymodifierTable extends ZfQueryBasedTable
 
     public function getColumnsToBeRendered()
     {
+        if ($this->readOnly) {
+            return [$this->translate('Property')];
+        }
         return [
             $this->translate('Property'),
             $this->getSortPriorityTitle()

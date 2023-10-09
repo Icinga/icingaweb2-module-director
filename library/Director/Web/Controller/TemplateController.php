@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use gipfl\Web\Widget\Hint;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -10,6 +11,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ObjectsTable;
+use Icinga\Module\Director\Web\Table\ObjectsTableSetMembers;
 use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Table\TemplateUsageTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
@@ -22,6 +24,8 @@ use gipfl\IcingaWeb2\CompatController;
 abstract class TemplateController extends CompatController
 {
     use DirectorDb;
+
+    use BranchHelper;
 
     /** @var IcingaObject */
     protected $template;
@@ -41,7 +45,28 @@ abstract class TemplateController extends CompatController
 
         ObjectsTable::create($this->getType(), $this->db())
             ->setAuth($this->Auth())
+            ->setBranch($this->getBranch())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
+            ->filterTemplate($template, $this->getInheritance())
+            ->renderTo($this);
+    }
+
+    public function setmembersAction()
+    {
+        $template = $this->requireTemplate();
+        $plural = $this->getTranslatedPluralType();
+        $this
+            ->addSingleTab($plural)
+            ->setAutorefreshInterval(10)
+            ->addTitle(
+                $this->translate('%s in service sets based on %s'),
+                $plural,
+                $template->getObjectName()
+            )->addBackToUsageLink($template);
+
+        ObjectsTableSetMembers::create($this->getType(), $this->db(), $this->Auth())
+            ->setBaseObjectUrl($this->getBaseObjectUrl())
+            ->setBranch($this->getBranch())
             ->filterTemplate($template, $this->getInheritance())
             ->renderTo($this);
     }
@@ -60,6 +85,7 @@ abstract class TemplateController extends CompatController
 
         ApplyRulesTable::create($type, $this->db())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
+            ->setBranch($this->getBranch())
             ->filterTemplate($template, $this->params->get('inheritance', 'direct'))
             ->renderTo($this);
     }
@@ -93,7 +119,7 @@ abstract class TemplateController extends CompatController
         $this->actions()->add(
             Link::create(
                 $this->translate('Back'),
-                "director/${type}template/usage",
+                "director/{$type}template/usage",
                 ['name' => $template->getObjectName()],
                 ['class' => 'icon-left-big']
             )
@@ -152,7 +178,7 @@ abstract class TemplateController extends CompatController
                 )]
             ));
         }
-        if ($auth->hasPermission('director/admin')) {
+        if ($auth->hasPermission(Permission::ADMIN)) {
             $list->addItem(new FormattedString(
                 $this->translate('Create a new %s inheriting from this one'),
                 [Link::create(
@@ -188,7 +214,7 @@ abstract class TemplateController extends CompatController
 
         try {
             $this->content()->add(
-                TemplateUsageTable::forTemplate($template)
+                TemplateUsageTable::forTemplate($template, $this->getBranch())
             );
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));

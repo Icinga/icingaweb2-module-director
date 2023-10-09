@@ -2,7 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
-use ipl\Html\Form;
+use gipfl\Web\Form;
+use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Data\ObjectImporter;
+use Icinga\Module\Director\Db;
 use ipl\Html\FormDecorator\DdDtDecorator;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Url;
@@ -36,37 +39,30 @@ class CloneSyncRuleForm extends Form
     }
 
     /**
-     * @return \Icinga\Module\Director\Db
-     */
-    protected function getTargetDb()
-    {
-        return $this->rule->getConnection();
-    }
-
-    /**
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     public function onSuccess()
     {
-        $export = $this->rule->export();
+        $db = $this->rule->getConnection();
+        assert($db instanceof Db);
+        $exporter = new Exporter($db);
+
+        $export = $exporter->export($this->rule);
         $newName = $this->getValue('rule_name');
         $export->rule_name = $newName;
-        unset($export->originalId);
+        unset($export->uuid);
 
-        if (SyncRule::existsWithName($newName, $this->getTargetDb())) {
+        if (SyncRule::existsWithName($newName, $db)) {
             $this->getElement('rule_name')->addMessage('Name already exists');
         }
-        $this->newRule = SyncRule::import($export, $this->getTargetDb());
+        $importer = new ObjectImporter($db);
+        $this->newRule = $importer->import(SyncRule::class, $export);
         $this->newRule->store();
     }
 
     public function getSuccessUrl()
     {
-        if ($this->newRule === null) {
-            return parent::getSuccessUrl();
-        } else {
-            return Url::fromPath('director/syncrule', ['id' => $this->newRule->get('id')]);
-        }
+        return Url::fromPath('director/syncrule', ['id' => $this->newRule->get('id')]);
     }
 }

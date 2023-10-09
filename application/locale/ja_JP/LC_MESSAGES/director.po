@@ -1665,7 +1665,7 @@ msgstr "サービスグループを定義すると、より構造がわかりま
 "最適です。 通知と許可はグループに基づいている場合があります。"
 
 #: ../../../../modules/director/application/forms/IcingaNotificationForm.php:196
-msgid "Delay unless the first notification should be sent"
+msgid "Delay until the first notification should be sent"
 msgstr "最初の通知時間"
 
 #: ../../../../modules/director/application/forms/IcingaObjectFieldForm.php:185
@@ -1791,7 +1791,7 @@ msgstr "監視を無効化"
 # smori
 
 #: ../../../../modules/director/application/forms/IcingaDependencyForm.php:164
-msgid "Disable Notificiations"
+msgid "Disable Notifications"
 msgstr "通知を無効化"
 
 #: ../../../../modules/director/application/forms/SettingsForm.php:54
@@ -3058,7 +3058,7 @@ msgstr "マージポリシー"
 
 #: ../../../../modules/director/application/forms/IcingaTimePeriodRangeForm.php:23
 msgid ""
-"Might be, monday, tuesday, 2016-01-28 - have a look at the documentation for "
+"Might be monday, tuesday or 2016-01-28 - have a look at the documentation for "
 "more examples"
 msgstr "monday, tuesday, 2016-01-28といった書式で指定します。"
 "より多くの例についてはドキュメントを見てください"

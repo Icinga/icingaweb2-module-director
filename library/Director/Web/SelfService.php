@@ -155,19 +155,6 @@ class SelfService
                 ['class' => 'logfile'],
                 $wizard->renderIcinga4WindowsWizardCommand($key)
             ),
-            Html::tag('h3', $this->translate('Icinga 2 Powershell Module')),
-            Html::tag('p', Html::sprintf(
-                $this->translate('In case you\'re using the legacy %s, please run:'),
-                Html::tag('a', [
-                    'href'   => 'https://github.com/Icinga/icinga2-powershell-module',
-                    'target' => '_blank',
-                ], $this->translate('Icinga 2 Powershell Module'))
-            )),
-            Html::tag(
-                'pre',
-                ['class' => 'logfile'],
-                $wizard->renderPowershellModuleInstaller($key)
-            ),
         ];
     }
 
@@ -240,8 +227,7 @@ class SelfService
             return;
         }
 
-        // TODO: move to CSS
-        $codeStyle = ['style' => 'background: black; color: white; height: 14em; overflow: scroll;'];
+        $class = ['class' => 'agent-deployment-instructions'];
         $c->add([
             Html::tag('h2', null, $this->translate('For manual configuration')),
             Html::tag('p', null, [$this->translate('Ticket'), ': ', Html::tag('code', null, $ticket)]),
@@ -252,7 +238,7 @@ class SelfService
                 null,
                 ['class' => 'icon-download', 'target' => '_blank']
             ),
-            Html::tag('pre', $codeStyle, $wizard->renderWindowsInstaller()),
+            Html::tag('pre', $class, $wizard->renderWindowsInstaller()),
             Html::tag('p', null, $this->translate(
                 'This requires the Icinga Agent to be installed. It generates and signs'
                 . ' it\'s certificate and it also generates a minimal icinga2.conf to get'
@@ -265,8 +251,9 @@ class SelfService
                 null,
                 ['class' => 'icon-download', 'target' => '_blank']
             ),
+
             Html::tag('p', null, $this->translate('Just download and run this script on your Linux Client Machine:')),
-            Html::tag('pre', $codeStyle, $wizard->renderLinuxInstaller())
+            Html::tag('pre', $class, $wizard->renderLinuxInstaller())
         ]);
     }
 

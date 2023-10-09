@@ -4,8 +4,280 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-next (will be 1.9.0)
+v1.11.0 (unreleased)
 --------------------
+
+This version hasn't been released yet
+
+### UI
+* FEATURE: allow to clone commands with fields (#2264)
+* FEATURE: Data Fields are now sorted in a case-insensitive way (#2358)
+* FEATURE: Data Field search is now case-insensitive (#2359)
+* FEATURE: Deployment Log now breaks lines (#2677)
+* FEATURE: Sort Template trees by name (#2691)
+* FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
+* FEATURE: Show more details for assign filter parsing errors (#2667)
+* FEATURE: Fields from set_if are now being proposed (#514)
+* FIX: do not fail for (some) Service Dependencies (#2669, #1142)
+* FIX: Service Sets can now be searched by Service name in branches too (#2738)
+* FIX: Template usage table had no header (#2780)
+* FIX: Strikethrough for deactivated services in applied Service Set (#2746, #2766)
+* FIX: editing multi-selected services with the same name has been fixed (#2798)
+* FIX: Service Sets table with PostgreSQL (#2799)
+
+### Icinga Configuration
+* FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
+* FEATURE: render host templates to all non-global zones per default (#2410)
+* FIX: render Set Services to individual zones where required (#1589, #2356)
+* FIX: special characters like &amp; and | caused trouble in filters (#2667)
+
+### Import and Sync
+* FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
+* FEATURE: property modifiers can now be applied based on filters (#2756)
+* FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
+* FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
+* FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
+* FIX: Import Source shows available columns for Core API Import (#2763)
+
+# Configuration Baskets
+* FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
+* FIX: basket now shows where to expect changes for lists from snapshots (#2791)
+
+### REST API
+* FIX: Commands give 304 w/o ghost changes for same properties (#2660)
+
+### Permissions and Restrictions
+* FIX: monitoring-related permission checks have been refactored (#2712)
+* FIX: Hostgroup-Filters have not been applied to Overview tables (#2775)
+
+### Configuration Branches
+* FEATURE: with this release, directorbranches v1.3 supports a "default branch" (#2688)
+* FEATURE: users with default branches get warnings in the main branch (#2689)
+* FIX: create a branched set, add services, modify them (#2710)
+
+### Health Check
+* FIX: complaint about overdue jobs was not correct (#2680, #2681)
+
+### Internals
+* FIX: group membership is no longer resolved when not needed (#2048)
+* FEATURE: support PHP 8.2 (#2777, #2792)
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/33?closed=1)
+
+
+v1.10.2
+-------
+
+This is a minor bugfix release, addressing some Sync-related issues: purge for
+objects with uppercase characters now works as expected, automated Sync jobs run
+again, and manually triggered Sync has been fixed on PostgreSQL.
+
+Some UI glitches have been addressed, and a few problems appearing only in
+certain conditions - related to Configuration Baskets, our Self Service REST API
+and the Activity Log.
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/31?closed=1)
+
+### UI
+* FEATURE: improve Service Set table layout (#2648)
+* FIX: modifying single time-period ranges had no effect (#2525)
+* FIX: activity log pagination is now on a single line (#2649)
+
+### Import and Sync
+* FIX: triggering Sync manually produced an error on PostgreSQL (#2636)
+* FIX: purge stopped working for objects with uppercase characters (#2627)
+* FIX: Notification Apply rule is now possible (wasn't since v1.8) (#2142, #2634)
+* FIX: nested property access with intermediate NULL values now gives NULL (#2474, #2584)
+* FIX: automated Sync jobs stopped working (#2633)
+
+### Configuration Baskets
+* FEATURE: more details shown in error messages related to invalid characters (#2646)
+* FIX: snapshots for Baskets containing Baskets failed since v1.10 (#2644)
+
+### REST API
+* FIX: Self Service API returned invalid JSON on PHP 8.1 (#2614)
+
+### Internals
+* FIX: issue with empty activity log, deprecate outdated method (#2630)
+
+v1.10.1
+-------
+
+This is a minor bugfix release, addressing issues with modifying services via
+the monitoring module, Sync problems and a copy and paste error in the DB schema,
+which caused problems for fresh installations since v1.10.
+
+Please note that a long-standing issue for our Sync Rules has been fixed: with
+"merge" policy, NULL properties have been ignored for quite some time. This has
+now been fixed. If in doubt, please **preview** your Sync Rules to make sure,
+that they behave as expected.
+
+This release brings a small schema migration, cleaning up invalid Sync history
+entries. If in doubt, please create a [database backup](05-Upgrading.md#backup-first) first.
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/30?closed=1)
+
+### Import and Sync
+* FIX: sync lower-cased all object names since v1.10 (#2608)
+* FIX: sync for Datalist entries has been fixed (#2618)
+* FIX: Sync now applied NULL values with merge policy (#2623)
+* FIX: Sync created Sync History entries for every preview (#2632)
+* FIX: "Purge" stopped working for Sync (#2627)
+
+### UI
+* FIX: "Modify" Services via the monitoring module (#2615, #2619)
+
+### Configuration Baskets
+* FIX: restore Import/Sync/Job when exported with v1.10 (#2620)
+* FIX: restoring Job with ImportSource or SyncRule (#2528)
+
+### Database Schema
+* FIX: new DB schema failed due to duplicate line in SQL statement (#2609)
+
+v1.10.0
+-------
+
+An advanced **Sync Preview** is one of the features I'd love to highlight in
+v1.10.0. We have been able to leverage our Configuration Branch support as
+an underlying technology for this:
+
+![Sync Preview - List](https://user-images.githubusercontent.com/553008/191472888-33849b3e-9d96-4113-b960-92708769e90d.png)
+
+In case you have lots of changes, you can browse all of them - formerly this
+hasn't been possible. Also, this now allows you to inspect every single upcoming
+change before applying the Sync:
+
+![Sync Preview - Details](https://user-images.githubusercontent.com/553008/191472900-1968691e-a758-4c99-99ce-059bc3689356.png)
+
+This has been possible based on the code we implemented to support the
+[Director Branches](https://icinga.com/docs/icinga-director-branches/latest/)
+module. In case you never heard about it,
+[here](https://icinga.com/blog/2022/07/21/releasing-icinga-director-branches/)
+you can find the related announcement.
+
+This release also contains a lot of related fixes and new Features. It is now
+possible to deal with **Service Sets** in Configuration Branches, the **commit
+remark** can be proposed with a merge request, and the Activity Log shows not
+only who has  merged the change, but also the **original author**.
+
+Powerful new features have been implemented for those who love to orchestrate
+the Director from the outside. Please check our
+[CLI](https://github.com/Icinga/icingaweb2-module-director/blob/v1.10.0/doc/60-CLI.md)
+and [REST API](https://github.com/Icinga/icingaweb2-module-director/blob/v1.10.0/doc/70-REST-API.md)
+documentation for related details, especially look for --with-services (withServices)
+and --allow-overrides (allowOverrides).
+
+CLI now supports **JSON on STDIN**, REST API can request detailed stack traces
+in case an error occurs.
+
+### Breaking Changes
+* Module and system dependencies have been raised, [Upgrading](05-Upgrading.md)
+  and [Installation](02-Installation.md) documentations contain related details
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/27?closed=1)
+
+### User Interface
+* FIX: links from Service Previews (Icinga DSL) to templates (#2554)
+* FIX: daemon health visualization on systems w/o /proc filesystem (#2544)
+
+### Import and Sync
+* FIX: Sync now compares keys in a case-insensitive way (#2598, #2419, #1140)
+* FIX: Sync now preserves Self Service API keys in override mode (#2590)
+* FEATURE: clone a row for nested Dictionary/Hash entries (#2555)
+* FEATURE: Sync in "override" mode now preserves Self Service API keys (#2590)
+* FEATURE: split a row in multiple ones, based on a Dictionary (#2555)
+* FEATURE: it's now possible to sync to a configuration branch (#2552)
+* FEATURE: Sync preview now allows to navigate single changes (#2607)
+
+### Configuration Baskets
+* BREAKING: configuration baskets no longer contain originalId (#2549)
+* FEATURE: exporting/snapshot-logic has been centralized (#2549)
+
+### Configuration Branches
+* FIX: PostgreSQL now allows for the same object in multiple branches (#2605)
+* FEATURE: merge comments can now be proposed (#2604)
+* FEATURE: activity log now shows author and committer (#2606)
+
+### Integrations
+* FIX: Monitoring Hooks are no longer provided with disable Director UI (#2597)
+* FIX: cleanup for IcingaDbCube (#2484)
+
+### Kickstart
+* FIX: breaking change in ipl/html, affected setups with ro INI files (#2595)
+* FEATURE: better explanation for missing DSL bodies fetched from core (#2557)
+
+### REST API
+* FIX: addressing service templates by name has been fixed (#2487)
+* FIX: allow for object_name in body only (#2576)
+* FIX: notice on PHP 8.1 (#2575)
+* FEATURE: Stack traces can now be requested (#2570)
+* FEATURE: Hosts can now be exported with their services (#2568)
+* FEATURE: "magic" variable overrides are now supported (#2569)
+
+### CLI
+* FIX: config deploy doesn't try to wait in case of no deployment (#2522)
+* FIX: renderer now shows full service sets (#2550)
+* FEATURE: improved wording for deployment error messages (#2523)
+* FEATURE: JSON can now be shipped via STDIN (#1570)
+* FEATURE: improved readability for some error messages (#2567)
+* FEATURE: allows showing hosts with their services (#2565)
+* FEATURE: allow showing resolved Host services (#2571)
+* FEATURE: "magic" variable overrides are now supported (#2560)
+* FEATURE: error messages are now friendlier (#2567)
+* FEATURE: STDIN support for --json is now available (#1570)
+
+### Activity Log
+
+* FIX: deleted objects might have been missing related properties (#2559)
+
+### Deployment Log
+* FEATURE: visualization performance has been improved (#2551)
+
+### Internals
+
+* FEATURE: there is now a centralized Exporter implementation (#2549)
+
+1.9.1
+-----
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/28?closed=1)
+
+### User Interface
+* FIX: DataList-backed fields failed to validate (#2475)
+* FIX: No Host list limit when adding a single service globally (#2481)
+* FIX: Cleared activity log caused exception (#2505, #2506)
+* FEATURE: Icinga Web 2.10 dark mode support (#2433)
+
+### Configuration Baskets
+* FIX: failed to export Baskets with Service Sets (#2488)
+* FIX: Sync Rule restore from snapshot on name change (#2467)
+* FIX: Do not export UUIDs with Service Sets (#2488)
+
+### CLI
+* FEATURE: Allow to define deployment grace period on CLI (#2499)
+
+### Integrations
+* FIX: Cleanup IcingaDbCubeLinks (#2484)
+
+### DB Schema
+* FIX: applying DB Schema migrations failed on PostgreSQL (#2482)
+
+1.9.0
+-----
+
+### Breaking Changes
+* Module dependencies have been raised, [Upgrading](05-Upgrading.md) and
+  [Installation](02-Installation.md) documentations contain related details
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
@@ -19,23 +291,41 @@ next (will be 1.9.0)
 
 ### Configuration Baskets
 * FIX: Notification Apply Rules have not been exported (#2335)
+* FIX: Restore now supports the set_if_format switch (#2291)
 * FEATURE: it's now possible to purge objects of specific types (#2201)
 * FEATURE: exporting Users, User-Templates and -Groups is now possible (#2328)
+* FEATURE: Data Field Categories are now supported (#2256)
 
 ### Permissions and Restrictions
 * FEATURE: allow using monitoring module permissions (#2304)
 * FEATURE: it's now possible to grant (global) access to scheduled downtimes (#2086)
+
+### Configuration / Templating
+* FEATURE: offering choices based on a specific imports is now possible (#1178)
 
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)
 * FIX: Links to duplicate services in Sets didn't check for deactivation (#2323)
 * FIX: SQL error for Data Fields table on PostgreSQL (#2310)
 * FIX: SQL error when searching for Data Field Categories (#2367)
+* FIX: Icon used for Notifications has been changed (#2455)
 * FEATURE: show "deprecated" flag on object attribute inspection (#2312)
 * FEATURE: Service Template for single Host services provides auto-completion (#1974)
 
+### CLI
+* FEATURE: config deployment now allows to --wait for an Icinga restart (#2314)
+
+### Activity log
+* FEATURE: Activity log now allows for remarks (addon module required, #2471)
+
 ### Documentation
 * FIX: configure the daemon with main setup instructions (#2296, #2320)
+
+### Internals
+* FEATURE: PHP 8.1 is now supported, works once available in Icinga Web (#2435)
+* FEATURE: Config Branches have been implemented, leveraged via Hook/Addon (#2376)
+* FEATURE: UUIDs have been implemented for most Icinga objects, more to come
+* FEATURE: new Deployment Hook, triggers onCollect(ing) Icinga startup info (#2315)
 
 1.8.1
 -----

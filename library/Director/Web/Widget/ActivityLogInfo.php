@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use gipfl\Diff\HtmlRenderer\SideBySideDiff;
-use gipfl\Diff\PhpDiff;
+use gipfl\Json\JsonString;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use Icinga\Date\DateFormatter;
@@ -21,7 +21,6 @@ use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\IcingaWeb2\Widget\Tabs;
-use ipl\Html\ValidHtml;
 
 class ActivityLogInfo extends HtmlDocument
 {
@@ -223,7 +222,7 @@ class ActivityLogInfo extends HtmlDocument
     {
         if ($this->oldProperties === null) {
             if (property_exists($this->entry, 'old_properties')) {
-                $this->oldProperties = json_decode($this->entry->old_properties);
+                $this->oldProperties = JsonString::decodeOptional($this->entry->old_properties);
             }
             if ($this->oldProperties === null) {
                 $this->oldProperties = new \stdClass;
@@ -237,7 +236,7 @@ class ActivityLogInfo extends HtmlDocument
     {
         if ($this->newProperties === null) {
             if (property_exists($this->entry, 'new_properties')) {
-                $this->newProperties = json_decode($this->entry->new_properties);
+                $this->newProperties = JsonString::decodeOptional($this->entry->new_properties);
             }
             if ($this->newProperties === null) {
                 $this->newProperties = new \stdClass;
@@ -345,7 +344,6 @@ class ActivityLogInfo extends HtmlDocument
     /**
      * @param Url|null $url
      * @return Tabs
-     * @throws ProgrammingError
      */
     public function getTabs(Url $url = null)
     {
@@ -359,13 +357,12 @@ class ActivityLogInfo extends HtmlDocument
     /**
      * @param Url $url
      * @return Tabs
-     * @throws ProgrammingError
      */
     public function createTabs(Url $url)
     {
         $entry = $this->entry;
         $tabs = new Tabs();
-        if ($entry->action_name === 'modify') {
+        if ($entry->action_name === DirectorActivityLog::ACTION_MODIFY) {
             $tabs->add('diff', [
                 'label' => $this->translate('Diff'),
                 'url'   => $url->without('show')->with('id', $entry->id)
@@ -374,7 +371,10 @@ class ActivityLogInfo extends HtmlDocument
             $this->defaultTab = 'diff';
         }
 
-        if (in_array($entry->action_name, ['create', 'modify'])) {
+        if (in_array($entry->action_name, [
+            DirectorActivityLog::ACTION_CREATE,
+            DirectorActivityLog::ACTION_MODIFY,
+        ])) {
             $tabs->add('new', [
                 'label' => $this->translate('New object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'new'])
@@ -385,7 +385,10 @@ class ActivityLogInfo extends HtmlDocument
             }
         }
 
-        if (in_array($entry->action_name, ['delete', 'modify'])) {
+        if (in_array($entry->action_name, [
+            DirectorActivityLog::ACTION_DELETE,
+            DirectorActivityLog::ACTION_MODIFY,
+        ])) {
             $tabs->add('old', [
                 'label' => $this->translate('Former object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'old'])
@@ -524,6 +527,13 @@ class ActivityLogInfo extends HtmlDocument
             );
         }
 
+        if ($comment = $this->getOptionalRangeComment()) {
+            $table->addNameValueRow(
+                $this->translate('Remark'),
+                $comment
+            );
+        }
+
         if ($this->hasBeenEnabled()) {
             $table->addNameValueRow(
                 $this->translate('Rendering'),
@@ -567,13 +577,13 @@ class ActivityLogInfo extends HtmlDocument
     public function getTitle()
     {
         switch ($this->entry->action_name) {
-            case 'create':
+            case DirectorActivityLog::ACTION_CREATE:
                 $msg = $this->translate('%s "%s" has been created');
                 break;
-            case 'delete':
+            case DirectorActivityLog::ACTION_DELETE:
                 $msg = $this->translate('%s "%s" has been deleted');
                 break;
-            case 'modify':
+            case DirectorActivityLog::ACTION_MODIFY:
                 $msg = $this->translate('%s "%s" has been modified');
                 break;
             default:
@@ -584,6 +594,21 @@ class ActivityLogInfo extends HtmlDocument
         }
 
         return sprintf($msg, $this->typeName, $this->entry->object_name);
+    }
+
+    protected function getOptionalRangeComment()
+    {
+        if ($this->id) {
+            $db = $this->db->getDbAdapter();
+            return $db->fetchOne(
+                $db->select()
+                    ->from('director_activity_log_remark', 'remark')
+                    ->where('first_related_activity <= ?', $this->id)
+                    ->where('last_related_activity >= ?', $this->id)
+            );
+        }
+
+        return null;
     }
 
     /**

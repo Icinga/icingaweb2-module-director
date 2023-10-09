@@ -14,6 +14,7 @@ use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
+use Ramsey\Uuid\Uuid;
 use Zend_Db_Select as ZfSelect;
 
 class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
@@ -35,8 +36,8 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
     {
         $type = $this->type;
         $this->enableMultiSelect(
-            "director/${type}s/edittemplates",
-            "director/${type}template",
+            "director/{$type}s/edittemplates",
+            "director/{$type}template",
             ['name']
         );
     }
@@ -64,7 +65,7 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
             )
         ];
 
-        $url = Url::fromPath("director/${type}template/usage", [
+        $url = Url::fromPath("director/{$type}template/usage", [
             'name' => $name
         ]);
 
@@ -76,7 +77,7 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
                     'imports' => $name
                 ]),
                 new Link(new Icon('history'), "director/$type/history", [
-                    'name' => $name
+                    'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
                 ])
             ]
         ]);
@@ -100,8 +101,8 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
     {
         $type = $this->getType();
         $this->getQuery()->where(
-            "(EXISTS (SELECT ${type}_id FROM icinga_${type}_inheritance"
-            . " WHERE parent_${type}_id = o.id))"
+            "(EXISTS (SELECT {$type}_id FROM icinga_{$type}_inheritance"
+            . " WHERE parent_{$type}_id = o.id))"
         );
     }
 
@@ -109,8 +110,8 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
     {
         $type = $this->getType();
         $this->getQuery()->where(
-            "(NOT EXISTS (SELECT ${type}_id FROM icinga_${type}_inheritance"
-            . " WHERE parent_${type}_id = o.id))"
+            "(NOT EXISTS (SELECT {$type}_id FROM icinga_{$type}_inheritance"
+            . " WHERE parent_{$type}_id = o.id))"
         );
     }
 
@@ -134,16 +135,17 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
     protected function prepareQuery()
     {
         $type = $this->getType();
-        $used = "CASE WHEN EXISTS(SELECT 1 FROM icinga_${type}_inheritance oi"
-            . " WHERE oi.parent_${type}_id = o.id) THEN 'y' ELSE 'n' END";
+        $used = "CASE WHEN EXISTS(SELECT 1 FROM icinga_{$type}_inheritance oi"
+            . " WHERE oi.parent_{$type}_id = o.id) THEN 'y' ELSE 'n' END";
 
         $columns = [
             'object_name' => 'o.object_name',
+            'uuid'    => 'o.uuid',
             'id'      => 'o.id',
             'is_used' => $used,
         ];
         $query = $this->db()->select()->from(
-            ['o' => "icinga_${type}"],
+            ['o' => "icinga_{$type}"],
             $columns
         )->where(
             "o.object_type = 'template'"

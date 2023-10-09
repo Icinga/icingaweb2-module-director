@@ -43,12 +43,13 @@ class SyncRule extends DbObject implements ExportInterface
         'last_attempt',
     ];
 
+    protected $booleans = [
+        'purge_existing' => 'purge_existing',
+    ];
+
     private $sync;
 
     private $purgeStrategy;
-
-    /** @var  int */
-    private $currentSyncRunId;
 
     private $filter;
 
@@ -62,8 +63,6 @@ class SyncRule extends DbObject implements ExportInterface
     private $destinationKeyPattern;
 
     private $newSyncProperties;
-
-    private $originalId;
 
     public function listInvolvedSourceIds()
     {
@@ -161,7 +160,6 @@ class SyncRule extends DbObject implements ExportInterface
                 if ($apply && $runId = $sync->apply()) {
                     Benchmark::measure('Successfully synced rule ' . $this->get('rule_name'));
                     $this->set('sync_state', 'in-sync');
-                    $this->currentSyncRunId = $runId;
                 }
 
                 $hadChanges = true;
@@ -200,11 +198,6 @@ class SyncRule extends DbObject implements ExportInterface
     public function applyChanges()
     {
         return $this->checkForChanges(true);
-    }
-
-    public function getCurrentSyncRunId()
-    {
-        return $this->currentSyncRunId;
     }
 
     public function getSourceKeyPattern()
@@ -265,62 +258,14 @@ class SyncRule extends DbObject implements ExportInterface
         }
     }
 
-    public function export()
-    {
-        $plain = $this->getProperties();
-        $plain['originalId'] = $plain['id'];
-        unset($plain['id']);
-
-        foreach ($this->stateProperties as $key) {
-            unset($plain[$key]);
-        }
-        $plain['properties'] = $this->exportSyncProperties();
-        ksort($plain);
-
-        return (object) $plain;
-    }
-
     /**
-     * @param object $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return static
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
+     * Flat object has 'properties', but setProperties() is not available in DbObject
+     *
+     * @return void
      */
-    public static function import($plain, Db $db, $replace = false)
+    public function setSyncProperties(?array $value)
     {
-        $properties = (array) $plain;
-        if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
-            unset($properties['originalId']);
-        } else {
-            $id = null;
-        }
-        $name = $properties['rule_name'];
-
-        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
-            $object = static::loadWithAutoIncId($id, $db);
-        } elseif ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::existsWithName($name, $db)) {
-            throw new DuplicateKeyException(
-                'Sync Rule %s already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        $object->newSyncProperties = $properties['properties'];
-        unset($properties['properties']);
-        $object->setProperties($properties);
-        if ($id !== null && (int) $id !== (int) $object->get('id')) {
-            $object->originalId = $object->get('id');
-            $object->reallySet('id', $id);
-        }
-
-        return $object;
+        $this->newSyncProperties = $value;
     }
 
     public function getUniqueIdentifier()
@@ -338,12 +283,6 @@ class SyncRule extends DbObject implements ExportInterface
             $connection = $this->getConnection();
             $db = $connection->getDbAdapter();
             $myId = $this->get('id');
-            if ($this->originalId === null) {
-                $originalId = $myId;
-            } else {
-                $originalId = $this->originalId;
-                $this->originalId = null;
-            }
             if ($this->hasBeenLoadedFromDb()) {
                 $db->delete(
                     'sync_property',
@@ -360,7 +299,11 @@ class SyncRule extends DbObject implements ExportInterface
         }
     }
 
-    public function exportSyncProperties()
+    /**
+     * @deprecated
+     * @return array
+     */
+    protected function exportSyncProperties()
     {
         $all = [];
         $db = $this->getDb();

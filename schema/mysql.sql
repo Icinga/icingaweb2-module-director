@@ -49,6 +49,23 @@ CREATE TABLE director_activity_log (
   INDEX checksum (checksum)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE director_activity_log_remark (
+  first_related_activity BIGINT(20) UNSIGNED NOT NULL,
+  last_related_activity BIGINT(20) UNSIGNED NOT NULL,
+  remark TEXT NOT NULL,
+  PRIMARY KEY (first_related_activity, last_related_activity),
+  CONSTRAINT activity_log_remark_begin
+    FOREIGN KEY first_related_activity (first_related_activity)
+      REFERENCES director_activity_log (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT activity_log_remark_end
+    FOREIGN KEY last_related_activity (last_related_activity)
+      REFERENCES director_activity_log (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE director_basket (
   uuid VARBINARY(16) NOT NULL,
   basket_name VARCHAR(64) NOT NULL,
@@ -150,6 +167,7 @@ CREATE TABLE director_deployment_log (
   username VARCHAR(64) DEFAULT NULL COMMENT 'The user that triggered this deployment',
   startup_log MEDIUMTEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  INDEX (start_time),
   CONSTRAINT config_checksum
     FOREIGN KEY config_checksum (config_checksum)
     REFERENCES director_generated_config (checksum)
@@ -159,6 +177,7 @@ CREATE TABLE director_deployment_log (
 
 CREATE TABLE director_datalist (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   list_name VARCHAR(255) NOT NULL,
   owner VARCHAR(255) NOT NULL,
   PRIMARY KEY (id),
@@ -189,6 +208,7 @@ CREATE TABLE director_datafield_category (
 
 CREATE TABLE director_datafield (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   category_id INT(10) UNSIGNED DEFAULT NULL,
   varname VARCHAR(64) NOT NULL COLLATE utf8_bin,
   caption VARCHAR(255) NOT NULL,
@@ -656,12 +676,14 @@ ALTER TABLE icinga_host_template_choice
 
 CREATE TABLE icinga_service_set (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(128) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
   description TEXT DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_set_host
     FOREIGN KEY host (host_id)
@@ -1240,6 +1262,8 @@ CREATE TABLE icinga_notification (
   command_id INT(10) UNSIGNED DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  users_var VARCHAR(255) DEFAULT NULL,
+  user_groups_var VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
@@ -1435,6 +1459,7 @@ CREATE TABLE import_row_modifier (
   target_property VARCHAR(255) DEFAULT NULL,
   provider_class VARCHAR(128) NOT NULL,
   priority SMALLINT UNSIGNED NOT NULL,
+  filter_expression TEXT DEFAULT NULL,
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   KEY search_idx (property_name),
@@ -1982,7 +2007,7 @@ CREATE TABLE branched_icinga_host (
   api_key VARCHAR(40) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
-  groups TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -2089,7 +2114,7 @@ CREATE TABLE branched_icinga_user (
   types TEXT DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
-  groups TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -2276,13 +2301,37 @@ CREATE TABLE branched_icinga_service (
   -- template_choice VARCHAR(255) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
-  groups TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
   INDEX search_object_name (object_name),
   INDEX search_display_name (display_name),
   CONSTRAINT icinga_service_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_service_set (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(128) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  host VARCHAR(255) DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_service_set_branch
     FOREIGN KEY branch (branch_uuid)
     REFERENCES director_branch (uuid)
     ON DELETE CASCADE
@@ -2307,6 +2356,8 @@ CREATE TABLE branched_icinga_notification (
   command VARCHAR(255) DEFAULT NULL,
   period VARCHAR(255) DEFAULT NULL,
   zone VARCHAR(255) DEFAULT NULL,
+  users_var VARCHAR(255) DEFAULT NULL,
+  user_groups_var VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
 
   states TEXT DEFAULT NULL,
@@ -2395,4 +2446,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (176, NOW());
+  VALUES (187, NOW());

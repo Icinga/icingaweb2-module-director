@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Exception;
+use gipfl\Json\JsonString;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
@@ -36,7 +37,7 @@ abstract class RequestHandler
     {
         $this->response->setHeader('Content-Type', 'application/json', true);
         $this->response->sendHeaders();
-        echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
+        echo JsonString::encode($object, JSON_PRETTY_PRINT) . "\n";
     }
 
     public function sendJsonError($error, $code = null)
@@ -57,7 +58,11 @@ abstract class RequestHandler
         }
 
         $response->sendHeaders();
-        $this->sendJson((object) ['error' => $message]);
+        $result = ['error' => $message];
+        if ($this->request->getUrl()->getParam('showStacktrace')) {
+            $result['trace'] = $error->getTraceAsString();
+        }
+        $this->sendJson((object) $result);
     }
 
     // TODO: just return json_last_error_msg() for PHP >= 5.5.0

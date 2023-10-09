@@ -11,15 +11,15 @@ class ExtensibleSet
 {
     protected $ownValues;
 
-    protected $plusValues = array();
+    protected $plusValues = [];
 
-    protected $minusValues = array();
+    protected $minusValues = [];
 
     protected $resolvedValues;
 
     protected $allowedValues;
 
-    protected $inheritedValues = array();
+    protected $inheritedValues = [];
 
     protected $fromDb;
 
@@ -50,7 +50,7 @@ class ExtensibleSet
         $set->object = $object;
         $set->propertyName = $propertyName;
 
-        if ($object->hasBeenLoadedFromDb()) {
+        if ($object->hasBeenLoadedFromDb() && $id = $object->get('id')) {
             $set->loadFromDb();
         }
 
@@ -69,7 +69,7 @@ class ExtensibleSet
         } elseif (is_object($set)) {
             $this->reset();
 
-            foreach (array('override', 'extend', 'blacklist') as $method) {
+            foreach (['override', 'extend', 'blacklist'] as $method) {
                 if (property_exists($set, $method)) {
                     $this->$method($set->$method);
                 }
@@ -98,7 +98,7 @@ class ExtensibleSet
             }
         }
 
-        $plain = (object) array();
+        $plain = (object) [];
 
         if ($this->ownValues !== null) {
             $plain->override = $this->ownValues;
@@ -127,7 +127,7 @@ class ExtensibleSet
             }
         }
 
-        $plain = (object) array();
+        $plain = (object) [];
 
         if ($old['override'] !== null) {
             $plain->override = $old['override'];
@@ -179,19 +179,16 @@ class ExtensibleSet
     {
         $db = $this->object->getDb();
 
-        $query = $db->select()->from(
-            $this->tableName(),
-            array(
-                'property',
-                'merge_behaviour'
-            )
-        )->where($this->foreignKey() . ' = ?', $this->object->get('id'));
+        $query = $db->select()->from($this->tableName(), [
+            'property',
+            'merge_behaviour'
+        ])->where($this->foreignKey() . ' = ?', $this->object->get('id'));
 
-        $byBehaviour = array(
-            'override'  => array(),
-            'extend'    => array(),
-            'blacklist' => array(),
-        );
+        $byBehaviour = [
+            'override'  => [],
+            'extend'    => [],
+            'blacklist' => [],
+        ];
 
         foreach ($db->fetchAll($query) as $row) {
             if (! array_key_exists($row->merge_behaviour, $byBehaviour)) {
@@ -229,11 +226,11 @@ class ExtensibleSet
 
     protected function tableName()
     {
-        return implode('_', array(
+        return implode('_', [
             $this->object->getTableName(),
             $this->propertyName,
             'set'
-        ));
+        ]);
     }
 
     public function getObject()
@@ -268,9 +265,9 @@ class ExtensibleSet
         }
 
         $table = $this->tableName();
-        $props = array(
+        $props = [
             $this->foreignKey() => $this->object->get('id')
-        );
+        ];
 
         $db->delete(
             $this->tableName(),
@@ -285,7 +282,7 @@ class ExtensibleSet
             foreach ($this->ownValues as $value) {
                 $db->insert(
                     $table,
-                    array_merge($props, array('property' => $value))
+                    array_merge($props, ['property' => $value])
                 );
             }
         }
@@ -295,7 +292,7 @@ class ExtensibleSet
             foreach ($this->plusValues as $value) {
                 $db->insert(
                     $table,
-                    array_merge($props, array('property' => $value))
+                    array_merge($props, ['property' => $value])
                 );
             }
         }
@@ -305,7 +302,7 @@ class ExtensibleSet
             foreach ($this->minusValues as $value) {
                 $db->insert(
                     $table,
-                    array_merge($props, array('property' => $value))
+                    array_merge($props, ['property' => $value])
                 );
             }
         }
@@ -324,8 +321,8 @@ class ExtensibleSet
 
     public function override($values)
     {
-        $this->ownValues       = array();
-        $this->inheritedValues = array();
+        $this->ownValues       = [];
+        $this->inheritedValues = [];
 
         $this->addValuesTo($this->ownValues, $values);
 
@@ -370,7 +367,7 @@ class ExtensibleSet
             $this->resolvedValues = null;
         }
 
-        $this->inheritedValues = array();
+        $this->inheritedValues = [];
 
         $this->addValuesTo(
             $this->inheritedValues,
@@ -382,13 +379,13 @@ class ExtensibleSet
 
     public function forgetInheritedValues()
     {
-        $this->inheritedValues = array();
+        $this->inheritedValues = [];
         return $this;
     }
 
     protected function renderArray($array)
     {
-        $safe = array();
+        $safe = [];
         foreach ($array as $value) {
             $safe[] = c::alreadyRendered($value);
         }
@@ -398,7 +395,7 @@ class ExtensibleSet
 
     public function renderAs($key, $prefix = '    ')
     {
-        $parts = array();
+        $parts = [];
 
         // TODO: It would be nice if we could use empty arrays to override
         //       inherited ones
@@ -446,7 +443,7 @@ class ExtensibleSet
         }
 
         if (empty($this->allowedValues)) {
-            return array();
+            return [];
         }
 
         return array_combine($this->allowedValues, $this->allowedValues);
@@ -498,7 +495,7 @@ class ExtensibleSet
     protected function addResolvedValues($values)
     {
         if (! $this->hasBeenResolved()) {
-            $this->resolvedValues  = array();
+            $this->resolvedValues  = [];
         }
 
         return $this->addValuesTo(
@@ -537,7 +534,7 @@ class ExtensibleSet
 
     protected function recalculate()
     {
-        $this->resolvedValues = array();
+        $this->resolvedValues = [];
 
         if ($this->ownValues === null) {
             $this->addValuesTo($this->resolvedValues, $this->inheritedValues);
@@ -553,10 +550,10 @@ class ExtensibleSet
     protected function reset()
     {
         $this->ownValues = null;
-        $this->plusValues = array();
-        $this->minusValues = array();
+        $this->plusValues = [];
+        $this->minusValues = [];
         $this->resolvedValues = null;
-        $this->inheritedValues = array();
+        $this->inheritedValues = [];
 
         return $this;
     }
@@ -572,6 +569,6 @@ class ExtensibleSet
             return $values;
         }
 
-        return array($values);
+        return [$values];
     }
 }

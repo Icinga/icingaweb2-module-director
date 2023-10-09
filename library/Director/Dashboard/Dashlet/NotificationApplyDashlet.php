@@ -2,9 +2,11 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class NotificationApplyDashlet extends Dashlet
 {
-    protected $icon = 'megaphone';
+    protected $icon = 'bell';
 
     protected $requiredStats = array('notification');
 
@@ -16,9 +18,8 @@ class NotificationApplyDashlet extends Dashlet
     public function getSummary()
     {
         return $this->translate(
-            'Apply notifications with specific properties according to given'
-            . ' rules.' . ' ' . $this->getApplySummaryText('notification')
-        );
+            'Apply notifications with specific properties according to given rules.'
+        )  . ' ' . $this->getApplySummaryText('notification');
     }
 
     public function shouldBeShown()
@@ -28,7 +29,7 @@ class NotificationApplyDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/notifications');
+        return [Permission::NOTIFICATIONS];
     }
 
     public function getUrl()

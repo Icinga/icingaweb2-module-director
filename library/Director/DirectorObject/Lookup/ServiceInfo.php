@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\DirectorObject\Lookup;
 
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Ramsey\Uuid\UuidInterface;
 
 interface ServiceInfo
 {
@@ -25,6 +26,11 @@ interface ServiceInfo
      * @return Url
      */
     public function getUrl();
+
+    /**
+     * @return UuidInterface
+     */
+    public function getUuid();
 
     /**
      * @return bool

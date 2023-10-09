@@ -7,6 +7,8 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * A Service Apply Rule matching this Host, generating a Service with the given
@@ -23,11 +25,15 @@ class AppliedServiceInfo implements ServiceInfo
     /** @var int */
     protected $serviceApplyRuleId;
 
-    public function __construct($hostName, $serviceName, $serviceApplyRuleId)
+    /** @var UuidInterface */
+    protected $uuid;
+
+    public function __construct($hostName, $serviceName, $serviceApplyRuleId, UuidInterface $uuid)
     {
         $this->hostName = $hostName;
         $this->serviceName= $serviceName;
         $this->serviceApplyRuleId = $serviceApplyRuleId;
+        $this->uuid = $uuid;
     }
 
     public static function find(IcingaHost $host, $serviceName)
@@ -36,7 +42,7 @@ class AppliedServiceInfo implements ServiceInfo
         $connection = $host->getConnection();
         foreach (static::fetchApplyRulesByServiceName($connection, $serviceName) as $rule) {
             if ($matcher->matchesFilter($rule->filter)) {
-                return new static($host->getObjectName(), $serviceName, (int) $rule->id);
+                return new static($host->getObjectName(), $serviceName, (int) $rule->id, $rule->uuid);
             }
         }
 
@@ -61,6 +67,11 @@ class AppliedServiceInfo implements ServiceInfo
         return $this->serviceName;
     }
 
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
     public function getUrl()
     {
         return Url::fromPath('director/host/appliedservice', [
@@ -80,6 +91,7 @@ class AppliedServiceInfo implements ServiceInfo
         $query = $db->select()
             ->from(['s' => 'icinga_service'], [
                 'id'            => 's.id',
+                'uuid'          => 's.uuid',
                 'name'          => 's.object_name',
                 'assign_filter' => 's.assign_filter',
             ])
@@ -88,6 +100,7 @@ class AppliedServiceInfo implements ServiceInfo
 
         $allRules = $db->fetchAll($query);
         foreach ($allRules as $rule) {
+            $rule->uuid = Uuid::fromBytes(Db\DbUtil::binaryResult($rule->uuid));
             $rule->filter = Filter::fromQueryString($rule->assign_filter);
         }
 

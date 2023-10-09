@@ -97,6 +97,26 @@ CREATE INDEX activity_log_author ON director_activity_log (author);
 COMMENT ON COLUMN director_activity_log.old_properties IS 'Property hash, JSON';
 COMMENT ON COLUMN director_activity_log.new_properties IS 'Property hash, JSON';
 
+CREATE TABLE director_activity_log_remark (
+  first_related_activity bigint NOT NULL,
+  last_related_activity bigint NOT NULL,
+  remark TEXT NOT NULL,
+  PRIMARY KEY (first_related_activity, last_related_activity),
+  CONSTRAINT activity_log_remark_begin
+    FOREIGN KEY (first_related_activity)
+      REFERENCES director_activity_log (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT activity_log_remark_end
+    FOREIGN KEY (last_related_activity)
+      REFERENCES director_activity_log (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
+CREATE INDEX first_related_activity ON director_activity_log_remark (first_related_activity);
+CREATE INDEX last_related_activity ON director_activity_log_remark (last_related_activity);
+
 
 CREATE TABLE director_basket (
   uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
@@ -221,9 +241,12 @@ COMMENT ON COLUMN director_deployment_log.duration_connection IS 'The time it to
 COMMENT ON COLUMN director_deployment_log.duration_dump IS 'Time spent dumping the config (ms)';
 COMMENT ON COLUMN director_deployment_log.username IS 'The user that triggered this deployment';
 
+CREATE INDEX start_time_idx ON director_deployment_log (start_time);
+
 
 CREATE TABLE director_datalist (
   id serial,
+  uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
   list_name character varying(255) NOT NULL,
   owner character varying(255) NOT NULL,
   PRIMARY KEY (id)
@@ -261,6 +284,7 @@ CREATE UNIQUE INDEX datafield_category_name ON director_datafield_category (cate
 
 CREATE TABLE director_datafield (
   id serial,
+  uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
   category_id integer DEFAULT NULL,
   varname character varying(64) NOT NULL,
   caption character varying(255) NOT NULL,
@@ -326,7 +350,6 @@ CREATE TABLE icinga_zone (
 );
 
 CREATE INDEX zone_parent ON icinga_zone (parent_id);
-CREATE UNIQUE INDEX zone_uuid ON icinga_zone (uuid);
 
 
 CREATE TABLE icinga_zone_inheritance (
@@ -369,7 +392,6 @@ CREATE TABLE icinga_timeperiod (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX timeperiod_uuid ON icinga_timeperiod (uuid);
 CREATE UNIQUE INDEX timeperiod_object_name ON icinga_timeperiod (object_name, zone_id);
 CREATE INDEX timeperiod_zone ON icinga_timeperiod (zone_id);
 COMMENT ON COLUMN icinga_timeperiod.update_method IS 'Usually LegacyTimePeriod';
@@ -475,7 +497,6 @@ CREATE TABLE icinga_command (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX command_uuid ON icinga_command (uuid);
 CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name);
 CREATE INDEX command_zone ON icinga_command (zone_id);
 COMMENT ON COLUMN icinga_command.object_type IS 'external_object is an attempt to work with existing commands';
@@ -583,7 +604,6 @@ CREATE TABLE icinga_apiuser (
   PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX apiuser_uuid ON icinga_apiuser (uuid);
 COMMENT ON COLUMN icinga_apiuser.permissions IS 'JSON-encoded permissions';
 
 
@@ -611,7 +631,6 @@ CREATE TABLE icinga_endpoint (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX endpoint_uuid ON icinga_endpoint (uuid);
 CREATE UNIQUE INDEX endpoint_object_name ON icinga_endpoint (object_name);
 CREATE INDEX endpoint_zone ON icinga_endpoint (zone_id);
 COMMENT ON COLUMN icinga_endpoint.host IS 'IP address / hostname of remote node';
@@ -727,7 +746,6 @@ CREATE TABLE icinga_host (
 );
 
 
-CREATE UNIQUE INDEX host_uuid ON icinga_host (uuid);
 CREATE UNIQUE INDEX object_name_host ON icinga_host (object_name, zone_id);
 CREATE UNIQUE INDEX host_api_key ON icinga_host (api_key);
 CREATE INDEX host_zone ON icinga_host (zone_id);
@@ -813,6 +831,7 @@ ALTER TABLE icinga_host_template_choice
 
 CREATE TABLE icinga_service_set (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   host_id integer DEFAULT NULL,
   object_name character varying(128) NOT NULL,
   object_type enum_object_type_all NOT NULL,
@@ -926,7 +945,6 @@ CREATE TABLE icinga_service (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX service_uuid ON icinga_service (uuid);
 CREATE INDEX service_zone ON icinga_service (zone_id);
 CREATE INDEX service_timeperiod ON icinga_service (check_period_id);
 CREATE INDEX service_check_command ON icinga_service (check_command_id);
@@ -1100,7 +1118,6 @@ CREATE TABLE icinga_hostgroup (
   PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX hostgroup_uuid ON icinga_hostgroup (uuid);
 CREATE UNIQUE INDEX hostgroup_object_name ON icinga_hostgroup (object_name);
 CREATE INDEX hostgroup_search_idx ON icinga_hostgroup (display_name);
 
@@ -1139,7 +1156,6 @@ CREATE TABLE icinga_servicegroup (
   PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX servicegroup_uuid ON icinga_servicegroup (uuid);
 CREATE UNIQUE INDEX servicegroup_object_name ON icinga_servicegroup (object_name);
 CREATE INDEX servicegroup_search_idx ON icinga_servicegroup (display_name);
 
@@ -1290,7 +1306,6 @@ CREATE TABLE icinga_user (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX user_uuid ON icinga_user (uuid);
 CREATE UNIQUE INDEX user_object_name ON icinga_user (object_name, zone_id);
 CREATE INDEX user_zone ON icinga_user (zone_id);
 
@@ -1408,7 +1423,6 @@ CREATE TABLE icinga_usergroup (
       ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX usergroup_uuid ON icinga_usergroup (uuid);
 CREATE UNIQUE INDEX usergroup_search_idx ON icinga_usergroup (display_name);
 CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name);
 CREATE INDEX usergroup_zone ON icinga_usergroup (zone_id);
@@ -1491,6 +1505,8 @@ CREATE TABLE icinga_notification (
   command_id integer DEFAULT NULL,
   period_id integer DEFAULT NULL,
   zone_id integer DEFAULT NULL,
+  users_var character varying(255) DEFAULT NULL,
+  user_groups_var character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_notification_host
@@ -1519,8 +1535,6 @@ CREATE TABLE icinga_notification (
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
-
-CREATE UNIQUE INDEX notification_uuid ON icinga_notification (uuid);
 
 
 CREATE TABLE icinga_notification_user (
@@ -1594,6 +1608,7 @@ CREATE TABLE import_row_modifier (
   target_property character varying(255) DEFAULT NULL,
   provider_class character varying(128) NOT NULL,
   priority integer NOT NULL,
+  filter_expression text DEFAULT NULL,
   description text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT row_modifier_import_source
@@ -2080,7 +2095,6 @@ CREATE TABLE icinga_dependency (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX dependency_uuid ON icinga_dependency (uuid);
 CREATE INDEX dependency_parent_host ON icinga_dependency (parent_host_id);
 CREATE INDEX dependency_parent_service ON icinga_dependency (parent_service_id);
 CREATE INDEX dependency_child_host ON icinga_dependency (child_host_id);
@@ -2181,7 +2195,6 @@ CREATE TABLE icinga_scheduled_downtime (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX scheduled_downtime_uuid ON icinga_scheduled_downtime (uuid);
 CREATE UNIQUE INDEX scheduled_downtime_object_name ON icinga_scheduled_downtime (object_name);
 CREATE INDEX scheduled_downtime_zone ON icinga_scheduled_downtime (zone_id);
 
@@ -2262,7 +2275,7 @@ CREATE INDEX branch_activity_branch_uuid ON director_branch_activity (branch_uui
 
 
 CREATE TABLE branched_icinga_host (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2322,7 +2335,7 @@ CREATE INDEX branched_host_search_display_name ON branched_icinga_host (display_
 
 
 CREATE TABLE branched_icinga_hostgroup (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2347,7 +2360,7 @@ CREATE INDEX branched_hostgroup_search_display_name ON branched_icinga_hostgroup
 
 
 CREATE TABLE branched_icinga_servicegroup (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2372,7 +2385,7 @@ CREATE INDEX branched_servicegroup_search_display_name ON branched_icinga_servic
 
 
 CREATE TABLE branched_icinga_usergroup (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2397,7 +2410,7 @@ CREATE INDEX branched_usergroup_search_display_name ON branched_icinga_usergroup
 
 
 CREATE TABLE branched_icinga_user (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2430,7 +2443,7 @@ CREATE INDEX branched_user_search_display_name ON branched_icinga_user (display_
 
 
 CREATE TABLE branched_icinga_zone (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2456,7 +2469,7 @@ CREATE INDEX branched_zone_search_object_name ON branched_icinga_zone (object_na
 
 
 CREATE TABLE branched_icinga_timeperiod (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2486,7 +2499,7 @@ CREATE INDEX branched_timeperiod_search_display_name ON branched_icinga_timeperi
 
 
 CREATE TABLE branched_icinga_command (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2517,7 +2530,7 @@ CREATE INDEX branched_command_search_object_name ON branched_icinga_command (obj
 
 
 CREATE TABLE branched_icinga_apiuser (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2543,7 +2556,7 @@ CREATE INDEX branched_apiuser_search_object_name ON branched_icinga_apiuser (obj
 
 
 CREATE TABLE branched_icinga_endpoint (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2572,7 +2585,7 @@ CREATE INDEX branched_endpoint_search_object_name ON branched_icinga_endpoint (o
 
 
 CREATE TABLE branched_icinga_service (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2629,8 +2642,37 @@ CREATE INDEX branched_service_search_object_name ON branched_icinga_service (obj
 CREATE INDEX branched_service_search_display_name ON branched_icinga_service (display_name);
 
 
+CREATE TABLE branched_icinga_service_set (
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
+  branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
+  branch_created enum_boolean NOT NULL DEFAULT 'n',
+  branch_deleted enum_boolean NOT NULL DEFAULT 'n',
+
+  object_name character varying(255) DEFAULT NULL,
+  object_type enum_object_type_all DEFAULT NULL,
+  disabled enum_boolean DEFAULT NULL,
+  host character varying(255) DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
+
+
+  imports TEXT DEFAULT NULL,
+  vars TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  CONSTRAINT icinga_service_branch
+      FOREIGN KEY (branch_uuid)
+          REFERENCES director_branch (uuid)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX service_set_branch_object_name ON branched_icinga_service_set (branch_uuid, object_name);
+CREATE INDEX branched_service_set_search_object_name ON branched_icinga_service_set (object_name);
+
+
 CREATE TABLE branched_icinga_notification (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2647,6 +2689,8 @@ CREATE TABLE branched_icinga_notification (
   command character varying(255) DEFAULT NULL,
   period character varying(255) DEFAULT NULL,
   zone character varying(255) DEFAULT NULL,
+  users_var character varying(255) DEFAULT NULL,
+  user_groups_var character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
 
   states TEXT DEFAULT NULL,
@@ -2670,7 +2714,7 @@ CREATE INDEX branched_notification_search_object_name ON branched_icinga_notific
 
 
 CREATE TABLE branched_icinga_scheduled_downtime (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2703,7 +2747,7 @@ CREATE INDEX branched_scheduled_downtime_search_object_name ON branched_icinga_s
 
 
 CREATE TABLE branched_icinga_dependency (
-  uuid bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
+  uuid bytea NOT NULL CHECK(LENGTH(uuid) = 16),
   branch_uuid bytea NOT NULL CHECK(LENGTH(branch_uuid) = 16),
   branch_created enum_boolean NOT NULL DEFAULT 'n',
   branch_deleted enum_boolean NOT NULL DEFAULT 'n',
@@ -2741,4 +2785,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (176, NOW());
+  VALUES (187, NOW());

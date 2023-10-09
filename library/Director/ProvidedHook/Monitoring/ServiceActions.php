@@ -5,8 +5,9 @@ namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 use Exception;
 use Icinga\Application\Config;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Monitoring;
+use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Monitoring\Hook\ServiceActionsHook;
@@ -39,7 +40,7 @@ class ServiceActions extends ServiceActionsHook
 
         $hostname = $service->host_name;
         $serviceName = $service->service_description;
-        if (Util::hasPermission('director/inspect')) {
+        if (Util::hasPermission(Permission::INSPECT)) {
             $actions[mt('director', 'Inspect')] = Url::fromPath('director/inspect/object', [
                 'type'   => 'service',
                 'plural' => 'services',
@@ -52,16 +53,13 @@ class ServiceActions extends ServiceActionsHook
         }
 
         $title = null;
-        if (Util::hasPermission('director/hosts')) {
+        if (Util::hasPermission(Permission::HOSTS)) {
             $title = mt('director', 'Modify');
-        } elseif (Util::hasPermission('director/monitoring/services')) {
-            $monitoring = new Monitoring();
-            if ($monitoring->isAvailable()
-                && $monitoring->authCanEditService(Auth::getInstance(), $hostname, $serviceName)
-            ) {
+        } elseif (Util::hasPermission(Permission::MONITORING_SERVICES)) {
+            if ((new Monitoring(Auth::getInstance()))->canModifyServiceByName($hostname, $serviceName)) {
                 $title = mt('director', 'Modify');
             }
-        } elseif (Util::hasPermission('director/monitoring/services-ro')) {
+        } elseif (Util::hasPermission(Permission::MONITORING_SERVICES_RO)) {
             $title = mt('director', 'Configuration');
         }
 

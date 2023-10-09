@@ -2,8 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
+use Icinga\Module\Director\Db\Branch\PreferredBranchSupport;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Widget\NotInBranchedHint;
 
 trait BranchHelper
@@ -13,6 +17,9 @@ trait BranchHelper
 
     /** @var BranchStore */
     protected $branchStore;
+
+    /** @var ?bool */
+    protected $hasPreferredBranch = null;
 
     /**
      * @return false|\Ramsey\Uuid\UuidInterface
@@ -49,6 +56,13 @@ trait BranchHelper
         return $this->getBranchUuid() !== null;
     }
 
+    protected function enableStaticObjectLoader($table)
+    {
+        if (BranchSupport::existsForTableName($table)) {
+            IcingaObject::setDbObjectStore(new DbObjectStore($this->db(), $this->getBranch()));
+        }
+    }
+
     /**
      * @param string $subject
      * @return bool
@@ -61,5 +75,19 @@ trait BranchHelper
         }
 
         return false;
+    }
+
+    protected function hasPreferredBranch()
+    {
+        if ($this->hasPreferredBranch === null) {
+            $implementation = Branch::optionalHook();
+            if ($implementation instanceof PreferredBranchSupport) {
+                $this->hasPreferredBranch = $implementation->hasPreferredBranch($this->Auth());
+            } else {
+                $this->hasPreferredBranch = false;
+            }
+        }
+
+        return $this->hasPreferredBranch;
     }
 }

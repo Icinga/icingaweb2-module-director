@@ -5,10 +5,11 @@ namespace Icinga\Module\Director\Clicommands;
 use Icinga\Application\Benchmark;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Core\Json;
+use Icinga\Module\Director\Deployment\ConditionalDeployment;
+use Icinga\Module\Director\Deployment\DeploymentGracePeriod;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Import\SyncUtils;
-use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 
 /**
  * Generate, show and deploy Icinga 2 configuration
@@ -90,17 +91,20 @@ class ConfigCommand extends Command
      * USAGE
      *
      * icingacli director config deploy [--checksum <checksum>] [--force] [--wait <seconds>]
+     *  [--grace-period <seconds>]
      *
      * OPTIONS
      *
      *   --checksum <checksum>  Optionally deploy a specific configuration
-     *   --force                Force a deployment, even when the configuration hasn't
-     *                          changed
-     *   --wait <seconds>       Optionally wait until Icinga completed it's restart
+     *   --force                Force a deployment, even when the configuration
+     *                          hasn't changed
+     *   --wait <seconds>       Optionally wait until Icinga completed it's
+     *                          restart
+     *   --grace-period <seconds>  Do not deploy if a deployment took place
+     *                          less than <seconds> ago
      */
     public function deployAction()
     {
-        $api = $this->api();
         $db = $this->db();
 
         $checksum = $this->params->get('checksum');
@@ -111,32 +115,32 @@ class ConfigCommand extends Command
             $checksum = $config->getHexChecksum();
         }
 
-        $api->wipeInactiveStages($db);
-        $current = $api->getActiveChecksum($db);
-        if ($current === $checksum) {
+        $deployer = new ConditionalDeployment($db, $this->api());
+        $deployer->force((bool) $this->params->get('force'));
+        if ($graceTime = $this->params->get('grace-period')) {
+            $deployer->setGracePeriod(new DeploymentGracePeriod((int) $graceTime, $db));
             if ($this->params->get('force')) {
-                echo "Config matches active stage, deploying anyway\n";
-            } else {
-                echo "Config matches active stage, nothing to do\n";
-
-                return;
+                fwrite(STDERR, "WARNING: force overrides Grace period\n");
             }
         }
+        $deployer->refresh();
 
-        $deploymentLog = $api->dumpConfig($config, $db);
-        if (! $deploymentLog) {
-            $this->fail("Failed to deploy config '%s'", $checksum);
-        }
-        if ($timeout = $this->params->get('wait')) {
-            if (! ctype_digit($timeout)) {
-                $this->fail("--wait must be the number of seconds to wait'");
+        if ($deployment = $deployer->deploy($config)) {
+            if ($deployer->hasBeenForced()) {
+                echo $deployer->getNoDeploymentReason() . ", deploying anyway\n";
             }
-            $deployed = $this->waitForStartupAfterDeploy($deploymentLog, $timeout);
+            printf("Config '%s' has been deployed\n", $checksum);
+        } else {
+            echo $deployer->getNoDeploymentReason() . "\n";
+            return;
+        }
+
+        if ($timeout = $this->getWaitTime()) {
+            $deployed = $deployer->waitForStartupAfterDeploy($deployment, $timeout);
             if ($deployed !== true) {
-                $this->fail("Failed to deploy config '%s': %s\n", $checksum, $deployed);
+                $this->fail("Waiting for Icinga restart failed '%s': %s\n", $checksum, $deployed);
             }
         }
-        printf("Config '%s' has been deployed\n", $checksum);
     }
 
     /**
@@ -159,24 +163,16 @@ class ConfigCommand extends Command
         }
     }
 
-    private function waitForStartupAfterDeploy($deploymentLog, $timeout)
+    protected function getWaitTime()
     {
-        $startTime = time();
-        while ((time() - $startTime) <= $timeout) {
-            $deploymentFromDB = DirectorDeploymentLog::load($deploymentLog->getId(), $this->db());
-            $stageCollected = $deploymentFromDB->get('stage_collected');
-            if ($stageCollected === null) {
-                usleep(500000);
-                continue;
+        if ($timeout = $this->params->get('wait')) {
+            if (!ctype_digit($timeout)) {
+                $this->fail("--wait must be the number of seconds to wait'");
             }
-            if ($stageCollected === 'n') {
-                return 'stage has not been collected';
-            }
-            if ($deploymentFromDB->get('startup_succeeded') === 'y') {
-                return true;
-            }
-            return 'deployment failed during startup';
+
+            return (int) $timeout;
         }
-        return 'deployment timed out';
+
+        return null;
     }
 }

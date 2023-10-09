@@ -7,7 +7,6 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
@@ -135,6 +134,8 @@ class IcingaHost extends IcingaObject implements ExportInterface
 
             $hostProperties[$prefix . $prop] = $prop;
         }
+        unset($hostProperties[$prefix . 'uuid']);
+        unset($hostProperties[$prefix . 'custom_endpoint_name']);
 
         $hostVars = array();
 
@@ -252,8 +253,14 @@ class IcingaHost extends IcingaObject implements ExportInterface
         $config->configFile($pre . 'agent_zones')->addObject($zone);
     }
 
+    /**
+    // @codingStandardsIgnoreStart
+     * @param $value
+     * @return string
+     */
     protected function renderCustom_endpoint_name($value)
     {
+        // @codingStandardsIgnoreEnd
         // When feature flag feature_custom_endpoint is enabled, render custom var
         if ($this->connection->settings()->get('feature_custom_endpoint') === 'y') {
             return c::renderKeyValue('vars._director_custom_endpoint_name', c::renderString($value));
@@ -302,83 +309,18 @@ class IcingaHost extends IcingaObject implements ExportInterface
         }
     }
 
-    /**
-     * @return object
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
+    protected function rendersConditionalTemplate(): bool
     {
-        // TODO: ksort in toPlainObject?
-        $props = (array) $this->toPlainObject();
-        $props['fields'] = $this->loadFieldReferences();
-        ksort($props);
-
-        return (object) $props;
+        return $this->getRenderingZone() === self::ALL_NON_GLOBAL_ZONES;
     }
 
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return IcingaHost
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
+    protected function getDefaultZone(IcingaConfig $config = null)
     {
-        $properties = (array) $plain;
-        $name = $properties['object_name'];
-        if ($properties['object_type'] !== 'template') {
-            throw new InvalidArgumentException(sprintf(
-                'Can import only Templates, got "%s" for "%s"',
-                $properties['object_type'],
-                $name
-            ));
-        }
-        $key = $name;
-
-        if ($replace && static::exists($key, $db)) {
-            $object = static::load($key, $db);
-        } elseif (static::exists($key, $db)) {
-            throw new DuplicateKeyException(
-                'Service Template "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
+        if ($this->isTemplate()) {
+            return self::ALL_NON_GLOBAL_ZONES;
         }
 
-        // $object->newFields = $properties['fields'];
-        unset($properties['fields']);
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
-    protected function loadFieldReferences()
-    {
-        $db = $this->getDb();
-
-        $res = $db->fetchAll(
-            $db->select()->from([
-                'hf' => 'icinga_host_field'
-            ], [
-                'hf.datafield_id',
-                'hf.is_required',
-                'hf.var_filter',
-            ])->join(['df' => 'director_datafield'], 'df.id = hf.datafield_id', [])
-                ->where('host_id = ?', $this->get('id'))
-                ->order('varname ASC')
-        );
-
-        if (empty($res)) {
-            return [];
-        } else {
-            foreach ($res as $field) {
-                $field->datafield_id = (int) $field->datafield_id;
-            }
-            return $res;
-        }
+        return parent::getDefaultZone();
     }
 
     public function beforeDelete()

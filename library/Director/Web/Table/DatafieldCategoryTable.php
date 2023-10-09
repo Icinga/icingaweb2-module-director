@@ -31,7 +31,7 @@ class DatafieldCategoryTable extends ZfQueryBasedTable
             ['name' => $row->category_name]
         )];
 
-        if (strlen($row->description)) {
+        if ($row->description !== null && strlen($row->description)) {
             $main[] = Html::tag('br');
             $main[] = Html::tag('small', $row->description);
         }

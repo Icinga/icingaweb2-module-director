@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Data\Db;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\InvalidDataException;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use InvalidArgumentException;
 use LogicException;
@@ -79,6 +80,9 @@ abstract class DbObject
 
     protected $binaryProperties = [];
 
+    /* key/value!! */
+    protected $booleans = [];
+
     /**
      * Filled with object instances when prefetchAll is used
      */
@@ -90,6 +94,9 @@ abstract class DbObject
     protected static $prefetchedNames = array();
 
     protected static $prefetchStats = array();
+
+    /** @var ?DbObjectStore */
+    protected static $dbObjectStore;
 
     /**
      * Constructor is not accessible and should not be overridden
@@ -225,6 +232,11 @@ abstract class DbObject
         return $this;
     }
 
+    public static function setDbObjectStore(DbObjectStore $store)
+    {
+        self::$dbObjectStore = $store;
+    }
+
     /**
      * Getter
      *
@@ -337,6 +349,16 @@ abstract class DbObject
             return $this->$func($value);
         }
 
+        if ($this->getUuidColumn() === $key) {
+            if (strlen($value) > 16) {
+                $value = Uuid::fromString($value)->getBytes();
+            }
+        }
+
+        if ($this->propertyIsBoolean($key)) {
+            $value = DbDataFormatter::normalizeBoolean($value);
+        }
+
         if (! $this->hasProperty($key)) {
             throw new InvalidArgumentException(sprintf(
                 'Trying to set invalid key "%s"',
@@ -362,9 +384,30 @@ abstract class DbObject
         if ($value === $this->properties[$key]) {
             return $this;
         }
+        if ($key === 'id' || substr($key, -3) === '_id') {
+            if ($value !== null
+                && $this->properties[$key] !== null
+                && (int) $value === (int) $this->properties[$key]
+            ) {
+                return $this;
+            }
+        }
 
-        $this->hasBeenModified = true;
-        $this->modifiedProperties[$key] = true;
+        if ($this->hasBeenLoadedFromDb()) {
+            if ($value === $this->loadedProperties[$key]) {
+                unset($this->modifiedProperties[$key]);
+                if (empty($this->modifiedProperties)) {
+                    $this->hasBeenModified = false;
+                }
+            } else {
+                $this->hasBeenModified = true;
+                $this->modifiedProperties[$key] = true;
+            }
+        } else {
+            $this->hasBeenModified = true;
+            $this->modifiedProperties[$key] = true;
+        }
+
         $this->properties[$key] = $value;
         return $this;
     }
@@ -465,6 +508,11 @@ abstract class DbObject
         return array_keys($this->properties);
     }
 
+    public function getDefaultProperties()
+    {
+        return $this->defaultProperties;
+    }
+
     /**
      * Return all properties that changed since object creation
      *
@@ -521,7 +569,7 @@ abstract class DbObject
     /**
      * Unique key name
      *
-     * @return string
+     * @return string|array
      */
     public function getKeyName()
     {
@@ -674,8 +722,7 @@ abstract class DbObject
      */
     protected function loadFromDb()
     {
-        $select = $this->db->select()->from($this->table)->where($this->createWhere());
-        $properties = $this->db->fetchRow($select);
+        $properties = $this->db->fetchRow($this->prepareObjectQuery());
 
         if (empty($properties)) {
             if (is_array($this->getKeyName())) {
@@ -696,6 +743,11 @@ abstract class DbObject
         return $this->setDbProperties($properties);
     }
 
+    public function prepareObjectQuery()
+    {
+        return $this->db->select()->from($this->table)->where($this->createWhere());
+    }
+
     /**
      * @param object|array $row
      * @param Db $db
@@ -703,16 +755,16 @@ abstract class DbObject
      */
     public static function fromDbRow($row, Db $db)
     {
-         $self = (new static())->setConnection($db);
-         if (is_object($row)) {
-             return $self->setDbProperties((array) $row);
-         }
+        $self = (new static())->setConnection($db);
+        if (is_object($row)) {
+            return $self->setDbProperties((array) $row);
+        }
 
-         if (is_array($row)) {
-             return $self->setDbProperties($row);
-         }
+        if (is_array($row)) {
+            return $self->setDbProperties($row);
+        }
 
-         throw new InvalidDataException('array or object', $row);
+        throw new InvalidDataException('array or object', $row);
     }
 
     protected function setDbProperties($properties)
@@ -844,6 +896,11 @@ abstract class DbObject
     protected function isBinaryColumn($column)
     {
         return in_array($column, $this->binaryProperties) || $this->getUuidColumn() === $column;
+    }
+
+    public function propertyIsBoolean($property)
+    {
+        return array_key_exists($property, $this->booleans);
     }
 
     /**
@@ -992,6 +1049,12 @@ abstract class DbObject
 
     public function createWhere()
     {
+        if ($this->hasUuidColumn() && $this->properties[$this->uuidColumn] !== null) {
+            return $this->db->quoteInto(
+                sprintf('%s = ?', $this->getUuidColumn()),
+                $this->connection->quoteBinary($this->getOriginalProperty($this->uuidColumn))
+            );
+        }
         if ($id = $this->getAutoincId()) {
             if ($originalId = $this->getOriginalProperty($this->autoincKeyName)) {
                 return $this->db->quoteInto(
@@ -1220,8 +1283,15 @@ abstract class DbObject
             return $prefetched;
         }
 
-        /** @var DbObject $obj */
         $obj = new static;
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::requireUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+
+            return self::$dbObjectStore->load($table, $uuid);
+        }
+
         $obj->setConnection($connection)
             ->set($obj->autoincKeyName, $id)
             ->loadFromDb();
@@ -1240,11 +1310,53 @@ abstract class DbObject
         if ($prefetched = static::getPrefetched($id)) {
             return $prefetched;
         }
-
         /** @var DbObject $obj */
         $obj = new static;
+
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::requireUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+
+            return self::$dbObjectStore->load($table, $uuid);
+        }
+
         $obj->setConnection($connection)->setKey($id)->loadFromDb();
 
+        return $obj;
+    }
+
+    /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return static
+     */
+    public static function loadOptional($id, DbConnection $connection): ?DbObject
+    {
+        if ($prefetched = static::getPrefetched($id)) {
+            return $prefetched;
+        }
+        /** @var DbObject $obj */
+        $obj = new static();
+
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+            if ($uuid) {
+                return self::$dbObjectStore->load($table, $uuid);
+            }
+
+            return null;
+        }
+
+        $obj->setConnection($connection)->setKey($id);
+        $properties = $connection->getDbAdapter()->fetchRow($obj->prepareObjectQuery());
+        if (empty($properties)) {
+            return null;
+        }
+
+        $obj->setDbProperties($properties);
         return $obj;
     }
 
@@ -1341,6 +1453,17 @@ abstract class DbObject
 
         /** @var DbObject $obj */
         $obj = new static;
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+            if ($uuid) {
+                return self::$dbObjectStore->exists($table, $uuid);
+            }
+
+            return false;
+        }
+
         $obj->setConnection($connection)->setKey($id);
         return $obj->existsInDb();
     }
@@ -1372,10 +1495,17 @@ abstract class DbObject
         ));
     }
 
-    public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection)
+    public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection): ?DbObject
     {
         $db = $connection->getDbAdapter();
         $obj = new static;
+
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            return self::$dbObjectStore->load($table, $uuid);
+        }
+
         $query = $db->select()
             ->from($obj->getTableName())
             ->where($obj->getUuidColumn() . ' = ?', $connection->quoteBinary($uuid->getBytes()));

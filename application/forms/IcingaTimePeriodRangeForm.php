@@ -20,7 +20,7 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
         $this->addElement('text', 'range_key', array(
             'label'       => $this->translate('Day(s)'),
             'description' => $this->translate(
-                'Might be, monday, tuesday, 2016-01-28 - have a look at the documentation for more examples'
+                'Might be monday, tuesday or 2016-01-28 - have a look at the documentation for more examples'
             ),
         ));
 

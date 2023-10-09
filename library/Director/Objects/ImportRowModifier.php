@@ -7,7 +7,7 @@ use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Objects\Extension\PriorityColumn;
 use RuntimeException;
 
-class ImportRowModifier extends DbObjectWithSettings
+class ImportRowModifier extends DbObjectWithSettings implements InstantiatedViaHook
 {
     use PriorityColumn;
 
@@ -18,13 +18,14 @@ class ImportRowModifier extends DbObjectWithSettings
     protected $autoincKeyName = 'id';
 
     protected $defaultProperties = [
-        'id'              => null,
-        'source_id'       => null,
-        'property_name'   => null,
-        'provider_class'  => null,
-        'target_property' => null,
-        'priority'        => null,
-        'description'     => null,
+        'id'                => null,
+        'source_id'         => null,
+        'property_name'     => null,
+        'provider_class'    => null,
+        'target_property'   => null,
+        'filter_expression' => null,
+        'priority'          => null,
+        'description'       => null,
     ];
 
     protected $settingsTable = 'import_row_modifier_setting';
@@ -56,6 +57,7 @@ class ImportRowModifier extends DbObjectWithSettings
     }
 
     /**
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
      * @return \stdClass
      */
     public function export()

@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Db\Branch;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Ramsey\Uuid\UuidInterface;
 
 class BranchMerger
@@ -82,9 +83,11 @@ class BranchMerger
     /**
      * @throws MergeError
      */
-    public function merge()
+    public function merge($comment = null)
     {
-        $this->connection->runFailSafeTransaction(function () {
+        $username = DirectorActivityLog::username();
+        $this->connection->runFailSafeTransaction(function () use ($comment, $username) {
+            $formerActivityId = (int) DirectorActivityLog::loadLatest($this->connection)->get('id');
             $query = $this->db->select()
                 ->from(BranchActivity::DB_TABLE)
                 ->where('branch_uuid = ?', $this->connection->quoteBinary($this->branchUuid->getBytes()))
@@ -92,10 +95,26 @@ class BranchMerger
             $rows = $this->db->fetchAll($query);
             foreach ($rows as $row) {
                 $activity = BranchActivity::fromDbRow($row);
+                $author = $activity->getAuthor();
+                if ($username !== $author) {
+                    DirectorActivityLog::overrideUsername("$author/$username");
+                }
                 $this->applyModification($activity);
             }
             (new BranchStore($this->connection))->deleteByUuid($this->branchUuid);
+            $currentActivityId = (int) DirectorActivityLog::loadLatest($this->connection)->get('id');
+            $firstActivityId = (int) $this->db->fetchOne(
+                $this->db->select()->from('director_activity_log', 'MIN(id)')->where('id > ?', $formerActivityId)
+            );
+            if ($comment && strlen($comment)) {
+                $this->db->insert('director_activity_log_remark', [
+                    'first_related_activity' => $firstActivityId,
+                    'last_related_activity' => $currentActivityId,
+                    'remark' => $comment,
+                ]);
+            }
         });
+        DirectorActivityLog::restoreUsername();
     }
 
     /**
@@ -117,11 +136,11 @@ class BranchMerger
                     throw new MergeErrorRecreateOnMerge($activity);
                 }
             } else {
-                $activity->createDbObject()->store($this->connection);
+                $activity->createDbObject($this->connection)->store($this->connection);
             }
         } elseif ($activity->isActionDelete()) {
             if ($exists) {
-                $activity->deleteDbObject($this->connection);
+                $activity->deleteDbObject($class::requireWithUniqueId($uuid, $this->connection));
             } elseif (! $this->ignoreDeleteWhenMissing && ! $this->ignoresActivity($activity)) {
                 throw new MergeErrorDeleteMissingObject($activity);
             }

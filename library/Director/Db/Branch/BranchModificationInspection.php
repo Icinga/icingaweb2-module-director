@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Db\Branch;
 
+use gipfl\Translation\StaticTranslator;
 use gipfl\Translation\TranslationHelper;
 use Icinga\Module\Director\Db;
 use ipl\Html\Html;
@@ -30,16 +31,21 @@ class BranchModificationInspection
     public function describeBranch(UuidInterface $uuid)
     {
         $tables = [
-            $this->translate('API Users')     => 'branched_icinga_apiuser',
-            $this->translate('Endpoints')     => 'branched_icinga_endpoint',
-            $this->translate('Zones')         => 'branched_icinga_zone',
-            $this->translate('Commands')      => 'branched_icinga_command',
-            $this->translate('Hosts')         => 'branched_icinga_host',
-            $this->translate('Hostgroups')    => 'branched_icinga_hostgroup',
-            $this->translate('Services')      => 'branched_icinga_service',
-            $this->translate('Servicegroups') => 'branched_icinga_servicegroup',
-            $this->translate('Users')         => 'branched_icinga_user',
-            $this->translate('Timeperiods')  => 'branched_icinga_timeperiod',
+            $this->translate('API Users')            => BranchSupport::BRANCHED_TABLE_ICINGA_APIUSER,
+            $this->translate('Endpoints')            => BranchSupport::BRANCHED_TABLE_ICINGA_COMMAND,
+            $this->translate('Zones')                => BranchSupport::BRANCHED_TABLE_ICINGA_DEPENDENCY,
+            $this->translate('Commands')             => BranchSupport::BRANCHED_TABLE_ICINGA_ENDPOINT,
+            $this->translate('Hosts')                => BranchSupport::BRANCHED_TABLE_ICINGA_HOST,
+            $this->translate('Hostgroups')           => BranchSupport::BRANCHED_TABLE_ICINGA_HOSTGROUP,
+            $this->translate('Services')             => BranchSupport::BRANCHED_TABLE_ICINGA_NOTIFICATION,
+            $this->translate('Servicegroups')        => BranchSupport::BRANCHED_TABLE_ICINGA_SCHEDULED_DOWNTIME,
+            $this->translate('Servicesets')          => BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE_SET,
+            $this->translate('Users')                => BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE,
+            $this->translate('Usergroups')           => BranchSupport::BRANCHED_TABLE_ICINGA_SERVICEGROUP,
+            $this->translate('Timeperiods')          => BranchSupport::BRANCHED_TABLE_ICINGA_TIMEPERIOD,
+            $this->translate('Notifications')        => BranchSupport::BRANCHED_TABLE_ICINGA_USER,
+            $this->translate('Dependencies')         => BranchSupport::BRANCHED_TABLE_ICINGA_USERGROUP,
+            $this->translate('Scheduled Downtimes')  => BranchSupport::BRANCHED_TABLE_ICINGA_ZONE,
         ];
 
         $parts = new HtmlDocument();
@@ -56,7 +62,7 @@ class BranchModificationInspection
 
     public static function describeModificationStatistics($stats)
     {
-        $t = TranslationHelper::getTranslator();
+        $t = StaticTranslator::get();
         $relevantStats = [];
         if ($stats->cnt_created > 0) {
             $relevantStats[] = sprintf($t->translate('%d created'), $stats->cnt_created);

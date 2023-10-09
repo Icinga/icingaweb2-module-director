@@ -155,6 +155,10 @@ abstract class QuickBaseForm extends Zend_Form implements ValidHtml
 
     protected function valueIsEmpty($value)
     {
+        if ($value === null) {
+            return true;
+        }
+
         if (is_array($value)) {
             return empty($value);
         }

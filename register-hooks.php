@@ -24,6 +24,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayToRow;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayUnique;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierBitmask;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierCombine;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierDictionaryToRow;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierDnsRecords;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierExtractFromDN;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierFromAdSid;
@@ -45,6 +46,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierRegexSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRejectOrSelect;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRenameColumn;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierReplace;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierReplaceNull;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSimpleGroupBy;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSkipDuplicates;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSplit;
@@ -58,11 +60,15 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierURLEncode;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUuidBinToHex;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierXlsNumericIp;
 use Icinga\Module\Director\ProvidedHook\CubeLinks;
+use Icinga\Module\Director\ProvidedHook\IcingaDbCubeLinks;
 
 /** @var Module $this */
-$this->provideHook('monitoring/HostActions');
-$this->provideHook('monitoring/ServiceActions');
-$this->provideHook('cube/Actions', CubeLinks::class);
+if ($this->getConfig()->get('frontend', 'disabled', 'no') !== 'yes') {
+    $this->provideHook('monitoring/HostActions');
+    $this->provideHook('monitoring/ServiceActions');
+    $this->provideHook('cube/Actions', CubeLinks::class);
+    $this->provideHook('cube/IcingaDbActions', IcingaDbCubeLinks::class);
+}
 
 $directorHooks = [
     'director/DataType' => [
@@ -95,6 +101,7 @@ $directorHooks = [
         PropertyModifierArrayUnique::class,
         PropertyModifierBitmask::class,
         PropertyModifierCombine::class,
+        PropertyModifierDictionaryToRow::class,
         PropertyModifierDnsRecords::class,
         PropertyModifierExtractFromDN::class,
         PropertyModifierFromAdSid::class,
@@ -116,6 +123,7 @@ $directorHooks = [
         PropertyModifierRejectOrSelect::class,
         PropertyModifierRenameColumn::class,
         PropertyModifierReplace::class,
+        PropertyModifierReplaceNull::class,
         PropertyModifierSimpleGroupBy::class,
         PropertyModifierSkipDuplicates::class,
         PropertyModifierSplit::class,

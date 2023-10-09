@@ -2,10 +2,13 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use Icinga\Module\Director\Util;
-use ipl\Html\BaseHtmlElement;
+use gipfl\Format\LocalTimeFormat;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Util;
+use ipl\Html\Html;
+use ipl\Html\HtmlElement;
 
 class ActivityLogTable extends ZfQueryBasedTable
 {
@@ -19,18 +22,31 @@ class ActivityLogTable extends ZfQueryBasedTable
 
     protected $hasObjectFilter = false;
 
-    /** @var BaseHtmlElement */
-    protected $currentHead;
-
-    /** @var BaseHtmlElement */
-    protected $currentBody;
-
-    protected $searchColumns = array(
+    protected $searchColumns = [
         'author',
         'object_name',
         'object_type',
-        'action',
-    );
+    ];
+
+    /** @var LocalTimeFormat */
+    protected $timeFormat;
+
+    protected $ranges = [];
+
+    /** @var ?object */
+    protected $currentRange = null;
+    /** @var ?HtmlElement */
+    protected $currentRangeCell = null;
+    /** @var int */
+    protected $rangeRows = 0;
+    protected $continueRange = false;
+    protected $currentRow;
+
+    public function __construct($db)
+    {
+        parent::__construct($db);
+        $this->timeFormat = new LocalTimeFormat();
+    }
 
     public function assemble()
     {
@@ -43,8 +59,30 @@ class ActivityLogTable extends ZfQueryBasedTable
         return $this;
     }
 
+    protected function fetchQueryRows()
+    {
+        $rows = parent::fetchQueryRows();
+        // Hint -> DESC, that's why they are inverted
+        if (empty($rows)) {
+            return $rows;
+        }
+        $last = $rows[0]->id;
+        $first = $rows[count($rows) - 1]->id;
+        $db = $this->db();
+        $this->ranges = $db->fetchAll(
+            $db->select()
+                ->from('director_activity_log_remark')
+                ->where('first_related_activity <= ?', $last)
+                ->where('last_related_activity >= ?', $first)
+        );
+
+        return $rows;
+    }
+
+
     public function renderRow($row)
     {
+        $this->currentRow = $row;
         $this->splitByDay($row->ts_change_time);
         $action = 'action-' . $row->action. ' ';
         if ($row->id > $this->lastDeployedId) {
@@ -53,10 +91,112 @@ class ActivityLogTable extends ZfQueryBasedTable
             $action .= 'deployed';
         }
 
-        return $this::tr([
+        $columns = [
             $this::td($this->makeLink($row))->setSeparator(' '),
-            $this::td(strftime('%H:%M:%S', $row->ts_change_time))
-        ])->addAttributes(['class' => $action]);
+        ];
+        if (! $this->hasObjectFilter) {
+            $columns[] = $this->makeRangeInfo($row->id);
+        }
+        $columns[] = $this::td($this->timeFormat->getTime($row->ts_change_time));
+
+        return $this::tr($columns)->addAttributes(['class' => $action]);
+    }
+
+    /**
+     * Hint: cloned from parent class and modified
+     * @param  int $timestamp
+     */
+    protected function renderDayIfNew($timestamp)
+    {
+        $day = $this->getDateFormatter()->getFullDay($timestamp);
+
+        if ($this->lastDay !== $day) {
+            $this->nextHeader()->add(
+                $this::th($day, [
+                    'colspan' => $this->hasObjectFilter ? 2 : 3,
+                    'class'   => 'table-header-day'
+                ])
+            );
+
+            $this->lastDay = $day;
+            if ($this->currentRangeCell) {
+                if ($this->currentRange->first_related_activity <= $this->currentRow->id) {
+                    $this->currentRangeCell->addAttributes(['class' => 'continuing']);
+                    $this->continueRange = true;
+                } else {
+                    $this->continueRange = false;
+                }
+            }
+            $this->currentRangeCell = null;
+            $this->currentRange = null;
+            $this->rangeRows = 0;
+            $this->nextBody();
+        }
+    }
+
+    protected function makeRangeInfo($id)
+    {
+        $range = $this->getRangeForId($id);
+        if ($range === null) {
+            if ($this->currentRangeCell) {
+                $this->currentRangeCell->getAttributes()->remove('class', 'continuing');
+            }
+            $this->currentRange = null;
+            $this->currentRangeCell = null;
+            $this->rangeRows = 0;
+            return $this::td();
+        }
+
+        if ($range === $this->currentRange) {
+            $this->growCurrentRange();
+            return null;
+        }
+        $this->startRange($range);
+
+        return $this->currentRangeCell;
+    }
+
+    protected function startRange($range)
+    {
+        $this->currentRangeCell = $this::td($this->renderRangeComment($range), [
+            'colspan' => $this->rangeRows = 1,
+            'class' => 'comment-cell'
+        ]);
+        if ($this->continueRange) {
+            $this->currentRangeCell->addAttributes(['class' => 'continued']);
+            $this->continueRange = false;
+        }
+        $this->currentRange = $range;
+    }
+
+    protected function renderRangeComment($range)
+    {
+        // The only purpose of this container is to avoid hovered rows from influencing
+        // the comments background color, as we're using the alpha channel to lighten it
+        // This can be replaced once we get theme-safe colors for such messages
+        return Html::tag('div', [
+            'class' => 'range-comment-container',
+        ], Link::create($this->continueRange ? '' : $range->remark, '#', null, [
+            'title' => $range->remark,
+            'class' => 'range-comment'
+        ]));
+    }
+
+    protected function growCurrentRange()
+    {
+        $this->rangeRows++;
+        $this->currentRangeCell->setAttribute('rowspan', $this->rangeRows);
+    }
+
+    protected function getRangeForId($id)
+    {
+        foreach ($this->ranges as $range) {
+            if ($id >= $range->first_related_activity && $id <= $range->last_related_activity) {
+                return $range;
+            }
+        }
+
+        return null;
     }
 
     protected function makeLink($row)
@@ -67,7 +207,7 @@ class ActivityLogTable extends ZfQueryBasedTable
             $type = substr($type, 7);
         }
 
-        if (Util::hasPermission('director/showconfig')) {
+        if (Util::hasPermission(Permission::SHOW_CONFIG)) {
             // Later on replacing, service_set -> serviceset
 
             // multi column key :(

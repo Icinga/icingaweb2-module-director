@@ -3,7 +3,8 @@
 namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
-use Icinga\Module\Director\Monitoring;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Web\Table\ObjectsTableService;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -24,35 +25,28 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\SelfService;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedForServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
-use Icinga\Module\Director\Web\Table\IcingaHostServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 
 class HostController extends ObjectController
 {
     protected function checkDirectorPermissions()
     {
-        if ($this->isServiceAction() && (new Monitoring())->authCanEditService(
-            $this->Auth(),
-            $this->getParam('name'),
-            $this->getParam('service')
-        )) {
+        $host = $this->getHostObject();
+        $auth = $this->Auth();
+        $mon = $this->monitoring();
+        if ($this->isServiceAction() && $mon->canModifyService($host, $this->getParam('service'))) {
             return;
         }
-
-        if ($this->isServicesReadOnlyAction()) {
-            $this->assertPermission('director/monitoring/services-ro');
+        if ($auth->hasPermission(Permission::MONITORING_SERVICES_RO) && $this->isServicesReadOnlyAction()) {
             return;
         }
-
-        if ($this->hasPermission('director/hosts')) { // faster
+        if ($auth->hasPermission(Permission::HOSTS)) { // faster
             return;
         }
-
-        if ($this->canModifyHostViaMonitoringPermissions($this->getParam('name'))) {
+        if ($mon->canModifyHost($host)) {
             return;
         }
-
-        $this->assertPermission('director/hosts'); // complain about default hosts permission
+        $this->assertPermission(Permission::HOSTS); // complain about default hosts permission
     }
 
     protected function isServicesReadOnlyAction()
@@ -74,16 +68,6 @@ class HostController extends ObjectController
             'appliedservice',
             'inheritedservice',
         ]);
-    }
-
-    protected function canModifyHostViaMonitoringPermissions($hostname)
-    {
-        if ($this->hasPermission('director/monitoring/hosts')) {
-            $monitoring = new Monitoring();
-            return $monitoring->authCanEditHost($this->Auth(), $hostname);
-        }
-
-        return false;
     }
 
     /**
@@ -119,8 +103,10 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $this->addServicesHeader();
         $this->addTitle($this->translate('Add Service Set to %s'), $host->getObjectName());
+
         $this->content()->add(
             IcingaServiceSetForm::load()
+                ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setDb($this->db())
                 ->handleRequest()
@@ -203,18 +189,14 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
         $branch = $this->getBranch();
-        if ($branch->isBranch() && $host->get('id') === null) {
-            $this->content()->add(Hint::info(
-                $this->translate('Managing services on new Hosts is possible only after they have been merged.')
-            ));
-            return;
-        }
+        $hostHasBeenCreatedInBranch = $branch->isBranch() && $host->get('id');
         $content = $this->content();
-        $table = IcingaHostServiceTable::load($host)
-            ->setTitle($this->translate('Individual Service objects'));
-        if ($branch->isBranch()) {
-            $table->setBranchUuid($branch->getUuid());
-        }
+        $table = (new ObjectsTableService($this->db()))
+            ->setAuth($this->Auth())
+            ->setHost($host)
+            ->setBranch($branch)
+            ->setTitle($this->translate('Individual Service objects'))
+            ->removeQueryLimit();
 
         if (count($table)) {
             $content->add($table);
@@ -224,18 +206,26 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = IcingaHostServiceTable::load($parent)->setInheritedBy($host);
+            $table = (new ObjectsTableService($this->db()))
+                ->setAuth($this->Auth())
+                ->setBranch($branch)
+                ->setHost($parent)
+                ->setInheritedBy($host)
+                ->removeQueryLimit();
+
             if (count($table)) {
                 $content->add(
                     $table->setTitle(sprintf(
-                        'Inherited from %s',
+                        $this->translate('Inherited from %s'),
                         $parent->getObjectName()
                     ))
                 );
             }
         }
 
-        $this->addHostServiceSetTables($host);
+        if (! $hostHasBeenCreatedInBranch) {
+            $this->addHostServiceSetTables($host);
+        }
         foreach ($parents as $parent) {
             $this->addHostServiceSetTables($parent, $host);
         }
@@ -247,8 +237,10 @@ class HostController extends ObjectController
             $content->add(
                 IcingaServiceSetServiceTable::load($set)
                     // ->setHost($host)
+                    ->setBranch($branch)
                     ->setAffectedHost($host)
                     ->setTitle($title)
+                    ->removeQueryLimit()
             );
         }
 
@@ -271,15 +263,20 @@ class HostController extends ObjectController
      */
     public function servicesroAction()
     {
-        $this->assertPermission('director/monitoring/services-ro');
+        $this->assertPermission(Permission::MONITORING_SERVICES_RO);
         $host = $this->getHostObject();
         $service = $this->params->getRequired('service');
         $db = $this->db();
+        $branch = $this->getBranch();
         $this->controls()->setTabs(new Tabs());
         $this->addSingleTab($this->translate('Configuration (read-only)'));
         $this->addTitle($this->translate('Services on %s'), $host->getObjectName());
         $content = $this->content();
-        $table = IcingaHostServiceTable::load($host)
+
+        $table = (new ObjectsTableService($db))
+            ->setAuth($this->Auth())
+            ->setHost($host)
+            ->setBranch($branch)
             ->setReadonly()
             ->highlightService($service)
             ->setTitle($this->translate('Individual Service objects'));
@@ -292,8 +289,10 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = IcingaHostServiceTable::load($parent)
+            $table = (new ObjectsTableService($db))
                 ->setReadonly()
+                ->setBranch($branch)
+                ->setHost($parent)
                 ->highlightService($service)
                 ->setInheritedBy($host);
             if (count($table)) {
@@ -318,6 +317,7 @@ class HostController extends ObjectController
             $content->add(
                 IcingaServiceSetServiceTable::load($set)
                     // ->setHost($host)
+                    ->setBranch($branch)
                     ->setAffectedHost($host)
                     ->setReadonly()
                     ->highlightService($service)
@@ -345,6 +345,9 @@ class HostController extends ObjectController
         if ($affectedHost === null) {
             $affectedHost = $host;
         }
+        if ($host->get('id') === null) {
+            return;
+        }
 
         $query = $db->getDbAdapter()->select()
             ->from(
@@ -366,7 +369,9 @@ class HostController extends ObjectController
             $title = sprintf($this->translate('%s (Service set)'), $name);
             $table = IcingaServiceSetServiceTable::load($set)
                 ->setHost($host)
+                ->setBranch($this->getBranch())
                 ->setAffectedHost($affectedHost)
+                ->removeQueryLimit()
                 ->setTitle($title);
             if ($roService) {
                 $table->setReadonly()->highlightService($roService);
@@ -402,6 +407,7 @@ class HostController extends ObjectController
         $this->content()->add(
             IcingaServiceForm::load()
                 ->setDb($db)
+                ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setApplyGenerated($parent)
                 ->setObject($service)
@@ -442,6 +448,7 @@ class HostController extends ObjectController
 
         $form = IcingaServiceForm::load()
             ->setDb($db)
+            ->setBranch($this->getBranch())
             ->setHost($host)
             ->setInheritedFrom($from->getObjectName())
             ->setObject($service)
@@ -519,6 +526,7 @@ class HostController extends ObjectController
 
         $form = IcingaServiceForm::load()
             ->setDb($db)
+            ->setBranch($this->getBranch())
             ->setHost($host)
             ->setServiceSet($set)
             ->setObject($service)
@@ -559,20 +567,13 @@ class HostController extends ObjectController
     {
         $host = $this->object;
         try {
-            $mon = $this->monitoring();
-            if ($host->isObject()
-                && $mon->isAvailable()
-                && $mon->hasHost($host->getObjectName())
-            ) {
-                $this->actions()->add(Link::create(
-                    $this->translate('Show'),
-                    'monitoring/host/show',
-                    ['host' => $host->getObjectName()],
-                    [
-                        'class'            => 'icon-globe critical',
-                        'data-base-target' => '_next'
-                    ]
-                ));
+            if ($host->isObject() && $host instanceof IcingaHost && $this->monitoring()->hasHost($host)) {
+                $this->actions()->add(Link::create($this->translate('Show'), 'monitoring/host/show', [
+                    'host' => $host->getObjectName()
+                ], [
+                    'class'            => 'icon-globe critical',
+                    'data-base-target' => '_next'
+                ]));
 
                 // Intentionally placed here, show it only for deployed Hosts
                 $this->addOptionalInspectLink();
@@ -584,7 +585,7 @@ class HostController extends ObjectController
 
     protected function addOptionalInspectLink()
     {
-        if (! $this->hasPermission('director/inspect')) {
+        if (! $this->hasPermission(Permission::INSPECT)) {
             return;
         }
 
@@ -604,11 +605,13 @@ class HostController extends ObjectController
     }
 
     /**
-     * @return IcingaHost
+     * @return ?IcingaHost
      */
     protected function getHostObject()
     {
-        assert($this->object instanceof IcingaHost);
+        if ($this->object !== null) {
+            assert($this->object instanceof IcingaHost);
+        }
         return $this->object;
     }
 }

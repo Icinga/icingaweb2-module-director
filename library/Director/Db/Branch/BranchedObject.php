@@ -267,14 +267,14 @@ class BranchedObject
             if ($this->object->hasProperty('object_type')) {
                 $branched->set('object_type', $this->object->get('object_type'));
             }
+            $branched->set('id', $this->object->get('id'));
+            $branched->set('uuid', $this->object->get('uuid'));
             foreach ((array) $this->object->toPlainObject(false, true) as $key => $value) {
                 if ($key === 'object_type') {
                     continue;
                 }
                 $branched->set($key, $value);
             }
-            $branched->set('id', $this->object->get('id'));
-            $branched->set('uuid', $this->object->get('uuid'));
         } else {
             $branched = DbObjectTypeRegistry::newObject($this->objectTable, [], $connection);
             $branched->setUniqueId($this->objectUuid);
@@ -342,6 +342,23 @@ class BranchedObject
         }
 
         return $self;
+    }
+
+    public static function exists(
+        Db $connection,
+        $table,
+        UuidInterface $uuid,
+        UuidInterface $branchUuid = null
+    ) {
+        if (static::optionalTableRowByUuid($connection, $table, $uuid)) {
+            return true;
+        }
+
+        if ($branchUuid && static::optionalBranchedTableRowByUuid($connection, $table, $uuid, $branchUuid)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

@@ -3,10 +3,12 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
-use Icinga\Module\Director\Monitoring;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -27,10 +29,11 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->hasPermission('director/monitoring/services')) {
-            $monitoring = new Monitoring();
-            if ($monitoring->authCanEditService($this->Auth(), $this->getParam('host'), $this->getParam('name'))) {
-                return;
+        if ($this->hasPermission(Permission::MONITORING_SERVICES)) {
+            if ($this->host && $service = $this->object) {
+                if ($this->monitoring()->canModifyService($this->host, $service->getObjectName())) {
+                    return;
+                }
             }
         }
         $this->assertPermission('director/hosts');
@@ -38,59 +41,60 @@ class ServiceController extends ObjectController
 
     public function init()
     {
+        // This happens in parent::init() too, but is required to take place before the next two lines
+        $this->enableStaticObjectLoader($this->getTableName());
+
+        // Hint: having Host and Set loaded first is important for UUID lookups with legacy URLs
+        $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
+        $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');
         parent::init();
-        $this->loadOptionalHost();
-        $this->loadOptionalSet();
+        if ($this->object) {
+            if ($this->host === null) {
+                $this->host = $this->loadOptionalRelatedObject($this->object, 'host');
+            }
+            if ($this->set === null) {
+                $this->set = $this->loadOptionalRelatedObject($this->object, 'service_set');
+            }
+        }
         $this->addOptionalHostTabs();
         $this->addOptionalSetTabs();
     }
 
-    protected function loadOptionalHost()
+    protected function getOptionalRelatedObjectFromParams($type, $parameter)
     {
-        $host = $this->params->get('host', $this->params->get('host_id'));
-        if ($host === null && $this->object) {
-            if ($host = $this->object->get('host_id')) {
-                $host = (int) $host;
+        if ($id = $this->params->get("{$parameter}_id")) {
+            $key = (int) $id;
+        } else {
+            $key = $this->params->get($parameter);
+        }
+        if ($key !== null) {
+            $table = DbObjectTypeRegistry::tableNameByType($type);
+            $key = UuidLookup::findUuidForKey($key, $table, $this->db(), $this->getBranch());
+            return $this->loadSpecificObject($table, $key);
+        }
+
+        return null;
+    }
+
+    protected function loadOptionalRelatedObject(IcingaObject $object, $relation)
+    {
+        $key = $object->getUnresolvedRelated($relation);
+        if ($key === null) {
+            if ($key = $object->get("{$relation}_id")) {
+                $key = (int) $key;
             } else {
-                $host = $this->object->get('host');
+                $key = $object->get($relation);
                 // We reach this when accessing Service Template Fields
             }
         }
 
-        if ($host !== null) {
-            $key = UuidLookup::findUuidForKey($host, 'icinga_host', $this->db(), $this->getBranch());
-            $this->host = $this->loadSpecificObject('icinga_host', $key);
-        }
-    }
-
-    protected function loadOptionalSet()
-    {
-        $key = $this->params->get('set', $this->params->get('service_set_id'));
-        if ($key === null && $this->object && $key = $this->object->get('service_set_id')) {
-            $key = (int) $key;
+        if ($key === null) {
+            return null;
         }
 
-        if ($key !== null) {
-            $uuid = UuidLookup::findUuidForKey($key, 'icinga_service_set', $this->db(), $this->getBranch());
-            $this->set = $this->loadSpecificObject('icinga_service_set', $uuid);
-        }
-    }
-
-    /**
-     * TODO: Is this still a thing? It's unused.
-     *
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    protected function loadOptionalApplyRule()
-    {
-        if ($apply = $this->params->get('apply')) {
-            // Hint: doesn't work, DbObjectStore::load does no longer exist
-            $store = new DbObjectStore($this->db(), $this->getBranch());
-            $this->apply = $store->load('service', [
-                'object_name' => $apply,
-                'object_type' => 'template'
-            ]);
-        }
+        $table = DbObjectTypeRegistry::tableNameByType($relation);
+        $uuid = UuidLookup::findUuidForKey($key, $table, $this->db(), $this->getBranch());
+        return $this->loadSpecificObject($table, $uuid);
     }
 
     protected function addParamToTabs($name, $value)
@@ -140,6 +144,12 @@ class ServiceController extends ObjectController
         /** @var IcingaService $object */
         $object = $this->object;
         $this->addTitle($object->getObjectName());
+        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Modifying Templates'))) {
+            return;
+        }
+
+        $form = IcingaServiceForm::load()->setDb($this->db());
+        $form->setBranch($this->getBranch());
 
         if ($this->host) {
             $this->actions()->add(Link::create(
@@ -148,9 +158,8 @@ class ServiceController extends ObjectController
                 ['uuid' => $this->host->getUniqueId()->toString()],
                 ['class' => 'icon-left-big']
             ));
+            $form->setHost($this->host);
         }
-
-        $form = IcingaServiceForm::load()->setDb($this->db());
 
         if ($this->set) {
             $form->setServiceSet($this->set);
@@ -245,9 +254,16 @@ class ServiceController extends ObjectController
         }
 
         $key = $this->getLegacyKey();
-        $uuid = UuidLookup::findServiceUuid($this->db(), $this->getBranch(), 'object', $key, $this->host, $this->set);
-        $this->params->set('uuid', $uuid->toString());
-        parent::loadObject();
+        // Hint: not passing 'object' as type, we still have name-based links in previews and similar
+        $uuid = UuidLookup::findServiceUuid($this->db(), $this->getBranch(), null, $key, $this->host, $this->set);
+        if ($uuid === null) {
+            if (! $this->params->get('allowOverrides')) {
+                throw new NotFoundError('Not found');
+            }
+        } else {
+            $this->params->set('uuid', $uuid->toString());
+            parent::loadObject();
+        }
     }
 
     protected function addOptionalHostTabs()

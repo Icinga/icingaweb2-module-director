@@ -2,11 +2,12 @@
 
 namespace Icinga\Module\Director\Cli;
 
+use gipfl\Json\JsonDecodeException;
+use gipfl\Json\JsonString;
 use Icinga\Cli\Command as CliCommand;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Application\Config;
 use RuntimeException;
@@ -21,7 +22,7 @@ class Command extends CliCommand
 
     protected function renderJson($object, $pretty = true)
     {
-        return json_encode($object, $pretty ? JSON_PRETTY_PRINT : null) . "\n";
+        return JsonString::encode($object, $pretty ? JSON_PRETTY_PRINT : null) . "\n";
     }
 
     /**
@@ -30,15 +31,17 @@ class Command extends CliCommand
      */
     protected function parseJson($json)
     {
-        $res = json_decode($json);
-
-        if ($res === null) {
-            $this->fail('Invalid JSON: %s', $this->getLastJsonError());
+        try {
+            return JsonString::decode($json);
+        } catch (JsonDecodeException $e) {
+            $this->fail('Invalid JSON: %s', $e->getMessage());
         }
-
-        return $res;
     }
 
+    /**
+     * @param string $msg
+     * @return never-return
+     */
     public function fail($msg)
     {
         $args = func_get_args();
@@ -46,16 +49,8 @@ class Command extends CliCommand
         if (count($args)) {
             $msg = vsprintf($msg, $args);
         }
-
-        throw new RuntimeException($msg);
-    }
-
-    /**
-     * @return string
-     */
-    protected function getLastJsonError()
-    {
-        return JsonException::getJsonErrorMessage(json_last_error());
+        echo $this->screen->colorize("ERROR", 'red') . ": $msg\n";
+        exit(1);
     }
 
     /**

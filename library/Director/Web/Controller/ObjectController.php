@@ -10,6 +10,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -61,48 +62,60 @@ abstract class ObjectController extends ActionController
 
     public function init()
     {
-        parent::init();
-
-        if ($this->getRequest()->isApiRequest()) {
-            $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
-            try {
-                $this->loadOptionalObject();
-            } catch (NotFoundError $e) {
-                // Silently ignore the error, the handler will complain
-                $handler->sendJsonError($e, 404);
-                // TODO: nice shutdown
-                exit;
-            }
-
-            $handler->setApi($this->api());
-            if ($this->object) {
-                $handler->setObject($this->object);
-            }
-            $handler->dispatch();
-            // Hint: also here, hard exit. There is too much magic going on.
-            // Letting this bubble up smoothly would be "correct", but proved
-            // to be too fragile. Web 2, all kinds of pre/postDispatch magic,
-            // different view renderers - hard exit is the only safe bet right
-            // now.
-            exit;
-        } else {
+        $this->enableStaticObjectLoader($this->getTableName());
+        if (! $this->getRequest()->isApiRequest()) {
             $this->loadOptionalObject();
-            if ($this->getRequest()->getActionName() === 'add') {
-                $this->addSingleTab(
-                    sprintf($this->translate('Add %s'), ucfirst($this->getType())),
-                    null,
-                    'add'
-                );
-            } else {
-                $this->tabs(new ObjectTabs(
-                    $this->getRequest()->getControllerName(),
-                    $this->getAuth(),
-                    $this->object
-                ));
-            }
-            if ($this->object !== null) {
-                $this->addDeploymentLink();
-            }
+        }
+        parent::init();
+        if ($this->getRequest()->isApiRequest()) {
+            $this->initializeRestApi();
+        } else {
+            $this->initializeWebRequest();
+        }
+    }
+
+    protected function initializeRestApi()
+    {
+        $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
+        try {
+            $this->loadOptionalObject();
+        } catch (NotFoundError $e) {
+            // Silently ignore the error, the handler will complain
+            $handler->sendJsonError($e, 404);
+            // TODO: nice shutdown
+            exit;
+        }
+
+        $handler->setApi($this->api());
+        if ($this->object) {
+            $handler->setObject($this->object);
+        }
+        $handler->dispatch();
+        // Hint: also here, hard exit. There is too much magic going on.
+        // Letting this bubble up smoothly would be "correct", but proved
+        // to be too fragile. Web 2, all kinds of pre/postDispatch magic,
+        // different view renderers - hard exit is the only safe bet right
+        // now.
+        exit;
+    }
+
+    protected function initializeWebRequest()
+    {
+        if ($this->getRequest()->getActionName() === 'add') {
+            $this->addSingleTab(
+                sprintf($this->translate('Add %s'), ucfirst($this->getType())),
+                null,
+                'add'
+            );
+        } else {
+            $this->tabs(new ObjectTabs(
+                $this->getRequest()->getControllerName(),
+                $this->getAuth(),
+                $this->object
+            ));
+        }
+        if ($this->object !== null) {
+            $this->addDeploymentLink();
         }
     }
 
@@ -130,11 +143,22 @@ abstract class ObjectController extends ActionController
         if ($oType = $this->params->get('type', 'object')) {
             $form->setPreferredObjectType($oType);
         }
-
         if ($oType === 'template') {
+            if ($this->showNotInBranch($this->translate('Creating Templates'))) {
+                $this->addTitle($this->translate('Create a new Template'));
+                return;
+            }
+
             $this->addTemplate();
         } else {
             $this->addObject();
+        }
+        $branch = $this->getBranch();
+        if (! $this->getRequest()->isApiRequest()) {
+            $hasPreferred = $this->hasPreferredBranch();
+            if ($branch->isBranch() || $hasPreferred) {
+                $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), null, $hasPreferred));
+            }
         }
 
         $form->handleRequest();
@@ -148,8 +172,19 @@ abstract class ObjectController extends ActionController
     {
         $object = $this->requireObject();
         $this->tabs()->activate('modify');
-        $this->addObjectTitle()
-             ->addObjectForm($object)
+        $this->addObjectTitle();
+        // Hint: Service Sets are 'templates' (as long as not being assigned to a host
+        if ($this->getTableName() !== 'icinga_service_set'
+            && $object->isTemplate()
+            && $this->showNotInBranch($this->translate('Modifying Templates'))
+        ) {
+            return;
+        }
+        if ($object->isApplyRule() && $this->showNotInBranch($this->translate('Modifying Apply Rules'))) {
+            return;
+        }
+
+        $this->addObjectForm($object)
              ->addActionClone()
              ->addActionUsage()
              ->addActionBasket();
@@ -179,6 +214,17 @@ abstract class ObjectController extends ActionController
     {
         $this->assertTypePermission();
         $object = $this->requireObject();
+        $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
+            ->addBackToObjectLink();
+
+        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Templates'))) {
+            return;
+        }
+
+        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Apply Rules'))) {
+            return;
+        }
+
         $form = IcingaCloneObjectForm::load()
             ->setBranch($this->getBranch())
             ->setObject($object)
@@ -190,9 +236,7 @@ abstract class ObjectController extends ActionController
         } else {
             $this->tabs()->activate('modify');
         }
-        $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
-            ->addBackToObjectLink()
-            ->content()->add($form);
+        $this->content()->add($form);
     }
 
     /**
@@ -210,6 +254,10 @@ abstract class ObjectController extends ActionController
             $object->getObjectName()
         );
         $this->tabs()->activate('fields');
+        if ($this->showNotInBranch($this->translate('Managing Fields'))) {
+            return;
+        }
+
         try {
             $this->addFieldsFormAndTable($object, $type);
         } catch (NestingError $e) {
@@ -225,7 +273,7 @@ abstract class ObjectController extends ActionController
 
         if ($id = $this->params->get('field_id')) {
             $form->loadObject([
-                "${type}_id"   => $object->id,
+                "{$type}_id"   => $object->id,
                 'datafield_id' => $id
             ]);
 
@@ -320,7 +368,7 @@ abstract class ObjectController extends ActionController
             $this->actions()->add([
                 Link::create(
                     $this->translate('Usage'),
-                    "director/${type}template/usage",
+                    "director/{$type}template/usage",
                     ['name'  => $object->getObjectName()],
                     ['class' => 'icon-sitemap']
                 )
@@ -516,8 +564,16 @@ abstract class ObjectController extends ActionController
         if (! $this->allowsObject($object)) {
             throw new NotFoundError('No such object available');
         }
-        if ($showHint && $branch->isBranch() && ! $this->getRequest()->isApiRequest()) {
-            $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), $branchedObject));
+        if ($showHint) {
+            $hasPreferredBranch = $this->hasPreferredBranch();
+            if (($hasPreferredBranch || $branch->isBranch())
+                && $object->isObject()
+                && ! $this->getRequest()->isApiRequest()
+            ) {
+                $this->content()->add(
+                    new BranchedObjectHint($branch, $this->Auth(), $branchedObject, $hasPreferredBranch)
+                );
+            }
         }
 
         return $object;

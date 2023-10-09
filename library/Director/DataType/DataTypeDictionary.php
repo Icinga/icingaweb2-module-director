@@ -63,7 +63,7 @@ class DataTypeDictionary extends DataTypeHook
         $form->addElement('select', 'template_object_type', [
             'label' => $form->translate('Template (Object) Type'),
             'description' => $form->translate(
-                'Please choose a specific Icinga object type. All '
+                'Please choose a specific Icinga object type'
             ),
             'class'    => 'autosubmit',
             'required' => true,

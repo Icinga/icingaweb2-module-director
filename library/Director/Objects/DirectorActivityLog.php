@@ -4,13 +4,19 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Util;
 use Icinga\Authentication\Auth;
 use Icinga\Application\Icinga;
 use Icinga\Application\Logger;
 
 class DirectorActivityLog extends DbObject
 {
+    const ACTION_CREATE = 'create';
+    const ACTION_DELETE = 'delete';
+    const ACTION_MODIFY = 'modify';
+
+    /** @deprecated */
+    const AUDIT_REMOVE = 'remove';
+
     protected $table = 'director_activity_log';
 
     protected $keyName = 'id';
@@ -35,6 +41,9 @@ class DirectorActivityLog extends DbObject
         'parent_checksum'
     ];
 
+    /** @var ?string */
+    protected static $overriddenUsername = null;
+
     /**
      * @param $name
      *
@@ -53,8 +62,12 @@ class DirectorActivityLog extends DbObject
         return $this->reallySet('object_name', $name);
     }
 
-    protected static function username()
+    public static function username()
     {
+        if (self::$overriddenUsername) {
+            return self::$overriddenUsername;
+        }
+
         if (Icinga::app()->isCli()) {
             return 'cli';
         }
@@ -84,6 +97,11 @@ class DirectorActivityLog extends DbObject
         }
     }
 
+    /**
+     * @param Db $connection
+     * @return DirectorActivityLog
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();
@@ -99,25 +117,25 @@ class DirectorActivityLog extends DbObject
         $type = $object->getTableName();
         $newProps = $object->toJson(null, true);
 
-        $data = array(
+        $data = [
             'object_name'     => $name,
-            'action_name'     => 'create',
+            'action_name'     => self::ACTION_CREATE,
             'author'          => static::username(),
             'object_type'     => $type,
             'new_properties'  => $newProps,
             'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
-        );
+        ];
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
-        static::audit($db, array(
-            'action'      => 'create',
+        static::audit($db, [
+            'action'      => self::ACTION_CREATE,
             'object_type' => $type,
             'object_name' => $name,
             'new_props'   => $newProps,
-        ));
+        ]);
 
         return static::create($data)->store($db);
     }
@@ -129,27 +147,27 @@ class DirectorActivityLog extends DbObject
         $oldProps = json_encode($object->getPlainUnmodifiedObject());
         $newProps = $object->toJson(null, true);
 
-        $data = array(
+        $data = [
             'object_name'     => $name,
-            'action_name'     => 'modify',
+            'action_name'     => self::ACTION_MODIFY,
             'author'          => static::username(),
             'object_type'     => $type,
             'old_properties'  => $oldProps,
             'new_properties'  => $newProps,
             'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
-        );
+        ];
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
-        static::audit($db, array(
-            'action'      => 'modify',
+        static::audit($db, [
+            'action'      => self::ACTION_MODIFY,
             'object_type' => $type,
             'object_name' => $name,
             'old_props'   => $oldProps,
             'new_props'   => $newProps,
-        ));
+        ]);
 
         return static::create($data)->store($db);
     }
@@ -160,48 +178,55 @@ class DirectorActivityLog extends DbObject
         $type = $object->getTableName();
         $oldProps = json_encode($object->getPlainUnmodifiedObject());
 
-        $data = array(
+        $data = [
             'object_name'     => $name,
-            'action_name'     => 'delete',
+            'action_name'     => self::ACTION_DELETE,
             'author'          => static::username(),
             'object_type'     => $type,
             'old_properties'  => $oldProps,
             'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
-        );
+        ];
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
-        static::audit($db, array(
-            'action'      => 'remove',
+        static::audit($db, [
+            'action'      => self::AUDIT_REMOVE,
             'object_type' => $type,
             'object_name' => $name,
             'old_props'   => $oldProps
-        ));
+        ]);
 
         return static::create($data)->store($db);
     }
 
     public static function audit(Db $db, $properties)
     {
-        if ($db->settings()->enable_audit_log !== 'y') {
+        if ($db->settings()->get('enable_audit_log') !== 'y') {
             return;
         }
 
-        $log = array();
-        $properties = array_merge(
-            array(
-                'username' => static::username(),
-                'address'  => static::ip(),
-            ),
-            $properties
-        );
+        $log = [];
+        $properties = array_merge([
+            'username' => static::username(),
+            'address'  => static::ip(),
+        ], $properties);
 
-        foreach ($properties as $key => & $val) {
+        foreach ($properties as $key => $val) {
             $log[] = "$key=" . json_encode($val);
         }
 
         Logger::info('(director) ' . implode(' ', $log));
+    }
+
+    public static function overrideUsername($username)
+    {
+        self::$overriddenUsername = $username;
+    }
+
+    public static function restoreUsername()
+    {
+        self::$overriddenUsername = null;
     }
 }
