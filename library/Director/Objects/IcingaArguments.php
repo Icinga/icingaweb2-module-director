@@ -155,7 +155,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             if (property_exists($value, 'type')) {
                 // argument is directly set as function, no further properties
                 if ($value->type === 'Function') {
-                    $attrs['argument_value'] = self::COMMENT_DSL_UNSUPPORTED;
+                    $attrs['argument_value'] = property_exists($value, 'body')
+                        ? $value->body
+                        : self::COMMENT_DSL_UNSUPPORTED;
                     $attrs['argument_format'] = 'expression';
                 }
             } elseif (property_exists($value, 'value')) {

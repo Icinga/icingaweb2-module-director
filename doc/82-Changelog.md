@@ -43,6 +43,7 @@ This version hasn't been released yet
 # Configuration Baskets
 * FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
 * FIX: basket now shows where to expect changes for lists from snapshots (#2791)
+* FIX: Icinga DSL parts for Commands are now restored from Baskets (#2811)
 
 ### REST API
 * FIX: Commands give 304 w/o ghost changes for same properties (#2660)
