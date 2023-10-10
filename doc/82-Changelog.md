@@ -38,6 +38,7 @@ This version hasn't been released yet
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 * FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
 * FIX: Import Source shows available columns for Core API Import (#2763)
+* FIX: JSON-decode now explicitly fails for non-string inputs (#2810)
 
 # Configuration Baskets
 * FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
