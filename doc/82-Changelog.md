@@ -35,6 +35,7 @@ This version hasn't been released yet
 * FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
 * FEATURE: property modifiers can now be applied based on filters (#2756)
 * FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
+* FEATURE: trigger group membership resolution on group sync conditionally (#2812)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 * FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
 * FIX: Import Source shows available columns for Core API Import (#2763)
