@@ -52,6 +52,7 @@ This version hasn't been released yet
 ### Permissions and Restrictions
 * FIX: monitoring-related permission checks have been refactored (#2712)
 * FIX: Hostgroup-Filters have not been applied to Overview tables (#2775)
+* FIX: error editing Hosts with hostgroup restriction in place (#2164, #2809)
 
 ### Configuration Branches
 * FEATURE: with this release, directorbranches v1.3 supports a "default branch" (#2688)
