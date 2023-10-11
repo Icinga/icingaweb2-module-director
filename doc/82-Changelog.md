@@ -64,6 +64,7 @@ This version hasn't been released yet
 
 ### Internals
 * FIX: group membership is no longer resolved when not needed (#2048)
+* FIX: require Auth object for all object tables (#2808)
 * FEATURE: support PHP 8.2 (#2777, #2792)
 
 ### Fixed issues

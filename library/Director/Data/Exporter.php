@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Data;
 
 use gipfl\Json\JsonString;
 use gipfl\ZfDb\Adapter\Adapter;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
@@ -185,7 +186,7 @@ class Exporter
     public function serviceLoader()
     {
         if ($this->serviceLoader === null) {
-            $this->serviceLoader = new HostServiceLoader($this->connection);
+            $this->serviceLoader = new HostServiceLoader($this->connection, Auth::getInstance());
             $this->serviceLoader->resolveObjects($this->resolveObjects);
         }
 

@@ -43,8 +43,7 @@ abstract class TemplateController extends CompatController
                 $template->getObjectName()
             )->addBackToUsageLink($template);
 
-        ObjectsTable::create($this->getType(), $this->db())
-            ->setAuth($this->Auth())
+        ObjectsTable::create($this->getType(), $this->db(), $this->Auth())
             ->setBranch($this->getBranch())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
             ->filterTemplate($template, $this->getInheritance())

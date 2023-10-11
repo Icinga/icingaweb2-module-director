@@ -144,8 +144,7 @@ abstract class ObjectsController extends ActionController
      */
     protected function getTable()
     {
-        $table = ObjectsTable::create($this->getType(), $this->db())
-            ->setAuth($this->getAuth())
+        $table = ObjectsTable::create($this->getType(), $this->db(), $this->getAuth())
             ->setBranchUuid($this->getBranchUuid())
             ->setBaseObjectUrl($this->getBaseObjectUrl());
 
