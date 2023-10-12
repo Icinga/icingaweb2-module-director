@@ -48,7 +48,7 @@ class TemplateUsageTable extends Table
         $type = ucfirst($template->getShortTableName());
         $class = __NAMESPACE__ . "\\{$type}TemplateUsageTable";
         if (class_exists($class)) {
-            return new $class($template, $branch);
+            return new $class($template, $auth, $branch);
         } else {
             return new static($template, $auth, $branch);
         }
