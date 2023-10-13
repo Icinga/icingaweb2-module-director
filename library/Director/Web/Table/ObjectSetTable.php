@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
 use Icinga\Authentication\Auth;
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
@@ -27,6 +29,8 @@ class ObjectSetTable extends ZfQueryBasedTable
 
     /** @var Auth */
     private $auth;
+
+    protected $queries = [];
 
     public static function create($type, Db $db, Auth $auth)
     {
@@ -53,7 +57,7 @@ class ObjectSetTable extends ZfQueryBasedTable
             'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
         ];
 
-        $url = Url::fromPath("director/${type}set", $params);
+        $url = Url::fromPath("director/{$type}set", $params);
 
         $classes = $this->getRowClasses($row);
         $tr = static::tr([
@@ -85,7 +89,7 @@ class ObjectSetTable extends ZfQueryBasedTable
     {
         $type = $this->getType();
 
-        $table = "icinga_${type}_set";
+        $table = "icinga_{$type}_set";
         $columns = [
             'id'             => 'os.id',
             'uuid'           => 'os.uuid',
@@ -106,15 +110,15 @@ class ObjectSetTable extends ZfQueryBasedTable
             ['os' => $table],
             $columns
         )->joinLeft(
-            ['o' => "icinga_${type}"],
-            "o.${type}_set_id = os.id",
+            ['o' => "icinga_{$type}"],
+            "o.{$type}_set_id = os.id",
             []
         );
 
         $nameFilter = new FilterByNameRestriction(
             $this->connection(),
             $this->auth,
-            "${type}_set"
+            "{$type}_set"
         );
         $nameFilter->applyToQuery($query, 'os');
         /** @var Db $conn */
@@ -145,7 +149,20 @@ class ObjectSetTable extends ZfQueryBasedTable
                 $query->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid');
                 $right->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid');
             }
-
+            $right->joinLeft(
+                ['bo' => "branched_icinga_{$type}"],
+                "bo.{$type}_set = bos.object_name",
+                []
+            )->group(['bo.object_name', 'o.object_name']);
+            $query->joinLeft(
+                ['bo' => "branched_icinga_{$type}"],
+                "bo.{$type}_set = bos.object_name",
+                []
+            )->group(['bo.object_name', 'o.object_name']);
+            $this->queries = [
+                $query,
+                $right
+            ];
             $query = $this->db()->select()->union([
                 'l' => new DbSelectParenthesis($query),
                 'r' => new DbSelectParenthesis($right),
@@ -168,16 +185,16 @@ class ObjectSetTable extends ZfQueryBasedTable
                     ->group('assign_filter')
                     ->group('description')
                     ->group('count_services');
-            };
+            }
         } else {
             // Disabled for now, check for correctness:
             // $query->joinLeft(
-            //     ['osi' => "icinga_${type}_set_inheritance"],
-            //     "osi.parent_${type}_set_id = os.id",
+            //     ['osi' => "icinga_{$type}_set_inheritance"],
+            //     "osi.parent_{$type}_set_id = os.id",
             //     []
             // )->joinLeft(
-            //     ['oso' => "icinga_${type}_set"],
-            //     "oso.id = oso.${type}_set_id",
+            //     ['oso' => "icinga_{$type}_set"],
+            //     "oso.id = oso.{$type}_set_id",
             //     []
             // );
             // 'count_hosts'    => 'COUNT(DISTINCT oso.id)',
@@ -196,9 +213,38 @@ class ObjectSetTable extends ZfQueryBasedTable
                     ->group('os.assign_filter')
                     ->group('os.description');
             };
+            $this->queries = [$query];
         }
 
         return $query;
+    }
+
+    public function search($search)
+    {
+        if (! empty($search)) {
+            $columns = $this->getSearchColumns();
+            if (strpos($search, ' ') === false) {
+                $filter = Filter::matchAny();
+                foreach ($columns as $column) {
+                    $filter->addFilter(Filter::expression($column, '=', "*$search*"));
+                }
+            } else {
+                $filter = Filter::matchAll();
+                foreach (explode(' ', $search) as $s) {
+                    $sub = Filter::matchAny();
+                    foreach ($columns as $column) {
+                        $sub->addFilter(Filter::expression($column, '=', "*$s*"));
+                    }
+                    $filter->addFilter($sub);
+                }
+            }
+
+            foreach ($this->queries as $query) {
+                FilterRenderer::applyToQuery($filter, $query);
+            }
+        }
+
+        return $this;
     }
 
     /**

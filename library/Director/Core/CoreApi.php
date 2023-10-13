@@ -622,7 +622,7 @@ constants
     {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
 
-        $objects = $this->getDirectorObjects('Command', "${type}Commands", [
+        $objects = $this->getDirectorObjects('Command', "{$type}Commands", [
             'arguments' => 'arguments',
             // 'env'      => 'env',
             'timeout'   => 'timeout',

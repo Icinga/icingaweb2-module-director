@@ -211,7 +211,7 @@ abstract class GroupMembershipResolver
             $query,
             $object,
             'o',
-            Db\IcingaObjectFilterHelper::INHERIT_DIRECT_OR_INDIRECT
+            IcingaObjectFilterHelper::INHERIT_DIRECT_OR_INDIRECT
         );
 
         foreach ($object::loadAll($this->connection, $query) as $child) {
@@ -352,7 +352,7 @@ abstract class GroupMembershipResolver
         $type = $this->type;
         if ($this->groupMap === null) {
             $this->groupMap = $this->db->fetchPairs(
-                $this->db->select()->from("icinga_${type}group", ['object_name', 'id'])
+                $this->db->select()->from("icinga_{$type}group", ['object_name', 'id'])
             );
         }
 
@@ -390,9 +390,9 @@ abstract class GroupMembershipResolver
             $db->delete(
                 $this->getResolvedTableName(),
                 sprintf(
-                    "(${type}group_id = %d AND ${type}_id = %d)",
-                    $row["${type}group_id"],
-                    $row["${type}_id"]
+                    "({$type}group_id = %d AND {$type}_id = %d)",
+                    $row["{$type}group_id"],
+                    $row["{$type}_id"]
                 )
             );
         }
@@ -416,16 +416,16 @@ abstract class GroupMembershipResolver
                 foreach ($objectIds as $objectId) {
                     if (! array_key_exists($objectId, $right[$groupId])) {
                         $diff[] = array(
-                            "${type}group_id" => $groupId,
-                            "${type}_id"      => $objectId,
+                            "{$type}group_id" => $groupId,
+                            "{$type}_id"      => $objectId,
                         );
                     }
                 }
             } else {
                 foreach ($objectIds as $objectId) {
                     $diff[] = array(
-                        "${type}group_id" => $groupId,
-                        "${type}_id"      => $objectId,
+                        "{$type}group_id" => $groupId,
+                        "{$type}_id"      => $objectId,
                     );
                 }
             }
@@ -445,16 +445,16 @@ abstract class GroupMembershipResolver
         $query = $this->db->select()->from(
             array('hgh' => $this->getResolvedTableName()),
             array(
-                'group_id'  => "${type}group_id",
-                'object_id' => "${type}_id",
+                'group_id'  => "{$type}group_id",
+                'object_id' => "{$type}_id",
             )
         );
 
-        $this->addMembershipWhere($query, "${type}_id", $this->objects);
-        $this->addMembershipWhere($query, "${type}group_id", $this->groups);
+        $this->addMembershipWhere($query, "{$type}_id", $this->objects);
+        $this->addMembershipWhere($query, "{$type}group_id", $this->groups);
         if (! empty($this->groups)) {
             // load staticGroups (we touched here) additionally, so we can compare changes
-            $this->addMembershipWhere($query, "${type}group_id", $this->staticGroups);
+            $this->addMembershipWhere($query, "{$type}group_id", $this->staticGroups);
         }
 
         foreach ($this->db->fetchAll($query) as $row) {
@@ -602,7 +602,7 @@ abstract class GroupMembershipResolver
     {
         $type = $this->getType();
         $query = $this->db->select()->from(
-            array('hg' => "icinga_${type}group"),
+            array('hg' => "icinga_{$type}group"),
             array(
                 'id',
                 'assign_filter',
@@ -629,7 +629,7 @@ abstract class GroupMembershipResolver
     protected function getTableName()
     {
         $type = $this->getType();
-        return "icinga_${type}group_${type}";
+        return "icinga_{$type}group_{$type}";
     }
 
     protected function getResolvedTableName()

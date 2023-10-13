@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class CommandObjectDashlet extends Dashlet
 {
     protected $icon = 'wrench';
 
-    protected $requiredStats = array('command');
+    protected $requiredStats = ['command'];
 
     public function getTitle()
     {
@@ -20,6 +22,6 @@ class CommandObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 }

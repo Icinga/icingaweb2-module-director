@@ -76,9 +76,4 @@ class CustomVariableCache
             return new CustomVariables();
         }
     }
-
-    public function __destruct()
-    {
-        unset($this->db);
-    }
 }

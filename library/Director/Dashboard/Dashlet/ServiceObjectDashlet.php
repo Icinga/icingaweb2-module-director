@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 use Icinga\Module\Director\Acl;
+use Icinga\Module\Director\Auth\Permission;
+use RuntimeException;
 
 class ServiceObjectDashlet extends Dashlet
 {
@@ -22,13 +24,13 @@ class ServiceObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return ['director/services'];
+        throw new RuntimeException('This method should not be accessed, isAllowed() has been implemented');
     }
 
     public function isAllowed()
     {
         $acl = Acl::instance();
-        return $acl->hasPermission('director/services')
-            || $acl->hasPermission('director/service_sets');
+        return $acl->hasPermission(Permission::SERVICES)
+            || $acl->hasPermission(Permission::SERVICE_SETS);
     }
 }

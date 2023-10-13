@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use Icinga\Module\Director\Auth\Permission;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use gipfl\IcingaWeb2\Icon;
@@ -35,10 +36,10 @@ class AdditionalTableActions
     public function appendTo(HtmlDocument $parent)
     {
         $links = [];
-        if ($this->hasPermission('director/admin')) {
+        if ($this->hasPermission(Permission::ADMIN)) {
             $links[] = $this->createDownloadJsonLink();
         }
-        if ($this->hasPermission('director/showsql')) {
+        if ($this->hasPermission(Permission::SHOW_SQL)) {
             $links[] = $this->createShowSqlToggle();
         }
 

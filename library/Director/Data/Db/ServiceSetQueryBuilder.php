@@ -27,6 +27,8 @@ class ServiceSetQueryBuilder
     /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
+    protected $searchColumns = [];
+
     /**
      * @param ?UuidInterface $uuid
      */

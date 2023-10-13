@@ -56,7 +56,7 @@ class Acl
     public function listRoleNames()
     {
         return array_map(
-            array($this, 'getNameForRole'),
+            [$this, 'getNameForRole'],
             $this->getUser()->getRoles()
         );
     }

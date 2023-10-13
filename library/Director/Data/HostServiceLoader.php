@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Data;
 
 use gipfl\IcingaWeb2\Table\QueryBasedTable;
 use gipfl\ZfDb\Select;
+use Icinga\Authentication\Auth;
 use Icinga\Data\SimpleQuery;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
@@ -26,21 +27,26 @@ class HostServiceLoader
     /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
+    /** @var Auth */
+    protected $auth;
+
     /** @var bool */
     protected $resolveHostServices = false;
 
     /** @var bool */
     protected $resolveObjects = false;
 
-    public function __construct(Db $connection)
+    public function __construct(Db $connection, Auth $auth)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+        $this->auth = $auth;
     }
 
     public function fetchServicesForHost(IcingaHost $host)
     {
-        $table = (new ObjectsTableService($this->connection))->setHost($host);
+        $table = (new ObjectsTableService($this->connection, $this->auth))
+            ->setHost($host);
         $services = $this->fetchServicesForTable($table);
         if ($this->resolveHostServices) {
             foreach ($this->fetchAllServicesForHost($host) as $service) {
@@ -69,7 +75,7 @@ class HostServiceLoader
         /** @var IcingaHost[] $parents */
         $parents = IcingaTemplateRepository::instanceByObject($host)->getTemplatesFor($host, true);
         foreach ($parents as $parent) {
-            $table = (new ObjectsTableService($this->connection))
+            $table = (new ObjectsTableService($this->connection, $this->auth))
                 ->setHost($parent)
                 ->setInheritedBy($host);
             foreach ($this->fetchServicesForTable($table) as $service) {

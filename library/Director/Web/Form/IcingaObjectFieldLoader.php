@@ -613,7 +613,7 @@ class IcingaObjectFieldLoader
         $fields = [];
         /** @var HostFieldHook|ServiceFieldHook $hook */
         $type = ucfirst($object->getShortTableName());
-        foreach (Hook::all("Director\\${type}Field") as $hook) {
+        foreach (Hook::all("Director\\{$type}Field") as $hook) {
             if ($hook->wants($object)) {
                 $id = $object->get('id');
                 $spec = $hook->getFieldSpec($object);

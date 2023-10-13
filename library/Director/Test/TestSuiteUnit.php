@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Test;
 
 abstract class TestSuiteUnit
 {
+    private $testdoxFile;
+
     public function run()
     {
     }
@@ -15,7 +17,7 @@ abstract class TestSuiteUnit
     public function __destruct()
     {
         if ($this->testdoxFile && file_exists($this->testdoxFile)) {
-            unlink($this->testDoxfile);
+            unlink($this->testdoxFile);
         }
     }
 

@@ -33,7 +33,7 @@ class PropertyModifierSplit extends PropertyModifierHook
 
     public function transform($value)
     {
-        if (! strlen(trim($value))) {
+        if ($value === null || ! strlen(trim($value))) {
             if ($this->getSetting('when_empty', 'empty_array') === 'empty_array') {
                 return array();
             } else {

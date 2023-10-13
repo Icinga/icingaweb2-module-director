@@ -135,7 +135,7 @@ class AssignFilterHelper
 
                 $parts = array();
                 foreach (preg_split('~\*~', $expression) as $part) {
-                    $parts[] = preg_quote($part);
+                    $parts[] = preg_quote($part, '/');
                 }
                 // match() is case insensitive
                 $pattern = '/^' . implode('.*', $parts) . '$/i';

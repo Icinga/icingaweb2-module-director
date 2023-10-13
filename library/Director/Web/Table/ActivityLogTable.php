@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Table;
 use gipfl\Format\LocalTimeFormat;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Util;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
@@ -206,7 +207,7 @@ class ActivityLogTable extends ZfQueryBasedTable
             $type = substr($type, 7);
         }
 
-        if (Util::hasPermission('director/showconfig')) {
+        if (Util::hasPermission(Permission::SHOW_CONFIG)) {
             // Later on replacing, service_set -> serviceset
 
             // multi column key :(

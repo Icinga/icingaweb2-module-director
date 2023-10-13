@@ -31,11 +31,10 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testGettingFirstFailsForEmptyArray()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $this->buildModifier('first')->transform([]);
     }
 
@@ -60,11 +59,10 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testGettingLastFailsForEmptyArray()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $this->buildModifier('last')->transform([]);
     }
 
@@ -89,11 +87,10 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testGettingSpecificFailsForEmptyArray()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $this->buildModifier('fixed', 1)->transform([]);
     }
 
@@ -102,11 +99,10 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
         $this->assertNull($this->buildModifier('fixed', 1, 'null')->transform([]));
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testGettingSpecificFailsForMissingValue()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $this->buildModifier('fixed', 3)->transform(['one', 'two', 'three']);
     }
 
@@ -115,11 +111,10 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
         $this->assertNull($this->buildModifier('fixed', 3, 'null')->transform(['one', 'two', 'three']));
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testFailsForStrings()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $this->buildModifier('first')->transform('string');
     }
 

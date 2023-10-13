@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class HostObjectDashlet extends Dashlet
 {
     protected $icon = 'host';
 
-    protected $requiredStats = array('host', 'hostgroup');
+    protected $requiredStats = ['host', 'hostgroup'];
 
     public function getTitle()
     {
@@ -15,7 +17,7 @@ class HostObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return ['director/hosts'];
+        return [Permission::HOSTS];
     }
 
     public function getUrl()

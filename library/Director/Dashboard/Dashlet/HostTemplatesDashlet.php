@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class HostTemplatesDashlet extends Dashlet
 {
     protected $icon = 'cubes';
@@ -26,6 +28,6 @@ class HostTemplatesDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 }

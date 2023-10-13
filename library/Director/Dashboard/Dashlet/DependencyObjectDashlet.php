@@ -6,7 +6,7 @@ class DependencyObjectDashlet extends Dashlet
 {
     protected $icon = 'sitemap';
 
-    protected $requiredStats = array('dependency');
+    protected $requiredStats = ['dependency'];
 
     public function getTitle()
     {

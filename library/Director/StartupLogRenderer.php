@@ -83,9 +83,9 @@ class StartupLogRenderer implements ValidHtml
             }
 
             if ($time === null) {
-                $lines[] .= $line;
+                $lines[] = $line;
             } else {
-                $lines[] .= "[$time] $line";
+                $lines[] = "[$time] $line";
             }
         }
         return implode("\n", $lines);

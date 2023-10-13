@@ -23,21 +23,19 @@ class PropertyModifierListToObjectTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testFailsOnMissingKey()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $input = $this->getInputArrays();
         unset($input[0]['name']);
         $this->getNewModifier()->transform($input);
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testFailsWithDuplicateRows()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         $input = $this->getInputArrays();
         $input[1]['name'] = 'row1';
         $this->getNewModifier()->transform($input);

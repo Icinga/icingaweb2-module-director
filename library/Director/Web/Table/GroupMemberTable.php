@@ -109,7 +109,7 @@ class GroupMemberTable extends ZfQueryBasedTable
             ];
         }
 
-        $url = Url::fromPath("director/${type}", $params);
+        $url = Url::fromPath("director/{$type}", $params);
 
         $tr = $this::tr();
 
@@ -163,7 +163,7 @@ class GroupMemberTable extends ZfQueryBasedTable
             'o.id',
             'o.object_type',
             'o.object_name',
-            'membership_type' => "CASE WHEN go.${type}_id IS NULL THEN 'apply' ELSE 'direct' END"
+            'membership_type' => "CASE WHEN go.{$type}_id IS NULL THEN 'apply' ELSE 'direct' END"
         ];
 
         if ($this->group === null) {
@@ -176,19 +176,19 @@ class GroupMemberTable extends ZfQueryBasedTable
         }
 
         $query = $this->db()->select()->from(
-            ['gro' => "icinga_${type}group_${type}_resolved"],
+            ['gro' => "icinga_{$type}group_{$type}_resolved"],
             $columns
         )->join(
-            ['o' => "icinga_${type}"],
-            "o.id = gro.${type}_id",
+            ['o' => "icinga_{$type}"],
+            "o.id = gro.{$type}_id",
             []
         )->join(
-            ['g' => "icinga_${type}group"],
-            "gro.${type}group_id = g.id",
+            ['g' => "icinga_{$type}group"],
+            "gro.{$type}group_id = g.id",
             []
         )->joinLeft(
-            ['go' => "icinga_${type}group_${type}"],
-            "go.${type}_id = o.id AND go.${type}group_id = g.id",
+            ['go' => "icinga_{$type}group_{$type}"],
+            "go.{$type}_id = o.id AND go.{$type}group_id = g.id",
             []
         )->order('o.object_name');
 

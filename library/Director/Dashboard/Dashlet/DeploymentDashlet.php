@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 use Exception;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 
 class DeploymentDashlet extends Dashlet
@@ -109,6 +110,6 @@ class DeploymentDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/deploy');
+        return [Permission::DEPLOY];
     }
 }

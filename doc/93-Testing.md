@@ -12,16 +12,12 @@ there is probably already someone running them from time to time. So, just
 lean back with full trust in our development toolchain and spend your time
 elsewhere ;-) Cheers!
 
-### Tests on Travis-CI
+### Tests on GitHub
 
 When pushing to [GitHub](https://github.com/Icinga/icingaweb2-module-director/)
-or sending pull requests, Unit-Tests are automatically triggered on
-[Travis-CI](https://travis-ci.org/Icinga/icingaweb2-module-director):
+or sending pull requests, Unit-Tests are automatically triggered.
 
-[![Build Status](https://travis-ci.org/Icinga/icingaweb2-module-director.svg?branch=master)](https://travis-ci.org/Icinga/icingaweb2-module-director)
-
-We run our tests against MySQL and PostgreSQL, with PHP versions ranging from
-5.3 to 7.1, including nightly builds.
+![Build Status](https://github.com/Icinga/icingaweb2-module-director/workflows/PHP%20Tests/badge.svg?branch=master)
 
 ### Tests for supported Platforms
 

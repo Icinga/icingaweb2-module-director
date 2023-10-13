@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
+use gipfl\Json\JsonDecodeException;
 use gipfl\Json\JsonString;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterAnd;
@@ -128,8 +129,14 @@ class AssignRenderer
         }
 
         $column = $filter->getColumn();
-        $rawExpression = Json::decode($filter->getExpression());
-        $expression = $this->renderExpressionValue($rawExpression);
+        try {
+            $rawExpression = JsonString::decode($filter->getExpression());
+            $expression = $this->renderExpressionValue($rawExpression);
+        } catch (JsonDecodeException $e) {
+            throw new InvalidArgumentException(
+                "Got invalid JSON in filter string: $column" . $filter->getSign() . $filter->getExpression()
+            );
+        }
 
         if (is_array($rawExpression) && $filter instanceof FilterMatch) {
             return $this->renderInArray($column, $expression);

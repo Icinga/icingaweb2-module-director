@@ -16,6 +16,7 @@ use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\SyncProperty;
@@ -48,6 +49,9 @@ class Sync
 
     /** @var array<mixed, array<int, string>> key => [property, property]*/
     protected $setNull = [];
+
+    /** @var array<mixed, array<string, mixed>> key => [propertyName, newValue]*/
+    protected $newProperties = [];
 
     /** @var bool Whether we already prepared your sync */
     protected $isPrepared = false;
@@ -87,6 +91,12 @@ class Sync
 
     /** @var ?DbObjectStore */
     protected $store;
+
+    /** @var IcingaObjectGroup[] */
+    protected $modifiedGroups = [];
+
+    /** @var IcingaObject[] */
+    protected $modifiedGroupObjects = [];
 
     /**
      * @param SyncRule $rule
@@ -134,24 +144,6 @@ class Sync
         }
 
         return $modified;
-    }
-
-    /**
-     * Transform the given value to an array
-     *
-     * @param  array|string|null $value
-     *
-     * @return array
-     */
-    protected function wantArray($value)
-    {
-        if (is_array($value)) {
-            return $value;
-        } elseif ($value === null) {
-            return [];
-        } else {
-            return [$value];
-        }
     }
 
     /**
@@ -452,7 +444,28 @@ class Sync
             if ($this->store) {
                 $objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType), 'object_name');
             } else {
-                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
+                $keyColumn = null;
+                $query = null;
+                // We enforce named index for combined-key templates (Services and Sets) and applied Sets
+                if ($ruleObjectType === 'service' || $ruleObjectType === 'serviceSet') {
+                    foreach ($this->syncProperties as $prop) {
+                        $configuredObjectType = $prop->get('source_expression');
+                        if ($prop->get('destination_field') === 'object_type'
+                            && (
+                                $configuredObjectType === 'template'
+                                || ($configuredObjectType === 'apply' && $ruleObjectType === 'serviceSet')
+                            )
+                        ) {
+                            $keyColumn = 'object_name';
+                            $table = $ruleObjectType === 'service'
+                                ? BranchSupport::TABLE_ICINGA_SERVICE
+                                : BranchSupport::TABLE_ICINGA_SERVICE_SET;
+                            $query = $this->db->getDbAdapter()->select()
+                                ->from($table)->where('object_type = ?', $configuredObjectType);
+                        }
+                    }
+                }
+                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db, $query, $keyColumn);
             }
 
             if ($useLowerCaseKeys) {
@@ -532,6 +545,15 @@ class Sync
      */
     protected function prepareNewObject($row, DbObject $object, $objectKey, $sourceId)
     {
+        if (!isset($this->newProperties[$objectKey])) {
+            $this->newProperties[$objectKey] = [];
+        }
+        // TODO: some more improvements are possible here. First, no need to instantiate
+        //       all new objects, we could stick with the newProperties array. Next, we
+        //       should be more correct when respecting sync property order. Right now,
+        //       a property from another Import Source might win, even if property order
+        //       tells something different. This is a very rare case, but still incorrect.
+        $properties = &$this->newProperties[$objectKey];
         foreach ($this->syncProperties as $propertyKey => $p) {
             if ($p->get('source_id') !== $sourceId) {
                 continue;
@@ -557,36 +579,33 @@ class Sync
                     $varName = substr($prop, 5);
                     if (substr($varName, -2) === '[]') {
                         $varName = substr($varName, 0, -2);
-                        $current = $this->wantArray($object->vars()->$varName);
                         $object->vars()->$varName = array_merge(
-                            $current,
-                            $this->wantArray($val)
+                            (array) ($object->vars()->$varName),
+                            (array) $val
                         );
                     } else {
-                        if ($val === null) {
-                            $this->setNull[$objectKey][$prop] = $prop;
-                        } else {
-                            unset($this->setNull[$objectKey][$prop]);
-                            $object->vars()->$varName = $val;
-                        }
+                        $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
                     }
                 } else {
-                    if ($val === null) {
-                        $this->setNull[$objectKey][$prop] = $prop;
-                    } else {
-                        unset($this->setNull[$objectKey][$prop]);
-                        $object->set($prop, $val);
-                    }
+                    $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
                 }
             } else {
-                if ($val === null) {
-                    $this->setNull[$objectKey][$prop] = $prop;
-                } else {
-                    unset($this->setNull[$objectKey][$prop]);
-                    $object->set($prop, $val);
-                }
+                $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
             }
         }
+    }
+
+    protected function setPropertyWithNullLogic(DbObject $object, $objectKey, $property, $value, &$allProps)
+    {
+        if ($value === null) {
+            if (! array_key_exists($property, $allProps) || $allProps[$property] === null) {
+                $this->setNull[$objectKey][$property] = $property;
+            }
+        } else {
+            unset($this->setNull[$objectKey][$property]);
+            $object->set($property, $value);
+        }
+        $allProps[$property] = $value;
     }
 
     /**
@@ -625,6 +644,9 @@ class Sync
     protected function notifyResolvers()
     {
         if ($resolver = $this->getHostGroupMembershipResolver()) {
+            if ($this->rule->get('object_type') === 'hostgroup') {
+                $resolver->setGroups($this->modifiedGroups);
+            }
             $resolver->refreshDb(true);
         }
 
@@ -748,6 +770,13 @@ class Sync
         }
     }
 
+    protected function optionallyTellResolverAboutModifiedGroup(IcingaObjectGroup $group)
+    {
+        if (in_array('assign_filter', $group->getModifiedProperties())) {
+            $this->modifiedGroups[] = $group;
+        }
+    }
+
     /**
      * @param $key
      * @param DbObject|IcingaObject $object
@@ -791,7 +820,11 @@ class Sync
             }
         }
 
-        if (isset($this->setNull[$key])) {
+        // Hint: in theory, NULL should be set on new objects, but this has no effect
+        //       anyway, and we also do not store vars.something = null, this would
+        //       instead delete the variable. So here we do not need to check for new
+        //       objects, and skip all null values with update policy = 'ignore'
+        if ($policy !== 'ignore' && isset($this->setNull[$key])) {
             foreach ($this->setNull[$key] as $property) {
                 $this->objects[$key]->set($property, null);
             }
@@ -850,6 +883,9 @@ class Sync
                 }
 
                 if ($object->hasBeenModified()) {
+                    if ($object instanceof IcingaObjectGroup) {
+                        $this->optionallyTellResolverAboutModifiedGroup($object);
+                    }
                     $existing = $object->hasBeenLoadedFromDb();
                     if ($existing) {
                         if ($this->store) {

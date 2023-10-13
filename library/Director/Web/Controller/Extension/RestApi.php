@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Controller\Extension;
 
 use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Web\Response;
 use InvalidArgumentException;
@@ -55,7 +56,7 @@ trait RestApi
      */
     protected function assertApiPermission()
     {
-        if (! $this->hasPermission('director/api')) {
+        if (! $this->hasPermission(Permission::API)) {
             throw new AuthenticationException('You are not allowed to access this API');
         }
     }

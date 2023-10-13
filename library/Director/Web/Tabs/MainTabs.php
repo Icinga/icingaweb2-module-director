@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Tabs;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Web\Widget\Daemon\BackgroundDaemonState;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Health;
@@ -26,7 +27,7 @@ class MainTabs extends Tabs
             'label' => $this->translate('Overview'),
             'url' => 'director'
         ]);
-        if ($this->auth->hasPermission('director/admin')) {
+        if ($this->auth->hasPermission(Permission::ADMIN)) {
             $this->add('health', [
                 'label' => $this->translate('Health'),
                 'url' => 'director/health'
@@ -39,7 +40,7 @@ class MainTabs extends Tabs
 
     public function render()
     {
-        if ($this->auth->hasPermission('director/admin')) {
+        if ($this->auth->hasPermission(Permission::ADMIN)) {
             if ($this->getActiveName() !== 'health') {
                 $state = $this->getHealthState();
                 if ($state->isProblem()) {

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form\Element;
 
+use gipfl\Json\JsonString;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
@@ -268,13 +269,13 @@ class DataFilter extends FormElement
             return Filter::expression(
                 $entry['column'],
                 '=',
-                json_encode(true)
+                $this->jsonEncode(true)
             );
         } elseif ($entry['sign'] === 'false') {
             return Filter::expression(
                 $entry['column'],
                 '=',
-                json_encode(false)
+                $this->jsonEncode(false)
             );
         } elseif ($entry['sign'] === 'in') {
             if (array_key_exists('value', $entry)) {
@@ -291,13 +292,13 @@ class DataFilter extends FormElement
             return Filter::expression(
                 $entry['column'],
                 '=',
-                json_encode($value)
+                $this->jsonEncode($value)
             );
         } elseif ($entry['sign'] === 'contains') {
             $value = array_key_exists('value', $entry) ? $entry['value'] : null;
 
             return Filter::expression(
-                json_encode($value),
+                $this->jsonEncode($value),
                 '=',
                 $entry['column']
             );
@@ -307,9 +308,18 @@ class DataFilter extends FormElement
             return Filter::expression(
                 $entry['column'],
                 $entry['sign'],
-                json_encode($value)
+                $this->jsonEncode($value)
             );
         }
+    }
+
+    protected function jsonEncode($string)
+    {
+        return preg_replace(
+            ['/&/u', '/\|/u', '/!/u', '/=/u', '/>/u', '/</u'],
+            ['\u0026', '\u007c', '\u0021', '\u003d', '\u003e', '\u003c'],
+            JsonString::encode($string)
+        );
     }
 
     protected function entryAction($entry)

@@ -171,7 +171,7 @@ class IcingaTimePeriodTest extends BaseTestCase
         return IcingaTimePeriod::load($this->testPeriodName . $suffix, $this->getDb());
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $db = $this->getDb();
 

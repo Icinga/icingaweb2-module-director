@@ -1979,7 +1979,7 @@ msgid "Disable Checks"
 msgstr "Disattivare i Checks"
 
 #: application/forms/IcingaDependencyForm.php:167
-msgid "Disable Notificiations"
+msgid "Disable Notifications"
 msgstr "Disattivare le notifiche"
 
 #: application/forms/SettingsForm.php:54

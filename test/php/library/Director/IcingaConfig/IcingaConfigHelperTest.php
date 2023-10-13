@@ -18,11 +18,10 @@ class IcingaConfigHelperTest extends BaseTestCase
         $this->assertEquals(c::parseInterval('1h 5m 60s'), 3960);
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testWhetherInvalidIntervalStringRaisesException()
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         c::parseInterval('1h 5m 60x');
     }
 

@@ -11,7 +11,7 @@ class AssignFilterHelperTest extends BaseTestCase
 {
     protected static $exampleHost;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         self::$exampleHost = (object) [
             'address'              => '127.0.0.1',

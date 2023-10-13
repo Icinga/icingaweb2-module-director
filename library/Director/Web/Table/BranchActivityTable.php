@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use gipfl\Format\LocalTimeFormat;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\BranchActivity;
 use Icinga\Module\Director\Util;
@@ -75,7 +76,7 @@ class BranchActivityTable extends ZfQueryBasedTable
     {
         $type = preg_replace('/^icinga_/', '', $activity->getObjectTable());
 
-        if (Util::hasPermission('director/showconfig')) {
+        if (Util::hasPermission(Permission::SHOW_CONFIG)) {
             // Later on replacing, service_set -> serviceset
             return [
                 '[' . $activity->getAuthor() . ']',

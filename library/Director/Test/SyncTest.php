@@ -29,7 +29,7 @@ abstract class SyncTest extends BaseTestCase
     /** @var  Sync */
     protected $sync;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->source = ImportSource::create(array(
             'source_name'    => 'testimport',
@@ -49,7 +49,7 @@ abstract class SyncTest extends BaseTestCase
         $this->sync = new Sync($this->rule);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         // properties should be deleted automatically
         if ($this->rule !== null && $this->rule->hasBeenLoadedFromDb()) {

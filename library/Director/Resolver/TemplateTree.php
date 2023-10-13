@@ -80,13 +80,13 @@ class TemplateTree
         $map = [];
         $db    = $this->db;
         $type  = $this->type;
-        $table = "icinga_${type}_inheritance";
+        $table = "icinga_{$type}_inheritance";
 
         $query = $db->select()->from(
             ['i' => $table],
             [
-                'object' => "i.${type}_id",
-                'parent' => "i.parent_${type}_id",
+                'object' => "i.{$type}_id",
+                'parent' => "i.parent_{$type}_id",
             ]
         )->order('i.weight');
 
@@ -439,12 +439,12 @@ class TemplateTree
 
         if ($type === 'command') {
             $joinCondition = $db->quoteInto(
-                "p.id = i.parent_${type}_id",
+                "p.id = i.parent_{$type}_id",
                 'template'
             );
         } else {
             $joinCondition = $db->quoteInto(
-                "p.id = i.parent_${type}_id AND p.object_type = ?",
+                "p.id = i.parent_{$type}_id AND p.object_type = ?",
                 'template'
             );
         }

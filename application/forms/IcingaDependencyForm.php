@@ -164,7 +164,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         ], null);
 
         $this->addBoolean('disable_notifications', [
-            'label'       => $this->translate('Disable Notificiations'),
+            'label'       => $this->translate('Disable Notifications'),
             'description' => $this->translate(
                 'Whether to disable notifications when this dependency fails.'
                 . ' Defaults to true.'

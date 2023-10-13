@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class HostGroupsDashlet extends Dashlet
 {
     protected $icon = 'tags';
@@ -26,6 +28,6 @@ class HostGroupsDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/hostgroups');
+        return [Permission::HOST_GROUPS];
     }
 }

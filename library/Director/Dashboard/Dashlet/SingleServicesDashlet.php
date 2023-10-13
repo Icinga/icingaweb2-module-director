@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class SingleServicesDashlet extends Dashlet
 {
     protected $icon = 'service';
@@ -26,6 +28,6 @@ class SingleServicesDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/services');
+        return [Permission::SERVICES];
     }
 }

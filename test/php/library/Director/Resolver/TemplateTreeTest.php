@@ -248,7 +248,7 @@ class TemplateTreeTest extends BaseTestCase
         }
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             $db = $this->getDb();

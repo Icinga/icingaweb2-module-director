@@ -3,12 +3,13 @@
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 use Exception;
+use Icinga\Module\Director\Auth\Permission;
 
 class EndpointObjectDashlet extends Dashlet
 {
     protected $icon = 'cloud';
 
-    protected $requiredStats = array('endpoint');
+    protected $requiredStats = ['endpoint'];
 
     protected $hasDeploymentEndpoint;
 
@@ -24,7 +25,7 @@ class EndpointObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 
     protected function hasDeploymentEndpoint()

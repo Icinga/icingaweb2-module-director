@@ -25,10 +25,12 @@ class BasketUploadForm extends DirectorObjectForm
      */
     public function setup()
     {
-        $this->addElement('text', 'basket_name', [
-            'label'        => $this->translate('Basket Name'),
-            'required'     => true,
-        ]);
+        if ($this->object === null) {
+            $this->addElement('text', 'basket_name', [
+                'label'        => $this->translate('Basket Name'),
+                'required'     => true,
+            ]);
+        }
         $this->setAttrib('enctype', 'multipart/form-data');
 
         $this->addElement('file', 'uploaded_file', [
@@ -51,16 +53,6 @@ class BasketUploadForm extends DirectorObjectForm
     protected function getObjectClassname()
     {
         return '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Basket';
-    }
-
-    protected function setObjectSuccessUrl()
-    {
-        /** @var Basket $basket */
-        $basket = $this->object();
-        $this->setSuccessUrl(
-            'director/basket',
-            ['name' => $basket->get('basket_name')]
-        );
     }
 
     /**
@@ -134,13 +126,17 @@ class BasketUploadForm extends DirectorObjectForm
 
         $basket->set('owner_type', 'user');
         $basket->set('owner_value', $this->getAuth()->getUser()->getUsername());
-        $basket->store($this->db);
+        if ($basket->hasBeenLoadedFromDb()) {
+            $this->setSuccessUrl('director/basket/snapshots', ['name' => $basket->get('basket_name')]);
+        } else {
+            $this->setSuccessUrl('director/basket', ['name' => $basket->get('basket_name')]);
+            $basket->store($this->db);
+        }
 
         BasketSnapshot::forBasketFromJson(
             $basket,
             $this->rawUpload
         )->store($this->db);
-        $this->setObjectSuccessUrl();
         $this->beforeSuccessfulRedirect();
         $this->redirectOnSuccess($this->translate('Basket has been uploaded'));
     }

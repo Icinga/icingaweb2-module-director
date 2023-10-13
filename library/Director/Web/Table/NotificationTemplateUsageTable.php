@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Db;
+
 class NotificationTemplateUsageTable extends TemplateUsageTable
 {
     public function getTypes()
@@ -12,11 +14,15 @@ class NotificationTemplateUsageTable extends TemplateUsageTable
         ];
     }
 
-    protected function getTypeSummaryDefinitions()
+    protected function getSummaryTables(string $templateType, Db $connection)
     {
         return [
-            'templates'  => $this->getSummaryLine('template'),
-            'applyrules' => $this->getSummaryLine('apply', 'o.host_id IS NULL'),
+            'templates'  => TemplatesTable::create(
+                $templateType,
+                $connection
+            ),
+            'applyrules' => ApplyRulesTable::create($templateType, $connection)
+                ->setBranchUuid($this->branchUuid)
         ];
     }
 }

@@ -75,7 +75,7 @@ class CommandUsage
                     $suffix = $urlSuffix[$objectType];
                     $links[] = Link::create(
                         sprintf($caption, $res->$objectType),
-                        "director/${type}s$suffix",
+                        "director/{$type}s$suffix",
                         ['command' => $name]
                     );
                 }
@@ -96,7 +96,7 @@ class CommandUsage
         $query = $this->db->select()->from("icinga_$table", $columns);
 
         foreach ($rels as $rel) {
-            $query->orWhere("${rel}_id = ?", $id);
+            $query->orWhere("{$rel}_id = ?", $id);
         }
 
         return $this->db->fetchRow($query);

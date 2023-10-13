@@ -1791,7 +1791,7 @@ msgstr "監視を無効化"
 # smori
 
 #: ../../../../modules/director/application/forms/IcingaDependencyForm.php:164
-msgid "Disable Notificiations"
+msgid "Disable Notifications"
 msgstr "通知を無効化"
 
 #: ../../../../modules/director/application/forms/SettingsForm.php:54

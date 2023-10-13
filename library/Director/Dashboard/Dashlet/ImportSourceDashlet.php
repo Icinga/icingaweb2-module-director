@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 use Exception;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\ImportSource;
 
 class ImportSourceDashlet extends Dashlet
@@ -60,6 +61,6 @@ class ImportSourceDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 }

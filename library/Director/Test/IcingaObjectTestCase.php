@@ -76,7 +76,7 @@ abstract class IcingaObjectTestCase extends BaseTestCase
     /**
      * @inheritdoc
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             /** @var IcingaObject $object */

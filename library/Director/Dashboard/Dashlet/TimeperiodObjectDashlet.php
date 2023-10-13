@@ -4,12 +4,13 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 use DirectoryIterator;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Auth\Permission;
 
 class TimeperiodObjectDashlet extends Dashlet
 {
     protected $icon = 'calendar';
 
-    protected $requiredStats = array('timeperiod');
+    protected $requiredStats = ['timeperiod'];
 
     public function getTitle()
     {
@@ -23,6 +24,6 @@ class TimeperiodObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 }

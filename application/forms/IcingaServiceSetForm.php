@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -113,7 +114,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        if (! $this->hasPermission('director/service_set/apply')) {
+        if (! $this->hasPermission(Permission::SERVICE_SET_APPLY)) {
             return $this;
         }
 

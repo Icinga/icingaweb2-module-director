@@ -26,14 +26,13 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testFailsToStoreWithMissingLazyRelations()
     {
         if ($this->skipForMissingDb()) {
             return;
         }
+
+        $this->expectException(\RuntimeException::class);
 
         $db = $this->getDb();
         $service = $this->service();
@@ -50,11 +49,10 @@ class IcingaServiceTest extends BaseTestCase
         $service->assign_filter = 'host.address="127.*"';
     }
 
-    /**
-     * @expectedException \LogicException
-     */
     public function testRefusesAssignRulesWhenNotBeingAnApply()
     {
+        $this->expectException(\LogicException::class);
+
         $service = $this->service();
         $service->assign_filter = 'host.address=127.*';
     }
@@ -271,7 +269,7 @@ class IcingaServiceTest extends BaseTestCase
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if ($this->hasDb()) {
             $db = $this->getDb();

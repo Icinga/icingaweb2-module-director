@@ -155,7 +155,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             if (property_exists($value, 'type')) {
                 // argument is directly set as function, no further properties
                 if ($value->type === 'Function') {
-                    $attrs['argument_value'] = self::COMMENT_DSL_UNSUPPORTED;
+                    $attrs['argument_value'] = property_exists($value, 'body')
+                        ? $value->body
+                        : self::COMMENT_DSL_UNSUPPORTED;
                     $attrs['argument_format'] = 'expression';
                 }
             } elseif (property_exists($value, 'value')) {
@@ -296,6 +298,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'argument_name');
         $this->cloneStored();
         $this->refreshIndex();
+        $this->modified = false;
 
         return $this;
     }
@@ -360,6 +363,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         }
         $this->refreshIndex();
         $this->cloneStored();
+        $this->modified = false;
     }
 
     /**
@@ -393,7 +397,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             unset($this->arguments[$key]);
         }
 
+        $this->refreshIndex();
         $this->cloneStored();
+        $this->modified = false;
 
         return $this;
     }

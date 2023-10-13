@@ -6,8 +6,10 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -196,14 +198,16 @@ class IcingaServiceForm extends DirectorObjectForm
     }
 
     /**
-     * @param IcingaService $service
-     * @return IcingaService
+     * Hint: could be moved elsewhere
+     *
+     * @param IcingaService $object
+     * @return IcingaObject|IcingaService|IcingaServiceSet
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getFirstParent(IcingaService $service)
+    protected static function getFirstParent(IcingaObject $object)
     {
-        /** @var IcingaService[] $objects */
-        $objects = $service->imports()->getObjects();
+        /** @var IcingaObject[] $objects */
+        $objects = $object->imports()->getObjects();
         if (empty($objects)) {
             throw new RuntimeException('Something went wrong, got no parent');
         }
@@ -300,7 +304,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->set) {
             return $this->object;
         } else {
-            return $this->getFirstParent($this->object);
+            return self::getFirstParent($this->object);
         }
     }
 
@@ -355,7 +359,7 @@ class IcingaServiceForm extends DirectorObjectForm
             $objectType = 'template';
         }
         $this->addHidden('object_type', $objectType);
-        $forceCommandElements = $this->hasPermission('director/admin');
+        $forceCommandElements = $this->hasPermission(Permission::ADMIN);
 
         $this->addNameElement()
              ->addHostObjectElement()
@@ -550,7 +554,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addGroupsElement()
              ->groupMainProperties();
 
-        if ($this->hasPermission('director/admin')) {
+        if ($this->hasPermission(Permission::ADMIN)) {
             $this->addCheckCommandElements(true)
                 ->addCheckExecutionElements(true)
                 ->addExtraInfoElements();
@@ -721,8 +725,7 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function enumHosts()
     {
         $db = $this->db->getDbAdapter();
-        $table = new ObjectsTableHost($this->db);
-        $table->setAuth($this->getAuth());
+        $table = new ObjectsTableHost($this->db, $this->getAuth());
         if ($this->branch && $this->branch->isBranch()) {
             $table->setBranchUuid($this->branch->getUuid());
         }

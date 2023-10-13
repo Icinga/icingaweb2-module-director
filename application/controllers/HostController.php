@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
-use Icinga\Module\Director\Monitoring;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
@@ -31,28 +31,22 @@ class HostController extends ObjectController
 {
     protected function checkDirectorPermissions()
     {
-        if ($this->isServiceAction() && (new Monitoring())->authCanEditService(
-            $this->Auth(),
-            $this->getParam('name'),
-            $this->getParam('service')
-        )) {
+        $host = $this->getHostObject();
+        $auth = $this->Auth();
+        $mon = $this->monitoring();
+        if ($this->isServiceAction() && $mon->canModifyService($host, $this->getParam('service'))) {
             return;
         }
-
-        if ($this->isServicesReadOnlyAction()) {
-            $this->assertPermission('director/monitoring/services-ro');
+        if ($auth->hasPermission(Permission::MONITORING_SERVICES_RO) && $this->isServicesReadOnlyAction()) {
             return;
         }
-
-        if ($this->hasPermission('director/hosts')) { // faster
+        if ($auth->hasPermission(Permission::HOSTS)) { // faster
             return;
         }
-
-        if ($this->canModifyHostViaMonitoringPermissions($this->getParam('name'))) {
+        if ($mon->canModifyHost($host)) {
             return;
         }
-
-        $this->assertPermission('director/hosts'); // complain about default hosts permission
+        $this->assertPermission(Permission::HOSTS); // complain about default hosts permission
     }
 
     protected function isServicesReadOnlyAction()
@@ -74,16 +68,6 @@ class HostController extends ObjectController
             'appliedservice',
             'inheritedservice',
         ]);
-    }
-
-    protected function canModifyHostViaMonitoringPermissions($hostname)
-    {
-        if ($this->hasPermission('director/monitoring/hosts')) {
-            $monitoring = new Monitoring();
-            return $monitoring->authCanEditHost($this->Auth(), $hostname);
-        }
-
-        return false;
     }
 
     /**
@@ -207,8 +191,7 @@ class HostController extends ObjectController
         $branch = $this->getBranch();
         $hostHasBeenCreatedInBranch = $branch->isBranch() && $host->get('id');
         $content = $this->content();
-        $table = (new ObjectsTableService($this->db()))
-            ->setAuth($this->Auth())
+        $table = (new ObjectsTableService($this->db(), $this->Auth()))
             ->setHost($host)
             ->setBranch($branch)
             ->setTitle($this->translate('Individual Service objects'))
@@ -222,8 +205,7 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = (new ObjectsTableService($this->db()))
-                ->setAuth($this->Auth())
+            $table = (new ObjectsTableService($this->db(), $this->Auth()))
                 ->setBranch($branch)
                 ->setHost($parent)
                 ->setInheritedBy($host)
@@ -279,7 +261,7 @@ class HostController extends ObjectController
      */
     public function servicesroAction()
     {
-        $this->assertPermission('director/monitoring/services-ro');
+        $this->assertPermission(Permission::MONITORING_SERVICES_RO);
         $host = $this->getHostObject();
         $service = $this->params->getRequired('service');
         $db = $this->db();
@@ -289,8 +271,7 @@ class HostController extends ObjectController
         $this->addTitle($this->translate('Services on %s'), $host->getObjectName());
         $content = $this->content();
 
-        $table = (new ObjectsTableService($db))
-            ->setAuth($this->Auth())
+        $table = (new ObjectsTableService($db, $this->Auth()))
             ->setHost($host)
             ->setBranch($branch)
             ->setReadonly()
@@ -305,7 +286,7 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = (new ObjectsTableService($db))
+            $table = (new ObjectsTableService($db, $this->Auth()))
                 ->setReadonly()
                 ->setBranch($branch)
                 ->setHost($parent)
@@ -387,6 +368,7 @@ class HostController extends ObjectController
                 ->setHost($host)
                 ->setBranch($this->getBranch())
                 ->setAffectedHost($affectedHost)
+                ->removeQueryLimit()
                 ->setTitle($title);
             if ($roService) {
                 $table->setReadonly()->highlightService($roService);
@@ -582,20 +564,13 @@ class HostController extends ObjectController
     {
         $host = $this->object;
         try {
-            $mon = $this->monitoring();
-            if ($host->isObject()
-                && $mon->isAvailable()
-                && $mon->hasHost($host->getObjectName())
-            ) {
-                $this->actions()->add(Link::create(
-                    $this->translate('Show'),
-                    'monitoring/host/show',
-                    ['host' => $host->getObjectName()],
-                    [
-                        'class'            => 'icon-globe critical',
-                        'data-base-target' => '_next'
-                    ]
-                ));
+            if ($host->isObject() && $host instanceof IcingaHost && $this->monitoring()->hasHost($host)) {
+                $this->actions()->add(Link::create($this->translate('Show'), 'monitoring/host/show', [
+                    'host' => $host->getObjectName()
+                ], [
+                    'class'            => 'icon-globe critical',
+                    'data-base-target' => '_next'
+                ]));
 
                 // Intentionally placed here, show it only for deployed Hosts
                 $this->addOptionalInspectLink();
@@ -607,7 +582,7 @@ class HostController extends ObjectController
 
     protected function addOptionalInspectLink()
     {
-        if (! $this->hasPermission('director/inspect')) {
+        if (! $this->hasPermission(Permission::INSPECT)) {
             return;
         }
 
@@ -627,11 +602,13 @@ class HostController extends ObjectController
     }
 
     /**
-     * @return IcingaHost
+     * @return ?IcingaHost
      */
     protected function getHostObject()
     {
-        assert($this->object instanceof IcingaHost);
+        if ($this->object !== null) {
+            assert($this->object instanceof IcingaHost);
+        }
         return $this->object;
     }
 }

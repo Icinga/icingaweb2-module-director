@@ -2,10 +2,11 @@
 
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
+use gipfl\Json\JsonDecodeException;
 use gipfl\Json\JsonEncodeException;
 use gipfl\Json\JsonString;
-use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -29,7 +30,9 @@ use Icinga\Module\Director\Objects\IcingaUserGroup;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use InvalidArgumentException;
+use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
+use stdClass;
 
 class BasketSnapshot extends DbObject
 {
@@ -217,16 +220,11 @@ class BasketSnapshot extends DbObject
 
     /**
      * @param Db $connection
-     * @param bool $replace
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function restoreTo(Db $connection, $replace = true)
+    public function restoreTo(Db $connection)
     {
-        static::restoreJson(
-            $this->getJsonDump(),
-            $connection,
-            $replace
-        );
+        static::restoreJson($this->getJsonDump(), $connection);
     }
 
     /**
@@ -240,61 +238,49 @@ class BasketSnapshot extends DbObject
             'basket_uuid' => $basket->get('uuid')
         ]);
         $snapshot->objects = [];
-        foreach ((array) Json::decode($string) as $type => $objects) {
+        foreach ((array) JsonString::decode($string) as $type => $objects) {
             $snapshot->objects[$type] = (array) $objects;
         }
 
         return $snapshot;
     }
 
-    public static function restoreJson($string, Db $connection, $replace = true)
+    public static function restoreJson($string, Db $connection)
     {
-        $snapshot = new static();
-        $snapshot->restoreObjects(
-            Json::decode($string),
-            $connection,
-            $replace
-        );
+        (new static())->restoreObjects(JsonString::decode($string), $connection);
     }
 
     /**
-     * @param $all
-     * @param Db $connection
-     * @param bool $replace
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
      * @throws \Icinga\Exception\NotFoundError
+     * @throws JsonDecodeException
      */
-    protected function restoreObjects($all, Db $connection, $replace = true)
+    protected function restoreObjects(stdClass $all, Db $connection)
     {
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
         $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
-        $this->restoreType($all, 'DataList', $fieldResolver, $connection, $replace);
-        $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection, $replace);
+        $this->restoreType($all, 'DataList', $fieldResolver, $connection);
+        $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
         $fieldResolver->storeNewFields();
         foreach ($this->restoreOrder as $typeName) {
-            $this->restoreType($all, $typeName, $fieldResolver, $connection, $replace);
+            $this->restoreType($all, $typeName, $fieldResolver, $connection);
         }
         $db->commit();
     }
 
     /**
-     * @param $all
-     * @param $typeName
-     * @param BasketSnapshotFieldResolver $fieldResolver
-     * @param Db $connection
-     * @param $replace
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
+     * @throws JsonDecodeException
      */
     public function restoreType(
-        &$all,
-        $typeName,
+        stdClass $all,
+        string $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
-        Db $connection,
-        $replace
+        Db $connection
     ) {
         if (isset($all->$typeName)) {
             $objects = (array) $all->$typeName;
@@ -302,11 +288,10 @@ class BasketSnapshot extends DbObject
             return;
         }
         $class = static::getClassForType($typeName);
-
+        $importer = new ObjectImporter($connection);
         $changed = [];
-        foreach ($objects as $key => $object) {
-            /** @var DbObject $new */
-            $new = $class::import($object, $connection, $replace);
+        foreach ($objects as $object) {
+            $new = $importer->import($class, $object);
             if ($new->hasBeenModified()) {
                 if ($new instanceof IcingaObject && $new->supportsImports()) {
                     /** @var ExportInterface $new */
@@ -325,7 +310,6 @@ class BasketSnapshot extends DbObject
                     $fieldResolver->relinkObjectFields($new, $object);
                 }
             }
-            $allObjects[spl_object_hash($new)] = $object;
         }
 
         /** @var IcingaObject $object */
@@ -334,7 +318,7 @@ class BasketSnapshot extends DbObject
         }
         foreach ($changed as $key => $new) {
             // Store related fields. As objects might have formerly been
-            // un-stored, let's to it right here
+            // un-stored, let's do it right here
             if ($new instanceof IcingaObject) {
                 $fieldResolver->relinkObjectFields($new, $objects[$key]);
             }
@@ -358,10 +342,9 @@ class BasketSnapshot extends DbObject
     }
 
     /**
-     * @return BasketContent
      * @throws \Icinga\Exception\NotFoundError
      */
-    protected function getContent()
+    protected function getContent(): BasketContent
     {
         if ($this->content === null) {
             $this->content = BasketContent::load($this->get('content_checksum'), $this->getConnection());
@@ -380,26 +363,25 @@ class BasketSnapshot extends DbObject
     }
 
     /**
-     * @return string
-     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\NotFoundError|JsonEncodeException
      */
-    public function getJsonSummary()
+    public function getJsonSummary(): string
     {
         if ($this->hasBeenLoadedFromDb()) {
             return $this->getContent()->get('summary');
         }
 
-        return Json::encode($this->getSummary(), JSON_PRETTY_PRINT);
+        return JsonString::encode($this->getSummary(), JSON_PRETTY_PRINT);
     }
 
     /**
      * @return array|mixed
-     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\NotFoundError|JsonDecodeException
      */
     public function getSummary()
     {
         if ($this->hasBeenLoadedFromDb()) {
-            return Json::decode($this->getContent()->get('summary'));
+            return JsonString::decode($this->getContent()->get('summary'));
         }
 
         $summary = [];
@@ -412,7 +394,7 @@ class BasketSnapshot extends DbObject
 
     /**
      * @return string
-     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\NotFoundError|JsonEncodeException
      */
     public function getJsonDump()
     {
@@ -486,6 +468,17 @@ class BasketSnapshot extends DbObject
     }
 
     /**
+     * @return ExportInterface|DbObject|null
+     */
+    public static function instanceByUuid(string $typeName, UuidInterface $uuid, Db $connection)
+    {
+        /** @var class-string<DbObject> $class */
+        $class = static::getClassForType($typeName);
+        /** @var ExportInterface $object */
+        return $class::loadWithUniqueId($uuid, $connection);
+    }
+
+    /**
      * @param $typeName
      * @param $identifier
      * @param Db $connection
@@ -493,21 +486,17 @@ class BasketSnapshot extends DbObject
      */
     public static function instanceByIdentifier($typeName, $identifier, Db $connection)
     {
+        /** @var class-string<DbObject> $class */
         $class = static::getClassForType($typeName);
-        if (substr($class, -13) === 'IcingaService') {
+        if ($class === IcingaService::class) {
             $identifier = [
                 'object_type' => 'template',
                 'object_name' => $identifier,
             ];
         }
-        /** @var ExportInterface $object */
-        if ($class::exists($identifier, $connection)) {
-            $object = $class::load($identifier, $connection);
-        } else {
-            $object = null;
-        }
 
-        return $object;
+        /** @var ExportInterface $object */
+        return $class::loadOptional($identifier, $connection);
     }
 
     /**

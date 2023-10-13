@@ -94,7 +94,7 @@ class SyncruleController extends ActionController
                 break;
             case 'in-sync':
                 $c->add(Html::tag('p', null, sprintf(
-                    $this->translate('This Sync Rule was last found to by in Sync at %s.'),
+                    $this->translate('This Sync Rule was last found to be in Sync at %s.'),
                     $rule->get('last_attempt')
                 )));
                 /*
@@ -464,7 +464,7 @@ class SyncruleController extends ActionController
     {
         $list = new UnorderedList();
         foreach ($properties as $property => $cnt) {
-            $list->addItem("${cnt}x $property");
+            $list->addItem("{$cnt}x $property");
         }
 
         return $list;
@@ -517,7 +517,6 @@ class SyncruleController extends ActionController
             if ($this->showNotInBranch($this->translate('Modifying Sync Rules'))) {
                 return;
             }
-
         } else {
             $this->addTitle($this->translate('Add sync rule'));
             $this->tabs(new SyncRuleTabs())->activate('add');
@@ -609,12 +608,11 @@ class SyncruleController extends ActionController
         $form = SyncPropertyForm::load()->setDb($db);
         $this->tabs(new SyncRuleTabs($rule))->activate('property');
             $this->actions()->add(new Link(
-            $this->translate('back'),
-            'director/syncrule/property',
-            ['rule_id' => $ruleId],
-            ['class' => 'icon-left-big']
-        ));
-
+                $this->translate('back'),
+                'director/syncrule/property',
+                ['rule_id' => $ruleId],
+                ['class' => 'icon-left-big']
+            ));
         if ($id = $this->params->get('id')) {
             $form->loadObject((int) $id);
             $this->addTitle(

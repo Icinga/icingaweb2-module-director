@@ -62,8 +62,11 @@ abstract class ObjectController extends ActionController
 
     public function init()
     {
-        parent::init();
         $this->enableStaticObjectLoader($this->getTableName());
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->loadOptionalObject();
+        }
+        parent::init();
         if ($this->getRequest()->isApiRequest()) {
             $this->initializeRestApi();
         } else {
@@ -98,7 +101,6 @@ abstract class ObjectController extends ActionController
 
     protected function initializeWebRequest()
     {
-        $this->loadOptionalObject();
         if ($this->getRequest()->getActionName() === 'add') {
             $this->addSingleTab(
                 sprintf($this->translate('Add %s'), ucfirst($this->getType())),
@@ -271,7 +273,7 @@ abstract class ObjectController extends ActionController
 
         if ($id = $this->params->get('field_id')) {
             $form->loadObject([
-                "${type}_id"   => $object->id,
+                "{$type}_id"   => $object->id,
                 'datafield_id' => $id
             ]);
 
@@ -366,7 +368,7 @@ abstract class ObjectController extends ActionController
             $this->actions()->add([
                 Link::create(
                     $this->translate('Usage'),
-                    "director/${type}template/usage",
+                    "director/{$type}template/usage",
                     ['name'  => $object->getObjectName()],
                     ['class' => 'icon-sitemap']
                 )

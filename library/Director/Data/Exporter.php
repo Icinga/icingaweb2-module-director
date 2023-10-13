@@ -2,10 +2,14 @@
 
 namespace Icinga\Module\Director\Data;
 
+use gipfl\Json\JsonString;
 use gipfl\ZfDb\Adapter\Adapter;
+use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorDatalistEntry;
@@ -18,6 +22,7 @@ use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\InstantiatedViaHook;
 use Icinga\Module\Director\Objects\SyncRule;
+use Ramsey\Uuid\Uuid;
 use RuntimeException;
 
 class Exporter
@@ -67,6 +72,11 @@ class Exporter
             }
 
             $props = $chosen;
+        }
+        if ($column = $object->getUuidColumn()) {
+            if ($uuid = $object->get($column)) {
+                $props[$column] = Uuid::fromBytes($uuid)->toString();
+            }
         }
 
         ksort($props);
@@ -152,10 +162,10 @@ class Exporter
                 throw new RuntimeException('Not yet');
             }
             $props['services'] = [];
-            foreach ($object->getServiceObjects() as $serviceObject) {
-                $props['services'][$serviceObject->getObjectName()] = $this->export($serviceObject);
+            foreach ($object->getServices() as $serviceObject) {
+                $props['services'][] = $this->export($serviceObject);
             }
-            ksort($props['services']);
+            usort($props['services'], [$this, 'sortByName']);
         } elseif ($object instanceof IcingaHost) {
             if ($this->exportHostServices) {
                 $services = [];
@@ -168,10 +178,15 @@ class Exporter
         }
     }
 
+    protected function sortByName($left, $right)
+    {
+        return $left->object_name < $right->object_name ? '-1' : '1';
+    }
+
     public function serviceLoader()
     {
         if ($this->serviceLoader === null) {
-            $this->serviceLoader = new HostServiceLoader($this->connection);
+            $this->serviceLoader = new HostServiceLoader($this->connection, Auth::getInstance());
             $this->serviceLoader->resolveObjects($this->resolveObjects);
         }
 
@@ -241,11 +256,22 @@ class Exporter
     protected function exportDbObject(DbObject $object)
     {
         $props = $object->getProperties();
+        foreach ($props as $key => &$value) {
+            if ($object->propertyIsBoolean($key)) {
+                $value = DbDataFormatter::booleanForDbValue($value);
+            }
+        }
+        unset($value);
         if ($object instanceof DbObjectWithSettings) {
             if ($object instanceof InstantiatedViaHook) {
                 $props['settings'] = (object) $object->getInstance()->exportSettings();
             } else {
                 $props['settings'] = (object) $object->getSettings(); // Already sorted
+            }
+        }
+        if ($object instanceof Basket) {
+            if (isset($props['objects']) && is_string($props['objects'])) {
+                $props['objects'] = JsonString::decode($props['objects']);
             }
         }
         unset($props['uuid']); // Not yet
@@ -279,16 +305,7 @@ class Exporter
     protected function exportDatalistEntries(DirectorDatalist $list)
     {
         $entries = [];
-        $id = $list->get('id');
-        if ($id === null) {
-            return $entries;
-        }
-
-        $dbEntries = DirectorDatalistEntry::loadAllForList($list);
-        // Hint: they are loaded with entry_name key
-        ksort($dbEntries);
-
-        foreach ($dbEntries as $entry) {
+        foreach ($list->getEntries() as $name => $entry) {
             if ($entry->shouldBeRemoved()) {
                 continue;
             }

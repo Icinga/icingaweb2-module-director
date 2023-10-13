@@ -29,8 +29,9 @@ class KickstartCommand extends Command
      *        require => Exec['Icinga Director DB migration'],
      *     }
      *
-     * Exit code 0 means that a kickstart run is required, code 2 that it is
-     * not.
+     * Exit code 0: A kickstart run is required.
+     * Exit code 1: Kickstart is configured but a run is not required.
+     * Exit code 2: A kickstart run is not required.
      */
     public function requiredAction()
     {

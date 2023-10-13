@@ -52,9 +52,9 @@ class BasketForm extends DirectorObjectForm
         $types = $this->getAvailableTypes();
 
         $options = [
-            'IGNORE' => $this->translate('Ignore'),
-            'ALL'    => $this->translate('All of them'),
-            '[]'     => $this->translate('Custom Selection'),
+            Basket::SELECTION_NONE   => $this->translate('Ignore'),
+            Basket::SELECTION_ALL    => $this->translate('All of them'),
+            Basket::SELECTION_CUSTOM => $this->translate('Custom Selection'),
         ];
 
         $this->addHtmlHint($this->translate(
@@ -92,13 +92,13 @@ class BasketForm extends DirectorObjectForm
         /** @var Basket $object */
         $values = [];
         foreach ($this->getAvailableTypes() as $type => $label) {
-            $values[$type] = 'IGNORE';
+            $values[$type] = Basket::SELECTION_NONE;
         }
         foreach ($object->getChosenObjects() as $type => $selection) {
             if ($selection === true) {
-                $values[$type] = 'ALL';
+                $values[$type] = Basket::SELECTION_ALL;
             } elseif (is_array($selection)) {
-                $values[$type] = '[]';
+                $values[$type] = Basket::SELECTION_CUSTOM;
             }
         }
 

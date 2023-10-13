@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class ApiUserObjectDashlet extends Dashlet
 {
     protected $icon = 'lock-open-alt';
 
-    protected $requiredStats = array('apiuser');
+    protected $requiredStats = ['apiuser'];
 
     public function getTitle()
     {
@@ -20,6 +22,6 @@ class ApiUserObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller\Extension;
 
+use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Window;
@@ -65,7 +66,7 @@ trait DirectorDb
         $auth = $this->Auth();
 
         $available = $this->listAvailableDbResourceNames();
-        if ($resourceNames = $auth->getRestrictions('director/db_resource')) {
+        if ($resourceNames = $auth->getRestrictions(Restriction::DB_RESOURCE)) {
             $names = [];
             foreach ($resourceNames as $rNames) {
                 foreach ($this->splitList($rNames) as $name) {

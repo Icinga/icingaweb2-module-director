@@ -6,7 +6,7 @@ use InvalidArgumentException;
 
 class DbDataFormatter
 {
-    public static function normalizeBoolean($value)
+    public static function normalizeBoolean($value): ?string
     {
         if ($value === 'y' || $value === '1' || $value === true || $value === 1) {
             return 'y';
@@ -22,5 +22,17 @@ class DbDataFormatter
             'Got invalid boolean: %s',
             var_export($value, 1)
         ));
+    }
+
+    public static function booleanForDbValue($value): ?bool
+    {
+        if ($value === 'y') {
+            return true;
+        }
+        if ($value === 'n') {
+            return false;
+        }
+
+        return $value; // let this fail elsewhere, if not null
     }
 }
