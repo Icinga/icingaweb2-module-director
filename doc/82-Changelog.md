@@ -11,11 +11,11 @@ Icinga Director v1.11 ships a nice new feature, which has been requested by
 many users: it is now possible to let Notification rules pick User and/or User
 Groups from Host and Service custom variables.
 
-![82-1.11.0-05-notification_user-var.png](screenshot/director/82_changelog/v1.11.0/82-1.11.0-05-notification_user-var.png)
+![Notification User Vars](screenshot/director/82_changelog/v1.11.0/82-1.11.0-05-notification_user-var.png)
 
 Behind the scenes, some Icinga DSL assures that Icinga behaves as expected:
 
-![82-1.11.0-06-notification_user-var_rendered.png](screenshot/director/82_changelog/v1.11.0/82-1.11.0-06-notification_user-var_rendered.png)
+![Notification User Vars rendered](screenshot/director/82_changelog/v1.11.0/82-1.11.0-06-notification_user-var_rendered.png)
 
 The IcingaDB module is now supported. This release also ships a fallback template
 for Icinga for Windows 1.11 (and Icinga 2.14). To improve security for those
@@ -44,7 +44,7 @@ has been improved, Preview Diff shows more details, editing  multiple single
 Services with the very same name has been fixed, and the interactive Startup log
 renderer now wraps log lines in a nice way:
 
-![82-1_11_0-02-wrap-startup-log-lines.png](screenshot/director/82_changelog/v1.11.0/82-1.11.0-02-wrap_startup_log_lines.png)
+![Wrap Startup Log lines](screenshot/director/82_changelog/v1.11.0/82-1.11.0-02-wrap_startup_log_lines.png)
 
 Performance has greatly been improved for those, who trigger a lot of single API
 requests, instead of relying on Import/Sync mechanism. Our template usage overview

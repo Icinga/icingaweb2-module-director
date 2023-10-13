@@ -42,15 +42,14 @@ use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
 
-<a name="upgrade-to-1.10.x"></a>Upgrading to 1.10.x
+<a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
 --------------------------------------------------
-
 
 Before upgrading, please upgrade the [incubator module](https://github.com/Icinga/icingaweb2-module-incubator)
 to (at least) v0.20.0. As always, you'll be prompted to apply pending Database
 Migrations.
 
-<a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
+<a name="upgrade-to-1.10.x"></a>Upgrading to 1.10.x
 --------------------------------------------------
 
 Please check module dependencies, we raised some of them. In case you're missing
