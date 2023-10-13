@@ -43,8 +43,7 @@ abstract class TemplateController extends CompatController
                 $template->getObjectName()
             )->addBackToUsageLink($template);
 
-        ObjectsTable::create($this->getType(), $this->db())
-            ->setAuth($this->Auth())
+        ObjectsTable::create($this->getType(), $this->db(), $this->Auth())
             ->setBranch($this->getBranch())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
             ->filterTemplate($template, $this->getInheritance())
@@ -214,7 +213,7 @@ abstract class TemplateController extends CompatController
 
         try {
             $this->content()->add(
-                TemplateUsageTable::forTemplate($template, $this->getBranch())
+                TemplateUsageTable::forTemplate($template, $this->Auth(), $this->getBranch())
             );
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));

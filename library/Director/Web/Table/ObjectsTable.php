@@ -51,12 +51,18 @@ class ObjectsTable extends ZfQueryBasedTable
     /** @var Auth */
     private $auth;
 
+    public function __construct($db, Auth $auth)
+    {
+        $this->auth = $auth;
+        parent::__construct($db);
+    }
+
     /**
      * @param $type
      * @param Db $db
      * @return static
      */
-    public static function create($type, Db $db)
+    public static function create($type, Db $db, Auth $auth)
     {
         $class = __NAMESPACE__ . '\\ObjectsTable' . ucfirst($type);
         if (! class_exists($class)) {
@@ -64,7 +70,7 @@ class ObjectsTable extends ZfQueryBasedTable
         }
 
         /** @var static $table */
-        $table = new $class($db);
+        $table = new $class($db, $auth);
         $table->type = $type;
         return $table;
     }
@@ -82,20 +88,6 @@ class ObjectsTable extends ZfQueryBasedTable
     {
         $this->baseObjectUrl = $url;
 
-        return $this;
-    }
-
-    /**
-     * @return Auth
-     */
-    public function getAuth()
-    {
-        return $this->auth;
-    }
-
-    public function setAuth(Auth $auth)
-    {
-        $this->auth = $auth;
         return $this;
     }
 
@@ -234,11 +226,10 @@ class ObjectsTable extends ZfQueryBasedTable
     {
         /** @var Db $db */
         $db = $this->connection();
-        $auth = $this->getAuth();
 
         return [
-            new HostgroupRestriction($db, $auth),
-            new FilterByNameRestriction($db, $auth, $this->getDummyObject()->getShortTableName())
+            new HostgroupRestriction($db, $this->auth),
+            new FilterByNameRestriction($db, $this->auth, $this->getDummyObject()->getShortTableName())
         ];
     }
 

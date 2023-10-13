@@ -11,6 +11,7 @@ use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
+use Ramsey\Uuid\Uuid;
 
 class ObjectsTableSetMembers extends ZfQueryBasedTable
 {
@@ -96,7 +97,7 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
     {
         $url = Url::fromPath('director/service/edit', [
             'name' => $row->object_name,
-            'uuid' => $row->uuid,
+            'uuid' => Uuid::fromBytes($row->uuid)->toString(),
         ]);
 
         return static::tr([

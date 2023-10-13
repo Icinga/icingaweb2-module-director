@@ -93,7 +93,7 @@ class HostgroupRestriction extends ObjectRestriction
             ['id']
         )->where('id = ?', $hostgroup->id);
 
-        $this->filterHostGroupsQuery($query);
+        $this->filterHostGroupsQuery($query, 'h');
         return (int) $this->db->fetchOne($query) === (int) $hostgroup->get('id');
     }
 

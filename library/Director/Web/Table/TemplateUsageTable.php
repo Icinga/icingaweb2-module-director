@@ -18,6 +18,9 @@ class TemplateUsageTable extends Table
 
     use TableWithBranchSupport;
 
+    /** @var Auth */
+    protected $auth;
+
     protected $defaultAttributes = ['class' => 'pivot'];
 
     protected $objectType;
@@ -40,14 +43,14 @@ class TemplateUsageTable extends Table
      *
      * @throws ProgrammingError
      */
-    public static function forTemplate(IcingaObject $template, Branch $branch = null)
+    public static function forTemplate(IcingaObject $template, Auth $auth, Branch $branch = null)
     {
         $type = ucfirst($template->getShortTableName());
         $class = __NAMESPACE__ . "\\{$type}TemplateUsageTable";
         if (class_exists($class)) {
-            return new $class($template, $branch);
+            return new $class($template, $auth, $branch);
         } else {
-            return new static($template, $branch);
+            return new static($template, $auth, $branch);
         }
     }
 
@@ -61,8 +64,9 @@ class TemplateUsageTable extends Table
         ];
     }
 
-    protected function __construct(IcingaObject $template, Branch $branch = null)
+    protected function __construct(IcingaObject $template, Auth $auth, Branch $branch = null)
     {
+        $this->auth = $auth;
 
         if ($template->get('object_type') !== 'template') {
             throw new ProgrammingError(
@@ -154,8 +158,7 @@ class TemplateUsageTable extends Table
                 $templateType,
                 $connection
             ),
-            'objects'   => ObjectsTable::create($templateType, $connection)
-                ->setAuth(Auth::getInstance())
+            'objects'   => ObjectsTable::create($templateType, $connection, $this->auth)
                 ->setBranchUuid($this->branchUuid)
         ];
     }

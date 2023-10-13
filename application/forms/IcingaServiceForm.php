@@ -725,8 +725,7 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function enumHosts()
     {
         $db = $this->db->getDbAdapter();
-        $table = new ObjectsTableHost($this->db);
-        $table->setAuth($this->getAuth());
+        $table = new ObjectsTableHost($this->db, $this->getAuth());
         if ($this->branch && $this->branch->isBranch()) {
             $table->setBranchUuid($this->branch->getUuid());
         }
