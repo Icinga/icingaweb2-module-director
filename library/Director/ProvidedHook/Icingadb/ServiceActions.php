@@ -4,9 +4,8 @@ namespace Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Exception;
 use Icinga\Application\Config;
-use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Backend\MonitorBackendIcingadb;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Backend;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Icingadb\Hook\ServiceActionsHook;
@@ -57,9 +56,9 @@ class ServiceActions extends ServiceActionsHook
         if (Util::hasPermission('director/hosts')) {
             $title = mt('director', 'Modify');
         } elseif (Util::hasPermission('director/monitoring/services')) {
-            $backend = new Backend(Backend::ICINGADB);
+            $backend = new MonitorBackendIcingadb();
             if ($backend->isAvailable()
-                && $backend->authCanEditService(Auth::getInstance(), $hostname, $serviceName)
+                && $backend->canModifyService($hostname, $serviceName)
             ) {
                 $title = mt('director', 'Modify');
             }

@@ -121,4 +121,16 @@ class MonitorBackendIcingadb implements MonitorBackend
         $result->state = $hostStates[$result->state];
         return $result;
     }
+
+    public function canModifyHost(string $hostName): bool
+    {
+        // TODO: Implement canModifyService() method.
+       return false;
+    }
+
+    public function canModifyService(string $hostName, string $serviceName): bool
+    {
+        // TODO: Implement canModifyService() method.
+        return false;
+    }
 }

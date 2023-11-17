@@ -4,9 +4,8 @@ namespace Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Exception;
 use Icinga\Application\Config;
-use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Backend\MonitorBackendIcingadb;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Backend;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Icingadb\Hook\HostActionsHook;
@@ -44,10 +43,9 @@ class HostActions extends HostActionsHook
         if (Util::hasPermission('director/hosts') && IcingaHost::exists($hostname, $db)) {
             $allowEdit = true;
         }
-        $auth = Auth::getInstance();
         if (Util::hasPermission('director/monitoring/hosts')) {
-            $backend = new Backend(Backend::ICINGADB);
-            if ($backend->isAvailable() && $backend->authCanEditHost($auth, $hostname)) {
+            $backend = new MonitorBackendIcingadb();
+            if ($backend->isAvailable() && $backend->canModifyHost($hostname)) {
                 $allowEdit = IcingaHost::exists($hostname, $db);
             }
         }
