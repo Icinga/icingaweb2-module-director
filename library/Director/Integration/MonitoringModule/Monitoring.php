@@ -33,38 +33,42 @@ class Monitoring implements BackendInterface
         return $this->backend !== null;
     }
 
-    public function getHostUrl(string $hostname): Url
+    public function getHostUrl(?string $hostName): ?Url
     {
-        return Url::fromPath('monitoring/host/show', ['host' => $hostname]);
+        if ($hostName === null) {
+            return null;
+        }
+
+        return Url::fromPath('monitoring/host/show', ['host' => $hostName]);
     }
 
-    public function hasHost($hostname): bool
+    public function hasHost(?string $hostName): bool
     {
-        if (! $this->isAvailable()) {
+        if ($hostName === null || ! $this->isAvailable()) {
             return false;
         }
 
         try {
-            return $this->selectHost($hostname)->fetchOne() === $hostname;
+            return $this->selectHost($hostName)->fetchOne() === $hostName;
         } catch (Exception $_) {
             return false;
         }
     }
 
-    public function hasService($hostname, $service): bool
+    public function hasService(?string $hostName, ?string $serviceName): bool
     {
-        if (! $this->isAvailable()) {
+        if ($hostName === null || $serviceName === null || ! $this->isAvailable()) {
             return false;
         }
 
         try {
-            return $this->rowIsService($this->selectService($hostname, $service)->fetchRow(), $hostname, $service);
+            return $this->rowIsService($this->selectService($hostName, $serviceName)->fetchRow(), $hostName, $serviceName);
         } catch (Exception $_) {
             return false;
         }
     }
 
-    public function canModifyService(string $hostName, string $serviceName): bool
+    public function canModifyService(?string $hostName, ?string $serviceName): bool
     {
         if (! $this->isAvailable() || $hostName === null || $serviceName === null) {
             return false;
@@ -84,9 +88,9 @@ class Monitoring implements BackendInterface
         return false;
     }
 
-    public function canModifyHost(string $hostName): bool
+    public function canModifyHost(?string $hostName): bool
     {
-        if ($this->isAvailable() && $this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
+        if ($hostName !== null && $this->isAvailable() && $this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
             $restriction = null;
             foreach ($this->auth->getRestrictions(Restriction::MONITORING_RW_OBJECT_FILTER) as $restriction) {
                 if ($this->hasHostWithFilter($hostName, Filter::fromQueryString($restriction))) {
