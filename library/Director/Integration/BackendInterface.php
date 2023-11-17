@@ -1,10 +1,10 @@
 <?php
 
-namespace Icinga\Module\Director\Backend;
+namespace Icinga\Module\Director\Integration;
 
 use Icinga\Web\Url;
 
-interface MonitorBackend
+interface BackendInterface
 {
     public function isAvailable(): bool;
 

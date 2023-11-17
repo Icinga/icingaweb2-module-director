@@ -1,10 +1,11 @@
 <?php
 
-namespace Icinga\Module\Director\Backend;
+namespace Icinga\Module\Director\Integration\Icingadb;
 
 use gipfl\IcingaWeb2\Link;
 use Icinga\Application\Icinga;
 use Icinga\Data\Filter\Filter as DataFilter;
+use Icinga\Module\Director\Integration\BackendInterface;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Icingadb\Common\Auth;
 use Icinga\Module\Icingadb\Common\Database;
@@ -14,7 +15,7 @@ use Icinga\Module\Icingadb\Redis\VolatileStateResults;
 use Icinga\Web\Url;
 use ipl\Stdlib\Filter;
 
-class MonitorBackendIcingadb implements MonitorBackend
+class IcingadbBackend implements BackendInterface
 {
     use Database;
     use Auth;
