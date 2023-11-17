@@ -40,11 +40,6 @@ class Monitoring implements BackendInterface
 
     public function hasHost($hostname): bool
     {
-        return $this->hasHostByName($hostname);
-    }
-
-    public function hasHostByName($hostname): bool
-    {
         if (! $this->isAvailable()) {
             return false;
         }
@@ -56,13 +51,7 @@ class Monitoring implements BackendInterface
         }
     }
 
-
     public function hasService($hostname, $service): bool
-    {
-        return $this->hasServiceByName($hostname, $service);
-    }
-
-    public function hasServiceByName($hostname, $service): bool
     {
         if (! $this->isAvailable()) {
             return false;
@@ -77,23 +66,18 @@ class Monitoring implements BackendInterface
 
     public function canModifyService(string $hostName, string $serviceName): bool
     {
-        return $this->canModifyServiceByName($hostName, $serviceName);
-    }
-
-    public function canModifyServiceByName($hostname, $service): bool
-    {
-        if (! $this->isAvailable() || $hostname === null || $service === null) {
+        if (! $this->isAvailable() || $hostName === null || $serviceName === null) {
             return false;
         }
         if ($this->auth->hasPermission(Permission::MONITORING_SERVICES)) {
             $restriction = null;
             foreach ($this->auth->getRestrictions(Restriction::MONITORING_RW_OBJECT_FILTER) as $restriction) {
-                if ($this->hasServiceWithFilter($hostname, $service, Filter::fromQueryString($restriction))) {
+                if ($this->hasServiceWithFilter($hostName, $serviceName, Filter::fromQueryString($restriction))) {
                     return true;
                 }
             }
             if ($restriction === null) {
-                return $this->hasServiceByName($hostname, $service);
+                return $this->hasService($hostName, $serviceName);
             }
         }
 
@@ -102,20 +86,15 @@ class Monitoring implements BackendInterface
 
     public function canModifyHost(string $hostName): bool
     {
-        return $this->canModifyHostByName($hostName);
-    }
-
-    public function canModifyHostByName($hostname): bool
-    {
         if ($this->isAvailable() && $this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
             $restriction = null;
             foreach ($this->auth->getRestrictions(Restriction::MONITORING_RW_OBJECT_FILTER) as $restriction) {
-                if ($this->hasHostWithFilter($hostname, Filter::fromQueryString($restriction))) {
+                if ($this->hasHostWithFilter($hostName, Filter::fromQueryString($restriction))) {
                     return true;
                 }
             }
             if ($restriction === null) {
-                return $this->hasHostByName($hostname);
+                return $this->hasHost($hostName);
             }
         }
 
@@ -131,7 +110,7 @@ class Monitoring implements BackendInterface
         }
     }
 
-    public function hasServiceWithFilter($hostname, $service, Filter $filter): bool
+    protected function hasServiceWithFilter($hostname, $service, Filter $filter): bool
     {
         try {
             return $this->rowIsService(
