@@ -17,6 +17,9 @@ class Permission
     public const MONITORING_SERVICES_RO = 'director/monitoring/services-ro';
     public const MONITORING_SERVICES = 'director/monitoring/services';
     public const MONITORING_HOSTS = 'director/monitoring/hosts';
+    public const ICINGADB_SERVICES_RO = 'director/icingadb/services-ro';
+    public const ICINGADB_SERVICES = 'director/icingadb/services';
+    public const ICINGADB_HOSTS = 'director/icingadb/hosts';
     public const NOTIFICATIONS = 'director/notifications';
     public const SCHEDULED_DOWNTIMES = 'director/scheduled-downtimes';
     public const SERVICES = 'director/services';
