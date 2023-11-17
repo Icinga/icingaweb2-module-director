@@ -56,10 +56,7 @@ class ServiceActions extends ServiceActionsHook
         if (Util::hasPermission('director/hosts')) {
             $title = mt('director', 'Modify');
         } elseif (Util::hasPermission('director/monitoring/services')) {
-            $backend = new IcingadbBackend();
-            if ($backend->isAvailable()
-                && $backend->canModifyService($hostname, $serviceName)
-            ) {
+            if ((new IcingadbBackend())->canModifyService($hostname, $serviceName)) {
                 $title = mt('director', 'Modify');
             }
         } elseif (Util::hasPermission('director/monitoring/services-ro')) {
