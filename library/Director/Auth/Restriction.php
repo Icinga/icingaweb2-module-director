@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Auth;
 class Restriction
 {
     public const MONITORING_RW_OBJECT_FILTER = 'director/monitoring/rw-object-filter';
+    public const ICINGADB_RW_OBJECT_FILTER = 'director/icingadb/rw-object-filter';
     public const FILTER_HOSTGROUPS = 'director/filter/hostgroups';
 
     // Hint: by-name-Filters are being fetched with variable names, like "director/$type/apply/filter-by-name"
