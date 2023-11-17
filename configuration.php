@@ -1,14 +1,18 @@
 <?php
 
 use Icinga\Application\Icinga;
+use Icinga\Application\Modules\Module;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Web\Window;
 
-/** @var \Icinga\Application\Modules\Module $this */
+/** @var Module $this */
 if ($this->getConfig()->get('frontend', 'disabled', 'no') === 'yes') {
     return;
 }
+
+$monitoringExists = Module::exists('monitoring');
+$icingadbExists = Module::exists('icingadb');
 
 $this->providePermission(Permission::ALL_PERMISSIONS, $this->translate('Allow unrestricted access to Icinga Director'));
 $this->providePermission(Permission::API, $this->translate('Allow to access the director API'));
@@ -37,21 +41,45 @@ $this->providePermission(Permission::USERS, $this->translate('Allow to configure
 $this->providePermission(Permission::SCHEDULED_DOWNTIMES, $this->translate(
     'Allow to configure notifications (unrestricted)'
 ));
-$this->providePermission(Permission::MONITORING_HOSTS, $this->translate(
-    'Allow users to modify Hosts they are allowed to see in the monitoring module'
-));
-$this->providePermission(Permission::MONITORING_SERVICES, $this->translate(
-    'Allow users to modify Service they are allowed to see in the monitoring module'
-));
-$this->providePermission(Permission::MONITORING_SERVICES_RO, $this->translate(
-    'Allow readonly users to see where a Service came from'
-));
+
+if ($monitoringExists) {
+    $this->providePermission(Permission::MONITORING_HOSTS, $this->translate(
+        'Allow users to modify Hosts they are allowed to see in the monitoring module'
+    ));
+    $this->providePermission(Permission::MONITORING_SERVICES, $this->translate(
+        'Allow users to modify Service they are allowed to see in the monitoring module'
+    ));
+    $this->providePermission(Permission::MONITORING_SERVICES_RO, $this->translate(
+        'Allow readonly users to see where a Service came from'
+    ));
+}
+
+if ($icingadbExists) {
+    $this->providePermission(Permission::ICINGADB_HOSTS, $this->translate(
+        'Allow users to modify Hosts they are allowed to see in Icinga DB Web'
+    ));
+    $this->providePermission(Permission::ICINGADB_SERVICES, $this->translate(
+        'Allow users to modify Service they are allowed to see in Icinga DB Web'
+    ));
+    $this->providePermission(Permission::ICINGADB_SERVICES_RO, $this->translate(
+        'Allow readonly users to see where a Service came from'
+    ));
+}
+
+if ($monitoringExists) {
+    $this->provideRestriction(Restriction::MONITORING_RW_OBJECT_FILTER, $this->translate(
+        'Additional (monitoring module) object filter to further restrict write access'
+    ));
+}
+
+if ($icingadbExists) {
+    $this->provideRestriction(Restriction::ICINGADB_RW_OBJECT_FILTER, $this->translate(
+        'Additional (Icinga DB Web) object filter to further restrict write access'
+    ));
+}
 
 $this->provideRestriction(Restriction::FILTER_HOSTGROUPS, $this->translate(
     'Limit access to the given comma-separated list of hostgroups'
-));
-$this->provideRestriction(Restriction::MONITORING_RW_OBJECT_FILTER, $this->translate(
-    'Additional (monitoring module) object filter to further restrict write access'
 ));
 $this->provideRestriction(Restriction::NOTIFICATION_APPLY_FILTER_BY_NAME, $this->translate(
     'Filter available notification apply rules'
