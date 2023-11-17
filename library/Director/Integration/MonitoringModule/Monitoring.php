@@ -10,11 +10,11 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Auth\MonitoringRestriction;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Auth\Restriction;
-use Icinga\Module\Director\Backend\MonitorBackend;
+use Icinga\Module\Director\Integration\BackendInterface;
 use Icinga\Module\Monitoring\Backend\MonitoringBackend;
 use Icinga\Web\Url;
 
-class Monitoring implements MonitorBackend
+class Monitoring implements BackendInterface
 {
     /** @var ?MonitoringBackend */
     protected $backend;
