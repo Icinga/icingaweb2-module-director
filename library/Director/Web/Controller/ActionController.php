@@ -11,7 +11,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Backend\MonitorBackend;
 use Icinga\Module\Director\Backend\MonitorBackendIcingadb;
-use Icinga\Module\Director\Backend\MonitorBackendMonitoring;
+use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
@@ -252,7 +252,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
             if (Module::exists('icingadb')) {
                 $this->backend = new MonitorBackendIcingadb();
             } else {
-                $this->backend = new MonitorBackendMonitoring();
+                $this->backend = new Monitoring($this->Auth());
             }
         }
 

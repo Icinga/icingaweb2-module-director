@@ -2,25 +2,19 @@
 
 namespace Icinga\Module\Director\Backend;
 
-use Icinga\Data\Filter\Filter;
+use Icinga\Web\Url;
 
 interface MonitorBackend
 {
-    public function isAvailable();
+    public function isAvailable(): bool;
 
-    public function hasHost($hostname);
+    public function hasHost(string $hostname): bool;
 
-    public function hasHostWithExtraFilter($hostname, Filter $filter);
-
-    public function hasService($hostname, $service);
-
-    public function hasServiceWithExtraFilter($hostname, $service, Filter $filter);
-
-    public function getHostLink($title, $hostname, array $attributes = null);
-
-    public function getHostState($hostname);
+    public function hasService(string $hostname, string $service): bool;
 
     public function canModifyHost(string $hostName): bool;
 
     public function canModifyService(string $hostName, string $serviceName): bool;
+
+    public function getHostUrl(string $hostname): Url;
 }
