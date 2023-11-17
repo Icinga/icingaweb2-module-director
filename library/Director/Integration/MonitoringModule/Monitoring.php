@@ -10,10 +10,11 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Auth\MonitoringRestriction;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Auth\Restriction;
-use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Backend\MonitorBackend;
 use Icinga\Module\Monitoring\Backend\MonitoringBackend;
+use Icinga\Web\Url;
 
-class Monitoring
+class Monitoring implements MonitorBackend
 {
     /** @var ?MonitoringBackend */
     protected $backend;
@@ -32,9 +33,14 @@ class Monitoring
         return $this->backend !== null;
     }
 
-    public function hasHost(IcingaHost $host): bool
+    public function getHostUrl(string $hostname): Url
     {
-        return $this->hasHostByName($host->getObjectName());
+        return Url::fromPath('monitoring/host/show', ['host' => $hostname]);
+    }
+
+    public function hasHost($hostname): bool
+    {
+        return $this->hasHostByName($hostname);
     }
 
     public function hasHostByName($hostname): bool
@@ -50,6 +56,12 @@ class Monitoring
         }
     }
 
+
+    public function hasService($hostname, $service): bool
+    {
+        return $this->hasServiceByName($hostname, $service);
+    }
+
     public function hasServiceByName($hostname, $service): bool
     {
         if (! $this->isAvailable()) {
@@ -63,9 +75,9 @@ class Monitoring
         }
     }
 
-    public function canModifyService(IcingaHost $host, $service): bool
+    public function canModifyService(string $hostName, string $serviceName): bool
     {
-        return $this->canModifyServiceByName($host->getObjectName(), $service);
+        return $this->canModifyServiceByName($hostName, $serviceName);
     }
 
     public function canModifyServiceByName($hostname, $service): bool
@@ -88,9 +100,9 @@ class Monitoring
         return false;
     }
 
-    public function canModifyHost(IcingaHost $host): bool
+    public function canModifyHost(string $hostName): bool
     {
-        return $this->canModifyHostByName($host->getObjectName());
+        return $this->canModifyHostByName($hostName);
     }
 
     public function canModifyHostByName($hostname): bool
@@ -130,39 +142,6 @@ class Monitoring
         } catch (Exception $e) {
             return false;
         }
-    }
-
-    public function getHostState($hostname)
-    {
-        $hostStates = [
-            '0'  => 'up',
-            '1'  => 'down',
-            '2'  => 'unreachable',
-            '99' => 'pending',
-        ];
-
-        $query = $this->selectHostStatus($hostname, [
-            'hostname'     => 'host_name',
-            'state'        => 'host_state',
-            'problem'      => 'host_problem',
-            'acknowledged' => 'host_acknowledged',
-            'in_downtime'  => 'host_in_downtime',
-        ])->where('host_name', $hostname);
-
-        $res = $query->fetchRow();
-        if ($res === false) {
-            $res = (object) [
-                'hostname'     => $hostname,
-                'state'        => '99',
-                'problem'      => '0',
-                'acknowledged' => '0',
-                'in_downtime'  => '0',
-            ];
-        }
-
-        $res->state = $hostStates[$res->state];
-
-        return $res;
     }
 
     protected function selectHost($hostname)

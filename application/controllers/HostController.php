@@ -34,7 +34,9 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $auth = $this->Auth();
         $backend = $this->backend();
-        if ($this->isServiceAction() && $backend->authCanEditService($auth, $host, $this->getParam('service'))) {
+        if ($this->isServiceAction()
+            && $backend->canModifyService($host->getObjectName(), $this->getParam('service'))
+        ) {
             return;
         }
         if ($auth->hasPermission(Permission::MONITORING_SERVICES_RO) && $this->isServicesReadOnlyAction()) {
@@ -43,7 +45,7 @@ class HostController extends ObjectController
         if ($auth->hasPermission(Permission::HOSTS)) { // faster
             return;
         }
-        if ($backend->authCanEditHost($host)) {
+        if ($backend->canModifyHost($host->getObjectName())) {
             return;
         }
         $this->assertPermission(Permission::HOSTS); // complain about default hosts permission
@@ -570,14 +572,13 @@ class HostController extends ObjectController
                 && $host->isObject()
                 && $backend->hasHost($host->getObjectName())
             ) {
-                $this->actions()->add($backend->getHostLink(
-                    $this->translate('Show'),
-                    $host->getObjectName(),
+                $this->actions()->add(Link::create($this->translate('Show'),
+                    $backend->getHostUrl($host->getObjectName()),
+                    null,
                     [
-                        'class'            => 'icon-globe critical',
-                        'data-base-target' => '_next'
-                    ]
-                ));
+                    'class'            => 'icon-globe critical',
+                    'data-base-target' => '_next'
+                ]));
 
                 // Intentionally placed here, show it only for deployed Hosts
                 $this->addOptionalInspectLink();
