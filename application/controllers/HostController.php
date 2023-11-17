@@ -568,7 +568,6 @@ class HostController extends ObjectController
         try {
             $backend = $this->backend();
             if ($host instanceof IcingaHost
-                && $backend->isAvailable()
                 && $host->isObject()
                 && $backend->hasHost($host->getObjectName())
             ) {

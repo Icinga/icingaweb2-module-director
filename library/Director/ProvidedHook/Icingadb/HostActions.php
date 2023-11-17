@@ -44,8 +44,7 @@ class HostActions extends HostActionsHook
             $allowEdit = true;
         }
         if (Util::hasPermission('director/monitoring/hosts')) {
-            $backend = new IcingadbBackend();
-            if ($backend->isAvailable() && $backend->canModifyHost($hostname)) {
+            if ((new IcingadbBackend())->canModifyHost($hostname)) {
                 $allowEdit = IcingaHost::exists($hostname, $db);
             }
         }
