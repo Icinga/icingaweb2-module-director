@@ -16,14 +16,22 @@ class IcingadbBackend implements BackendInterface
     use Database;
     use Auth;
 
+    /** @var bool */
+    protected $isAvailable;
+
+    public function __construct()
+    {
+        $this->isAvailable = Module::exists('icingadb');
+    }
+
     public function isAvailable(): bool
     {
-        return Module::exists('icingadb');
+        return $this->isAvailable;
     }
 
     public function hasHost(?string $hostName): bool
     {
-        if ($hostName === null) {
+        if ($hostName === null || ! $this->isAvailable()) {
             return false;
         }
 
@@ -37,7 +45,7 @@ class IcingadbBackend implements BackendInterface
 
     public function hasService(?string $hostName, ?string $serviceName): bool
     {
-        if ($hostName === null || $serviceName === null) {
+        if ($hostName === null || $serviceName === null || ! $this->isAvailable()) {
             return false;
         }
 
@@ -54,7 +62,7 @@ class IcingadbBackend implements BackendInterface
 
     public function getHostUrl(?string $hostName): ?Url
     {
-        if ($hostName === null) {
+        if ($hostName === null || ! $this->isAvailable()) {
             return null;
         }
 
@@ -63,7 +71,7 @@ class IcingadbBackend implements BackendInterface
 
     public function canModifyHost(?string $hostName): bool
     {
-        if ($hostName === null) {
+        if ($hostName === null || ! $this->isAvailable()) {
             return false;
         }
         // TODO: Implement canModifyService() method.
@@ -72,7 +80,7 @@ class IcingadbBackend implements BackendInterface
 
     public function canModifyService(?string $hostName, ?string $serviceName): bool
     {
-        if ($hostName === null || $serviceName === null) {
+        if ($hostName === null || $serviceName === null || ! $this->isAvailable()) {
             return false;
         }
         // TODO: Implement canModifyService() method.
