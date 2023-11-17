@@ -21,22 +21,30 @@ class IcingadbBackend implements BackendInterface
         return Module::exists('icingadb');
     }
 
-    public function hasHost($hostname): bool
+    public function hasHost(?string $hostName): bool
     {
+        if ($hostName === null) {
+            return false;
+        }
+
         $query = Host::on($this->getDb())
-            ->filter(Filter::equal('host.name', $hostname));
+            ->filter(Filter::equal('host.name', $hostName));
 
         $this->applyRestrictions($query);
 
         return $query->first() !== null;
     }
 
-    public function hasService($hostname, $service): bool
+    public function hasService(?string $hostName, ?string $serviceName): bool
     {
+        if ($hostName === null || $serviceName === null) {
+            return false;
+        }
+
         $query = Service::on($this->getDb())
             ->filter(Filter::all(
-                Filter::equal('service.name', $service),
-                Filter::equal('host.name', $hostname)
+                Filter::equal('service.name', $serviceName),
+                Filter::equal('host.name', $hostName)
             ));
 
         $this->applyRestrictions($query);
@@ -44,19 +52,29 @@ class IcingadbBackend implements BackendInterface
         return $query->first() !== null;
     }
 
-    public function getHostUrl(string $hostname): Url
+    public function getHostUrl(?string $hostName): ?Url
     {
-        return Url::fromPath('icingadb/host', ['name' => $hostname]);
+        if ($hostName === null) {
+            return null;
+        }
+
+        return Url::fromPath('icingadb/host', ['name' => $hostName]);
     }
 
-    public function canModifyHost(string $hostName): bool
+    public function canModifyHost(?string $hostName): bool
     {
+        if ($hostName === null) {
+            return false;
+        }
         // TODO: Implement canModifyService() method.
        return false;
     }
 
-    public function canModifyService(string $hostName, string $serviceName): bool
+    public function canModifyService(?string $hostName, ?string $serviceName): bool
     {
+        if ($hostName === null || $serviceName === null) {
+            return false;
+        }
         // TODO: Implement canModifyService() method.
         return false;
     }
