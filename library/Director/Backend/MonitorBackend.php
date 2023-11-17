@@ -19,4 +19,8 @@ interface MonitorBackend
     public function getHostLink($title, $hostname, array $attributes = null);
 
     public function getHostState($hostname);
+
+    public function canModifyHost(string $hostName): bool;
+
+    public function canModifyService(string $hostName, string $serviceName): bool;
 }

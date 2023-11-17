@@ -134,4 +134,16 @@ class MonitorBackendMonitoring implements MonitorBackend
             ->where('host_name', $hostname)
             ->where('service_description', $service);
     }
+
+    public function canModifyHost(string $hostName): bool
+    {
+        // TODO: Implement canModifyHost() method.
+        return false;
+    }
+
+    public function canModifyService(string $hostName, string $serviceName): bool
+    {
+        // TODO: Implement canModifyService() method.
+        return false;
+    }
 }
