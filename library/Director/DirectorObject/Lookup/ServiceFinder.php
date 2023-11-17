@@ -68,7 +68,7 @@ class ServiceFinder
         }
         if ($this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
             if ($info = $this::find($this->host, $serviceName)) {
-                if ((new Monitoring($this->auth))->canModifyService($this->host->getObjectName(), $serviceName)) {
+                if ((new Monitoring())->canModifyService($this->host->getObjectName(), $serviceName)) {
                     return $info->getUrl();
                 }
             }

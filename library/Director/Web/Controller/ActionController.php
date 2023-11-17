@@ -251,7 +251,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
             if (Module::exists('icingadb')) {
                 $this->backend = new IcingadbBackend();
             } else {
-                $this->backend = new Monitoring($this->Auth());
+                $this->backend = new Monitoring($this->getAuth());
             }
         }
 

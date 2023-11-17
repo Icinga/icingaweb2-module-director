@@ -2,16 +2,12 @@
 
 namespace Icinga\Module\Director\Integration\Icingadb;
 
-use gipfl\IcingaWeb2\Link;
-use Icinga\Application\Icinga;
-use Icinga\Data\Filter\Filter as DataFilter;
+use Icinga\Application\Modules\Module;
 use Icinga\Module\Director\Integration\BackendInterface;
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Icingadb\Common\Auth;
 use Icinga\Module\Icingadb\Common\Database;
 use Icinga\Module\Icingadb\Model\Host;
 use Icinga\Module\Icingadb\Model\Service;
-use Icinga\Module\Icingadb\Redis\VolatileStateResults;
 use Icinga\Web\Url;
 use ipl\Stdlib\Filter;
 
@@ -22,28 +18,22 @@ class IcingadbBackend implements BackendInterface
 
     public function isAvailable(): bool
     {
-        $app = Icinga::app();
-        $modules = $app->getModuleManager();
-        return $modules->hasLoaded('icingadb');
+        return Module::exists('icingadb');
     }
 
     public function hasHost($hostname): bool
     {
-        $query = Host::on($this->getDb());
-        $query->filter(Filter::equal('host.name', $hostname));
+        $query = Host::on($this->getDb())
+            ->filter(Filter::equal('host.name', $hostname));
 
         $this->applyRestrictions($query);
 
-        /** @var Host $host */
-        $host = $query->first();
-
-        return ($host !== null);
+        return $query->first() !== null;
     }
 
     public function hasService($hostname, $service): bool
     {
-        $query = Service::on($this->getDb());
-        $query
+        $query = Service::on($this->getDb())
             ->filter(Filter::all(
                 Filter::equal('service.name', $service),
                 Filter::equal('host.name', $hostname)
@@ -51,10 +41,7 @@ class IcingadbBackend implements BackendInterface
 
         $this->applyRestrictions($query);
 
-        /** @var Service $service */
-        $service = $query->first();
-
-        return ($service !== null);
+        return $query->first() !== null;
     }
 
     public function getHostUrl(string $hostname): Url
