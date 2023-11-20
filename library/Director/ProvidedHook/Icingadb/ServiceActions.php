@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Exception;
 use Icinga\Application\Config;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -20,7 +21,6 @@ class ServiceActions extends ServiceActionsHook
         try {
             return $this->getThem($service);
         } catch (Exception $e) {
-            die($e);
             return [];
         }
     }
@@ -40,26 +40,25 @@ class ServiceActions extends ServiceActionsHook
 
         $hostname = $service->host->name;
         $serviceName = $service->name;
-        if (Util::hasPermission('director/inspect')) {
-            $actions[mt('director', 'Inspect')] = Url::fromPath('director/inspect/object', [
-                'type'   => 'service',
-                'plural' => 'services',
-                'name'   => sprintf(
-                    '%s!%s',
-                    $hostname,
-                    $serviceName
-                )
-            ]);
+        if (Util::hasPermission(Permission::INSPECT)) {
+            $actions[] = new Link(
+                mt('director', 'Inspect'),
+                Url::fromPath('director/inspect/object', [
+                    'type'   => 'service',
+                    'plural' => 'services',
+                    'name'   => sprintf('%s!%s', $hostname, $serviceName)
+                ])
+            );
         }
 
         $title = null;
-        if (Util::hasPermission('director/hosts')) {
+        if (Util::hasPermission(Permission::HOSTS)) {
             $title = mt('director', 'Modify');
-        } elseif (Util::hasPermission('director/monitoring/services')) {
+        } elseif (Util::hasPermission(Permission::ICINGADB_SERVICES)) {
             if ((new IcingadbBackend())->canModifyService($hostname, $serviceName)) {
                 $title = mt('director', 'Modify');
             }
-        } elseif (Util::hasPermission('director/monitoring/services-ro')) {
+        } elseif (Util::hasPermission(Permission::ICINGADB_SERVICES_RO)) {
             $title = mt('director', 'Configuration');
         }
 
