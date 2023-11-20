@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Exception;
 use Icinga\Application\Config;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -20,30 +21,33 @@ class HostActions extends HostActionsHook
         try {
             return $this->getThem($host);
         } catch (Exception $e) {
-            return array();
+            return [];
         }
     }
 
     protected function getThem(Host $host): array
     {
-        $actions = array();
+        $actions = [];
         $db = $this->db();
         if (! $db) {
             return $actions;
         }
         $hostname = $host->name;
-        if (Util::hasPermission('director/inspect')) {
-            $actions[mt('director', 'Inspect')] = Url::fromPath(
-                'director/inspect/object',
-                array('type' => 'host', 'plural' => 'hosts', 'name' => $hostname)
+        if (Util::hasPermission(Permission::INSPECT)) {
+            $actions[] = new Link(
+                mt('director', 'Inspect'),
+                Url::fromPath(
+                    'director/inspect/object',
+                    ['type' => 'host', 'plural' => 'hosts', 'name' => $hostname]
+                )
             );
         }
 
         $allowEdit = false;
-        if (Util::hasPermission('director/hosts') && IcingaHost::exists($hostname, $db)) {
+        if (Util::hasPermission(Permission::HOSTS) && IcingaHost::exists($hostname, $db)) {
             $allowEdit = true;
         }
-        if (Util::hasPermission('director/monitoring/hosts')) {
+        if (Util::hasPermission(Permission::ICINGADB_HOSTS)) {
             if ((new IcingadbBackend())->canModifyHost($hostname)) {
                 $allowEdit = IcingaHost::exists($hostname, $db);
             }
