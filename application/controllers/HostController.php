@@ -191,8 +191,7 @@ class HostController extends ObjectController
         $branch = $this->getBranch();
         $hostHasBeenCreatedInBranch = $branch->isBranch() && $host->get('id');
         $content = $this->content();
-        $table = (new ObjectsTableService($this->db()))
-            ->setAuth($this->Auth())
+        $table = (new ObjectsTableService($this->db(), $this->Auth()))
             ->setHost($host)
             ->setBranch($branch)
             ->setTitle($this->translate('Individual Service objects'))
@@ -206,8 +205,7 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = (new ObjectsTableService($this->db()))
-                ->setAuth($this->Auth())
+            $table = (new ObjectsTableService($this->db(), $this->Auth()))
                 ->setBranch($branch)
                 ->setHost($parent)
                 ->setInheritedBy($host)
@@ -273,8 +271,7 @@ class HostController extends ObjectController
         $this->addTitle($this->translate('Services on %s'), $host->getObjectName());
         $content = $this->content();
 
-        $table = (new ObjectsTableService($db))
-            ->setAuth($this->Auth())
+        $table = (new ObjectsTableService($db, $this->Auth()))
             ->setHost($host)
             ->setBranch($branch)
             ->setReadonly()
@@ -289,7 +286,7 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = (new ObjectsTableService($db))
+            $table = (new ObjectsTableService($db, $this->Auth()))
                 ->setReadonly()
                 ->setBranch($branch)
                 ->setHost($parent)
@@ -371,6 +368,7 @@ class HostController extends ObjectController
                 ->setHost($host)
                 ->setBranch($this->getBranch())
                 ->setAffectedHost($affectedHost)
+                ->removeQueryLimit()
                 ->setTitle($title);
             if ($roService) {
                 $table->setReadonly()->highlightService($roService);

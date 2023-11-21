@@ -181,7 +181,7 @@ class IcingaNotificationForm extends DirectorObjectForm
                 'If defined, User Groups from this Custom Variable will be combined with single Groups chosen below. '
                 . ' e.g.: when set to notification_groups, this notification will pick User Groups from the Array'
                 . ' service.vars.notification_groups and fall back to host.vars.notification_groups, in'
-                . ' case the former one does not exist'
+                . ' case the former one does not exist.'
                 . ' Only Array type DirectorObject Fields for User objects are eligible for this feature.'
             )
         ]);

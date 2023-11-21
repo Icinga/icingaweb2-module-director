@@ -16,6 +16,7 @@ use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\SyncProperty;
@@ -90,6 +91,12 @@ class Sync
 
     /** @var ?DbObjectStore */
     protected $store;
+
+    /** @var IcingaObjectGroup[] */
+    protected $modifiedGroups = [];
+
+    /** @var IcingaObject[] */
+    protected $modifiedGroupObjects = [];
 
     /**
      * @param SyncRule $rule
@@ -637,6 +644,9 @@ class Sync
     protected function notifyResolvers()
     {
         if ($resolver = $this->getHostGroupMembershipResolver()) {
+            if ($this->rule->get('object_type') === 'hostgroup') {
+                $resolver->setGroups($this->modifiedGroups);
+            }
             $resolver->refreshDb(true);
         }
 
@@ -760,6 +770,13 @@ class Sync
         }
     }
 
+    protected function optionallyTellResolverAboutModifiedGroup(IcingaObjectGroup $group)
+    {
+        if (in_array('assign_filter', $group->getModifiedProperties())) {
+            $this->modifiedGroups[] = $group;
+        }
+    }
+
     /**
      * @param $key
      * @param DbObject|IcingaObject $object
@@ -866,6 +883,9 @@ class Sync
                 }
 
                 if ($object->hasBeenModified()) {
+                    if ($object instanceof IcingaObjectGroup) {
+                        $this->optionallyTellResolverAboutModifiedGroup($object);
+                    }
                     $existing = $object->hasBeenLoadedFromDb();
                     if ($existing) {
                         if ($this->store) {

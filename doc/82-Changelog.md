@@ -4,10 +4,71 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-v1.11.0 (unreleased)
---------------------
+v1.11.0
+-------
 
-This version hasn't been released yet
+Icinga Director v1.11 ships a nice new feature, which has been requested by
+many users: it is now possible to let Notification rules pick User and/or User
+Groups from Host and Service custom variables.
+
+![Notification User Vars](screenshot/director/82_changelog/v1.11.0/82-1.11.0-05-notification_user-var.png)
+
+Behind the scenes, some Icinga DSL assures that Icinga behaves as expected:
+
+![Notification User Vars rendered](screenshot/director/82_changelog/v1.11.0/82-1.11.0-06-notification_user-var_rendered.png)
+
+The IcingaDB module is now supported. This release also ships a fallback template
+for Icinga for Windows 1.11 (and Icinga 2.14). To improve security for those
+relying on default settings, all Host templates are per default rendered to all
+non-global zones in a redundant way, instead of being rendered to the main global
+zone.
+
+For those who want to store Secrets in their Host template definitions, this now
+hinders them from reaching your Agent Endpoints. In addition to this, with this
+release you now have more control over target Zones for services belonging to
+Service Sets. Also, some issues related to permissions and restrictions have been
+addressed.
+
+Various little Import and Sync issues have been addressed, automated Service
+Template import has been fixed. In addition to some minor Property modifier
+improvements, they can now be applied  in a conditional way. Such filter rules
+also support CIDR notation. Most prominent use-case: as vSphereDB now ships ALL
+guest IP addresses, you can pick  specific addresses for specific use-cases /
+host properties based on their network range:
+
+![CIDR-based filters](screenshot/director/82_changelog/v1.11.0/82-1.11.0-01-cidr_based_filters.png)
+
+This release now officially supports PHP 8.2, addresses issues when integrating
+with the IcingaDB web module, and some dark-mode glitches. Search functionality
+has been improved, Preview Diff shows more details, editing  multiple single
+Services with the very same name has been fixed, and the interactive Startup log
+renderer now wraps log lines in a nice way:
+
+![Wrap Startup Log lines](screenshot/director/82_changelog/v1.11.0/82-1.11.0-02-wrap_startup_log_lines.png)
+
+Performance has greatly been improved for those, who trigger a lot of single API
+requests, instead of relying on Import/Sync mechanism. Our template usage overview
+now also summarizes and links objects used in Services belonging to Service Sets:
+
+![Template Usage overview](screenshot/director/82_changelog/v1.11.0/82-1.11.0-03-template_usage.png)
+
+Commands can now be cloned with their field definitions, and custom variables
+from set_if flags make now part of the "suggested fields" list.
+
+In addition to major refactoring and technical improvements related to our
+configuration baskets, it's now also possible to upload additional snapshots for
+existing baskets:
+
+![Basket Snapshot upload](screenshot/director/82_changelog/v1.11.0/82-1.11.0-04-upload_basket_snapshot.png)
+
+Speaking of baskets, they have been reworked in a way giving especially Icinga
+Partners and Plugin authors more control over related objects. As UUIDs are now
+supported in Baskets too, it is for example possible to rename an object with a
+new Basket Snapshot.
+
+### Breaking Changes
+* Module and system dependencies have been raised, [Upgrading](05-Upgrading.md)
+  and [Installation](02-Installation.md) documentations contain related details
 
 ### UI
 * FEATURE: allow to clone commands with fields (#2264)
@@ -18,12 +79,19 @@ This version hasn't been released yet
 * FEATURE: Branch and Sync diff/preview now shows related host for services (#2736)
 * FEATURE: Show more details for assign filter parsing errors (#2667)
 * FEATURE: Fields from set_if are now being proposed (#514)
+* FEATURE: Template usage table now shows Set members (#2378)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 * FIX: Service Sets can now be searched by Service name in branches too (#2738)
 * FIX: Template usage table had no header (#2780)
+* FIX: Strikethrough for deactivated services in applied Service Set (#2746, #2766)
+* FIX: editing multi-selected services with the same name has been fixed (#2798, 2801, #2599)
+* FIX: Service Sets table with PostgreSQL (#2799)
+* FIX: Dark mode for some clone forms (#2670)
 
 ### Icinga Configuration
 * FEATURE: render fallback template for IfW 1.11 for Icinga &lt; 2.14 (#2776)
+* FEATURE: render host templates to all non-global zones per default (#2410)
+* FEATURE: notifications can pick user(groups) from host/service vars (#462)
 * FIX: render Set Services to individual zones where required (#1589, #2356)
 * FIX: special characters like &amp; and | caused trouble in filters (#2667)
 
@@ -31,19 +99,27 @@ This version hasn't been released yet
 * FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
 * FEATURE: property modifiers can now be applied based on filters (#2756)
 * FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
+* FEATURE: trigger group membership resolution on group sync conditionally (#2812)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
 * FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
+* FIX: Import Source shows available columns for Core API Import (#2763)
+* FIX: JSON-decode now explicitly fails for non-string inputs (#2810)
+
+### Integrations
+* FIX: don't throw an error, when editing a Service via IcingaDB link (#2533, #2563)
 
 # Configuration Baskets
 * FEATURE: it's now possible to upload snapshots for existing baskets (#1952)
 * FIX: basket now shows where to expect changes for lists from snapshots (#2791)
+* FIX: Icinga DSL parts for Commands are now restored from Baskets (#2811)
 
 ### REST API
-* FIX: Commands give 304 w/o ghost changes for same properties (#2660)
+* FIX: Commands give 204 w/o ghost changes for same properties (#2660)
 
 ### Permissions and Restrictions
 * FIX: monitoring-related permission checks have been refactored (#2712)
 * FIX: Hostgroup-Filters have not been applied to Overview tables (#2775)
+* FIX: error editing Hosts with hostgroup restriction in place (#2164, #2809)
 
 ### Configuration Branches
 * FEATURE: with this release, directorbranches v1.3 supports a "default branch" (#2688)
@@ -54,6 +130,10 @@ This version hasn't been released yet
 * FIX: complaint about overdue jobs was not correct (#2680, #2681)
 
 ### Internals
+* FEATURE: support PHP 8.2 (#2777, #2792)
+* FEATURE: Unit Tests are now being triggered as GitHub workflows (no issue)
+* FIX: group membership is no longer resolved when not needed (#2048)
+* FIX: require Auth object for all object tables (#2808)
 * FIX: group membership is no longer resolved when not needed (#2048)
 
 ### Fixed issues

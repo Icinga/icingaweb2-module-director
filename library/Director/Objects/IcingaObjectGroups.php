@@ -183,6 +183,10 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
+        if (is_int($group)) {
+            $group = (string) $group;
+        }
+
         /** @var IcingaObjectGroup $class */
         $class = $this->getGroupClass();
 

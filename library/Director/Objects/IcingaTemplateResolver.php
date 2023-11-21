@@ -45,7 +45,6 @@ class IcingaTemplateResolver
     {
         $this->object     = $object;
         $this->type       = $object->getShortTableName();
-        $this->table      = $object->getTableName();
         $this->connection = $object->getConnection();
         $this->db         = $this->connection->getDbAdapter();
 

@@ -2,6 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Db;
+
 class ServiceTemplateUsageTable extends TemplateUsageTable
 {
     public function getTypes()
@@ -10,18 +13,27 @@ class ServiceTemplateUsageTable extends TemplateUsageTable
             'templates'  => $this->translate('Templates'),
             'objects'    => $this->translate('Objects'),
             'applyrules' => $this->translate('Apply Rules'),
-            // 'setmembers' => $this->translate('Set Members'),
+            'setmembers' => $this->translate('Set Members'),
         ];
     }
 
-    protected function getTypeSummaryDefinitions()
+    protected function getSummaryTables(string $templateType, Db $connection)
     {
+        $auth = Auth::getInstance();
         return [
-            'templates'  => $this->getSummaryLine('template'),
-            'objects'    => $this->getSummaryLine('object'),
-            'applyrules' => $this->getSummaryLine('apply', 'o.service_set_id IS NULL'),
-            // TODO: re-enable
-            // 'setmembers' => $this->getSummaryLine('apply', 'o.service_set_id IS NOT NULL'),
+            'templates'  => TemplatesTable::create(
+                $templateType,
+                $connection
+            ),
+            'objects'    => ObjectsTable::create($templateType, $connection, $this->auth)
+                ->setBranchUuid($this->branchUuid),
+            'applyrules' => ApplyRulesTable::create($templateType, $connection)
+                ->setBranchUuid($this->branchUuid),
+            'setmembers' => ObjectsTableSetMembers::create(
+                $templateType,
+                $connection,
+                $auth
+            )
         ];
     }
 }

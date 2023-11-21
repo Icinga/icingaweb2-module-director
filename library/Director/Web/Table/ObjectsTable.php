@@ -14,6 +14,7 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Ramsey\Uuid\Uuid;
+use Zend_Db_Adapter_Pdo_Pgsql;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable
@@ -50,12 +51,18 @@ class ObjectsTable extends ZfQueryBasedTable
     /** @var Auth */
     private $auth;
 
+    public function __construct($db, Auth $auth)
+    {
+        $this->auth = $auth;
+        parent::__construct($db);
+    }
+
     /**
      * @param $type
      * @param Db $db
      * @return static
      */
-    public static function create($type, Db $db)
+    public static function create($type, Db $db, Auth $auth)
     {
         $class = __NAMESPACE__ . '\\ObjectsTable' . ucfirst($type);
         if (! class_exists($class)) {
@@ -63,7 +70,7 @@ class ObjectsTable extends ZfQueryBasedTable
         }
 
         /** @var static $table */
-        $table = new $class($db);
+        $table = new $class($db, $auth);
         $table->type = $type;
         return $table;
     }
@@ -81,20 +88,6 @@ class ObjectsTable extends ZfQueryBasedTable
     {
         $this->baseObjectUrl = $url;
 
-        return $this;
-    }
-
-    /**
-     * @return Auth
-     */
-    public function getAuth()
-    {
-        return $this->auth;
-    }
-
-    public function setAuth(Auth $auth)
-    {
-        $this->auth = $auth;
         return $this;
     }
 
@@ -124,11 +117,17 @@ class ObjectsTable extends ZfQueryBasedTable
         IcingaObject $template,
         $inheritance = Db\IcingaObjectFilterHelper::INHERIT_DIRECT
     ) {
+        if ($this->branchUuid) {
+            $tableAlias = 'u';
+        } else {
+            $tableAlias = 'o';
+        }
         IcingaObjectFilterHelper::filterByTemplate(
             $this->getQuery(),
             $template,
-            'o',
-            $inheritance
+            $tableAlias,
+            $inheritance,
+            $this->branchUuid
         );
 
         return $this;
@@ -227,11 +226,10 @@ class ObjectsTable extends ZfQueryBasedTable
     {
         /** @var Db $db */
         $db = $this->connection();
-        $auth = $this->getAuth();
 
         return [
-            new HostgroupRestriction($db, $auth),
-            new FilterByNameRestriction($db, $auth, $this->getDummyObject()->getShortTableName())
+            new HostgroupRestriction($db, $this->auth),
+            new FilterByNameRestriction($db, $this->auth, $this->getDummyObject()->getShortTableName())
         ];
     }
 
@@ -279,7 +277,39 @@ class ObjectsTable extends ZfQueryBasedTable
                     $conn->quoteBinary($this->branchUuid->getBytes())
                 ),
                 []
-            )->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
+            );
+
+            // keep the imported templates as columns
+            $leftColumns = $columns;
+            $rightColumns = $columns;
+
+            if ($this->db() instanceof Zend_Db_Adapter_Pdo_Pgsql) {
+                $leftColumns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
+                    . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
+            } else {
+                $leftColumns['imports'] = 'CONCAT(\'[\', '
+                    . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
+            }
+
+            $query->reset('columns');
+
+            $query->columns($leftColumns)
+                ->joinLeft(
+                    ['oi' => $table . '_inheritance'],
+                    'o.id = oi.' . $this->getType() . '_id',
+                    []
+                )->joinLeft(
+                    ['sub_o' => $table],
+                    'sub_o.id = oi.parent_' . $this->getType() . '_id',
+                    []
+                )->group(['o.id', 'bo.uuid', 'bo.branch_uuid']);
+
+            $rightColumns['imports'] = 'bo.imports';
+
+            $right->reset('columns');
+            $right->columns($rightColumns);
+
+            $query->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
             $this->applyObjectTypeFilter($query, $right);
             $right->joinRight(
                 ['bo' => "branched_$table"],

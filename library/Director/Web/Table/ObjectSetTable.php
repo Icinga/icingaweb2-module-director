@@ -22,7 +22,7 @@ class ObjectSetTable extends ZfQueryBasedTable
         'os.object_name',
         'os.description',
         'os.assign_filter',
-        'service_object_name',
+        'o.object_name',
     ];
 
     private $type;
@@ -98,7 +98,6 @@ class ObjectSetTable extends ZfQueryBasedTable
             'object_type'    => 'os.object_type',
             'assign_filter'  => 'os.assign_filter',
             'description'    => 'os.description',
-            'service_object_name' => 'o.object_name',
             'count_services' => 'COUNT(DISTINCT o.uuid)',
         ];
         if ($this->branchUuid) {
@@ -154,12 +153,12 @@ class ObjectSetTable extends ZfQueryBasedTable
                 ['bo' => "branched_icinga_{$type}"],
                 "bo.{$type}_set = bos.object_name",
                 []
-            );
+            )->group(['bo.object_name', 'o.object_name']);
             $query->joinLeft(
                 ['bo' => "branched_icinga_{$type}"],
                 "bo.{$type}_set = bos.object_name",
                 []
-            );
+            )->group(['bo.object_name', 'o.object_name']);
             $this->queries = [
                 $query,
                 $right
@@ -186,7 +185,7 @@ class ObjectSetTable extends ZfQueryBasedTable
                     ->group('assign_filter')
                     ->group('description')
                     ->group('count_services');
-            };
+            }
         } else {
             // Disabled for now, check for correctness:
             // $query->joinLeft(

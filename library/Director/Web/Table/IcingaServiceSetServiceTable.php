@@ -123,6 +123,10 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
             ];
             $url = 'director/host/servicesetservice';
         } else {
+            if (is_resource($row->uuid)) {
+                $row->uuid =stream_get_contents($row->uuid);
+            }
+
             $params = [
                 'uuid' => Uuid::fromBytes($row->uuid)->toString(),
             ];
@@ -195,11 +199,13 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         assert($connection instanceof Db);
         $builder = new ServiceSetQueryBuilder($connection, $this->branchUuid);
         $query = $builder->selectServicesForSet($this->set);
+        $alias = $this->branchUuid ? 'u' : 'o';
+
         if ($this->affectedHost) {
             if ($hostId = $this->affectedHost->get('id')) {
                 $query->joinLeft(
                     ['hsb' => 'icinga_host_service_blacklist'],
-                    $this->db()->quoteInto('o.id = hsb.service_id AND hsb.host_id = ?', $hostId),
+                    $this->db()->quoteInto("$alias.id = hsb.service_id AND hsb.host_id = ?", $hostId),
                     []
                 )->columns([
                     'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"

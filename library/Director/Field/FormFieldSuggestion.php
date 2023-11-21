@@ -83,7 +83,7 @@ class FormFieldSuggestion
         }
 
         if (! empty($this->booleans)) {
-            $fields[$this->translate('Flags (boolean) arguments')] = $this->booleans;
+            $fields[$this->translate('Toggles (boolean arguments)')] = $this->booleans;
         }
 
         if (! empty($this->existingFields)) {

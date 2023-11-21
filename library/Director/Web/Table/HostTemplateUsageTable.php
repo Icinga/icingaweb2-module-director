@@ -11,12 +11,4 @@ class HostTemplateUsageTable extends TemplateUsageTable
             'objects'    => $this->translate('Objects'),
         ];
     }
-
-    protected function getTypeSummaryDefinitions()
-    {
-        return [
-            'templates'  => $this->getSummaryLine('template'),
-            'objects'    => $this->getSummaryLine('object'),
-        ];
-    }
 }

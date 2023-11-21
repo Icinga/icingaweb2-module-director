@@ -2,8 +2,9 @@
 
 namespace Icinga\Module\Director\PropertyModifier;
 
+use Exception;
+use gipfl\Json\JsonString;
 use Icinga\Exception\InvalidPropertyException;
-use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
@@ -38,16 +39,22 @@ class PropertyModifierJsonDecode extends PropertyModifierHook
     /**
      * @param $value
      * @return mixed|null
-     * @throws InvalidPropertyException
+     * @throws InvalidPropertyException|\gipfl\Json\JsonDecodeException
      */
     public function transform($value)
     {
         if (null === $value) {
-            return $value;
+            return null;
         }
-
-        $decoded = @json_decode($value);
-        if ($decoded === null && JSON_ERROR_NONE !== json_last_error()) {
+        try {
+            if (is_string($value)) {
+                $decoded = JsonString::decode($value);
+            } else {
+                throw new InvalidPropertyException(
+                    'JSON decode expects a string, got ' . gettype($value)
+                );
+            }
+        } catch (Exception $e) {
             switch ($this->getSetting('on_failure')) {
                 case 'null':
                     return null;
@@ -55,11 +62,7 @@ class PropertyModifierJsonDecode extends PropertyModifierHook
                     return $value;
                 case 'fail':
                 default:
-                    throw new InvalidPropertyException(
-                        'JSON decoding failed with "%s" for %s',
-                        JsonException::getJsonErrorMessage(json_last_error()),
-                        substr($value, 0, 128)
-                    );
+                    throw $e;
             }
         }
 
