@@ -3,12 +3,15 @@
 namespace Icinga\Module\Director\Integration\Icingadb;
 
 use Icinga\Application\Modules\Module;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Integration\BackendInterface;
 use Icinga\Module\Icingadb\Common\Auth;
 use Icinga\Module\Icingadb\Common\Database;
 use Icinga\Module\Icingadb\Model\Host;
 use Icinga\Module\Icingadb\Model\Service;
 use Icinga\Web\Url;
+use ipl\Orm\Query;
 use ipl\Stdlib\Filter;
 
 class IcingadbBackend implements BackendInterface
@@ -35,12 +38,7 @@ class IcingadbBackend implements BackendInterface
             return false;
         }
 
-        $query = Host::on($this->getDb())
-            ->filter(Filter::equal('host.name', $hostName));
-
-        $this->applyRestrictions($query);
-
-        return $query->first() !== null;
+        return $this->getHostQuery($hostName)->first() !== null;
     }
 
     public function hasService(?string $hostName, ?string $serviceName): bool
@@ -49,15 +47,7 @@ class IcingadbBackend implements BackendInterface
             return false;
         }
 
-        $query = Service::on($this->getDb())
-            ->filter(Filter::all(
-                Filter::equal('service.name', $serviceName),
-                Filter::equal('host.name', $hostName)
-            ));
-
-        $this->applyRestrictions($query);
-
-        return $query->first() !== null;
+        return $this->getServiceQuery($hostName, $serviceName)->first() !== null;
     }
 
     public function getHostUrl(?string $hostName): ?Url
@@ -71,19 +61,92 @@ class IcingadbBackend implements BackendInterface
 
     public function canModifyHost(?string $hostName): bool
     {
-        if ($hostName === null || ! $this->isAvailable()) {
+        if ($hostName === null
+            || ! $this->isAvailable()
+            || ! $this->getAuth()->hasPermission(Permission::ICINGADB_HOSTS)
+        ) {
             return false;
         }
-        // TODO: Implement canModifyService() method.
-       return false;
+
+        $query = $this->getHostQuery($hostName);
+        $this->applyDirectorRestrictions($query);
+
+        return $query->first() !== null;
     }
 
     public function canModifyService(?string $hostName, ?string $serviceName): bool
     {
-        if ($hostName === null || $serviceName === null || ! $this->isAvailable()) {
+        if ($hostName === null
+            || $serviceName === null
+            || ! $this->isAvailable()
+            || ! $this->getAuth()->hasPermission(Permission::ICINGADB_SERVICES)
+        ) {
             return false;
         }
-        // TODO: Implement canModifyService() method.
-        return false;
+
+        $query = $this->getServiceQuery($hostName, $serviceName);
+        $this->applyDirectorRestrictions($query);
+
+        return $query->first() !== null;
+    }
+
+    /**
+     * Get the query for given host
+     *
+     * @param string $hostName
+     *
+     * @return Query
+     */
+    protected function getHostQuery(string $hostName): Query
+    {
+        $query = Host::on($this->getDb())
+            ->filter(Filter::equal('host.name', $hostName));
+
+        $this->applyRestrictions($query);
+
+        return $query;
+    }
+
+    /**
+     * Get the query for given host and service
+     *
+     * @param string $hostName
+     * @param string $serviceName
+     *
+     * @return Query
+     */
+    protected function getServiceQuery(string $hostName, string $serviceName): Query
+    {
+        $query = Service::on($this->getDb())
+            ->filter(Filter::all(
+                Filter::equal('service.name', $serviceName),
+                Filter::equal('host.name', $hostName)
+            ));
+
+        $this->applyRestrictions($query);
+
+        return $query;
+    }
+
+    /**
+     * Apply director restrictions on the given query
+     *
+     * @param Query $query
+     */
+    protected function applyDirectorRestrictions(Query $query): void
+    {
+        $queryFilter = Filter::any();
+        foreach ($this->getAuth()->getUser()->getRoles() as $role) {
+            $roleFilter = Filter::all();
+            if ($restriction = $role->getRestrictions(Restriction::ICINGADB_RW_OBJECT_FILTER)) {
+                $roleFilter->add($this->parseRestriction($restriction, Restriction::ICINGADB_RW_OBJECT_FILTER));
+            }
+
+            if (! $roleFilter->isEmpty()) {
+                $queryFilter->add($roleFilter);
+            }
+        }
+
+        $query->filter($queryFilter);
     }
 }
