@@ -62,7 +62,11 @@ class Monitoring implements BackendInterface
         }
 
         try {
-            return $this->rowIsService($this->selectService($hostName, $serviceName)->fetchRow(), $hostName, $serviceName);
+            return $this->rowIsService(
+                $this->selectService($hostName, $serviceName)->fetchRow(),
+                $hostName,
+                $serviceName
+            );
         } catch (Exception $_) {
             return false;
         }
