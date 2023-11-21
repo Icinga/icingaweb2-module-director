@@ -597,13 +597,14 @@ class HostController extends ObjectController
                 && $host->isObject()
                 && $backend->hasHost($host->getObjectName())
             ) {
-                $this->actions()->add(Link::create($this->translate('Show'),
-                    $backend->getHostUrl($host->getObjectName()),
-                    null,
-                    [
-                    'class'            => 'icon-globe critical',
-                    'data-base-target' => '_next'
-                ]));
+                $this->actions()->add(
+                    Link::create(
+                        $this->translate('Show'),
+                        $backend->getHostUrl($host->getObjectName()),
+                        null,
+                        ['class' => 'icon-globe critical', 'data-base-target' => '_next']
+                    )
+                );
 
                 // Intentionally placed here, show it only for deployed Hosts
                 $this->addOptionalInspectLink();
