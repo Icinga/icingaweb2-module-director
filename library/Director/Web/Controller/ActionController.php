@@ -11,6 +11,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\BackendInterface;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
+use Icinga\Module\Director\ProvidedHook\Icingadb\IcingadbSupport;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
@@ -248,7 +249,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
     protected function backend(): BackendInterface
     {
         if ($this->backend === null) {
-            if (Module::exists('icingadb')) {
+            if (Module::exists('icingadb') && IcingadbSupport::useIcingaDbAsBackend()) {
                 $this->backend = new IcingadbBackend();
             } else {
                 $this->backend = new Monitoring($this->getAuth());
