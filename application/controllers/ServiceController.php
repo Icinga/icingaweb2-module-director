@@ -29,7 +29,10 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->backend()->canModifyService($this->getParam('host'), $this->getParam('name'))) {
+        if ($this->host
+            && $this->object
+            && $this->backend()->canModifyService($this->host->getObjectName(), $this->object->getObjectName())
+        ) {
             return;
         }
 
