@@ -37,6 +37,7 @@ jobs:
           sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git /usr/share/icinga-php/vendor
           sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git /usr/share/icinga-php/ipl
           sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-cube.git /usr/share/icingaweb2-modules/cube
+          sudo git clone --depth 1 https://github.com/Icinga/icingadb-web.git /usr/share/icingaweb2-modules/icingadb
 
       - name: Setup Incubator
         run: |
