@@ -935,7 +935,7 @@ in case an error occurs.
 ### Large environments
 * FIX: Director tries to raise it's memory limit for certain memory-intensive
   tasks. When granted more (but not infinite) memory however this had the effect
-  that he self-restricted himself to a lower limit (#1222)
+  that he self-restricted themselves to a lower limit (#1222)
 
 ### User Interface
 * FIX: Assignment filters suggested only Host properties, you have been required
