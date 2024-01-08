@@ -9,7 +9,7 @@ Generic hints
 -------------
 
 Director keeps all of its configuration in a relational database. So,
-all you need to tell him is how it can reach and access that db. In case
+all you need to tell them is how it can reach and access that db. In case
 you already rolled out Icinga Web 2 you should already be used to handle
 resource definitions.
 
