@@ -223,7 +223,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
             // Hint -> $this->view->compact is the only way since v2.8.0
             if ($this->view->compact || $this->getOriginalUrl()->getParam('view') === 'compact') {
                 if ($this->view->controls) {
-                    $this->controls()->getAttributes()->add('style', 'display: none;');
+                    $this->controls()->getAttributes()->add('class', 'compact');
                 }
             }
         } else {

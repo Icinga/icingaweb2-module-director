@@ -380,10 +380,7 @@ class SyncruleController extends ActionController
     protected function firstNames($objects, $max = 50)
     {
         $names = [];
-        $list = new UnorderedList();
-        $list->addAttributes([
-            'style' => 'list-style-type: none; marign: 0; padding: 0',
-        ]);
+        $list = new UnorderedList([], ['class' => 'unordred-list']);
         $total = count($objects);
         $i = 0;
         PrefetchCache::forget();

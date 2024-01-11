@@ -288,9 +288,7 @@ class IcingaHostForm extends DirectorObjectForm
             );
         }
 
-        return Html::tag('span', [
-            'style' => 'line-height: 2.5em; padding-left: 0.5em'
-        ], $links);
+        return Html::tag('span', ['class' => 'host-group-links'], $links);
     }
 
     protected function getAppliedGroups()
