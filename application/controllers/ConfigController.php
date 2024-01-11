@@ -376,25 +376,27 @@ class ConfigController extends ActionController
         }
 
         $baseUrl = $this->url()->without(['left', 'right']);
-        $this->content()->add(Html::tag('form', ['action' => (string) $baseUrl, 'method' => 'GET'], [
-            new HtmlString($this->view->formSelect(
-                'left',
-                $leftSum,
-                ['class' => 'autosubmit', 'style' => 'width: 37%'],
-                [null => $this->translate('- please choose -')] + $configs
-            )),
-            Link::create(
-                Icon::create('flapping'),
-                $baseUrl,
-                ['left' => $rightSum, 'right' => $leftSum]
-            ),
-            new HtmlString($this->view->formSelect(
-                'right',
-                $rightSum,
-                ['class' => 'autosubmit', 'style' => 'width: 37%'],
-                [null => $this->translate('- please choose -')] + $configs
-            )),
-        ]));
+        $this->content()->add(
+            Html::tag('form', ['action' => (string) $baseUrl, 'method' => 'GET', 'class' => 'director-form'], [
+                new HtmlString($this->view->formSelect(
+                    'left',
+                    $leftSum,
+                    ['class' => ['autosubmit', 'config-diff']],
+                    [null => $this->translate('- please choose -')] + $configs
+                )),
+                Link::create(
+                    Icon::create('flapping'),
+                    $baseUrl,
+                    ['left' => $rightSum, 'right' => $leftSum]
+                ),
+                new HtmlString($this->view->formSelect(
+                    'right',
+                    $rightSum,
+                    ['class' => ['autosubmit', 'config-diff']],
+                    [null => $this->translate('- please choose -')] + $configs
+                )),
+            ])
+        );
 
         if ($rightSum === null || $leftSum === null || ! strlen($rightSum) || ! strlen($leftSum)) {
             return;

@@ -304,17 +304,21 @@ class BasketController extends ActionController
                                 $this->translate('modified'),
                                 'director/basket/snapshotobject',
                                 $linkParams,
-                                ['style' => 'color: orange; font-weight: bold']
+                                ['class' => 'basket-modified']
                             );
                         } else {
-                            $link = Html::tag('span', ['style' => 'color: green'], $this->translate('unchanged'));
+                            $link = Html::tag(
+                                'span',
+                                ['class' => 'basket-unchanged'],
+                                $this->translate('unchanged')
+                            );
                         }
                     } else {
                         $link = Link::create(
                             $this->translate('new'),
                             'director/basket/snapshotobject',
                             $linkParams,
-                            ['style' => 'color: green; font-weight: bold']
+                            ['class' => 'basket-new']
                         );
                     }
                     $table->addNameValueRow($key, $link);
