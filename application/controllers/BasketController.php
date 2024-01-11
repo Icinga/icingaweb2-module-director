@@ -333,7 +333,6 @@ class BasketController extends ActionController
             $this->content()->add(Html::tag('h2', $type));
             $this->content()->add($table);
         }
-        $this->content()->add(Html::tag('div', ['style' => 'height: 5em']));
     }
 
     /**
