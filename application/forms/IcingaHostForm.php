@@ -264,15 +264,6 @@ class IcingaHostForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function strikeGroupLinks(BaseHtmlElement $links)
-    {
-        /** @var BaseHtmlElement $link */
-        foreach ($links->getContent() as $link) {
-            $link->getAttributes()->add('style', 'text-decoration: strike');
-        }
-        $links->add('aha');
-    }
-
     protected function getInheritedGroups()
     {
         if ($this->hasObject()) {
