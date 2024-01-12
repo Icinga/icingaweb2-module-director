@@ -11,9 +11,6 @@ use Icinga\Module\Director\Web\Form\DirectorForm;
 
 class AddToBasketForm extends DirectorForm
 {
-    /** @var Basket */
-    private $basket;
-
     private $type = '(has not been set)';
 
     private $names = [];
@@ -30,7 +27,6 @@ class AddToBasketForm extends DirectorForm
             'b' => 'basket_name',
         ])->order('basket_name'));
 
-        $names = [];
         $basket = null;
         if ($this->hasBeenSent()) {
             $basketName = $this->getSentValue('basket');
@@ -38,25 +34,17 @@ class AddToBasketForm extends DirectorForm
                 $basket = Basket::load($basketName, $this->getDb());
             }
         }
-        $count = 0;
-        $type = $this->type;
+
+        $names = [];
         foreach ($this->names as $name) {
-            if (! empty($names)) {
-                $names[] = ', ';
-            }
-            if ($basket && $basket->hasObject($type, $name)) {
-                $names[] = Html::tag('span', [
-                    'style' => 'text-decoration: line-through'
-                ], $name);
-            } else {
-                $count++;
+            if (! $basket || ! $basket->hasObject($this->type, $name)) {
                 $names[] = $name;
             }
         }
-        $this->addHtmlHint((new HtmlDocument())->add([
-            'The following objects will be added: ',
-            $names
-        ]));
+        $this->addHtmlHint(
+            (new HtmlDocument())
+                ->add(sprintf('The following objects will be added: %s', implode(", ", $names)))
+        );
         $this->addElement('select', 'basket', [
             'label'        => $this->translate('Basket'),
             'multiOptions' => $this->optionalEnum($enum),
@@ -64,10 +52,10 @@ class AddToBasketForm extends DirectorForm
             'class'        => 'autosubmit',
         ]);
 
-        if ($count > 0) {
+        if (! empty($names)) {
             $this->setSubmitLabel(sprintf(
                 $this->translate('Add %s objects'),
-                $count
+                count($names)
             ));
         } else {
             $this->setSubmitLabel($this->translate('Add'));
@@ -112,18 +100,18 @@ class AddToBasketForm extends DirectorForm
                 'Configuration objects have been added to the chosen basket "%s"'
             ), $basketName));
             return parent::onSuccess();
-        } else {
-            $this->addHtmlHint(Hint::error(Html::sprintf($this->translate(
-                'Please check your Basket configuration, %s does not support'
-                . ' single "%s" configuration objects'
-            ), Link::create(
-                $basketName,
-                'director/basket',
-                ['name' => $basketName],
-                ['data-base-target' => '_next']
-            ), $type)));
-
-            return false;
         }
+
+        $this->addHtmlHint(Hint::error(Html::sprintf($this->translate(
+            'Please check your Basket configuration, %s does not support'
+            . ' single "%s" configuration objects'
+        ), Link::create(
+            $basketName,
+            'director/basket',
+            ['name' => $basketName],
+            ['data-base-target' => '_next']
+        ), $type)));
+
+        return false;
     }
 }
