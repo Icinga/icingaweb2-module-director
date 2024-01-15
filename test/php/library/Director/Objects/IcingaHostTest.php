@@ -756,6 +756,8 @@ class IcingaHostTest extends BaseTestCase
 
             $this->deleteDatafields();
         }
+
+        parent::tearDown();
     }
 
     protected function deleteDatafields()
