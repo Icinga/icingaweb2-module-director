@@ -44,6 +44,7 @@ class IcingaServiceTest extends BaseTestCase
 
     public function testAcceptsAssignRules()
     {
+        $this->expectNotToPerformAssertions();
         $service = $this->service();
         $service->object_type = 'apply';
         $service->assign_filter = 'host.address="127.*"';

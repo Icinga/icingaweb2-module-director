@@ -435,7 +435,7 @@ class IcingaHostTest extends BaseTestCase
             $msg = $e->getMessage();
             $matchMysql = strpos(
                 $msg,
-                "Duplicate entry 'a' for key 'api_key'"
+                "Duplicate entry 'a' for key 'icinga_host.api_key'"
             ) !== false;
 
             $matchPostgres = strpos(
@@ -747,7 +747,7 @@ class IcingaHostTest extends BaseTestCase
                 }
             }
 
-            $kill = array('___TEST___zone');
+            $kill = ['___TEST___zone', '___TEST___zone2'];
             foreach ($kill as $name) {
                 if (IcingaZone::exists($name, $db)) {
                     IcingaZone::load($name, $db)->delete();
