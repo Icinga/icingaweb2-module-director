@@ -69,7 +69,6 @@ class IcingadbBackend implements BackendInterface
         }
 
         $query = $this->getHostQuery($hostName);
-        $this->applyDirectorRestrictions($query);
 
         return $query->first() !== null;
     }
@@ -85,7 +84,6 @@ class IcingadbBackend implements BackendInterface
         }
 
         $query = $this->getServiceQuery($hostName, $serviceName);
-        $this->applyDirectorRestrictions($query);
 
         return $query->first() !== null;
     }
@@ -102,7 +100,7 @@ class IcingadbBackend implements BackendInterface
         $query = Host::on($this->getDb())
             ->filter(Filter::equal('host.name', $hostName));
 
-        $this->applyRestrictions($query);
+        $this->applyDirectorRestrictions($query);
 
         return $query;
     }
@@ -123,7 +121,7 @@ class IcingadbBackend implements BackendInterface
                 Filter::equal('host.name', $hostName)
             ));
 
-        $this->applyRestrictions($query);
+        $this->applyDirectorRestrictions($query);
 
         return $query;
     }
@@ -136,15 +134,8 @@ class IcingadbBackend implements BackendInterface
     protected function applyDirectorRestrictions(Query $query): void
     {
         $queryFilter = Filter::any();
-        foreach ($this->getAuth()->getUser()->getRoles() as $role) {
-            $roleFilter = Filter::all();
-            if ($restriction = $role->getRestrictions(Restriction::ICINGADB_RW_OBJECT_FILTER)) {
-                $roleFilter->add($this->parseRestriction($restriction, Restriction::ICINGADB_RW_OBJECT_FILTER));
-            }
-
-            if (! $roleFilter->isEmpty()) {
-                $queryFilter->add($roleFilter);
-            }
+        foreach ($this->getAuth()->getRestrictions(Restriction::ICINGADB_RW_OBJECT_FILTER) as $restriction) {
+            $queryFilter->add($this->parseRestriction($restriction, Restriction::ICINGADB_RW_OBJECT_FILTER));
         }
 
         $query->filter($queryFilter);
