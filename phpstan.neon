@@ -17,8 +17,11 @@ parameters:
         - '#. but return statement is missing#'
 
     scanDirectories:
-        - vendor
-        - library/Director/Test
+        - /icingaweb2
+        - /usr/share/icinga-php
+        - /usr/share/icingaweb2-modules/incubator
+        - /usr/share/icingaweb2-modules/cube
+
     excludePaths:
         - library/Director/CoreBeta
 

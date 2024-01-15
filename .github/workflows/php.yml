@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
+        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
         os: ['ubuntu-latest']
 
     steps:
@@ -32,15 +32,16 @@ jobs:
 
       - name: Setup dependencies
         run: |
-          composer require -n --no-progress overtrue/phplint phpunit/phpunit ipl/stdlib:@dev ipl/html:@dev
-          git clone --depth 1 https://github.com/Icinga/icingaweb2.git vendor/icingaweb2
-          git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git vendor/icinga-php-thirdparty
-          git clone --depth 1 https://github.com/Icinga/icingaweb2-module-cube.git vendor/cube
+          composer require -n --no-progress overtrue/phplint phpunit/phpunit phpstan/phpstan
+          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2.git /icingaweb2
+          sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git /usr/share/icinga-php/vendor
+          sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git /usr/share/icinga-php/ipl
+          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-cube.git /usr/share/icingaweb2-modules/cube
 
       - name: Setup Incubator
         run: |
-          git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator vendor/incubator
-          cd vendor/incubator
+          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator /usr/share/icingaweb2-modules/incubator
+          cd /usr/share/icingaweb2-modules/incubator
           composer require --no-update \
           "gipfl/calendar": "dev-master as 99.x-dev" \
           "gipfl/cli": "dev-master as 99.x-dev" \
@@ -82,7 +83,7 @@ jobs:
 
       - name: PHPStan
         if: ${{ ! cancelled() }}
-        uses: php-actions/phpstan@v3
+        run: ./vendor/bin/phpstan analyse
 
   test:
     name: Unit tests with php ${{ matrix.php }} on ${{ matrix.os }}
@@ -94,7 +95,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
+        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
         os: ['ubuntu-latest']
         include:
           - php: '7.2'
