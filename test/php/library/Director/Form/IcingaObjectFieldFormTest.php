@@ -30,6 +30,7 @@ class IcingaObjectFieldFormTest extends BaseTestCase
 
     public function setUp(): void
     {
+        parent::setUp();
         if ($this->hasDb()) {
             $db = $this->getDb();
             $this->testDatafield = DirectorDatafield::create([

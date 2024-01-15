@@ -212,5 +212,7 @@ class IcingaCommandTest extends BaseTestCase
         if (IcingaCommand::exists($this->testCommandName, $db)) {
             IcingaCommand::load($this->testCommandName, $db)->delete();
         }
+
+        parent::tearDown();
     }
 }

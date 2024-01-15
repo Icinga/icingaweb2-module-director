@@ -167,5 +167,7 @@ class StateFilterSetTest extends BaseTestCase
                 }
             }
         }
+
+        parent::tearDown();
     }
 }

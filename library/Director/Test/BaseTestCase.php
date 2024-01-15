@@ -10,19 +10,14 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaZone;
-use PHPUnit\Framework\TestCase;
+use Icinga\Test\BaseTestCase as IcingaBaseTestCase;
 
-abstract class BaseTestCase extends TestCase
+abstract class BaseTestCase extends IcingaBaseTestCase
 {
     private static $app;
 
     /** @var Db */
     private static $db;
-
-    public function setUp(): void
-    {
-        $this->app();
-    }
 
     protected function skipForMissingDb()
     {

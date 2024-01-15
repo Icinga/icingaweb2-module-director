@@ -244,5 +244,7 @@ class IcingaNotificationTest extends BaseTestCase
                 }
             }
         }
+
+        parent::tearDown();
     }
 }
