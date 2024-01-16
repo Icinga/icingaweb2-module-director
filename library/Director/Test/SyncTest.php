@@ -31,6 +31,7 @@ abstract class SyncTest extends BaseTestCase
 
     public function setUp(): void
     {
+        parent::setUp();
         $this->source = ImportSource::create(array(
             'source_name'    => 'testimport',
             'provider_class' => 'Icinga\\Module\\Director\\Test\\ImportSourceDummy',
@@ -75,6 +76,7 @@ abstract class SyncTest extends BaseTestCase
         // make sure cache is clean for other tests
         PrefetchCache::forget();
         DbObject::clearAllPrefetchCaches();
+        parent::tearDown();
     }
 
     /**

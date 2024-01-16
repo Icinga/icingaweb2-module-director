@@ -20,7 +20,7 @@ class FormFieldSuggestion
     protected $descriptions = [];
     protected $booleans = [];
 
-    /** @var IcingaCommand */
+    /** @var ?IcingaCommand */
     protected $command;
 
     /** @var array */
@@ -29,7 +29,7 @@ class FormFieldSuggestion
     protected $fields = null;
 
     public function __construct(
-        IcingaCommand $command,
+        ?IcingaCommand $command,
         array $existingFields
     ) {
         $this->command = $command;
@@ -54,19 +54,23 @@ class FormFieldSuggestion
                 $this->blacklistedVars['$' . $m[1] . '$'] = $id;
             }
         }
-        foreach ($this->command->arguments() as $arg) {
-            if ($arg->argument_format === 'string') {
-                foreach (self::extractMacroNamesFromString($arg->argument_value) as $val) {
-                    $this->addSuggestion($val, $arg->description, $this->argumentVars);
+
+        if ($this->command) {
+            foreach ($this->command->arguments() as $arg) {
+                if ($arg->argument_format === 'string') {
+                    foreach (self::extractMacroNamesFromString($arg->argument_value) as $val) {
+                        $this->addSuggestion($val, $arg->description, $this->argumentVars);
+                    }
+                }
+
+                if (($arg->set_if_format === 'string' || $arg->set_if_format === null)
+                    && $val = self::getMacroIfStringIsSingleMacro($arg->set_if)
+                ) {
+                    $this->addSuggestion($val, $arg->description, $this->booleans);
                 }
             }
-
-            if (($arg->set_if_format === 'string' || $arg->set_if_format === null)
-                && $val = self::getMacroIfStringIsSingleMacro($arg->set_if)
-            ) {
-                $this->addSuggestion($val, $arg->description, $this->booleans);
-            }
         }
+
         asort($this->suggestedFields, SORT_NATURAL | SORT_FLAG_CASE);
         ksort($this->argumentVars);
         ksort($this->booleans);

@@ -88,5 +88,7 @@ abstract class IcingaObjectTestCase extends BaseTestCase
                 $this->subject->delete();
             }
         }
+
+        parent::tearDown();
     }
 }

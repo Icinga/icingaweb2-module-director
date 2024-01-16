@@ -53,13 +53,8 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             $command = null;
         }
 
-        if ($command) {
-            $suggestions = $this->fieldSuggestion = new FormFieldSuggestion($command, $this->db->enumDatafields());
-            $fields = $suggestions->getCommandFields();
-        } else {
-            $suggestions = null;
-            $fields = [];
-        }
+        $suggestions = $this->fieldSuggestion = new FormFieldSuggestion($command, $this->db->enumDatafields());
+        $fields = $suggestions->getCommandFields();
 
         $this->addElement('select', 'datafield_id', [
             'label'        => 'Field',
@@ -97,7 +92,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                     . ' user puts the focus on this field'
                 ),
                 'ignore'      => true,
-                'value'       => $suggestions ? $suggestions->getDescription($id) : null,
+                'value'       => $command ? $suggestions->getDescription($id) : null,
                 'rows'        => '3',
             ]);
         }

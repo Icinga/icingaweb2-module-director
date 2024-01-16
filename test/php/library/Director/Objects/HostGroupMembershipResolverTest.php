@@ -17,6 +17,7 @@ class HostGroupMembershipResolverTest extends BaseTestCase
 
     public function setUp(): void
     {
+        parent::setUp();
         IcingaTemplateRepository::clear();
     }
 

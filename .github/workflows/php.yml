@@ -150,6 +150,7 @@ jobs:
 
       - name: Setup Libraries
         run: |
+          composer require --working-dir=_icingaweb2 -n --no-progress mockery/mockery
           mkdir _libraries
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor

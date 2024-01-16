@@ -10,19 +10,14 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaZone;
-use PHPUnit\Framework\TestCase;
+use Icinga\Test\BaseTestCase as IcingaBaseTestCase;
 
-abstract class BaseTestCase extends TestCase
+abstract class BaseTestCase extends IcingaBaseTestCase
 {
     private static $app;
 
     /** @var Db */
     private static $db;
-
-    public function setUp(): void
-    {
-        $this->app();
-    }
 
     protected function skipForMissingDb()
     {
@@ -81,11 +76,14 @@ abstract class BaseTestCase extends TestCase
             self::$db = new Db($dbConfig);
             $migrations = new Migrations(self::$db);
             $migrations->applyPendingMigrations();
-            IcingaZone::create([
+            $zone = IcingaZone::create([
                 'object_name' => 'director-global',
                 'object_type' => 'external_object',
                 'is_global'   => 'y'
-            ])->store(self::$db);
+            ]);
+            if (! IcingaZone::exists($zone->getId(), self::$db)) {
+                $zone->store(self::$db);
+            }
         }
 
         return self::$db;

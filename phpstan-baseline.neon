@@ -511,11 +511,6 @@ parameters:
 			path: library/Director/ProvidedHook/IcingaDbCubeLinks.php
 
 		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Test\\\\TestSuiteUnit\\:\\:newTempfile\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Test/TestSuiteUnit.php
-
-		-
 			message: "#^Access to an undefined property Zend_Controller_Action_HelperBroker\\:\\:\\$viewRenderer\\.$#"
 			count: 1
 			path: library/Director/Web/Controller/ActionController.php

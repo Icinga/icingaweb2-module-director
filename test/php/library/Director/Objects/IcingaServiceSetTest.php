@@ -12,6 +12,7 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
 
     public function setUp(): void
     {
+        parent::setUp();
         $this->assertNull($this->subject, 'subject must have been taken down before!');
 
         if ($this->hasDb()) {
