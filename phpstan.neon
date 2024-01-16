@@ -25,6 +25,8 @@ parameters:
 
     excludePaths:
         - library/Director/CoreBeta
+        - test
+        - library/Director/Test
 
     universalObjectCratesClasses:
         - Icinga\Module\Director\Data\Db\DbObject
