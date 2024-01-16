@@ -7,13 +7,6 @@ use Icinga\Web\Url;
 interface BackendInterface
 {
     /**
-     * Whether the backend is available
-     *
-     * @return bool
-     */
-    public function isAvailable(): bool;
-
-    /**
      * Whether the backend has the given host
      *
      * @param ?string $hostName

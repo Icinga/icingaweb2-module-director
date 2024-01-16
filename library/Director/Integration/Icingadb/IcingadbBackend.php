@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Integration\Icingadb;
 
-use Icinga\Application\Modules\Module;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Integration\BackendInterface;
@@ -19,22 +18,9 @@ class IcingadbBackend implements BackendInterface
     use Database;
     use Auth;
 
-    /** @var bool */
-    protected $isAvailable;
-
-    public function __construct()
-    {
-        $this->isAvailable = Module::exists('icingadb');
-    }
-
-    public function isAvailable(): bool
-    {
-        return $this->isAvailable;
-    }
-
     public function hasHost(?string $hostName): bool
     {
-        if ($hostName === null || ! $this->isAvailable()) {
+        if ($hostName === null) {
             return false;
         }
 
@@ -43,7 +29,7 @@ class IcingadbBackend implements BackendInterface
 
     public function hasService(?string $hostName, ?string $serviceName): bool
     {
-        if ($hostName === null || $serviceName === null || ! $this->isAvailable()) {
+        if ($hostName === null || $serviceName === null) {
             return false;
         }
 
@@ -52,7 +38,7 @@ class IcingadbBackend implements BackendInterface
 
     public function getHostUrl(?string $hostName): ?Url
     {
-        if ($hostName === null || ! $this->isAvailable()) {
+        if ($hostName === null) {
             return null;
         }
 
@@ -62,7 +48,6 @@ class IcingadbBackend implements BackendInterface
     public function canModifyHost(?string $hostName): bool
     {
         if ($hostName === null
-            || ! $this->isAvailable()
             || ! $this->getAuth()->hasPermission(Permission::ICINGADB_HOSTS)
         ) {
             return false;
@@ -77,7 +62,6 @@ class IcingadbBackend implements BackendInterface
     {
         if ($hostName === null
             || $serviceName === null
-            || ! $this->isAvailable()
             || ! $this->getAuth()->hasPermission(Permission::ICINGADB_SERVICES)
         ) {
             return false;

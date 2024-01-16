@@ -28,11 +28,6 @@ class Monitoring implements BackendInterface
         $this->initializeMonitoringBackend();
     }
 
-    public function isAvailable(): bool
-    {
-        return $this->backend !== null;
-    }
-
     public function getHostUrl(?string $hostName): ?Url
     {
         if ($hostName === null) {
@@ -196,5 +191,10 @@ class Monitoring implements BackendInterface
                 $this->backend = null;
             }
         }
+    }
+
+    protected function isAvailable(): bool
+    {
+        return $this->backend !== null;
     }
 }
