@@ -76,11 +76,14 @@ abstract class BaseTestCase extends IcingaBaseTestCase
             self::$db = new Db($dbConfig);
             $migrations = new Migrations(self::$db);
             $migrations->applyPendingMigrations();
-            IcingaZone::create([
+            $zone = IcingaZone::create([
                 'object_name' => 'director-global',
                 'object_type' => 'external_object',
                 'is_global'   => 'y'
-            ])->store(self::$db);
+            ]);
+            if (! IcingaZone::exists($zone->getId(), self::$db)) {
+                $zone->store(self::$db);
+            }
         }
 
         return self::$db;
