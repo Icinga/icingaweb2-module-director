@@ -1,22 +1,22 @@
 <?php
 
-namespace Icinga\Module\Director\ProvidedHook\Monitoring;
+namespace Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Exception;
 use Icinga\Application\Config;
-use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
+use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
-use Icinga\Module\Monitoring\Hook\ServiceActionsHook;
-use Icinga\Module\Monitoring\Object\Service;
-use Icinga\Web\Url;
+use Icinga\Module\Icingadb\Hook\ServiceActionsHook;
+use Icinga\Module\Icingadb\Model\Service;
+use ipl\Web\Url;
+use ipl\Web\Widget\Link;
 
 class ServiceActions extends ServiceActionsHook
 {
-    public function getActionsForService(Service $service)
+    public function getActionsForObject(Service $service): array
     {
         try {
             return $this->getThem($service);
@@ -38,36 +38,38 @@ class ServiceActions extends ServiceActionsHook
             return [];
         }
 
-        $hostname = $service->host_name;
-        $serviceName = $service->service_description;
+        $hostname = $service->host->name;
+        $serviceName = $service->name;
         if (Util::hasPermission(Permission::INSPECT)) {
-            $actions[mt('director', 'Inspect')] = Url::fromPath('director/inspect/object', [
-                'type'   => 'service',
-                'plural' => 'services',
-                'name'   => sprintf(
-                    '%s!%s',
-                    $hostname,
-                    $serviceName
-                )
-            ]);
+            $actions[] = new Link(
+                mt('director', 'Inspect'),
+                Url::fromPath('director/inspect/object', [
+                    'type'   => 'service',
+                    'plural' => 'services',
+                    'name'   => sprintf('%s!%s', $hostname, $serviceName)
+                ])
+            );
         }
 
         $title = null;
         if (Util::hasPermission(Permission::HOSTS)) {
             $title = mt('director', 'Modify');
-        } elseif (Util::hasPermission(Permission::MONITORING_SERVICES)) {
-            if ((new Monitoring(Auth::getInstance()))->canModifyService($hostname, $serviceName)) {
+        } elseif (Util::hasPermission(Permission::ICINGADB_SERVICES)) {
+            if ((new IcingadbBackend())->canModifyService($hostname, $serviceName)) {
                 $title = mt('director', 'Modify');
             }
-        } elseif (Util::hasPermission(Permission::MONITORING_SERVICES_RO)) {
+        } elseif (Util::hasPermission(Permission::ICINGADB_SERVICES_RO)) {
             $title = mt('director', 'Configuration');
         }
 
         if ($title && IcingaHost::exists($hostname, $db)) {
-            $actions[$title] = Url::fromPath('director/host/findservice', [
-                'name'    => $hostname,
-                'service' => $serviceName
-            ]);
+            $actions[] = new Link(
+                $title,
+                Url::fromPath('director/host/findservice', [
+                    'name'    => $hostname,
+                    'service' => $serviceName
+                ])
+            );
         }
 
         return $actions;

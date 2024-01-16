@@ -1,42 +1,45 @@
 <?php
 
-namespace Icinga\Module\Director\ProvidedHook\Monitoring;
+namespace Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Exception;
 use Icinga\Application\Config;
-use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
+use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
-use Icinga\Module\Monitoring\Hook\HostActionsHook;
-use Icinga\Module\Monitoring\Object\Host;
-use Icinga\Web\Url;
+use Icinga\Module\Icingadb\Hook\HostActionsHook;
+use Icinga\Module\Icingadb\Model\Host;
+use ipl\Web\Url;
+use ipl\Web\Widget\Link;
 
 class HostActions extends HostActionsHook
 {
-    public function getActionsForHost(Host $host)
+    public function getActionsForObject(Host $host): array
     {
         try {
             return $this->getThem($host);
         } catch (Exception $e) {
-            return array();
+            return [];
         }
     }
 
-    protected function getThem(Host $host)
+    protected function getThem(Host $host): array
     {
-        $actions = array();
+        $actions = [];
         $db = $this->db();
         if (! $db) {
             return $actions;
         }
-        $hostname = $host->host_name;
+        $hostname = $host->name;
         if (Util::hasPermission(Permission::INSPECT)) {
-            $actions[mt('director', 'Inspect')] = Url::fromPath(
-                'director/inspect/object',
-                array('type' => 'host', 'plural' => 'hosts', 'name' => $hostname)
+            $actions[] = new Link(
+                mt('director', 'Inspect'),
+                Url::fromPath(
+                    'director/inspect/object',
+                    ['type' => 'host', 'plural' => 'hosts', 'name' => $hostname]
+                )
             );
         }
 
@@ -44,14 +47,20 @@ class HostActions extends HostActionsHook
         if (Util::hasPermission(Permission::HOSTS) && IcingaHost::exists($hostname, $db)) {
             $allowEdit = true;
         }
-        if (Util::hasPermission(Permission::MONITORING_HOSTS)) {
-            if ((new Monitoring(Auth::getInstance()))->canModifyHost($hostname)) {
+        if (Util::hasPermission(Permission::ICINGADB_HOSTS)) {
+            if ((new IcingadbBackend())->canModifyHost($hostname)) {
                 $allowEdit = IcingaHost::exists($hostname, $db);
             }
         }
 
         if ($allowEdit) {
-            $actions[mt('director', 'Modify')] = Url::fromPath('director/host/edit', ['name' => $hostname]);
+            $label = mt('director', 'Modify');
+            $actions[] = new Link(
+                $label,
+                Url::fromPath('director/host/edit', [
+                    'name'    => $hostname
+                ])
+            );
         }
 
         return $actions;

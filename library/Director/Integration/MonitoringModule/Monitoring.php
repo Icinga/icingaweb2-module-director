@@ -10,10 +10,11 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Auth\MonitoringRestriction;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Auth\Restriction;
-use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Integration\BackendInterface;
 use Icinga\Module\Monitoring\Backend\MonitoringBackend;
+use Icinga\Web\Url;
 
-class Monitoring
+class Monitoring implements BackendInterface
 {
     /** @var ?MonitoringBackend */
     protected $backend;
@@ -27,83 +28,76 @@ class Monitoring
         $this->initializeMonitoringBackend();
     }
 
-    public function isAvailable(): bool
+    public function getHostUrl(?string $hostName): ?Url
     {
-        return $this->backend !== null;
+        if ($hostName === null) {
+            return null;
+        }
+
+        return Url::fromPath('monitoring/host/show', ['host' => $hostName]);
     }
 
-    public function hasHost(IcingaHost $host): bool
+    public function hasHost(?string $hostName): bool
     {
-        return $this->hasHostByName($host->getObjectName());
-    }
-
-    public function hasHostByName($hostname): bool
-    {
-        if (! $this->isAvailable()) {
+        if ($hostName === null || ! $this->isAvailable()) {
             return false;
         }
 
         try {
-            return $this->selectHost($hostname)->fetchOne() === $hostname;
+            return $this->selectHost($hostName)->fetchOne() === $hostName;
         } catch (Exception $_) {
             return false;
         }
     }
 
-    public function hasServiceByName($hostname, $service): bool
+    public function hasService(?string $hostName, ?string $serviceName): bool
     {
-        if (! $this->isAvailable()) {
+        if ($hostName === null || $serviceName === null || ! $this->isAvailable()) {
             return false;
         }
 
         try {
-            return $this->rowIsService($this->selectService($hostname, $service)->fetchRow(), $hostname, $service);
+            return $this->rowIsService(
+                $this->selectService($hostName, $serviceName)->fetchRow(),
+                $hostName,
+                $serviceName
+            );
         } catch (Exception $_) {
             return false;
         }
     }
 
-    public function canModifyService(IcingaHost $host, $service): bool
+    public function canModifyService(?string $hostName, ?string $serviceName): bool
     {
-        return $this->canModifyServiceByName($host->getObjectName(), $service);
-    }
-
-    public function canModifyServiceByName($hostname, $service): bool
-    {
-        if (! $this->isAvailable() || $hostname === null || $service === null) {
+        if (! $this->isAvailable() || $hostName === null || $serviceName === null) {
             return false;
         }
         if ($this->auth->hasPermission(Permission::MONITORING_SERVICES)) {
             $restriction = null;
             foreach ($this->auth->getRestrictions(Restriction::MONITORING_RW_OBJECT_FILTER) as $restriction) {
-                if ($this->hasServiceWithFilter($hostname, $service, Filter::fromQueryString($restriction))) {
+                if ($this->hasServiceWithFilter($hostName, $serviceName, Filter::fromQueryString($restriction))) {
                     return true;
                 }
             }
             if ($restriction === null) {
-                return $this->hasServiceByName($hostname, $service);
+                return $this->hasService($hostName, $serviceName);
             }
         }
 
         return false;
     }
 
-    public function canModifyHost(IcingaHost $host): bool
+    public function canModifyHost(?string $hostName): bool
     {
-        return $this->canModifyHostByName($host->getObjectName());
-    }
-
-    public function canModifyHostByName($hostname): bool
-    {
-        if ($this->isAvailable() && $this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
+        if ($hostName !== null && $this->isAvailable() && $this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
             $restriction = null;
             foreach ($this->auth->getRestrictions(Restriction::MONITORING_RW_OBJECT_FILTER) as $restriction) {
-                if ($this->hasHostWithFilter($hostname, Filter::fromQueryString($restriction))) {
+                if ($this->hasHostWithFilter($hostName, Filter::fromQueryString($restriction))) {
                     return true;
                 }
             }
             if ($restriction === null) {
-                return $this->hasHostByName($hostname);
+                return $this->hasHost($hostName);
             }
         }
 
@@ -119,7 +113,7 @@ class Monitoring
         }
     }
 
-    public function hasServiceWithFilter($hostname, $service, Filter $filter): bool
+    protected function hasServiceWithFilter($hostname, $service, Filter $filter): bool
     {
         try {
             return $this->rowIsService(
@@ -130,39 +124,6 @@ class Monitoring
         } catch (Exception $e) {
             return false;
         }
-    }
-
-    public function getHostState($hostname)
-    {
-        $hostStates = [
-            '0'  => 'up',
-            '1'  => 'down',
-            '2'  => 'unreachable',
-            '99' => 'pending',
-        ];
-
-        $query = $this->selectHostStatus($hostname, [
-            'hostname'     => 'host_name',
-            'state'        => 'host_state',
-            'problem'      => 'host_problem',
-            'acknowledged' => 'host_acknowledged',
-            'in_downtime'  => 'host_in_downtime',
-        ])->where('host_name', $hostname);
-
-        $res = $query->fetchRow();
-        if ($res === false) {
-            $res = (object) [
-                'hostname'     => $hostname,
-                'state'        => '99',
-                'problem'      => '0',
-                'acknowledged' => '0',
-                'in_downtime'  => '0',
-            ];
-        }
-
-        $res->state = $hostStates[$res->state];
-
-        return $res;
     }
 
     protected function selectHost($hostname)
@@ -230,5 +191,10 @@ class Monitoring
                 $this->backend = null;
             }
         }
+    }
+
+    protected function isAvailable(): bool
+    {
+        return $this->backend !== null;
     }
 }

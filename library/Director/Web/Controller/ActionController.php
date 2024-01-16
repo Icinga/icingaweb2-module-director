@@ -4,10 +4,14 @@ namespace Icinga\Module\Director\Web\Controller;
 
 use gipfl\Translation\StaticTranslator;
 use Icinga\Application\Benchmark;
+use Icinga\Application\Modules\Module;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
+use Icinga\Module\Director\Integration\BackendInterface;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
+use Icinga\Module\Director\ProvidedHook\Icingadb\IcingadbSupport;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
@@ -36,8 +40,8 @@ abstract class ActionController extends Controller implements ControlsAndContent
     /** @var UrlParams Hint for IDE, somehow does not work in web */
     protected $params;
 
-    /** @var Monitoring */
-    private $monitoring;
+    /** @var BackendInterface */
+    private $backend;
 
     /**
      * @throws SecurityException
@@ -240,14 +244,18 @@ abstract class ActionController extends Controller implements ControlsAndContent
     }
 
     /**
-     * @return Monitoring
+     * @return BackendInterface
      */
-    protected function monitoring()
+    protected function backend(): BackendInterface
     {
-        if ($this->monitoring === null) {
-            $this->monitoring = new Monitoring($this->Auth());
+        if ($this->backend === null) {
+            if (Module::exists('icingadb') && IcingadbSupport::useIcingaDbAsBackend()) {
+                $this->backend = new IcingadbBackend();
+            } else {
+                $this->backend = new Monitoring($this->getAuth());
+            }
         }
 
-        return $this->monitoring;
+        return $this->backend;
     }
 }
