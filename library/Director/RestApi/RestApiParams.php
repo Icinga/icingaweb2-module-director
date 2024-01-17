@@ -19,8 +19,9 @@ class RestApiParams
             }
             $exporter->enableHostServices();
         }
+        /** @var ?string $properties */
         $properties = $params->shift('properties');
-        if ($properties !== null && strlen($properties)) {
+        if ($properties) {
             $exporter->filterProperties(preg_split('/\s*,\s*/', $properties, -1, PREG_SPLIT_NO_EMPTY));
         }
         $exporter->resolveObjects($resolved);

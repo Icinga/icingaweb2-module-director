@@ -370,7 +370,7 @@ class ConfigController extends ActionController
 
         $configs = $db->enumDeployedConfigs();
         foreach (array($leftSum, $rightSum) as $sum) {
-            if (! array_key_exists($sum, $configs)) {
+            if ($sum && ! array_key_exists($sum, $configs)) {
                 $configs[$sum] = substr($sum, 0, 7);
             }
         }

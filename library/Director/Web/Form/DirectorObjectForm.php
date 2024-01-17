@@ -791,7 +791,9 @@ abstract class DirectorObjectForm extends DirectorForm
             return;
         }
 
-        $post = $values = $this->getRequest()->getPost();
+        /** @var array $post */
+        $post = $this->getRequest()->getPost();
+        $values = $post;
 
         foreach ($post as $key => $value) {
             if (preg_match('/^(.+?)_(\d+)__(MOVE_DOWN|MOVE_UP|REMOVE)$/', $key, $m)) {
@@ -1519,6 +1521,7 @@ abstract class DirectorObjectForm extends DirectorForm
             return [];
         }
 
+        /** @var int|string $id */
         $id = $object->get('id');
 
         if (array_key_exists($id, $tpl)) {

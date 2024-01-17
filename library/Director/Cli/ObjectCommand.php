@@ -428,7 +428,7 @@ class ObjectCommand extends Command
         }
 
         $stdin = file_get_contents('php://stdin');
-        if (strlen($stdin) === 0) {
+        if (! $stdin) {
             return null;
         }
 
