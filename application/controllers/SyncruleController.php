@@ -48,7 +48,7 @@ class SyncruleController extends ActionController
      */
     public function indexAction()
     {
-        $this->setAutoRefreshInterval(10);
+        $this->setAutorefreshInterval(10);
         $rule = $this->requireSyncRule();
         $this->tabs(new SyncRuleTabs($rule))->activate('show');
         $ruleName = $rule->get('rule_name');
@@ -642,7 +642,7 @@ class SyncruleController extends ActionController
      */
     public function historyAction()
     {
-        $this->setAutoRefreshInterval(30);
+        $this->setAutorefreshInterval(30);
         $rule = $this->requireSyncRule();
         $this->tabs(new SyncRuleTabs($rule))->activate('history');
         $this->addTitle($this->translate('Sync history') . ': ' . $rule->get('rule_name'));
