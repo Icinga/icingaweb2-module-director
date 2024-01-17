@@ -4,8 +4,8 @@ includes:
 parameters:
     level: 2
 
-    checkFunctionNameCase: false
-    checkInternalClassCaseSensitivity: false
+    checkFunctionNameCase: true
+    checkInternalClassCaseSensitivity: true
     treatPhpDocTypesAsCertain: false
 
     paths:
