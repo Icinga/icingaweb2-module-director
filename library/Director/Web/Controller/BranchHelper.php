@@ -9,6 +9,7 @@ use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\PreferredBranchSupport;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Widget\NotInBranchedHint;
+use Ramsey\Uuid\UuidInterface;
 
 trait BranchHelper
 {
@@ -22,14 +23,17 @@ trait BranchHelper
     protected $hasPreferredBranch = null;
 
     /**
-     * @return false|\Ramsey\Uuid\UuidInterface
+     * @return ?UuidInterface
      */
-    protected function getBranchUuid()
+    protected function getBranchUuid(): ?UuidInterface
     {
         return $this->getBranch()->getUuid();
     }
 
-    protected function getBranch()
+    /**
+     * @return Branch
+     */
+    protected function getBranch(): Branch
     {
         if ($this->branch === null) {
             /** @var ActionController $this */
@@ -42,7 +46,7 @@ trait BranchHelper
     /**
      * @return BranchStore
      */
-    protected function getBranchStore()
+    protected function getBranchStore(): BranchStore
     {
         if ($this->branchStore === null) {
             $this->branchStore = new BranchStore($this->db());
@@ -51,12 +55,15 @@ trait BranchHelper
         return $this->branchStore;
     }
 
-    protected function hasBranch()
+    /**
+     * @return bool
+     */
+    protected function hasBranch(): bool
     {
         return $this->getBranchUuid() !== null;
     }
 
-    protected function enableStaticObjectLoader($table)
+    protected function enableStaticObjectLoader($table): void
     {
         if (BranchSupport::existsForTableName($table)) {
             IcingaObject::setDbObjectStore(new DbObjectStore($this->db(), $this->getBranch()));
@@ -67,7 +74,7 @@ trait BranchHelper
      * @param string $subject
      * @return bool
      */
-    protected function showNotInBranch($subject)
+    protected function showNotInBranch($subject): bool
     {
         if ($this->getBranch()->isBranch()) {
             $this->content()->add(new NotInBranchedHint($subject, $this->getBranch(), $this->Auth()));
@@ -77,7 +84,7 @@ trait BranchHelper
         return false;
     }
 
-    protected function hasPreferredBranch()
+    protected function hasPreferredBranch(): bool
     {
         if ($this->hasPreferredBranch === null) {
             $implementation = Branch::optionalHook();
