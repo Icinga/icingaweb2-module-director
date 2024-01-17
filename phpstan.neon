@@ -13,8 +13,11 @@ parameters:
         - library/Director
 
     ignoreErrors:
-        - '#Unsafe usage of new static\(\)#'
-        - '#. but return statement is missing#'
+        -
+            messages:
+                - '#Unsafe usage of new static\(\)#'
+                - '#. but return statement is missing#'
+            reportUnmatched: false
 
     scanDirectories:
         - /icingaweb2
