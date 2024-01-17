@@ -69,6 +69,7 @@ class ImportSourceRestApi extends ImportSourceHook
         $data = $result;
         foreach ($parts as $part) {
             // un-escape any dots
+            /** @var string $part */
             $part = preg_replace('~\\\\.~', '.', $part);
 
             if (property_exists($data, $part)) {

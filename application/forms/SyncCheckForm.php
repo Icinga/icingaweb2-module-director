@@ -55,7 +55,7 @@ class SyncCheckForm extends DirectorForm
             } elseif ($sum['modify'] > 1) {
             }
             */
-            $html = '<pre>' . print_r($sum, 1) . '</pre>';
+            $html = '<pre>' . print_r($sum, true) . '</pre>';
 
             $this->addHtml($html);
         } elseif ($this->rule->get('sync_state') === 'in-sync') {

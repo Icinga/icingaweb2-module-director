@@ -33,7 +33,9 @@ class StartupLogRenderer implements ValidHtml
         // len [stage] + 1
         $markReplace = '        ^';
 
-        foreach (preg_split('/\n/', $log) as $line) {
+        /** @var string[] $logLines */
+        $logLines = preg_split('/\n/', $log);
+        foreach ($logLines as $line) {
             if (preg_match('/^\[([\d\s\:\+\-]+)\]\s/', $line, $m)) {
                 $time = $m[1];
                 // TODO: we might use new DateTime($time) and show a special "timeAgo"
