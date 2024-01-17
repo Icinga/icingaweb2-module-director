@@ -66,7 +66,7 @@ class BasketSnapshotTable extends IntlZfQueryBasedTable
         if (! is_object($summary) && ! is_array($summary)) {
             throw new RuntimeException(sprintf(
                 'Got invalid basket summary: %s ',
-                var_export($summary, 1)
+                var_export($summary, true)
             ));
         }
 

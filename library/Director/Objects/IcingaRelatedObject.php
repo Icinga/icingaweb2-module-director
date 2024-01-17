@@ -180,7 +180,7 @@ class IcingaRelatedObject
         } else {
             throw new ProgrammingError(
                 'Related object can be name or object, got: %s',
-                var_export($related, 1)
+                var_export($related, true)
             );
         }
 

@@ -19,7 +19,7 @@ class PropertyMangler
                 throw new InvalidArgumentException(sprintf(
                     'I can only append to arrays, %s is %s',
                     $key,
-                    var_export($current, 1)
+                    var_export($current, true)
                 ));
             }
 
@@ -52,7 +52,7 @@ class PropertyMangler
                 throw new InvalidArgumentException(sprintf(
                     'I can only remove strings or from arrays, %s is %s',
                     $key,
-                    var_export($current, 1)
+                    var_export($current, true)
                 ));
             }
         }

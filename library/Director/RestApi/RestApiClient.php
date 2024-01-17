@@ -287,7 +287,7 @@ class RestApiClient
 
         if ($statusCode >= 400) {
             throw new RuntimeException(
-                "Got $statusCode: " . \var_export($res, 1)
+                "Got $statusCode: " . \var_export($res, true)
             );
         }
 

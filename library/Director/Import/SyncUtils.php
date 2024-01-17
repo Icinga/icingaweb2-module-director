@@ -99,7 +99,7 @@ class SyncUtils
                 throw new InvalidArgumentException(sprintf(
                     'Data is not nested, cannot access %s: %s',
                     $var,
-                    var_export($row, 1)
+                    var_export($row, true)
                 ));
             }
 

@@ -45,7 +45,7 @@ class Branch
             $row->uuid = stream_get_contents($row->uuid);
         }
         if (strlen($row->uuid) !== 16) {
-            throw new RuntimeException('Valid UUID expected, got ' . var_export($row->uuid, 1));
+            throw new RuntimeException('Valid UUID expected, got ' . var_export($row->uuid, true));
         }
         $self->branchUuid = Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid));
         $self->name = $row->branch_name;

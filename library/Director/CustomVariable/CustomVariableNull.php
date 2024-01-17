@@ -31,7 +31,7 @@ class CustomVariableNull extends CustomVariable
         if (! is_null($value)) {
             throw new ProgrammingError(
                 'Null can only be null, got %s',
-                var_export($value, 1)
+                var_export($value, true)
             );
         }
 
