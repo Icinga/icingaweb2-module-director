@@ -194,7 +194,7 @@ class SelfServiceController extends ActionController
         } else {
             throw new ProgrammingError(
                 'Expected boolean value, got %s',
-                var_export($value, 1)
+                var_export($value, true)
             );
         }
     }

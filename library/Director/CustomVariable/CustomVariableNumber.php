@@ -47,7 +47,7 @@ class CustomVariableNumber extends CustomVariable
         if (! is_int($value) && ! is_float($value)) {
             throw new ProgrammingError(
                 'Expected a number, got %s',
-                var_export($value, 1)
+                var_export($value, true)
             );
         }
 

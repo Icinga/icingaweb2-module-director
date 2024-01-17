@@ -20,7 +20,7 @@ class DbDataFormatter
 
         throw new InvalidArgumentException(sprintf(
             'Got invalid boolean: %s',
-            var_export($value, 1)
+            var_export($value, true)
         ));
     }
 

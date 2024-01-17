@@ -116,7 +116,7 @@ class PropertyModifierArrayFilter extends PropertyModifierHook
             default:
                 throw new ConfigurationError(
                     '%s is not a valid value for an ArrayFilter filter_method',
-                    var_export($method, 1)
+                    var_export($method, true)
                 );
         }
 

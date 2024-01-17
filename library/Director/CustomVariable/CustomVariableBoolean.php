@@ -31,7 +31,7 @@ class CustomVariableBoolean extends CustomVariable
         if (! is_bool($value)) {
             throw new ProgrammingError(
                 'Expected a boolean, got %s',
-                var_export($value, 1)
+                var_export($value, true)
             );
         }
 

@@ -410,7 +410,7 @@ class BasketSnapshot extends DbObject
                     try {
                         JsonString::encode($object);
                     } catch (JsonEncodeException $singleError) {
-                        $dump = var_export($object, 1);
+                        $dump = var_export($object, true);
                         if (function_exists('iconv')) {
                             $dump = iconv('UTF-8', 'UTF-8//IGNORE', $dump);
                         }
