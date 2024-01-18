@@ -8,7 +8,6 @@ use RuntimeException;
 
 class RestApiClient
 {
-    /** @var resource */
     private $curl;
 
     /** @var string HTTP or HTTPS */
@@ -295,14 +294,14 @@ class RestApiClient
     }
 
     /**
-     * @return resource
+     * @throws RuntimeException
      */
     protected function curl()
     {
         if ($this->curl === null) {
-            $this->curl = \curl_init(\sprintf('https://%s:%d', $this->host, $this->port));
+            $this->curl = curl_init(sprintf('https://%s:%d', $this->host, $this->port));
             if (! $this->curl) {
-                throw new RuntimeException('CURL INIT ERROR: ' . \curl_error($this->curl));
+                throw new RuntimeException('CURL INIT FAILED');
             }
         }
 
