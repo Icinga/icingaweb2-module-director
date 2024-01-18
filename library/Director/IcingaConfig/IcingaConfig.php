@@ -448,9 +448,9 @@ class IcingaConfig
         $start = microtime(true);
 
         MemoryLimit::raiseTo('1024M');
-        ini_set('max_execution_time', 0);
+        ini_set('max_execution_time', '0');
         // Workaround for https://bugs.php.net/bug.php?id=68606 or similar
-        ini_set('zend.enable_gc', 0);
+        ini_set('zend.enable_gc', '0');
 
         if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
             throw new RuntimeException(
