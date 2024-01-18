@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.1 (unreleased)
+--------------------
+
+### Internals
+* FIX: UserGroup creation failed since v1.10.0 (#2784)
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/35?closed=1)
+
 v1.11.0
 -------
 
