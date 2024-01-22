@@ -22,9 +22,7 @@ parameters:
     scanDirectories:
         - /icingaweb2
         - /usr/share/icinga-php
-        - /usr/share/icingaweb2-modules/incubator
-        - /usr/share/icingaweb2-modules/cube
-        - /usr/share/icingaweb2-modules/icingadb
+        - /usr/share/icingaweb2-modules
 
     excludePaths:
         - library/Director/CoreBeta
