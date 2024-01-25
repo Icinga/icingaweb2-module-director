@@ -83,8 +83,7 @@ class ActivityLogInfo extends HtmlDocument
         /** @var Url $url */
         $url = $url->without('checksum')->without('show');
         $div = Html::tag('div', [
-            'class' => 'pagination-control',
-            'style' => 'float: right; width: 5em'
+            'class' => ['pagination-control', 'activity-log-control'],
         ]);
 
         $ul = Html::tag('ul', ['class' => 'nav tab-nav']);

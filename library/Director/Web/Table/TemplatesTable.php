@@ -60,7 +60,7 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
             $name,
             Html::tag(
                 'span',
-                ['style' => 'font-style: italic'],
+                ['class' => 'font-italic'],
                 $this->translate(' - not in use -')
             )
         ];
