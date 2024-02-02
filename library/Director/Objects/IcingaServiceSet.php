@@ -44,8 +44,32 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         'host' => 'IcingaHost',
     );
 
+    /** @var IcingaService[] Cached services */
+    protected $cachedServices = [];
+
     /** @var IcingaService[]|null */
     private $services;
+
+    /**
+     * Set the services to be cached
+     *
+     * @param $services IcingaService[]
+     * @return void
+     */
+    public function setCachedServices($services)
+    {
+        $this->cachedServices = $services;
+    }
+
+    /**
+     * Get the cached services
+     *
+     * @return IcingaService[]
+     */
+    public function getCachedServices()
+    {
+        return $this->cachedServices;
+    }
 
     public function isDisabled()
     {
@@ -110,7 +134,12 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     protected function storeRelatedServices()
     {
         if ($this->services === null) {
-            return;
+            $cachedServices = $this->getCachedServices();
+            if ($cachedServices) {
+                $this->services = $cachedServices;
+            } else {
+                return;
+            }
         }
 
         $seen = [];
@@ -179,6 +208,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     public function beforeDelete()
     {
+        $this->setCachedServices($this->getServices());
         // check if this is a template, or directly assigned to a host
         if ($this->get('host_id') === null) {
             // find all host sets and delete them

@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Authentication\Auth;
 use Icinga\Application\Icinga;
 use Icinga\Application\Logger;
+use stdClass;
 
 class DirectorActivityLog extends DbObject
 {
@@ -176,7 +177,19 @@ class DirectorActivityLog extends DbObject
     {
         $name = $object->getObjectName();
         $type = $object->getTableName();
-        $oldProps = json_encode($object->getPlainUnmodifiedObject());
+        /** @var stdClass $plainUnmodifiedObject */
+        $plainUnmodifiedObject = $object->getPlainUnmodifiedObject();
+
+        if ($object instanceof IcingaServiceSet) {
+            $services = [];
+            foreach ($object->getCachedServices() as $service) {
+                $services[$service->getObjectName()] = $service->toPlainObject();
+            }
+
+            $plainUnmodifiedObject->services = $services;
+        }
+
+        $oldProps = json_encode($plainUnmodifiedObject);
 
         $data = [
             'object_name'     => $name,
