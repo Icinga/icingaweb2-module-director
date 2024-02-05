@@ -984,7 +984,7 @@ abstract class DbObject
                 $this->table,
                 $this->getLogId(),
                 $e->getMessage(),
-                var_export($this->getProperties(), 1) // TODO: Remove properties
+                var_export($this->getProperties(), true) // TODO: Remove properties
             ));
         }
 

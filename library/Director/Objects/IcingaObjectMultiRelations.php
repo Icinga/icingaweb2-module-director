@@ -239,7 +239,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         } else {
             throw new ProgrammingError(
                 'Invalid related object: %s',
-                var_export($relation, 1)
+                var_export($relation, true)
             );
         }
 

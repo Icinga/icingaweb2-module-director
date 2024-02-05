@@ -62,7 +62,7 @@ class SchemaController extends ActionController
         return file_get_contents(
             sprintf(
                 '%s/schema/%s.sql',
-                $this->Module()->getBasedir(),
+                $this->Module()->getBaseDir(),
                 $type
             )
         );

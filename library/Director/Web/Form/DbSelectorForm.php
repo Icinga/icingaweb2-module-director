@@ -69,7 +69,7 @@ class DbSelectorForm extends Form
             $params = [];
         }
 
-        if (array_key_exists($name, $params)) {
+        if (is_array($params) && array_key_exists($name, $params)) {
             return $params[$name];
         }
 

@@ -82,9 +82,9 @@ class Command extends CliCommand
     {
         MemoryLimit::raiseTo('1024M');
 
-        ini_set('max_execution_time', 0);
+        ini_set('max_execution_time', '0');
         if (version_compare(PHP_VERSION, '7.0.0') < 0) {
-            ini_set('zend.enable_gc', 0);
+            ini_set('zend.enable_gc', '0');
         }
 
         return $this;

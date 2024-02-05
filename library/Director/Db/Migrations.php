@@ -90,7 +90,7 @@ class Migrations
     public function applyPendingMigrations()
     {
         // Ensure we have enough time to migrate
-        ini_set('max_execution_time', 0);
+        ini_set('max_execution_time', '0');
 
         foreach ($this->getPendingMigrations() as $migration) {
             $migration->apply($this->connection);

@@ -74,7 +74,7 @@ class PropertyModifierExtractFromDN extends PropertyModifierHook
                 default:
                     throw new InvalidPropertyException(
                         'DN part extraction failed for %s',
-                        var_export($value, 1)
+                        var_export($value, true)
                     );
             }
         }

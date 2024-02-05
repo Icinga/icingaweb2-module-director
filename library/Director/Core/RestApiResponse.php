@@ -113,7 +113,7 @@ class RestApiResponse
                     throw new IcingaException('API request failed: ' . $result->status);
                 }
             } else {
-                throw new IcingaException('API request failed: ' . var_export($result, 1));
+                throw new IcingaException('API request failed: ' . var_export($result, true));
             }
         }
 

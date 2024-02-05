@@ -4,8 +4,8 @@ includes:
 parameters:
     level: 2
 
-    checkFunctionNameCase: false
-    checkInternalClassCaseSensitivity: false
+    checkFunctionNameCase: true
+    checkInternalClassCaseSensitivity: true
     treatPhpDocTypesAsCertain: false
 
     paths:
@@ -13,15 +13,16 @@ parameters:
         - library/Director
 
     ignoreErrors:
-        - '#Unsafe usage of new static\(\)#'
-        - '#. but return statement is missing#'
+        -
+            messages:
+                - '#Unsafe usage of new static\(\)#'
+                - '#. but return statement is missing#'
+            reportUnmatched: false
 
     scanDirectories:
         - /icingaweb2
         - /usr/share/icinga-php
-        - /usr/share/icingaweb2-modules/incubator
-        - /usr/share/icingaweb2-modules/cube
-        - /usr/share/icingaweb2-modules/icingadb
+        - /usr/share/icingaweb2-modules
 
     excludePaths:
         - library/Director/CoreBeta

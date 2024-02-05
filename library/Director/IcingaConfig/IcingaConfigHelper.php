@@ -177,7 +177,7 @@ class IcingaConfigHelper
 
         throw new InvalidArgumentException(sprintf(
             'Unexpected type %s',
-            var_export($value, 1)
+            var_export($value, true)
         ));
     }
 
