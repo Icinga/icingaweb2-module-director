@@ -17,7 +17,7 @@ class CsrfToken
             return false;
         }
 
-        list($seed, $token) = explode('|', $elementValue);
+        list($seed, $token) = explode('|', $token);
 
         if (!is_numeric($seed)) {
             return false;

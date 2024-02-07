@@ -2,14 +2,14 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use gipfl\Format\LocalTimeFormat;
+use DateTime;
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Icinga\Module\Director\Util;
+use IntlDateFormatter;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 
-class ActivityLogTable extends ZfQueryBasedTable
+class ActivityLogTable extends IntlZfQueryBasedTable
 {
     protected $filters = [];
 
@@ -27,9 +27,6 @@ class ActivityLogTable extends ZfQueryBasedTable
         'object_type',
     ];
 
-    /** @var LocalTimeFormat */
-    protected $timeFormat;
-
     protected $ranges = [];
 
     /** @var ?object */
@@ -44,7 +41,6 @@ class ActivityLogTable extends ZfQueryBasedTable
     public function __construct($db)
     {
         parent::__construct($db);
-        $this->timeFormat = new LocalTimeFormat();
     }
 
     public function assemble()
@@ -96,7 +92,9 @@ class ActivityLogTable extends ZfQueryBasedTable
         if (! $this->hasObjectFilter) {
             $columns[] = $this->makeRangeInfo($row->id);
         }
-        $columns[] = $this::td($this->timeFormat->getTime($row->ts_change_time));
+
+
+        $columns[] = $this::td($this->getTime($row->ts_change_time));
 
         return $this::tr($columns)->addAttributes(['class' => $action]);
     }
@@ -107,7 +105,7 @@ class ActivityLogTable extends ZfQueryBasedTable
      */
     protected function renderDayIfNew($timestamp)
     {
-        $day = $this->getDateFormatter()->getFullDay($timestamp);
+        $day = $this->getDateFormatter()->format((new DateTime())->setTimestamp($timestamp));
 
         if ($this->lastDay !== $day) {
             $this->nextHeader()->add(
