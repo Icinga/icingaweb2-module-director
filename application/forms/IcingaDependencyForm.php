@@ -336,18 +336,22 @@ class IcingaDependencyForm extends DirectorObjectForm
     protected function handleProperties(DbObject $object, &$values)
     {
         if ($this->hasBeenSent()) {
-            if (isset($values['parent_host'])
-                && $this->isCustomVar($values['parent_host'])
-            ) {
-                $values['parent_host_var'] = \trim($values['parent_host'], '$');
-                $values['parent_host'] = '';
+            if (isset($values['parent_host'])) {
+                if ($this->isCustomVar($values['parent_host'])) {
+                    $values['parent_host_var'] = \trim($values['parent_host'], '$');
+                    $values['parent_host'] = '';
+                } else {
+                    $values['parent_host_var'] = '';
+                }
             }
 
-            if (isset($values['parent_service'])
-                && $this->isCustomVar($values['parent_service'])
-            ) {
-                $values['parent_service_by_name'] = trim($values['parent_service'], '$');
-                $values['parent_service'] = '';
+            if (isset($values['parent_service'])) {
+                if ($this->isCustomVar($values['parent_service'])) {
+                    $values['parent_service_by_name'] = trim($values['parent_service'], '$');
+                    $values['parent_service'] = '';
+                } else {
+                    $values['parent_service_by_name'] = '';
+                }
             }
         }
 
