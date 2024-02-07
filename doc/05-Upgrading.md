@@ -43,7 +43,7 @@ pending database migrations to an imported old database snapshot.
 -------------------------------------------------
 
 Before upgrading, please upgrade the [incubator module](https://github.com/Icinga/icingaweb2-module-incubator)
-to (at least) v0.6.0. As always, you'll be prompted to apply pending Database
+to (at least) v0.21.0. As always, you'll be prompted to apply pending Database
 Migrations.
 
 <a name="upgrade-to-1.7.x"></a>Upgrading to 1.7.x

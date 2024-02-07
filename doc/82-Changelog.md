@@ -4,6 +4,12 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.8.2
+-----
+
+### UI
+* FIX: The activity log now avoids a bug in PHP introduced with version 8.1.25 (#2828)
+
 1.8.1
 -----
 

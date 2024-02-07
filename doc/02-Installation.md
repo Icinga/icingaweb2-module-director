@@ -20,7 +20,7 @@ Requirements
   might show smaller UI bugs and are not actively tested
 * The following Icinga modules must be installed and enabled:
   * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.3.0)
-  * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.5.0)
+  * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.21.0)
   * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.7.0)
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
   MySQL forks are also fine. Mentioned versions are the required minimum,
@@ -102,7 +102,7 @@ You might want to use a script as follows for this task:
     ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
     REPO_URL="https://github.com/icinga/icingaweb2-module-director"
     TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
-    MODULE_VERSION="1.8.1"
+    MODULE_VERSION="1.8.2"
     URL="${REPO_URL}/archive/v${MODULE_VERSION}.tar.gz"
     install -d -m 0755 "${TARGET_DIR}"
     wget -q -O - "$URL" | tar xfz - -C "${TARGET_DIR}" --strip-components 1
@@ -119,7 +119,7 @@ It will be immediately ready for use:
     ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
     REPO_URL="https://github.com/icinga/icingaweb2-module-director"
     TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
-    MODULE_VERSION="1.8.1"
+    MODULE_VERSION="1.8.2"
     git clone "${REPO_URL}" "${TARGET_DIR}" --branch v${MODULE_VERSION}
 
 You can now directly use our current GIT master or check out a specific version.
