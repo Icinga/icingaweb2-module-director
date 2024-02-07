@@ -4,9 +4,8 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\SyncRule;
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 
-class SyncRunTable extends ZfQueryBasedTable
+class SyncRunTable extends IntlZfQueryBasedTable
 {
     /** @var SyncRule */
     protected $rule;
@@ -28,7 +27,7 @@ class SyncRunTable extends ZfQueryBasedTable
         return $this::tr([
             $this::td($this->makeSummary($row)),
             $this::td(new Link(
-                strftime('%H:%M:%S', $time),
+                $this->getTime($time),
                 'director/syncrule/history',
                 [
                     'id'     => $row->rule_id,

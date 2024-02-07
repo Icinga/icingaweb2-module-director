@@ -5,9 +5,8 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Module\Director\Util;
 use ipl\Html\BaseHtmlElement;
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 
-class ActivityLogTable extends ZfQueryBasedTable
+class ActivityLogTable extends IntlZfQueryBasedTable
 {
     protected $filters = [];
 
@@ -55,7 +54,7 @@ class ActivityLogTable extends ZfQueryBasedTable
 
         return $this::tr([
             $this::td($this->makeLink($row))->setSeparator(' '),
-            $this::td(strftime('%H:%M:%S', $row->ts_change_time))
+            $this::td($this->getTime($row->ts_change_time))
         ])->addAttributes(['class' => $action]);
     }
 
