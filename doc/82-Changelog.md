@@ -4,11 +4,24 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-v1.11.1 (unreleased)
---------------------
+v1.11.1
+-------
+
+### UI
+* FIX: Data fields are now suggested for service templates without a check command (#2815, #2826)
+* FIX: Unsetting a parent host or service of a dependency is now correctly stored (no issue)
+* FIX: The activity log now avoids a bug in PHP introduced with version 8.1.25 (#2828)
 
 ### Internals
 * FIX: UserGroup creation failed since v1.10.0 (#2784)
+* FIX: Hostgroup names consisting only of digits are now correctly handled (#2821)
+* FIX: Improved compatibility with PHP 8.1 and 8.2 (#2819, #2827)
+* FIX: The parent host or service of a dependency can now be reliably referenced by custom variable (#2289)
+* FIX: Services in service sets are now fully restored once a removed set is restored (#1065)
+
+### Integrations
+* FIX: Icinga DB integration now works even if the monitoring module is not available (#2635)
+* FIX: Conformity with the content security policy introduced with Icinga Web v2.12 (#2845)
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
