@@ -620,6 +620,10 @@ abstract class QuickForm extends QuickBaseForm
                 $this->hasBeenSent = true;
             } elseif ($req->isPost()) {
                 $post = $req->getPost();
+                if (! CsrfToken::isValid($post[self::CSRF])) {
+                    throw new Exception('Invalid CSRF token provided');
+                }
+
                 $this->hasBeenSent = array_key_exists(self::ID, $post) &&
                     $post[self::ID] === $this->getName();
             } else {
