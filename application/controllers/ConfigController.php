@@ -8,6 +8,7 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
@@ -186,7 +187,7 @@ class ConfigController extends ActionController
                 ['class' => 'icon-user', 'data-base-target' => '_self']
             ));
         }
-        if ($this->hasPermission('director/deploy') && ! $this->getBranch()->isBranch()) {
+        if ($this->hasPermission(Permission::DEPLOY) && ! $this->getBranch()->isBranch()) {
             if ($this->db()->hasDeploymentEndpoint()) {
                 $this->actions()->add(DeployConfigForm::load()
                     ->setDb($this->db())
@@ -369,31 +370,33 @@ class ConfigController extends ActionController
 
         $configs = $db->enumDeployedConfigs();
         foreach (array($leftSum, $rightSum) as $sum) {
-            if (! array_key_exists($sum, $configs)) {
+            if ($sum && ! array_key_exists($sum, $configs)) {
                 $configs[$sum] = substr($sum, 0, 7);
             }
         }
 
         $baseUrl = $this->url()->without(['left', 'right']);
-        $this->content()->add(Html::tag('form', ['action' => (string) $baseUrl, 'method' => 'GET'], [
-            new HtmlString($this->view->formSelect(
-                'left',
-                $leftSum,
-                ['class' => 'autosubmit', 'style' => 'width: 37%'],
-                [null => $this->translate('- please choose -')] + $configs
-            )),
-            Link::create(
-                Icon::create('flapping'),
-                $baseUrl,
-                ['left' => $rightSum, 'right' => $leftSum]
-            ),
-            new HtmlString($this->view->formSelect(
-                'right',
-                $rightSum,
-                ['class' => 'autosubmit', 'style' => 'width: 37%'],
-                [null => $this->translate('- please choose -')] + $configs
-            )),
-        ]));
+        $this->content()->add(
+            Html::tag('form', ['action' => (string) $baseUrl, 'method' => 'GET', 'class' => 'director-form'], [
+                new HtmlString($this->view->formSelect(
+                    'left',
+                    $leftSum,
+                    ['class' => ['autosubmit', 'config-diff']],
+                    [null => $this->translate('- please choose -')] + $configs
+                )),
+                Link::create(
+                    Icon::create('flapping'),
+                    $baseUrl,
+                    ['left' => $rightSum, 'right' => $leftSum]
+                ),
+                new HtmlString($this->view->formSelect(
+                    'right',
+                    $rightSum,
+                    ['class' => ['autosubmit', 'config-diff']],
+                    [null => $this->translate('- please choose -')] + $configs
+                )),
+            ])
+        );
 
         if ($rightSum === null || $leftSum === null || ! strlen($rightSum) || ! strlen($leftSum)) {
             return;
@@ -500,7 +503,7 @@ class ConfigController extends ActionController
     {
         $tabs = $this->tabs();
 
-        if ($this->hasPermission('director/deploy')
+        if ($this->hasPermission(Permission::DEPLOY)
             && $deploymentId = $this->params->get('deployment_id')
         ) {
             $tabs->add('deployment', [
@@ -510,7 +513,7 @@ class ConfigController extends ActionController
             ]);
         }
 
-        if ($this->hasPermission('director/showconfig')) {
+        if ($this->hasPermission(Permission::SHOW_CONFIG)) {
             $tabs->add('config', [
                 'label'     => $this->translate('Config'),
                 'url'       => 'director/config/files',

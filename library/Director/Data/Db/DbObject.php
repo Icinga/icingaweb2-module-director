@@ -80,6 +80,9 @@ abstract class DbObject
 
     protected $binaryProperties = [];
 
+    /* key/value!! */
+    protected $booleans = [];
+
     /**
      * Filled with object instances when prefetchAll is used
      */
@@ -346,6 +349,16 @@ abstract class DbObject
             return $this->$func($value);
         }
 
+        if ($this->getUuidColumn() === $key) {
+            if (strlen($value) > 16) {
+                $value = Uuid::fromString($value)->getBytes();
+            }
+        }
+
+        if ($this->propertyIsBoolean($key)) {
+            $value = DbDataFormatter::normalizeBoolean($value);
+        }
+
         if (! $this->hasProperty($key)) {
             throw new InvalidArgumentException(sprintf(
                 'Trying to set invalid key "%s"',
@@ -371,9 +384,30 @@ abstract class DbObject
         if ($value === $this->properties[$key]) {
             return $this;
         }
+        if ($key === 'id' || substr($key, -3) === '_id') {
+            if ($value !== null
+                && $this->properties[$key] !== null
+                && (int) $value === (int) $this->properties[$key]
+            ) {
+                return $this;
+            }
+        }
 
-        $this->hasBeenModified = true;
-        $this->modifiedProperties[$key] = true;
+        if ($this->hasBeenLoadedFromDb()) {
+            if ($value === $this->loadedProperties[$key]) {
+                unset($this->modifiedProperties[$key]);
+                if (empty($this->modifiedProperties)) {
+                    $this->hasBeenModified = false;
+                }
+            } else {
+                $this->hasBeenModified = true;
+                $this->modifiedProperties[$key] = true;
+            }
+        } else {
+            $this->hasBeenModified = true;
+            $this->modifiedProperties[$key] = true;
+        }
+
         $this->properties[$key] = $value;
         return $this;
     }
@@ -474,6 +508,11 @@ abstract class DbObject
         return array_keys($this->properties);
     }
 
+    public function getDefaultProperties()
+    {
+        return $this->defaultProperties;
+    }
+
     /**
      * Return all properties that changed since object creation
      *
@@ -530,7 +569,7 @@ abstract class DbObject
     /**
      * Unique key name
      *
-     * @return string
+     * @return string|array
      */
     public function getKeyName()
     {
@@ -683,8 +722,7 @@ abstract class DbObject
      */
     protected function loadFromDb()
     {
-        $select = $this->db->select()->from($this->table)->where($this->createWhere());
-        $properties = $this->db->fetchRow($select);
+        $properties = $this->db->fetchRow($this->prepareObjectQuery());
 
         if (empty($properties)) {
             if (is_array($this->getKeyName())) {
@@ -703,6 +741,11 @@ abstract class DbObject
         }
 
         return $this->setDbProperties($properties);
+    }
+
+    public function prepareObjectQuery()
+    {
+        return $this->db->select()->from($this->table)->where($this->createWhere());
     }
 
     /**
@@ -855,6 +898,11 @@ abstract class DbObject
         return in_array($column, $this->binaryProperties) || $this->getUuidColumn() === $column;
     }
 
+    public function propertyIsBoolean($property)
+    {
+        return array_key_exists($property, $this->booleans);
+    }
+
     /**
      * Store object to database
      *
@@ -936,7 +984,7 @@ abstract class DbObject
                 $this->table,
                 $this->getLogId(),
                 $e->getMessage(),
-                var_export($this->getProperties(), 1) // TODO: Remove properties
+                var_export($this->getProperties(), true) // TODO: Remove properties
             ));
         }
 
@@ -1004,7 +1052,7 @@ abstract class DbObject
         if ($this->hasUuidColumn() && $this->properties[$this->uuidColumn] !== null) {
             return $this->db->quoteInto(
                 sprintf('%s = ?', $this->getUuidColumn()),
-                $this->connection->quoteBinary($this->getUniqueId()->getBytes())
+                $this->connection->quoteBinary($this->getOriginalProperty($this->uuidColumn))
             );
         }
         if ($id = $this->getAutoincId()) {
@@ -1279,6 +1327,40 @@ abstract class DbObject
     }
 
     /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return static
+     */
+    public static function loadOptional($id, DbConnection $connection): ?DbObject
+    {
+        if ($prefetched = static::getPrefetched($id)) {
+            return $prefetched;
+        }
+        /** @var DbObject $obj */
+        $obj = new static();
+
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+            if ($uuid) {
+                return self::$dbObjectStore->load($table, $uuid);
+            }
+
+            return null;
+        }
+
+        $obj->setConnection($connection)->setKey($id);
+        $properties = $connection->getDbAdapter()->fetchRow($obj->prepareObjectQuery());
+        if (empty($properties)) {
+            return null;
+        }
+
+        $obj->setDbProperties($properties);
+        return $obj;
+    }
+
+    /**
      * @param DbConnection $connection
      * @param \Zend_Db_Select $query
      * @param string|null $keyColumn
@@ -1413,7 +1495,7 @@ abstract class DbObject
         ));
     }
 
-    public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection)
+    public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection): ?DbObject
     {
         $db = $connection->getDbAdapter();
         $obj = new static;

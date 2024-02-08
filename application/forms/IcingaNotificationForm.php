@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\DataType\DataTypeDirectorObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaNotificationForm extends DirectorObjectForm
@@ -121,20 +122,32 @@ class IcingaNotificationForm extends DirectorObjectForm
     {
         $users = $this->enumUsers();
         if (empty($users)) {
-            return $this;
-        }
-
-        $this->addElement(
-            'extensibleSet',
-            'users',
-            array(
+            $this->addElement('select', 'users', [
+                'label' => $this->translate('Users'),
+                'description' => $this->translate('No User object has been created yet'),
+                'multiOptions' => $this->optionalEnum([]),
+            ]);
+        } else {
+            $this->addElement('extensibleSet', 'users', [
                 'label'       => $this->translate('Users'),
                 'description' => $this->translate(
                     'Users that should be notified by this notifications'
                 ),
                 'multiOptions' => $this->optionalEnum($users)
+            ]);
+        }
+
+        $this->addElement('select', 'users_var', [
+            'label' => $this->translate('Users Custom Variable'),
+            'multiOptions' => $this->enumDirectorObjectFields('user'),
+            'description' => $this->translate(
+                'If defined, Users from this Custom Variable will be combined with single users chosen below. '
+                . ' e.g.: when set to notification_contacts, this notification will pick Users from the Array'
+                . ' service.vars.notification_contacts and fall back to host.vars.notification_contacts, in'
+                . ' case the former one does not exist.'
+                . ' Only Array type DirectorObject Fields for User objects are eligible for this feature.'
             )
-        );
+        ]);
 
         return $this;
     }
@@ -146,22 +159,57 @@ class IcingaNotificationForm extends DirectorObjectForm
     {
         $groups = $this->enumUsergroups();
         if (empty($groups)) {
-            return $this;
-        }
-
-        $this->addElement(
-            'extensibleSet',
-            'user_groups',
-            array(
+            $this->addElement('select', 'user_groups', [
+                'label' => $this->translate('Users'),
+                'description' => $this->translate('No UserGroup object has been created yet'),
+                'multiOptions' => $this->optionalEnum([]),
+            ]);
+        } else {
+            $this->addElement('extensibleSet', 'user_groups', [
                 'label'       => $this->translate('User groups'),
                 'description' => $this->translate(
                     'User groups that should be notified by this notifications'
                 ),
                 'multiOptions' => $this->optionalEnum($groups)
+            ]);
+        }
+
+        $this->addElement('select', 'user_groups_var', [
+            'label' => $this->translate('User Groups Custom Variable'),
+            'multiOptions' => $this->enumDirectorObjectFields('usergroup'),
+            'description' => $this->translate(
+                'If defined, User Groups from this Custom Variable will be combined with single Groups chosen below. '
+                . ' e.g.: when set to notification_groups, this notification will pick User Groups from the Array'
+                . ' service.vars.notification_groups and fall back to host.vars.notification_groups, in'
+                . ' case the former one does not exist.'
+                . ' Only Array type DirectorObject Fields for User objects are eligible for this feature.'
             )
-        );
+        ]);
 
         return $this;
+    }
+
+    protected function enumDirectorObjectFields($objectType, $dataType = 'array')
+    {
+        $db = $this->db->getDbAdapter();
+        $query = $db->select()
+            ->from(['df' => 'director_datafield'], ['k' => 'df.varname', 'v' => 'df.varname'])
+            ->join(
+                ['dfs' => 'director_datafield_setting'],
+                $db->quoteInto('df.id = dfs.datafield_id AND dfs.setting_name = ?', 'icinga_object_type'),
+                []
+            )
+            ->join(
+                ['dft' => 'director_datafield_setting'],
+                $db->quoteInto('df.id = dft.datafield_id AND dft.setting_name = ?', 'data_type'),
+                []
+            )
+            ->where('df.datatype = ?', DataTypeDirectorObject::class)
+            ->where('dfs.setting_value = ?', $objectType)
+            ->where('dft.setting_value = ?', $dataType)
+            ->order('df.varname');
+
+        return $this->optionalEnum($db->fetchPairs($query));
     }
 
     /**
@@ -196,7 +244,7 @@ class IcingaNotificationForm extends DirectorObjectForm
             array(
                 'label' => $this->translate('First notification delay'),
                 'description' => $this->translate(
-                    'Delay unless the first notification should be sent'
+                    'Delay until the first notification should be sent'
                 ) . '. ' . $this->getTimeValueInfo()
             )
         );

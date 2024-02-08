@@ -7,12 +7,16 @@ use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\SyncProperty;
@@ -43,8 +47,17 @@ class Sync
     /** @var IcingaObject[] Objects to work with */
     protected $objects;
 
+    /** @var array<mixed, array<int, string>> key => [property, property]*/
+    protected $setNull = [];
+
+    /** @var array<mixed, array<string, mixed>> key => [propertyName, newValue]*/
+    protected $newProperties = [];
+
     /** @var bool Whether we already prepared your sync */
     protected $isPrepared = false;
+
+    /** @var bool Whether we applied strtolower() to existing object keys */
+    protected $usedLowerCasedKeys = false;
 
     protected $modify = [];
 
@@ -76,13 +89,24 @@ class Sync
     /** @var HostGroupMembershipResolver|bool */
     protected $hostGroupMembershipResolver;
 
+    /** @var ?DbObjectStore */
+    protected $store;
+
+    /** @var IcingaObjectGroup[] */
+    protected $modifiedGroups = [];
+
+    /** @var IcingaObject[] */
+    protected $modifiedGroupObjects = [];
+
     /**
      * @param SyncRule $rule
+     * @param ?DbObjectStore $store
      */
-    public function __construct(SyncRule $rule)
+    public function __construct(SyncRule $rule, DbObjectStore $store = null)
     {
         $this->rule = $rule;
         $this->db = $rule->getConnection();
+        $this->store = $store;
     }
 
     /**
@@ -123,24 +147,6 @@ class Sync
     }
 
     /**
-     * Transform the given value to an array
-     *
-     * @param  array|string|null $value
-     *
-     * @return array
-     */
-    protected function wantArray($value)
-    {
-        if (is_array($value)) {
-            return $value;
-        } elseif ($value === null) {
-            return [];
-        } else {
-            return [$value];
-        }
-    }
-
-    /**
      * Raise PHP resource limits
      *
      * @return self;
@@ -148,7 +154,7 @@ class Sync
     protected function raiseLimits()
     {
         MemoryLimit::raiseTo('1024M');
-        ini_set('max_execution_time', 0);
+        ini_set('max_execution_time', '0');
 
         return $this;
     }
@@ -306,6 +312,9 @@ class Sync
             foreach ($rows as $row) {
                 if ($combinedKey) {
                     $key = SyncUtils::fillVariables($sourceKeyPattern, $row);
+                    if ($this->usedLowerCasedKeys) {
+                        $key = strtolower($key);
+                    }
 
                     if (array_key_exists($key, $this->imported[$sourceId])) {
                         throw new InvalidArgumentException(sprintf(
@@ -334,7 +343,11 @@ class Sync
                 if ($combinedKey) {
                     $this->imported[$sourceId][$key] = $row;
                 } else {
-                    $this->imported[$sourceId][$row->$key] = $row;
+                    if ($this->usedLowerCasedKeys) {
+                        $this->imported[$sourceId][strtolower($row->$key)] = $row;
+                    } else {
+                        $this->imported[$sourceId][$row->$key] = $row;
+                    }
                 }
             }
 
@@ -360,13 +373,13 @@ class Sync
 
         if ($listId === null) {
             throw new InvalidArgumentException(
-                'Cannot sync datalist entry without list_ist'
+                'Cannot sync datalist entry without list_id'
             );
         }
 
         $no = [];
         foreach ($this->objects as $k => $o) {
-            if ((int) $o->get('list_id') !== (int) $listId) {
+            if ((int) $o->get('list_id') !== $listId) {
                 $no[] = $k;
             }
         }
@@ -384,15 +397,19 @@ class Sync
         Benchmark::measure('Begin loading existing objects');
 
         $ruleObjectType = $this->rule->get('object_type');
+        $useLowerCaseKeys = $ruleObjectType !== 'datalistEntry';
         // TODO: Make object_type (template, object...) and object_name mandatory?
         if ($this->rule->hasCombinedKey()) {
             $this->objects = [];
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
+            $table = DbObjectTypeRegistry::tableNameByType($ruleObjectType);
+            if ($this->store && BranchSupport::existsForTableName($table)) {
+                $objects = $this->store->loadAll($table);
+            } else {
+                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
+            }
 
-            foreach (IcingaObject::loadAllByType(
-                $ruleObjectType,
-                $this->db
-            ) as $object) {
+            foreach ($objects as $object) {
                 if ($object instanceof IcingaService) {
                     if (strstr($destinationKeyPattern, '${host}')
                         && $object->get('host_id') === null
@@ -409,6 +426,9 @@ class Sync
                     $destinationKeyPattern,
                     $object
                 );
+                if ($useLowerCaseKeys) {
+                    $key = strtolower($key);
+                }
 
                 if (array_key_exists($key, $this->objects)) {
                     throw new InvalidArgumentException(sprintf(
@@ -421,12 +441,44 @@ class Sync
                 $this->objects[$key] = $object;
             }
         } else {
-            $this->objects = IcingaObject::loadAllByType(
-                $ruleObjectType,
-                $this->db
-            );
+            if ($this->store) {
+                $objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType), 'object_name');
+            } else {
+                $keyColumn = null;
+                $query = null;
+                // We enforce named index for combined-key templates (Services and Sets) and applied Sets
+                if ($ruleObjectType === 'service' || $ruleObjectType === 'serviceSet') {
+                    foreach ($this->syncProperties as $prop) {
+                        $configuredObjectType = $prop->get('source_expression');
+                        if ($prop->get('destination_field') === 'object_type'
+                            && (
+                                $configuredObjectType === 'template'
+                                || ($configuredObjectType === 'apply' && $ruleObjectType === 'serviceSet')
+                            )
+                        ) {
+                            $keyColumn = 'object_name';
+                            $table = $ruleObjectType === 'service'
+                                ? BranchSupport::TABLE_ICINGA_SERVICE
+                                : BranchSupport::TABLE_ICINGA_SERVICE_SET;
+                            $query = $this->db->getDbAdapter()->select()
+                                ->from($table)->where('object_type = ?', $configuredObjectType);
+                        }
+                    }
+                }
+                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db, $query, $keyColumn);
+            }
+
+            if ($useLowerCaseKeys) {
+                $this->objects = [];
+                foreach ($objects as $key => $object) {
+                    $this->objects[strtolower($key)] = $object;
+                }
+            } else {
+                $this->objects = $objects;
+            }
         }
 
+        $this->usedLowerCasedKeys = $useLowerCaseKeys;
         // TODO: should be obsoleted by a better "loadFiltered" method
         if ($ruleObjectType === 'datalistEntry') {
             $this->removeForeignListEntries();
@@ -449,10 +501,15 @@ class Sync
 
         foreach ($this->sources as $source) {
             $sourceId = $source->id;
+            $keyColumn = $source->get('key_column');
 
             foreach ($this->imported[$sourceId] as $key => $row) {
                 // Workaround: $a["10"] = "val"; -> array_keys($a) = [(int) 10]
                 $key = (string) $key;
+                $originalKey = $row->$keyColumn;
+                if ($this->usedLowerCasedKeys) {
+                    $key = strtolower($key);
+                }
                 if (! array_key_exists($key, $objects)) {
                     // Safe default values for object_type and object_name
                     if ($ruleObjectType === 'datalistEntry') {
@@ -460,7 +517,7 @@ class Sync
                     } else {
                         $props = [
                             'object_type' => 'object',
-                            'object_name' => $key
+                            'object_name' => $originalKey,
                         ];
                     }
 
@@ -472,7 +529,7 @@ class Sync
                 }
 
                 $object = $objects[$key];
-                $this->prepareNewObject($row, $object, $sourceId);
+                $this->prepareNewObject($row, $object, $key, $sourceId);
             }
         }
 
@@ -486,8 +543,17 @@ class Sync
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
-    protected function prepareNewObject($row, DbObject $object, $sourceId)
+    protected function prepareNewObject($row, DbObject $object, $objectKey, $sourceId)
     {
+        if (!isset($this->newProperties[$objectKey])) {
+            $this->newProperties[$objectKey] = [];
+        }
+        // TODO: some more improvements are possible here. First, no need to instantiate
+        //       all new objects, we could stick with the newProperties array. Next, we
+        //       should be more correct when respecting sync property order. Right now,
+        //       a property from another Import Source might win, even if property order
+        //       tells something different. This is a very rare case, but still incorrect.
+        $properties = &$this->newProperties[$objectKey];
         foreach ($this->syncProperties as $propertyKey => $p) {
             if ($p->get('source_id') !== $sourceId) {
                 continue;
@@ -498,7 +564,6 @@ class Sync
             }
 
             $prop = $p->get('destination_field');
-
             $val = SyncUtils::fillVariables($p->get('source_expression'), $row);
 
             if ($object instanceof IcingaObject) {
@@ -514,25 +579,33 @@ class Sync
                     $varName = substr($prop, 5);
                     if (substr($varName, -2) === '[]') {
                         $varName = substr($varName, 0, -2);
-                        $current = $this->wantArray($object->vars()->$varName);
                         $object->vars()->$varName = array_merge(
-                            $current,
-                            $this->wantArray($val)
+                            (array) ($object->vars()->$varName),
+                            (array) $val
                         );
                     } else {
-                        $object->vars()->$varName = $val;
+                        $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
                     }
                 } else {
-                    if ($val !== null) {
-                        $object->set($prop, $val);
-                    }
+                    $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
                 }
             } else {
-                if ($val !== null) {
-                    $object->set($prop, $val);
-                }
+                $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
             }
         }
+    }
+
+    protected function setPropertyWithNullLogic(DbObject $object, $objectKey, $property, $value, &$allProps)
+    {
+        if ($value === null) {
+            if (! array_key_exists($property, $allProps) || $allProps[$property] === null) {
+                $this->setNull[$objectKey][$property] = $property;
+            }
+        } else {
+            unset($this->setNull[$objectKey][$property]);
+            $object->set($property, $value);
+        }
+        $allProps[$property] = $value;
     }
 
     /**
@@ -571,6 +644,9 @@ class Sync
     protected function notifyResolvers()
     {
         if ($resolver = $this->getHostGroupMembershipResolver()) {
+            if ($this->rule->get('object_type') === 'hostgroup') {
+                $resolver->setGroups($this->modifiedGroups);
+            }
             $resolver->refreshDb(true);
         }
 
@@ -636,6 +712,7 @@ class Sync
         $noAction = [];
         $purgeAction = $this->rule->get('purge_action');
         foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
+            $key = strtolower($key);
             if (array_key_exists($key, $newObjects)) {
                 // Object has been touched, do not delete
                 continue;
@@ -693,6 +770,13 @@ class Sync
         }
     }
 
+    protected function optionallyTellResolverAboutModifiedGroup(IcingaObjectGroup $group)
+    {
+        if (in_array('assign_filter', $group->getModifiedProperties())) {
+            $this->modifiedGroups[] = $group;
+        }
+    }
+
     /**
      * @param $key
      * @param DbObject|IcingaObject $object
@@ -704,7 +788,13 @@ class Sync
 
         switch ($policy) {
             case 'override':
-                $this->objects[$key]->replaceWith($object);
+                if ($object instanceof IcingaHost
+                    && !in_array('api_key', $this->rule->getSyncProperties())
+                ) {
+                    $this->objects[$key]->replaceWith($object, ['api_key']);
+                } else {
+                    $this->objects[$key]->replaceWith($object);
+                }
                 break;
 
             case 'merge':
@@ -727,6 +817,16 @@ class Sync
                 if (! $object->hasInitializedVars() || ! isset($object->vars()->$key)) {
                     $this->objects[$key]->vars()->restoreStoredVar($keyName);
                 }
+            }
+        }
+
+        // Hint: in theory, NULL should be set on new objects, but this has no effect
+        //       anyway, and we also do not store vars.something = null, this would
+        //       instead delete the variable. So here we do not need to check for new
+        //       objects, and skip all null values with update policy = 'ignore'
+        if ($policy !== 'ignore' && isset($this->setNull[$key])) {
+            foreach ($this->setNull[$key] as $property) {
+                $this->objects[$key]->set($property, null);
             }
         }
     }
@@ -753,7 +853,9 @@ class Sync
         $objects = $this->prepare();
         $db = $this->db;
         $dba = $db->getDbAdapter();
-        $dba->beginTransaction();
+        if (! $this->store) { // store has it's own transaction
+            $dba->beginTransaction();
+        }
 
         $object = null;
         $updateOnly = $this->rule->get('update_policy') === 'update-only';
@@ -771,18 +873,33 @@ class Sync
             foreach ($objects as $object) {
                 $this->setResolver($object);
                 if (! $updateOnly && $object->shouldBeRemoved()) {
-                    $object->delete();
+                    if ($this->store) {
+                        $this->store->delete($object);
+                    } else {
+                        $object->delete();
+                    }
                     $deleted++;
                     continue;
                 }
 
                 if ($object->hasBeenModified()) {
+                    if ($object instanceof IcingaObjectGroup) {
+                        $this->optionallyTellResolverAboutModifiedGroup($object);
+                    }
                     $existing = $object->hasBeenLoadedFromDb();
                     if ($existing) {
-                        $object->store($db);
+                        if ($this->store) {
+                            $this->store->store($object);
+                        } else {
+                            $object->store($db);
+                        }
                         $modified++;
                     } elseif ($allowCreate) {
-                        $object->store($db);
+                        if ($this->store) {
+                            $this->store->store($object);
+                        } else {
+                            $object->store($db);
+                        }
                         $created++;
                     }
                 }
@@ -802,24 +919,34 @@ class Sync
                 ));
             }
 
-            $this->run->setProperties($runProperties)->store();
+            $this->run->setProperties($runProperties);
+            if (!$this->store || !$this->store->getBranch()->isBranch()) {
+                $this->run->store();
+            }
             $this->notifyResolvers();
-            $dba->commit();
+            if (! $this->store) {
+                $dba->commit();
+            }
 
             // Store duration after commit, as the commit might take some time
             $this->run->set('duration_ms', (int) round(
                 (microtime(true) - $this->runStartTime) * 1000
-            ))->store();
+            ));
+            if (!$this->store || !$this->store->getBranch()->isBranch()) {
+                $this->run->store();
+            }
 
             Benchmark::measure('Done applying objects');
         } catch (Exception $e) {
-            $dba->rollBack();
+            if (! $this->store) {
+                $dba->rollBack();
+            }
 
-            if ($object !== null && $object instanceof IcingaObject) {
+            if ($object instanceof IcingaObject) {
                 throw new IcingaException(
                     'Exception while syncing %s %s: %s',
                     get_class($object),
-                    $object->get('object_name'),
+                    $object->getObjectName(),
                     $e->getMessage(),
                     $e
                 );
@@ -833,6 +960,9 @@ class Sync
 
     protected function prepareCache()
     {
+        if ($this->store) {
+            return $this;
+        }
         PrefetchCache::initialize($this->db);
         IcingaTemplateRepository::clear();
 

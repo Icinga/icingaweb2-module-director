@@ -4,13 +4,12 @@ namespace Icinga\Module\Director\Web\Table;
 
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use RuntimeException;
 
-class BasketSnapshotTable extends ZfQueryBasedTable
+class BasketSnapshotTable extends IntlZfQueryBasedTable
 {
     use DbHelper;
 
@@ -67,7 +66,7 @@ class BasketSnapshotTable extends ZfQueryBasedTable
         if (! is_object($summary) && ! is_array($summary)) {
             throw new RuntimeException(sprintf(
                 'Got invalid basket summary: %s ',
-                var_export($summary, 1)
+                var_export($summary, true)
             ));
         }
 

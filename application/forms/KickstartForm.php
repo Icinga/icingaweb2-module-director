@@ -320,7 +320,7 @@ class KickstartForm extends DirectorForm
                 )
             );
             $this->addHtmlHint(
-                Html::tag('pre', null, $config),
+                Html::tag('pre', null, (string) $config),
                 array('name' => 'HINT_config_store')
             );
 

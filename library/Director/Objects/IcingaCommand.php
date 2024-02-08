@@ -2,9 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\Arguments;
@@ -66,7 +64,6 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
         'ClusterZoneCheck' => 'plugin-check-command',
         'IdoCheck'         => 'ido-check-command',
         'RandomCheck'      => 'random-check-command',
-        'CrlCheck'         => 'clr-check-command',
     ];
 
     /**
@@ -130,10 +127,8 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
             // return $value;
         }
 
-        if (self::$pluginDir !== null) {
-            if (($pos = strpos($value, self::$pluginDir)) === 0) {
-                $value = substr($value, strlen(self::$pluginDir) + 1);
-            }
+        if (isset($value, self::$pluginDir) && strpos($value, self::$pluginDir) === 0) {
+            $value = substr($value, strlen(self::$pluginDir) + 1);
         }
 
         return $value;
@@ -211,84 +206,6 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
     public function getUniqueIdentifier()
     {
         return $this->getObjectName();
-    }
-
-    /**
-     * @return object
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
-    {
-        $props = (array) $this->toPlainObject();
-        if (isset($props['arguments'])) {
-            foreach ($props['arguments'] as $key => $argument) {
-                if (property_exists($argument, 'command_id')) {
-                    unset($props['arguments'][$key]->command_id);
-                }
-            }
-        }
-        $props['fields'] = $this->loadFieldReferences();
-        ksort($props);
-
-        return (object) $props;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return IcingaCommand
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        $name = $properties['object_name'];
-        $key = $name;
-
-        if ($replace && static::exists($key, $db)) {
-            $object = static::load($key, $db);
-        } elseif (static::exists($key, $db)) {
-            throw new DuplicateKeyException(
-                'Command "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        unset($properties['fields']);
-        $object->setProperties($properties);
-
-        return $object;
-    }
-
-    protected function loadFieldReferences()
-    {
-        $db = $this->getDb();
-
-        $res = $db->fetchAll(
-            $db->select()->from([
-                'cf' => 'icinga_command_field'
-            ], [
-                'cf.datafield_id',
-                'cf.is_required',
-                'cf.var_filter',
-            ])->join(['df' => 'director_datafield'], 'df.id = cf.datafield_id', [])
-                ->where('command_id = ?', $this->get('id'))
-                ->order('varname ASC')
-        );
-
-        if (empty($res)) {
-            return [];
-        } else {
-            foreach ($res as $field) {
-                $field->datafield_id = (int) $field->datafield_id;
-            }
-
-            return $res;
-        }
     }
 
     protected function renderCommand()

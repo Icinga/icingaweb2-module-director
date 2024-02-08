@@ -5,8 +5,10 @@ namespace Icinga\Module\Director\Forms;
 use gipfl\Web\Widget\Hint;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -41,7 +43,7 @@ class IcingaCloneObjectForm extends DirectorForm
             'value'    => $name,
         ));
 
-        if (!$branchOnly && Acl::instance()->hasPermission('director/admin')) {
+        if (!$branchOnly && Acl::instance()->hasPermission(Permission::ADMIN)) {
             $this->addElement('select', 'clone_type', array(
                 'label'        => 'Clone type',
                 'required'     => true,
@@ -95,7 +97,9 @@ class IcingaCloneObjectForm extends DirectorForm
             }
         }
 
-        if ($this->object->isTemplate() && $this->object->supportsFields()) {
+        if (($this->object->isTemplate() || $this->object instanceof IcingaCommand)
+            && $this->object->supportsFields()
+        ) {
             $this->addBoolean('clone_fields', [
                 'label'       => $this->translate('Clone Template Fields'),
                 'description' => $this->translate(
@@ -132,7 +136,7 @@ class IcingaCloneObjectForm extends DirectorForm
         $connection = $object->getConnection();
         $db = $connection->getDbAdapter();
         $newName = $this->getValue('new_object_name');
-        $resolve = Acl::instance()->hasPermission('director/admin')
+        $resolve = Acl::instance()->hasPermission(Permission::ADMIN)
             && $this->getValue('clone_type') === 'flat';
 
         $msg = sprintf(
@@ -189,7 +193,7 @@ class IcingaCloneObjectForm extends DirectorForm
             $fields = $db->fetchAll(
                 $db->select()
                     ->from($table . '_field')
-                    ->where("${type}_id = ?", $object->get('id'))
+                    ->where("{$type}_id = ?", $object->get('id'))
             );
         } else {
             $fields = [];
@@ -221,7 +225,7 @@ class IcingaCloneObjectForm extends DirectorForm
             }
 
             foreach ($fields as $row) {
-                $row->{"${type}_id"} = $newId;
+                $row->{"{$type}_id"} = $newId;
                 $db->insert($table . '_field', (array) $row);
             }
 
@@ -247,6 +251,7 @@ class IcingaCloneObjectForm extends DirectorForm
         return $db->fetchPairs(
             $db->select()
                 ->from('icinga_service_set', ['id', 'object_name'])
+                ->where('object_type = ?', 'template')
                 ->order('object_name')
         );
     }

@@ -149,6 +149,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         $ds = new ArrayDatasource($services);
         return $ds->select()->columns([
             'id'            => 'id',
+            'uuid'          => 'uuid',
             'name'          => 'name',
             'filter'        => 'filter',
             'disabled'      => 'disabled',
@@ -184,6 +185,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
             ['s' => 'icinga_service'],
             [
                 'id'            => 's.id',
+                'uuid'          => 's.uuid',
                 'name'          => 's.object_name',
                 'assign_filter' => 's.assign_filter',
                 'apply_for'     => 's.apply_for',

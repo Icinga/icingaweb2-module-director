@@ -2,15 +2,14 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use gipfl\Format\LocalTimeFormat;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\BranchActivity;
 use Icinga\Module\Director\Util;
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Ramsey\Uuid\UuidInterface;
 
-class BranchActivityTable extends ZfQueryBasedTable
+class BranchActivityTable extends IntlZfQueryBasedTable
 {
     protected $extraParams = [];
 
@@ -20,14 +19,12 @@ class BranchActivityTable extends ZfQueryBasedTable
     /** @var ?UuidInterface */
     protected $objectUuid;
 
-    /** @var LocalTimeFormat */
-    protected $timeFormat;
+    protected $linkToObject = true;
 
     public function __construct(UuidInterface $branchUuid, $db, UuidInterface $objectUuid = null)
     {
         $this->branchUuid = $branchUuid;
         $this->objectUuid = $objectUuid;
-        $this->timeFormat = new LocalTimeFormat();
         parent::__construct($db);
     }
 
@@ -38,17 +35,26 @@ class BranchActivityTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
-        $ts = (int) floor($row->timestamp_ns / 1000000);
+        $ts = (int) floor(BranchActivity::fixFakeTimestamp($row->timestamp_ns) / 1000000);
         $this->splitByDay($ts);
         $activity = BranchActivity::fromDbRow($row);
         return $this::tr([
             $this::td($this->makeBranchLink($activity))->setSeparator(' '),
-            $this::td($this->timeFormat->getTime($ts))
+            $this::td($this->getTime($ts))
         ])->addAttributes(['class' => ['action-' . $activity->getAction(), 'branched']]);
+    }
+
+    public function disableObjectLink()
+    {
+        $this->linkToObject = false;
+        return $this;
     }
 
     protected function linkObject(BranchActivity $activity)
     {
+        if (! $this->linkToObject) {
+            return $activity->getObjectName();
+        }
         // $type, UuidInterface $uuid
         // Later on replacing, service_set -> serviceset
         $type = preg_replace('/^icinga_/', '', $activity->getObjectTable());
@@ -64,7 +70,7 @@ class BranchActivityTable extends ZfQueryBasedTable
     {
         $type = preg_replace('/^icinga_/', '', $activity->getObjectTable());
 
-        if (Util::hasPermission('director/showconfig')) {
+        if (Util::hasPermission(Permission::SHOW_CONFIG)) {
             // Later on replacing, service_set -> serviceset
             return [
                 '[' . $activity->getAuthor() . ']',
@@ -83,7 +89,7 @@ class BranchActivityTable extends ZfQueryBasedTable
                 $activity->getAuthor(),
                 $activity->getAction(),
                 $type,
-                'object name'
+                $activity->getObjectName()
             );
         }
     }

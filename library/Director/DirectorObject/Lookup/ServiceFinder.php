@@ -4,15 +4,18 @@ namespace Icinga\Module\Director\DirectorObject\Lookup;
 
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
+use RuntimeException;
 
 class ServiceFinder
 {
     /** @var IcingaHost */
     protected $host;
 
-    /** @var Auth */
+    /** @var ?Auth */
     protected $auth;
 
     /** @var IcingaHost[] */
@@ -24,7 +27,7 @@ class ServiceFinder
     /** @var \Icinga\Module\Director\Db */
     protected $db;
 
-    public function __construct(IcingaHost $host, Auth $auth)
+    public function __construct(IcingaHost $host, Auth $auth = null)
     {
         $this->host = $host;
         $this->auth = $auth;
@@ -47,29 +50,5 @@ class ServiceFinder
         }
 
         return false;
-    }
-
-    /**
-     * @param $serviceName
-     * @return Url
-     */
-    public function getRedirectionUrl($serviceName)
-    {
-        if ($this->auth->hasPermission('director/host')) {
-            if ($info = $this::find($this->host, $serviceName)) {
-                return $info->getUrl();
-            }
-        }
-        if ($this->auth->hasPermission('director/monitoring/services-ro')) {
-            return Url::fromPath('director/host/servicesro', [
-                'name'    => $this->host->getObjectName(),
-                'service' => $serviceName
-            ]);
-        }
-
-        return Url::fromPath('director/host/invalidservice', [
-            'name'    => $this->host->getObjectName(),
-            'service' => $serviceName,
-        ]);
     }
 }

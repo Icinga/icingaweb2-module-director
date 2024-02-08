@@ -2,11 +2,11 @@
 
 namespace Icinga\Module\Director\Db\Branch;
 
+use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\BranchSupportHook;
-use Icinga\Web\Hook;
 use Icinga\Web\Request;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -18,6 +18,8 @@ use stdClass;
  */
 class Branch
 {
+    const PREFIX_SYNC_PREVIEW = '/syncpreview';
+
     /** @var UuidInterface|null */
     protected $branchUuid;
 
@@ -43,11 +45,12 @@ class Branch
             $row->uuid = stream_get_contents($row->uuid);
         }
         if (strlen($row->uuid) !== 16) {
-            throw new RuntimeException('Valid UUID expected, got ' . var_export($row->uuid, 1));
+            throw new RuntimeException('Valid UUID expected, got ' . var_export($row->uuid, true));
         }
         $self->branchUuid = Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid));
         $self->name = $row->branch_name;
         $self->owner = $row->owner;
+        $self->description = $row->description;
         $self->tsMergeRequest = $row->ts_merge_request;
         if (isset($row->cnt_activities)) {
             $self->cntActivities = $row->cnt_activities;
@@ -180,10 +183,34 @@ class Branch
     }
 
     /**
+     * @since v1.10.0
+     * @return string
+     */
+    public function getDescription()
+    {
+        return $this->description;
+    }
+
+    /**
+     * @since v1.10.0
+     * @param ?string $description
+     * @return void
+     */
+    public function setDescription($description)
+    {
+        $this->description = $description;
+    }
+
+    /**
      * @return string
      */
     public function getOwner()
     {
         return $this->owner;
+    }
+
+    public function isSyncPreview()
+    {
+        return (bool) preg_match('/^' . preg_quote(self::PREFIX_SYNC_PREVIEW, '/') . '\//', $this->getName());
     }
 }

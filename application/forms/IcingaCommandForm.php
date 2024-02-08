@@ -28,7 +28,6 @@ class IcingaCommandForm extends DirectorObjectForm
                     'ClusterZoneCheck'   => 'Icinga Cluster Zone Check Command',
                     'IdoCheck'           => 'Ido Check Command',
                     'RandomCheck'        => 'Random Check Command',
-                    'CrlCheck'           => 'Crl Check Command',
                 )
             ),
             'required'    => ! $this->isTemplate(),

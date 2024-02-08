@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class UsersDashlet extends Dashlet
 {
     protected $icon = 'users';
 
-    protected $requiredStats = array('user', 'usergroup');
+    protected $requiredStats = ['user', 'usergroup'];
 
     public function getTitle()
     {
@@ -15,7 +17,7 @@ class UsersDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/users');
+        return [Permission::USERS];
     }
 
     public function getUrl()

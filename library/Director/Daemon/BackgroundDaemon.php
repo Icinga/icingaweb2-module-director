@@ -104,7 +104,7 @@ class BackgroundDaemon
             try {
                 $uuid = \bin2hex(Uuid::uuid4()->getBytes());
             } catch (Exception $e) {
-                $uuid = 'deadc0de' . \substr(\md5(\getmypid()), 0, 24);
+                $uuid = 'deadc0de' . substr(md5((string) getmypid()), 0, 24);
             }
         }
         $processDetails = new DaemonProcessDetails($uuid);

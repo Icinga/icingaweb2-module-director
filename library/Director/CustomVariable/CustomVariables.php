@@ -162,6 +162,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     protected function refreshIndex()
     {
         $this->idx = array();
+        ksort($this->vars);
         foreach ($this->vars as $name => $var) {
             if (! $var->hasBeenDeleted()) {
                 $this->idx[] = $name;
@@ -344,8 +345,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         $out = '';
 
-        ksort($this->vars);
-        foreach ($this->vars as $key => $var) {
+        foreach ($this as $key => $var) {
             // TODO: ctype_alnum + underscore?
             $out .= $this->renderSingleVar($key, $var, $renderExpressions);
         }
@@ -414,10 +414,15 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     protected function renderKeyName($key)
     {
+        return 'vars' . self::renderKeySuffix($key);
+    }
+
+    public static function renderKeySuffix($key)
+    {
         if (preg_match('/^[a-z][a-z0-9_]*$/i', $key)) {
-            return 'vars.' . c::escapeIfReserved($key);
+            return '.' . c::escapeIfReserved($key);
         } else {
-            return 'vars[' . c::renderString($key) . ']';
+            return '[' . c::renderString($key) . ']';
         }
     }
 

@@ -5,6 +5,8 @@ namespace Icinga\Module\Director\DirectorObject\Lookup;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * A service belonging to a Service Set, attached either directly to the given
@@ -21,11 +23,15 @@ class ServiceSetServiceInfo implements ServiceInfo
     /** @var string */
     protected $serviceSetName;
 
-    public function __construct($hostName, $serviceName, $serviceSetName)
+    /** @var UuidInterface */
+    protected $uuid;
+
+    public function __construct($hostName, $serviceName, $serviceSetName, UuidInterface $uuid)
     {
         $this->hostName = $hostName;
         $this->serviceName = $serviceName;
         $this->serviceSetName = $serviceSetName;
+        $this->uuid = $uuid;
     }
 
     public static function find(IcingaHost $host, $serviceName)
@@ -40,7 +46,10 @@ class ServiceSetServiceInfo implements ServiceInfo
         $query = $db->select()
             ->from(
                 ['s' => 'icinga_service'],
-                ['service_set_name' => 'ss.object_name',]
+                [
+                    'service_set_name' => 'ss.object_name',
+                    'uuid'             => 's.uuid',
+                ]
             )->join(
                 ['ss' => 'icinga_service_set'],
                 's.service_set_id = ss.id',
@@ -62,7 +71,12 @@ class ServiceSetServiceInfo implements ServiceInfo
             );
 
         if ($row = $db->fetchRow($query)) {
-            return new static($host->getObjectName(), $serviceName, $row->service_set_name);
+            return new static(
+                $host->getObjectName(),
+                $serviceName,
+                $row->service_set_name,
+                Uuid::fromBytes($row->uuid)
+            );
         }
 
         return null;
@@ -76,6 +90,11 @@ class ServiceSetServiceInfo implements ServiceInfo
     public function getName()
     {
         return $this->serviceName;
+    }
+
+    public function getUuid()
+    {
+        return $this->uuid;
     }
 
     /**

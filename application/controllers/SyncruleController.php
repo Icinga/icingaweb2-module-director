@@ -4,6 +4,15 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\IcingaWeb2\Link;
 use gipfl\Web\Widget\Hint;
+use Icinga\Date\DateFormatter;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
+use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Db\Branch\BranchStore;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
+use Icinga\Module\Director\Web\Controller\BranchHelper;
+use Icinga\Module\Director\Web\Form\ClickHereForm;
+use Icinga\Module\Director\Web\Table\BranchActivityTable;
 use Icinga\Module\Director\Web\Widget\IcingaConfigDiff;
 use Icinga\Module\Director\Web\Widget\UnorderedList;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -26,24 +35,38 @@ use Icinga\Module\Director\Web\Table\SyncpropertyTable;
 use Icinga\Module\Director\Web\Table\SyncRunTable;
 use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
 use Icinga\Module\Director\Web\Widget\SyncRunDetails;
+use Icinga\Web\Notification;
 use ipl\Html\Form;
 use ipl\Html\Html;
 
 class SyncruleController extends ActionController
 {
+    use BranchHelper;
+
     /**
      * @throws \Icinga\Exception\NotFoundError
      */
     public function indexAction()
     {
-        $this->setAutoRefreshInterval(10);
+        $this->setAutorefreshInterval(10);
         $rule = $this->requireSyncRule();
         $this->tabs(new SyncRuleTabs($rule))->activate('show');
         $ruleName = $rule->get('rule_name');
         $this->addTitle($this->translate('Sync rule: %s'), $ruleName);
 
         $checkForm = SyncCheckForm::load()->setSyncRule($rule)->handleRequest();
-        $runForm = SyncRunForm::load()->setSyncRule($rule)->handleRequest();
+        $store = new DbObjectStore($this->db(), $this->getBranch());
+        $runForm = new SyncRunForm($rule, $store);
+        $runForm->on(SyncRunForm::ON_SUCCESS, function (SyncRunForm $form) {
+            $message = $form->getSuccessMessage();
+            if ($message === null) {
+                Notification::error($this->translate('Synchronization failed'));
+            } else {
+                Notification::success($message);
+            }
+            $this->redirectNow($this->url());
+        });
+        $runForm->handleRequest($this->getServerRequest());
 
         if ($lastRunId = $rule->getLastSyncRunId()) {
             $run = SyncRun::load($lastRunId, $this->db());
@@ -71,7 +94,7 @@ class SyncruleController extends ActionController
                 break;
             case 'in-sync':
                 $c->add(Html::tag('p', null, sprintf(
-                    $this->translate('This Sync Rule was last found to by in Sync at %s.'),
+                    $this->translate('This Sync Rule was last found to be in Sync at %s.'),
                     $rule->get('last_attempt')
                 )));
                 /*
@@ -98,6 +121,15 @@ class SyncruleController extends ActionController
         }
 
         $c->add($checkForm);
+        if ($this->hasBranch()) {
+            $objectType = $rule->get('object_type');
+            $table = DbObjectTypeRegistry::tableNameByType($objectType);
+            if (! BranchSupport::existsForTableName($table)) {
+                $this->showNotInBranch(sprintf($this->translate("Synchronizing '%s'"), $objectType));
+                return;
+            }
+        }
+
         $c->add($runForm);
 
         if ($run) {
@@ -142,31 +174,97 @@ class SyncruleController extends ActionController
     public function previewAction()
     {
         $rule = $this->requireSyncRule();
-        // $rule->set('update_policy', 'replace');
+        $branchSupport = BranchSupport::existsForSyncRule($rule);
+        $branchStore = new BranchStore($this->db());
+        $owner = $this->getAuth()->getUser()->getUsername();
+        if ($branchSupport) {
+            if ($this->getBranch()->isBranch()) {
+                $tmpBranchName = sprintf(
+                    '%s/%s-%s',
+                    Branch::PREFIX_SYNC_PREVIEW,
+                    $this->getBranch()->getUuid()->toString(),
+                    $rule->get('id')
+                );
+                // We could keep changes for preview on branch too
+                $branchStore->deleteByName($tmpBranchName);
+                $tmpBranch = $branchStore->cloneBranchForSync($this->getBranch(), $tmpBranchName, $owner);
+                $after = 1600000000; // a date in 2020, minus 10000000
+            } else {
+                $tmpBranchName = Branch::PREFIX_SYNC_PREVIEW . '/' . $rule->get('id');
+                $tmpBranch = $branchStore->fetchOrCreateByName($tmpBranchName, $owner);
+                $after = null;
+            }
+            $store = new DbObjectStore($this->db(), $tmpBranch);
+        } else {
+            $tmpBranch = $store = null;
+        }
+
         $this->tabs(new SyncRuleTabs($rule))->activate('preview');
-        $this->addTitle('Sync Preview');
-        $sync = new Sync($rule);
-        try {
+        $this->addTitle($this->translate('Sync Preview'));
+        $sync = new Sync($rule, $store);
+        $keepBranchPreview = false;
+        if ($tmpBranch) {
+            if ($lastTime = $branchStore->getLastActivityTime($tmpBranch, $after)) {
+                if ((time() - $lastTime) > 100) {
+                    $branchStore->wipeBranch($tmpBranch, $after);
+                } else {
+                    $here = (new ClickHereForm())->handleRequest($this->getServerRequest());
+                    if ($here->hasBeenClicked()) {
+                        $branchStore->wipeBranch($tmpBranch, $after);
+                        $this->redirectNow($this->url());
+                    } else {
+                        $keepBranchPreview = true;
+                    }
+                    $this->content()->add(Hint::info(Html::sprintf(
+                        $this->translate('This preview has been generated %s, please click %s to regenerate it'),
+                        DateFormatter::timeAgo($lastTime),
+                        $here
+                    )));
+                }
+            }
+        }
+        if (!$keepBranchPreview) {
             $modifications = $sync->getExpectedModifications();
-        } catch (\Exception $e) {
-            $this->content()->add(Hint::error($e->getMessage()));
-
-            return;
         }
 
-        if (empty($modifications)) {
-            $this->content()->add(Hint::ok($this->translate(
-                'This Sync Rule is in sync and would currently not apply any changes'
-            )));
+        if ($tmpBranch) {
+            try {
+                if (!$keepBranchPreview) {
+                    $sync->apply();
+                }
+            } catch (\Exception $e) {
+                $this->content()->add(Hint::error($e->getMessage()));
+                return;
+            }
 
-            return;
+            $changes = new BranchActivityTable($tmpBranch->getUuid(), $this->db());
+            $changes->disableObjectLink();
+            if (count($changes) === 0) {
+                $this->showInSync();
+            }
+            $changes->renderTo($this);
+        } else {
+            if (empty($modifications)) {
+                $this->showInSync();
+                return;
+            }
+            $this->showExpectedModificationSummary($modifications);
         }
+    }
 
+    protected function showInSync()
+    {
+        $this->content()->add(Hint::ok($this->translate(
+            'This Sync Rule is in sync and would currently not apply any changes'
+        )));
+    }
+
+    protected function showExpectedModificationSummary($modifications)
+    {
         $create = [];
         $modify = [];
         $delete = [];
         $modifiedProperties = [];
-
         /** @var IcingaObject $object */
         foreach ($modifications as $object) {
             if ($object->hasBeenLoadedFromDb()) {
@@ -282,10 +380,7 @@ class SyncruleController extends ActionController
     protected function firstNames($objects, $max = 50)
     {
         $names = [];
-        $list = new UnorderedList();
-        $list->addAttributes([
-            'style' => 'list-style-type: none; marign: 0; padding: 0',
-        ]);
+        $list = new UnorderedList([], ['class' => 'unordred-list']);
         $total = count($objects);
         $i = 0;
         PrefetchCache::forget();
@@ -366,7 +461,7 @@ class SyncruleController extends ActionController
     {
         $list = new UnorderedList();
         foreach ($properties as $property => $cnt) {
-            $list->addItem("${cnt}x $property");
+            $list->addItem("{$cnt}x $property");
         }
 
         return $list;
@@ -416,9 +511,15 @@ class SyncruleController extends ActionController
             if (! $rule->hasSyncProperties()) {
                 $this->addPropertyHint($rule);
             }
+            if ($this->showNotInBranch($this->translate('Modifying Sync Rules'))) {
+                return;
+            }
         } else {
             $this->addTitle($this->translate('Add sync rule'));
             $this->tabs(new SyncRuleTabs())->activate('add');
+            if ($this->showNotInBranch($this->translate('Creating Sync Rules'))) {
+                return;
+            }
         }
 
         $form->handleRequest();
@@ -451,6 +552,9 @@ class SyncruleController extends ActionController
                 ['class' => 'icon-paste']
             )
         );
+        if ($this->showNotInBranch($this->translate('Cloning Sync Rules'))) {
+            return;
+        }
 
         $form = new CloneSyncRuleForm($rule);
         $this->content()->add($form);
@@ -499,6 +603,13 @@ class SyncruleController extends ActionController
         $ruleId = (int) $rule->get('id');
 
         $form = SyncPropertyForm::load()->setDb($db);
+        $this->tabs(new SyncRuleTabs($rule))->activate('property');
+            $this->actions()->add(new Link(
+                $this->translate('back'),
+                'director/syncrule/property',
+                ['rule_id' => $ruleId],
+                ['class' => 'icon-left-big']
+            ));
         if ($id = $this->params->get('id')) {
             $form->loadObject((int) $id);
             $this->addTitle(
@@ -506,24 +617,21 @@ class SyncruleController extends ActionController
                 $form->getObject()->get('destination_field'),
                 $rule->get('rule_name')
             );
+            if ($this->showNotInBranch($this->translate('Modifying Sync Rules'))) {
+                return;
+            }
         } else {
             $this->addTitle(
                 $this->translate('Add sync property: %s'),
                 $rule->get('rule_name')
             );
+            if ($this->showNotInBranch($this->translate('Modifying Sync Rules'))) {
+                return;
+            }
         }
         $form->setRule($rule);
         $form->setSuccessUrl('director/syncrule/property', ['rule_id' => $ruleId]);
-
-        $this->actions()->add(new Link(
-            $this->translate('back'),
-            'director/syncrule/property',
-            ['rule_id' => $ruleId],
-            ['class' => 'icon-left-big']
-        ));
-
         $this->content()->add($form->handleRequest());
-        $this->tabs(new SyncRuleTabs($rule))->activate('property');
         SyncpropertyTable::create($rule)
             ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
             ->renderTo($this);
@@ -534,7 +642,7 @@ class SyncruleController extends ActionController
      */
     public function historyAction()
     {
-        $this->setAutoRefreshInterval(30);
+        $this->setAutorefreshInterval(30);
         $rule = $this->requireSyncRule();
         $this->tabs(new SyncRuleTabs($rule))->activate('history');
         $this->addTitle($this->translate('Sync history') . ': ' . $rule->get('rule_name'));

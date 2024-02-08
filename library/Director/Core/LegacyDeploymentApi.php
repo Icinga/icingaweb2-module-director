@@ -128,6 +128,10 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         if (file_exists($path)) {
             if (is_link($path)) {
                 $linkTarget = readlink($path);
+                if (! $linkTarget) {
+                    throw new IcingaException('Failed to read symlink');
+                }
+
                 $linkTargetDir = dirname($linkTarget);
                 $linkTargetName = basename($linkTarget);
 
@@ -165,7 +169,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         $this->assertDeploymentPath();
 
         $dh = @opendir($this->deploymentPath);
-        if ($dh === null) {
+        if ($dh === false) {
             throw new IcingaException('Can not list contents of %s', $this->deploymentPath);
         }
 
@@ -279,7 +283,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
                 $this->mkdir(dirname($fullPath), true);
 
                 $fh = @fopen($fullPath, 'w');
-                if ($fh === null) {
+                if ($fh === false) {
                     throw new IcingaException('Could not open file "%s" for writing.', $fullPath);
                 }
                 chmod($fullPath, $this->file_mode);
@@ -334,7 +338,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     protected function listDirectoryContents($path, $depth = 0)
     {
         $dh = @opendir($path);
-        if ($dh === null) {
+        if ($dh === false) {
             throw new IcingaException('Can not list contents of %s', $path);
         }
 

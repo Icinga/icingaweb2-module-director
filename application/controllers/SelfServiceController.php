@@ -194,7 +194,7 @@ class SelfServiceController extends ActionController
         } else {
             throw new ProgrammingError(
                 'Expected boolean value, got %s',
-                var_export($value, 1)
+                var_export($value, true)
             );
         }
     }
@@ -275,7 +275,7 @@ class SelfServiceController extends ActionController
             // PluginsUrl => framework_plugins_url
         ];
         $username = $settings->get('self-service/icinga_service_user');
-        if (strlen($username)) {
+        if ($username) {
             $params['icinga_service_user'] = $username;
         }
 
@@ -404,7 +404,7 @@ class SelfServiceController extends ActionController
     {
         foreach ($keys as $key) {
             $value = $settings->get("self-service/$key");
-            if (strlen($value)) {
+            if ($value) {
                 $params[$key] = $value;
             }
         }

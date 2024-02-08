@@ -144,7 +144,7 @@ class IcingaTemplateResolverTest extends BaseTestCase
         return $host;
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $db = $this->getDb();
         $kill = array('t1', 't2', 't6', 't3', 't4', 't5');
@@ -154,5 +154,7 @@ class IcingaTemplateResolverTest extends BaseTestCase
                 IcingaHost::load($name, $db)->delete();
             }
         }
+
+        parent::tearDown();
     }
 }

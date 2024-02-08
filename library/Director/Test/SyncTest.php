@@ -29,8 +29,9 @@ abstract class SyncTest extends BaseTestCase
     /** @var  Sync */
     protected $sync;
 
-    public function setUp()
+    public function setUp(): void
     {
+        parent::setUp();
         $this->source = ImportSource::create(array(
             'source_name'    => 'testimport',
             'provider_class' => 'Icinga\\Module\\Director\\Test\\ImportSourceDummy',
@@ -49,7 +50,7 @@ abstract class SyncTest extends BaseTestCase
         $this->sync = new Sync($this->rule);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         // properties should be deleted automatically
         if ($this->rule !== null && $this->rule->hasBeenLoadedFromDb()) {
@@ -75,6 +76,7 @@ abstract class SyncTest extends BaseTestCase
         // make sure cache is clean for other tests
         PrefetchCache::forget();
         DbObject::clearAllPrefetchCaches();
+        parent::tearDown();
     }
 
     /**

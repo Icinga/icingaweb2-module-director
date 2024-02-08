@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class NotificationApplyDashlet extends Dashlet
 {
     protected $icon = 'bell';
@@ -27,7 +29,7 @@ class NotificationApplyDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/notifications');
+        return [Permission::NOTIFICATIONS];
     }
 
     public function getUrl()

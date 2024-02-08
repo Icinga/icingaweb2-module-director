@@ -23,7 +23,7 @@ class SyncrulesController extends ActionController
         }
 
         $this->addTitle($this->translate('Sync rule'))
-            ->setAutoRefreshInterval(10)
+            ->setAutorefreshInterval(10)
             ->addAddLink(
                 $this->translate('Add a new Sync Rule'),
                 'director/syncrule/add'

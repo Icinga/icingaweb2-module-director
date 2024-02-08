@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\SyncRule;
 use RuntimeException;
@@ -98,9 +99,9 @@ class SyncruleCommand extends Command
         }
 
         return (object) [
-            'create' => $create,
-            'modify' => $modify,
-            'delete' => $delete,
+            DirectorActivityLog::ACTION_CREATE => $create,
+            DirectorActivityLog::ACTION_MODIFY => $modify,
+            DirectorActivityLog::ACTION_DELETE => $delete,
         ];
     }
 

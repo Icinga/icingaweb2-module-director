@@ -26,6 +26,8 @@ class ExtensibleSetElement extends BaseHtmlElement
 
     private $description;
 
+    private $descriptions;
+
     private $multiOptions;
 
     private $validOptions;
@@ -109,7 +111,7 @@ class ExtensibleSetElement extends BaseHtmlElement
         if (null !== $value && ! is_array($value)) {
             throw new ProgrammingError(
                 'Got unexpected value, no array: %s',
-                var_export($value, 1)
+                var_export($value, true)
             );
         }
 
@@ -323,7 +325,7 @@ class ExtensibleSetElement extends BaseHtmlElement
         } else {
             return \sprintf(
                 $this->translate('%s (not an Array!)'),
-                \var_export($this->inherited, 1)
+                \var_export($this->inherited, true)
             );
         }
     }

@@ -75,6 +75,12 @@ icingacli director host create localhost \
     --json '{ "address": "127.0.0.1", "vars": { "test": [ "one", "two" ] } }'
 ```
 
+Passing JSON via STDIN is also possible:
+
+```shell
+icingacli director host create localhost --json < my-host.json
+```
+
 
 ### Delete a specific object
 
@@ -137,6 +143,7 @@ Use this command to modify specific properties of an existing Icinga object.
 | `--json`                   | Otherwise provide all options as a JSON string        |
 | `--replace`                | Replace all object properties with the given ones     |
 | `--auto-create`            | Create the object in case it does not exist           |
+| `--allow-overrides`        | Set variable overrides for virtual Services           |
 
 
 #### Examples
@@ -184,16 +191,16 @@ in JSON format.
 
 #### Options
 
-| Option          | Description                                             |
-|-----------------|---------------------------------------------------------|
-| `--resolved`    | Resolve all inherited properties and show a flat object |
-|                 | object                                                  |
-| `--json`        | Use JSON format                                         |
-| `--no-pretty`   | JSON is pretty-printed per default (for PHP >= 5.4)     |
-|                 | Use this flag to enforce unformatted JSON               |
-| `--no-defaults` | Per default JSON output skips null or default values    |
-|                 | With this flag you will get all properties              |
-
+| Option            | Description                                          |
+|-------------------|------------------------------------------------------|
+| `--resolved`      | Resolve all inherited properties and show a flat     |
+|                   | object                                               |
+| `--json`          | Use JSON format                                      |
+| `--no-pretty`     | JSON is pretty-printed per default (for PHP >= 5.4)  |
+|                   | Use this flag to enforce unformatted JSON            |
+| `--no-defaults`   | Per default JSON output skips null or default values |
+|                   | With this flag you will get all properties           |
+| `--with-services` | For hosts only, also shows attached services         |
 
 ### Clone an existing object
 
@@ -464,7 +471,7 @@ Config with checksum b330febd0820493fb12921ad8f5ea42102a5c871 already exists
 
 | Option                     | Description                                                      |
 |----------------------------|------------------------------------------------------------------|
-| `checksum <checksum>`      | Optionally deploy a specific configuration                       |
+| `--checksum <checksum>`    | Optionally deploy a specific configuration                       |
 | `--force`                  | Force a deployment, even when the configuration hasn't changed   |
 | `--wait <seconds>`         | Optionally wait until Icinga completed it's restart              |
 | `--grace-period <seconds>` | Do not deploy if a deployment took place less than <seconds> ago |

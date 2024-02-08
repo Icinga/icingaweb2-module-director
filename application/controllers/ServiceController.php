@@ -3,11 +3,11 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
-use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -29,17 +29,21 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->hasPermission('director/monitoring/services')) {
-            $monitoring = new Monitoring();
-            if ($monitoring->authCanEditService($this->Auth(), $this->getParam('host'), $this->getParam('name'))) {
-                return;
-            }
+        if ($this->host
+            && $this->object
+            && $this->backend()->canModifyService($this->host->getObjectName(), $this->object->getObjectName())
+        ) {
+            return;
         }
-        $this->assertPermission('director/hosts');
+
+        $this->assertPermission(Permission::HOSTS);
     }
 
     public function init()
     {
+        // This happens in parent::init() too, but is required to take place before the next two lines
+        $this->enableStaticObjectLoader($this->getTableName());
+
         // Hint: having Host and Set loaded first is important for UUID lookups with legacy URLs
         $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
         $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');
@@ -58,7 +62,7 @@ class ServiceController extends ObjectController
 
     protected function getOptionalRelatedObjectFromParams($type, $parameter)
     {
-        if ($id = $this->params->get("${parameter}_id")) {
+        if ($id = $this->params->get("{$parameter}_id")) {
             $key = (int) $id;
         } else {
             $key = $this->params->get($parameter);
@@ -76,7 +80,7 @@ class ServiceController extends ObjectController
     {
         $key = $object->getUnresolvedRelated($relation);
         if ($key === null) {
-            if ($key = $object->get("${relation}_id")) {
+            if ($key = $object->get("{$relation}_id")) {
                 $key = (int) $key;
             } else {
                 $key = $object->get($relation);
@@ -250,9 +254,16 @@ class ServiceController extends ObjectController
         }
 
         $key = $this->getLegacyKey();
-        $uuid = UuidLookup::findServiceUuid($this->db(), $this->getBranch(), 'object', $key, $this->host, $this->set);
-        $this->params->set('uuid', $uuid->toString());
-        parent::loadObject();
+        // Hint: not passing 'object' as type, we still have name-based links in previews and similar
+        $uuid = UuidLookup::findServiceUuid($this->db(), $this->getBranch(), null, $key, $this->host, $this->set);
+        if ($uuid === null) {
+            if (! $this->params->get('allowOverrides')) {
+                throw new NotFoundError('Not found');
+            }
+        } else {
+            $this->params->set('uuid', $uuid->toString());
+            parent::loadObject();
+        }
     }
 
     protected function addOptionalHostTabs()

@@ -10,6 +10,8 @@ class TestSuiteLint extends TestSuite
 
     protected $failed;
 
+    protected $result = [];
+
     public function run()
     {
         $this->checked = $this->failed = array();

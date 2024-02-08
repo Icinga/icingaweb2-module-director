@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\DirectorObject\Lookup;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * A single service, directly attached to a Host Object. Overrides might
@@ -21,11 +22,15 @@ class SingleServiceInfo implements ServiceInfo
     /** @var bool */
     protected $useOverrides;
 
-    public function __construct($hostName, $serviceName, $useOverrides)
+    /** @var UuidInterface */
+    protected $uuid;
+
+    public function __construct($hostName, $serviceName, UuidInterface $uuid, $useOverrides)
     {
         $this->hostName = $hostName;
         $this->serviceName = $serviceName;
         $this->useOverrides = $useOverrides;
+        $this->uuid = $uuid;
     }
 
     public static function find(IcingaHost $host, $serviceName)
@@ -36,10 +41,10 @@ class SingleServiceInfo implements ServiceInfo
         ];
         $connection = $host->getConnection();
         if (IcingaService::exists($keyParams, $connection)) {
-            $useOverrides = IcingaService::load($keyParams, $connection)
-                ->getResolvedVar('use_var_overrides') === 'y';
+            $service = IcingaService::load($keyParams, $connection);
+            $useOverrides = $service->getResolvedVar('use_var_overrides') === 'y';
 
-            return new static($host->getObjectName(), $serviceName, $useOverrides);
+            return new static($host->getObjectName(), $serviceName, $service->getUniqueId(), $useOverrides);
         }
 
         return false;
@@ -53,6 +58,14 @@ class SingleServiceInfo implements ServiceInfo
     public function getName()
     {
         return $this->serviceName;
+    }
+
+    /**
+     * @return UuidInterface
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
     }
 
     public function getUrl()

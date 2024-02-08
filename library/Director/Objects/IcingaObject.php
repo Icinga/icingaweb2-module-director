@@ -27,6 +27,7 @@ use RuntimeException;
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
     const RESOLVE_ERROR = '(unable to resolve)';
+    const ALL_NON_GLOBAL_ZONES = '(all non-global zones)';
 
     protected $keyName = 'object_name';
 
@@ -62,9 +63,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected $rangeClass;
 
     protected $type;
-
-    /* key/value!! */
-    protected $booleans = [];
 
     // Property suffixed with _id must exist
     protected $relations = [
@@ -140,11 +138,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getConnection()
     {
         return $this->connection;
-    }
-
-    public function propertyIsBoolean($property)
-    {
-        return array_key_exists($property, $this->booleans);
     }
 
     public function propertyIsInterval($property)
@@ -497,9 +490,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $type = get_class($this);
             }
 
+            if ($type === null) {
+                throw new LogicException(
+                    'Cannot set assign_filter unless object_type has been set'
+                );
+            }
             throw new LogicException(sprintf(
                 'I can only assign for applied objects or objects with native'
-                . ' support for assigments, got %s',
+                . ' support for assignments, got %s',
                 $type
             ));
         }
@@ -565,7 +563,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } catch (NotFoundError $e) {
             // Hint: eventually a NotFoundError would be better
             throw new RuntimeException(sprintf(
-                'Unable to load object referenced from %s "%s", %s',
+                'Unable to load object (%s: %s) referenced from %s "%s", %s',
+                $short,
+                $this->unresolvedRelatedProperties[$name],
                 $this->getShortTableName(),
                 $this->getObjectName(),
                 lcfirst($e->getMessage())
@@ -764,10 +764,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this;
         }
 
-        if ($this->propertyIsBoolean($key)) {
-            return parent::set($key, DbDataFormatter::normalizeBoolean($value));
-        }
-
         // e.g. zone_id
         if ($this->propertyIsRelation($key)) {
             return $this->setRelation($key, $value);
@@ -899,20 +895,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $type = strtolower($this->getType());
         $query = $this->db->select()->from(
-            ['gr' => "icinga_${type}group_${type}_resolved"],
+            ['gr' => "icinga_{$type}group_{$type}_resolved"],
             ['g.object_name']
         )->join(
-            ['g' => "icinga_${type}group"],
-            "g.id = gr.${type}group_id",
+            ['g' => "icinga_{$type}group"],
+            "g.id = gr.{$type}group_id",
             []
         )->joinLeft(
-            ['go' => "icinga_${type}group_${type}"],
-            "go.${type}group_id = gr.${type}group_id AND go.${type}_id = " . (int) $id,
+            ['go' => "icinga_{$type}group_{$type}"],
+            "go.{$type}group_id = gr.{$type}group_id AND go.{$type}_id = " . (int) $id,
             []
         )->where(
-            "gr.${type}_id = ?",
+            "gr.{$type}_id = ?",
             (int) $id
-        )->where("go.${type}_id IS NULL")->order('g.object_name');
+        )->where("go.{$type}_id IS NULL")->order('g.object_name');
 
         return $this->db->fetchCol($query);
     }
@@ -1536,6 +1532,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($this->loadedMultiRelations as $multiRelation) {
             $multiRelation->setBeingLoadedFromDb();
         }
+        // This might trigger DB requests and 404's. We might want to defer this, but a call to
+        // hasBeenModified triggers  anyway:
+        $this->resolveUnresolvedRelatedProperties();
 
         parent::setBeingLoadedFromDb();
     }
@@ -1802,9 +1801,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return;
         }
 
-        $config->configFile(
-            'zones.d/' . $this->getRenderingZone($config) . '/' . $this->getRenderingFilename()
-        )->addObject($this);
+        foreach ($this->getRenderingZones($config) as $zone) {
+            $config->configFile(
+                'zones.d/' . $zone . '/' . $this->getRenderingFilename()
+            )->addObject($this);
+        }
+    }
+
+    protected function getRenderingZones(IcingaConfig $config): array
+    {
+        $zone = $this->getRenderingZone($config);
+        if ($zone === self::ALL_NON_GLOBAL_ZONES) {
+            return $config->listNonGlobalZones();
+        }
+
+        return [$zone];
     }
 
     public function getRenderingFilename()
@@ -2183,7 +2194,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderSuffix()
     {
-        return "}\n\n";
+        $prefix = '';
+        if ($this->rendersConditionalTemplate()) {
+            $prefix = '} ';
+        }
+
+        return "$prefix}\n\n";
     }
 
     protected function renderLegacySuffix()
@@ -2408,12 +2424,23 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderObjectHeader()
     {
+        $prefix = '';
+        $renderedName = c::renderString($this->getObjectName());
+        if ($this->rendersConditionalTemplate()) {
+            $prefix = sprintf('if (! get_template(%s, %s)) { ', $this->getType(), $renderedName);
+        }
         return sprintf(
-            "%s %s %s {\n",
+            "%s%s %s %s {\n",
+            $prefix,
             $this->getObjectTypeName(),
             $this->getType(),
-            c::renderString($this->getObjectName())
+            $renderedName
         );
+    }
+
+    protected function rendersConditionalTemplate(): bool
+    {
+        return false;
     }
 
     public function getLegacyObjectType()
@@ -2664,14 +2691,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         /** @var DbObject $class */
         $class = DbObjectTypeRegistry::classByType($type);
 
+        if ($keyColumn === null && is_array($class::create()->getKeyName())) {
+            return $class::loadAll($db, $query);
+        }
+
         if ($keyColumn === null) {
             if (method_exists($class, 'getKeyColumnName')) {
                 $keyColumn = $class::getKeyColumnName();
             }
-        }
-
-        if (is_array($class::create()->getKeyName())) {
-            return $class::loadAll($db, $query);
         }
 
         if (PrefetchCache::shouldBeUsed()
@@ -2731,21 +2758,28 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * @return $this
      * @throws NotFoundError
      */
-    public function replaceWith(IcingaObject $object, $preserve = null)
+    public function replaceWith(IcingaObject $object, $preserve = [])
     {
-        if ($preserve === null) {
-            $this->setProperties((array) $object->toPlainObject());
-        } else {
-            $plain = (array) $object->toPlainObject();
-            foreach ($preserve as $k) {
-                $v = $this->$k;
-                if ($v !== null) {
-                    $plain[$k] = $v;
-                }
-            }
+        return $this->replaceWithProperties($object->toPlainObject(), $preserve);
+    }
 
-            $this->setProperties($plain);
+    /**
+     * @param array|object $properties
+     * @param array $preserve
+     * @return $this
+     * @throws NotFoundError
+     */
+    public function replaceWithProperties($properties, $preserve = [])
+    {
+        $properties = (array) $properties;
+        foreach ($preserve as $k) {
+            $v = $this->get($k);
+            if ($v !== null) {
+                $properties[$k] = $v;
+            }
         }
+        $this->setProperties($properties);
+
         return $this;
     }
 
@@ -2873,11 +2907,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     }
                 }
             }
+            if ($this->propertyIsInterval($k) && is_string($v) && ctype_digit($v)) {
+                $v = (int) $v;
+            }
 
             // TODO: Do not ship null properties based on flag?
             if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
-                    $props[$k] = $this->booleanForDbValue($v);
+                    $props[$k] = DbDataFormatter::booleanForDbValue($v);
                 } else {
                     $props[$k] = $v;
                 }
@@ -2986,18 +3023,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         ksort($props);
 
         return (object) $props;
-    }
-
-    protected function booleanForDbValue($value)
-    {
-        if ($value === 'y') {
-            return true;
-        }
-        if ($value === 'n') {
-            return false;
-        }
-
-        return $value; // let this fail elsewhere, if not null
     }
 
     public function listImportNames()
@@ -3144,7 +3169,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
             if ($this->differsFromDefaultValue($k, $v)) {
                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
-                    $props[$k] = $this->booleanForDbValue($v);
+                    $props[$k] = DbDataFormatter::booleanForDbValue($v);
                 } else {
                     $props[$k] = $v;
                 }

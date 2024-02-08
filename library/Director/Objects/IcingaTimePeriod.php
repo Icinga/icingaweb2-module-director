@@ -2,9 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
 
 class IcingaTimePeriod extends IcingaObject implements ExportInterface
 {
@@ -53,47 +51,6 @@ class IcingaTimePeriod extends IcingaObject implements ExportInterface
     public function getUniqueIdentifier()
     {
         return $this->getObjectName();
-    }
-
-    /**
-     * @return object
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
-    {
-        $props = (array) $this->toPlainObject();
-        ksort($props);
-
-        return (object) $props;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return static
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        $name = $properties['object_name'];
-        $key = $name;
-
-        if ($replace && static::exists($key, $db)) {
-            $object = static::load($key, $db);
-        } elseif (static::exists($key, $db)) {
-            throw new DuplicateKeyException(
-                'Time Period "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-        $object->setProperties($properties);
-
-        return $object;
     }
 
     /**

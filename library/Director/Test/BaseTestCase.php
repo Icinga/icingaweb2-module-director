@@ -10,19 +10,14 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaZone;
-use PHPUnit_Framework_TestCase;
+use Icinga\Test\BaseTestCase as IcingaBaseTestCase;
 
-abstract class BaseTestCase extends PHPUnit_Framework_TestCase
+abstract class BaseTestCase extends IcingaBaseTestCase
 {
     private static $app;
 
     /** @var Db */
     private static $db;
-
-    public function setUp()
-    {
-        $this->app();
-    }
 
     protected function skipForMissingDb()
     {
@@ -69,6 +64,9 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
             if (array_key_exists('DIRECTOR_TESTDB_HOST', $_SERVER)) {
                 $dbConfig->host = $_SERVER['DIRECTOR_TESTDB_HOST'];
             }
+            if (array_key_exists('DIRECTOR_TESTDB_PORT', $_SERVER)) {
+                $dbConfig->port = $_SERVER['DIRECTOR_TESTDB_PORT'];
+            }
             if (array_key_exists('DIRECTOR_TESTDB_USER', $_SERVER)) {
                 $dbConfig->username = $_SERVER['DIRECTOR_TESTDB_USER'];
             }
@@ -78,11 +76,14 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
             self::$db = new Db($dbConfig);
             $migrations = new Migrations(self::$db);
             $migrations->applyPendingMigrations();
-            IcingaZone::create([
+            $zone = IcingaZone::create([
                 'object_name' => 'director-global',
                 'object_type' => 'external_object',
                 'is_global'   => 'y'
-            ])->store(self::$db);
+            ]);
+            if (! IcingaZone::exists($zone->getId(), self::$db)) {
+                $zone->store(self::$db);
+            }
         }
 
         return self::$db;

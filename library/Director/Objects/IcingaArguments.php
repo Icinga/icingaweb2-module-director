@@ -11,6 +11,8 @@ use Iterator;
 
 class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 {
+    const COMMENT_DSL_UNSUPPORTED = '/* Icinga 2 does not export DSL function bodies via API */';
+
     /** @var IcingaCommandArgument[] */
     protected $storedArguments = [];
 
@@ -153,7 +155,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             if (property_exists($value, 'type')) {
                 // argument is directly set as function, no further properties
                 if ($value->type === 'Function') {
-                    $attrs['argument_value'] = '/* Unable to fetch function body through API */';
+                    $attrs['argument_value'] = property_exists($value, 'body')
+                        ? $value->body
+                        : self::COMMENT_DSL_UNSUPPORTED;
                     $attrs['argument_format'] = 'expression';
                 }
             } elseif (property_exists($value, 'value')) {
@@ -164,7 +168,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
                         $attrs['argument_value'] = $value->value->body;
                         $attrs['argument_format'] = 'expression';
                     } elseif ($value->value->type === 'Function') {
-                        $attrs['argument_value'] = '/* Unable to fetch function body through API */';
+                        $attrs['argument_value'] = self::COMMENT_DSL_UNSUPPORTED;
                         $attrs['argument_format'] = 'expression';
                     } else {
                         die('Unable to resolve command argument');
@@ -192,7 +196,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
         if (array_key_exists('set_if', $attrs)) {
             if (is_object($attrs['set_if']) && $attrs['set_if']->type === 'Function') {
-                $attrs['set_if'] = '/* Unable to fetch function body through API */';
+                $attrs['set_if'] = self::COMMENT_DSL_UNSUPPORTED;
                 $attrs['set_if_format'] = 'expression';
             } elseif (property_exists($value, 'set_if_format')) {
                 if (in_array($value->set_if_format, ['string', 'expression', 'json'])) {
@@ -294,6 +298,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'argument_name');
         $this->cloneStored();
         $this->refreshIndex();
+        $this->modified = false;
 
         return $this;
     }
@@ -358,6 +363,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         }
         $this->refreshIndex();
         $this->cloneStored();
+        $this->modified = false;
     }
 
     /**
@@ -391,7 +397,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             unset($this->arguments[$key]);
         }
 
+        $this->refreshIndex();
         $this->cloneStored();
+        $this->modified = false;
 
         return $this;
     }

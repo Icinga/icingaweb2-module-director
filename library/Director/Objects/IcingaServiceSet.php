@@ -4,16 +4,15 @@ namespace Icinga\Module\Director\Objects;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Data\Db\ServiceSetQueryBuilder;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
-use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
-use RuntimeException;
+use stdClass;
 
 class IcingaServiceSet extends IcingaObject implements ExportInterface
 {
@@ -44,6 +43,33 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     protected $relations = array(
         'host' => 'IcingaHost',
     );
+
+    /** @var IcingaService[] Cached services */
+    protected $cachedServices = [];
+
+    /** @var IcingaService[]|null */
+    private $services;
+
+    /**
+     * Set the services to be cached
+     *
+     * @param $services IcingaService[]
+     * @return void
+     */
+    public function setCachedServices($services)
+    {
+        $this->cachedServices = $services;
+    }
+
+    /**
+     * Get the cached services
+     *
+     * @return IcingaService[]
+     */
+    public function getCachedServices()
+    {
+        return $this->cachedServices;
+    }
 
     public function isDisabled()
     {
@@ -78,6 +104,61 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     }
 
     /**
+     * @param stdClass[] $services
+     * @return void
+     */
+    public function setServices(array $services)
+    {
+        $existing = $this->getServices();
+        $uuidMap = [];
+        foreach ($existing as $service) {
+            $uuidMap[$service->getUniqueId()->getBytes()] = $service;
+        }
+        $this->services = [];
+        foreach ($services as $service) {
+            if (isset($service->uuid)) {
+                $uuid = Uuid::fromString($service->uuid)->getBytes();
+                $current = $uuidMap[$uuid] ?? IcingaService::create([], $this->connection);
+            } else {
+                if (! is_object($service)) {
+                    var_dump($service);
+                    exit;
+                }
+                $current = $existing[$service->object_name] ?? IcingaService::create([], $this->connection);
+            }
+            $current->setProperties((array) $service);
+            $this->services[] = $current;
+        }
+    }
+
+    protected function storeRelatedServices()
+    {
+        if ($this->services === null) {
+            $cachedServices = $this->getCachedServices();
+            if ($cachedServices) {
+                $this->services = $cachedServices;
+            } else {
+                return;
+            }
+        }
+
+        $seen = [];
+        /** @var IcingaService $service */
+        foreach ($this->services as $service) {
+            $seen[$service->getUniqueId()->getBytes()] = true;
+            $service->set('service_set_id', $this->get('id'));
+            $service->store();
+        }
+
+        foreach ($this->fetchServices() as $service) {
+            if (!isset($seen[$service->getUniqueId()->getBytes()])) {
+                $service->delete();
+            }
+        }
+    }
+
+    /**
+     * @deprecated
      * @return IcingaService[]
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -94,7 +175,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             if (empty($imports)) {
                 return array();
             }
-            return $this->getServiceObjectsForSet(array_shift($imports));
+            $parent = array_shift($imports);
+            assert($parent instanceof IcingaServiceSet);
+            return $this->getServiceObjectsForSet($parent);
         } else {
             return $this->getServiceObjectsForSet($this);
         }
@@ -102,30 +185,20 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     /**
      * @param IcingaServiceSet $set
-     * @return array
+     * @return IcingaService[]
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function getServiceObjectsForSet(IcingaServiceSet $set)
     {
-        if ($set->get('id') === null) {
-            return array();
-        }
         $connection = $this->getConnection();
-        $db = $this->getDb();
-        $uuids = $db->fetchCol(
-            $db->select()->from('icinga_service', 'uuid')
-                ->where('service_set_id = ?', $set->get('id'))
-        );
-
-        $services = array();
-        foreach ($uuids as $uuid) {
-            $service = IcingaService::loadWithUniqueId(Uuid::fromBytes(DbUtil::binaryResult($uuid)), $connection);
-            $service->set('service_set', null);
-
-            $services[$service->getObjectName()] = $service;
+        if (self::$dbObjectStore !== null) {
+            $branchUuid = self::$dbObjectStore->getBranch()->getUuid();
+        } else {
+            $branchUuid = null;
         }
 
-        return $services;
+        $builder = new ServiceSetQueryBuilder($connection, $branchUuid);
+        return $builder->fetchServicesWithQuery($builder->selectServicesForSet($set));
     }
 
     public function getUniqueIdentifier()
@@ -133,127 +206,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         return $this->getObjectName();
     }
 
-    /**
-     * @return object
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public function export()
-    {
-        if ($this->get('host_id')) {
-            $result = $this->exportSetOnHost();
-        } else {
-            $result = $this->exportTemplate();
-        }
-
-        unset($result->uuid);
-        return $result;
-    }
-
-    protected function exportSetOnHost()
-    {
-        // TODO.
-        throw new RuntimeException('Not yet');
-    }
-
-    /**
-     * @return object
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    protected function exportTemplate()
-    {
-        $props = $this->getProperties();
-        unset($props['id'], $props['host_id']);
-        $props['services'] = [];
-        foreach ($this->getServiceObjects() as $serviceObject) {
-            $props['services'][$serviceObject->getObjectName()] = $serviceObject->export();
-        }
-        ksort($props);
-
-        return (object) $props;
-    }
-
-    /**
-     * @param $plain
-     * @param Db $db
-     * @param bool $replace
-     * @return IcingaServiceSet
-     * @throws DuplicateKeyException
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    public static function import($plain, Db $db, $replace = false)
-    {
-        $properties = (array) $plain;
-        $name = $properties['object_name'];
-        if (isset($properties['services'])) {
-            $services = $properties['services'];
-            unset($properties['services']);
-        } else {
-            $services = [];
-        }
-
-        if ($properties['object_type'] !== 'template') {
-            throw new InvalidArgumentException(sprintf(
-                'Can import only Templates, got "%s" for "%s"',
-                $properties['object_type'],
-                $name
-            ));
-        }
-        if ($replace && static::exists($name, $db)) {
-            $object = static::load($name, $db);
-        } elseif (static::exists($name, $db)) {
-            throw new DuplicateKeyException(
-                'Service Set "%s" already exists',
-                $name
-            );
-        } else {
-            $object = static::create([], $db);
-        }
-
-        $object->setProperties($properties);
-
-        // This is not how other imports work, but here we need an ID
-        if (! $object->hasBeenLoadedFromDb()) {
-            $object->store();
-        }
-
-        $setId = $object->get('id');
-        $sQuery = $db->getDbAdapter()->select()->from(
-            ['s' => 'icinga_service'],
-            's.*'
-        )->where('service_set_id = ?', $setId);
-        $existingServices = IcingaService::loadAll($db, $sQuery, 'object_name');
-        $serviceNames = [];
-        foreach ($services as $service) {
-            if (isset($service->fields)) {
-                unset($service->fields);
-            }
-            $name = $service->object_name;
-            $serviceNames[] = $name;
-            if (isset($existingServices[$name])) {
-                $existing = $existingServices[$name];
-                $existing->setProperties((array) $service);
-                $existing->set('service_set_id', $setId);
-                if ($existing->hasBeenModified()) {
-                    $existing->store();
-                }
-            } else {
-                $new = IcingaService::create((array) $service, $db);
-                $new->set('service_set_id', $setId);
-                $new->store();
-            }
-        }
-
-        foreach ($existingServices as $existing) {
-            if (!in_array($existing->getObjectName(), $serviceNames)) {
-                $existing->delete();
-            }
-        }
-
-        return $object;
-    }
-
     public function beforeDelete()
     {
+        $this->setCachedServices($this->getServices());
         // check if this is a template, or directly assigned to a host
         if ($this->get('host_id') === null) {
             // find all host sets and delete them
@@ -274,7 +229,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         if ($hostId) {
             $deleteIds = [];
             foreach ($this->getServiceObjects() as $service) {
-                $deleteIds[] = (int) $service->get('id');
+                if ($idToDelete = $service->get('id')) {
+                    $deleteIds[] = (int) $idToDelete;
+                }
             }
 
             if (! empty($deleteIds)) {
@@ -298,8 +255,8 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
      */
     public function renderToConfig(IcingaConfig $config)
     {
-        // always print the header, so you have minimal info present
-        $file = $this->getConfigFileWithHeader($config);
+        $files = [];
+        $zone = $this->getRenderingZone($config) ;
 
         if ($this->get('assign_filter') === null && $this->isTemplate()) {
             return;
@@ -337,7 +294,15 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             }
 
             $this->copyVarsToService($service);
-            $file->addObject($service);
+            foreach ($service->getRenderingZones($config) as $serviceZone) {
+                $file = $this->getConfigFileWithHeader($config, $serviceZone, $files);
+                $file->addObject($service);
+            }
+        }
+
+        if (empty($files)) {
+            // always print the header, so you have minimal info present
+            $this->getConfigFileWithHeader($config, $zone, $files);
         }
     }
 
@@ -358,14 +323,18 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         return $lookup->getBlacklistedHostnamesForService($service);
     }
 
-    protected function getConfigFileWithHeader(IcingaConfig $config)
+    protected function getConfigFileWithHeader(IcingaConfig $config, $zone, &$files = [])
     {
-        $file = $config->configFile(
-            'zones.d/' . $this->getRenderingZone($config) . '/servicesets'
-        );
+        if (!isset($files[$zone])) {
+            $file = $config->configFile(
+                'zones.d/' . $zone . '/servicesets'
+            );
 
-        $file->addContent($this->getConfigHeaderComment($config));
-        return $file;
+            $file->addContent($this->getConfigHeaderComment($config));
+            $files[$zone] = $file;
+        }
+
+        return $files[$zone];
     }
 
     protected function getConfigHeaderComment(IcingaConfig $config)
@@ -375,13 +344,13 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
         if ($config->isLegacy()) {
             if ($assign !== null) {
-                return "## applied Service Set '${name}'\n\n";
+                return "## applied Service Set '{$name}'\n\n";
             } else {
-                return "## Service Set '${name}' on this host\n\n";
+                return "## Service Set '{$name}' on this host\n\n";
             }
         } else {
             $comment = [
-                "Service Set: ${name}",
+                "Service Set: {$name}",
             ];
 
             if (($host = $this->get('host')) !== null) {
@@ -481,11 +450,16 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     public function getRenderingZone(IcingaConfig $config = null)
     {
         if ($this->get('host_id') === null) {
-            return $this->connection->getDefaultGlobalZoneName();
+            if ($hostname = $this->get('host')) {
+                $host = IcingaHost::load($hostname, $this->getConnection());
+            } else {
+                return $this->connection->getDefaultGlobalZoneName();
+            }
         } else {
             $host = $this->getRelatedObject('host', $this->get('host_id'));
-            return $host->getRenderingZone($config);
         }
+
+        return $host->getRenderingZone($config);
     }
 
     public function createWhere()
@@ -503,19 +477,31 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     /**
      * @return IcingaService[]
      */
-    public function fetchServices()
+    public function getServices(): array
     {
-        $connection = $this->getConnection();
-        $db = $connection->getDbAdapter();
+        if ($this->services !== null) {
+            return $this->services;
+        }
 
-        /** @var IcingaService[] $services */
-        $services = IcingaService::loadAll(
-            $connection,
-            $db->select()->from('icinga_service')
-                ->where('service_set_id = ?', $this->get('id'))
-        );
+        if ($this->hasBeenLoadedFromDb()) {
+            return $this->fetchServices();
+        }
 
-        return $services;
+        return [];
+    }
+
+    /**
+     * @return IcingaService[]
+     */
+    public function fetchServices(): array
+    {
+        if ($store = self::$dbObjectStore) {
+            $uuid = $store->getBranch()->getUuid();
+        } else {
+            $uuid = null;
+        }
+        $builder = new ServiceSetQueryBuilder($this->getConnection(), $uuid);
+        return $builder->fetchServicesWithQuery($builder->selectServicesForSet($this));
     }
 
     /**
@@ -555,7 +541,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
         $name = $this->getObjectName();
 
-        if ($this->isObject() && $this->get('host_id') === null) {
+        if ($this->isObject() && $this->get('host_id') === null && $this->get('host') === null) {
             throw new InvalidArgumentException(
                 'A Service Set cannot be an object with no related host'
             );
@@ -571,6 +557,24 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         }
     }
 
+    public function onStore()
+    {
+        $this->storeRelatedServices();
+    }
+
+    public function hasBeenModified()
+    {
+        if ($this->services !== null) {
+            foreach ($this->services as $service) {
+                if ($service->hasBeenModified()) {
+                    return true;
+                }
+            }
+        }
+
+        return parent::hasBeenModified();
+    }
+
     public function toSingleIcingaConfig()
     {
         $config = parent::toSingleIcingaConfig();
@@ -583,7 +587,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             $config->configFile(
                 'failed-to-render'
             )->prepend(
-                "/** Failed to render this object **/\n"
+                "/** Failed to render this Service Set **/\n"
                 . '/*  ' . $e->getMessage() . ' */'
             );
         }

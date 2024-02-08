@@ -176,7 +176,7 @@ class IcingaObjectResolver
             $object->groups = $groups;
         }
 
-        $templates = $this->getTemplateNamesById($id);
+        $templates = $this->getTemplateNamesByID($id);
         if (! empty($templates)) {
             $object->templates = \array_reverse($templates);
         }
@@ -198,7 +198,7 @@ class IcingaObjectResolver
         }
         $query = $this->db->select()
             ->from([
-                'oi' => "${baseTable}_inheritance"
+                'oi' => "{$baseTable}_inheritance"
             ], [
                 $relColumn,
                 $groupColumn
@@ -494,12 +494,12 @@ class IcingaObjectResolver
     {
         $type = $this->getType();
         $groupsTable = $this->baseTable . 'group';
-        $groupMembershipTable = "${groupsTable}_$type";
+        $groupMembershipTable = "{$groupsTable}_$type";
         if ($resolved) {
             $groupMembershipTable .= '_resolved';
         }
-        $oRef = "${type}_id";
-        $gRef = "${type}group_id";
+        $oRef = "{$type}_id";
+        $gRef = "{$type}group_id";
 
         return $this->db->select()
             ->from(['gm' => $groupMembershipTable], [

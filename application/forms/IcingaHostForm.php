@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\AuthenticationException;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -162,7 +164,7 @@ class IcingaHostForm extends DirectorObjectForm
                 if ($this->hasBeenSent()) {
                     $this->addError($this->translate('No Host template has been chosen'));
                 } else {
-                    if ($this->hasPermission('director/admin')) {
+                    if ($this->hasPermission(Permission::ADMIN)) {
                         $html = sprintf(
                             $this->translate('Please define a %s first'),
                             Link::create(
@@ -208,7 +210,7 @@ class IcingaHostForm extends DirectorObjectForm
     protected function addGroupsElement()
     {
         if ($this->hasHostGroupRestriction()
-            && ! $this->getAuth()->hasPermission('director/groups-for-restricted-hosts')
+            && ! $this->getAuth()->hasPermission(Permission::GROUPS_FOR_RESTRICTED_HOSTS)
         ) {
             return $this;
         }
@@ -262,15 +264,6 @@ class IcingaHostForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function strikeGroupLinks(BaseHtmlElement $links)
-    {
-        /** @var BaseHtmlElement $link */
-        foreach ($links->getContent() as $link) {
-            $link->getAttributes()->add('style', 'text-decoration: strike');
-        }
-        $links->add('aha');
-    }
-
     protected function getInheritedGroups()
     {
         if ($this->hasObject()) {
@@ -295,9 +288,7 @@ class IcingaHostForm extends DirectorObjectForm
             );
         }
 
-        return Html::tag('span', [
-            'style' => 'line-height: 2.5em; padding-left: 0.5em'
-        ], $links);
+        return Html::tag('span', ['class' => 'host-group-links'], $links);
     }
 
     protected function getAppliedGroups()
@@ -311,7 +302,7 @@ class IcingaHostForm extends DirectorObjectForm
 
     protected function hasHostGroupRestriction()
     {
-        return $this->getAuth()->getRestrictions('director/filter/hostgroups');
+        return $this->getAuth()->getRestrictions(Restriction::FILTER_HOSTGROUPS);
     }
 
     /**

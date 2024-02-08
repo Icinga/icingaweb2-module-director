@@ -1,0 +1,40 @@
+includes:
+	- phpstan-baseline.neon
+
+parameters:
+    level: 2
+
+    checkFunctionNameCase: true
+    checkInternalClassCaseSensitivity: true
+    treatPhpDocTypesAsCertain: false
+
+    paths:
+        - application
+        - library/Director
+
+    ignoreErrors:
+        -
+            messages:
+                - '#Unsafe usage of new static\(\)#'
+                - '#. but return statement is missing#'
+            reportUnmatched: false
+
+    scanDirectories:
+        - /icingaweb2
+        - /usr/share/icinga-php
+        - /usr/share/icingaweb2-modules
+
+    excludePaths:
+        - library/Director/CoreBeta
+        - test
+        - library/Director/Test
+
+    universalObjectCratesClasses:
+        - Icinga\Module\Director\Data\Db\DbObject
+        - Icinga\Data\ConfigObject
+        - Icinga\Web\View
+        - Icinga\Module\Monitoring\Object\MonitoredObject
+        - Icinga\Module\Monitoring\DataView\DataView
+        - Icinga\Web\Session\SessionNamespace
+        - Icinga\User\Preferences
+        - ipl\Orm\Model

@@ -2,7 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
-use ipl\Html\Form;
+use gipfl\Web\Form;
+use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Data\ObjectImporter;
+use Icinga\Module\Director\Db;
 use ipl\Html\FormDecorator\DdDtDecorator;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Url;
@@ -35,36 +38,25 @@ class CloneImportSourceForm extends Form
         ]);
     }
 
-    /**
-     * @return \Icinga\Module\Director\Db
-     */
-    protected function getTargetDb()
-    {
-        return $this->source->getConnection();
-    }
-
-    /**
-     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
-     */
     public function onSuccess()
     {
-        $export = $this->source->export();
+        $db = $this->source->getConnection();
+        assert($db instanceof Db);
+        $export = (new Exporter($db))->export($this->source);
         $newName = $this->getElement('source_name')->getValue();
         $export->source_name = $newName;
-        unset($export->originalId);
-        if (ImportSource::existsWithName($newName, $this->source->getConnection())) {
+        unset($export->uuid);
+
+        if (ImportSource::existsWithName($newName, $db)) {
             $this->getElement('source_name')->addMessage('Name already exists');
         }
-        $this->newSource = ImportSource::import($export, $this->getTargetDb());
+        $importer = new ObjectImporter($db);
+        $this->newSource = $importer->import(ImportSource::class, $export);
         $this->newSource->store();
     }
 
     public function getSuccessUrl()
     {
-        if ($this->newSource === null) {
-            return parent::getSuccessUrl();
-        } else {
-            return Url::fromPath('director/importsource', ['id' => $this->newSource->get('id')]);
-        }
+        return Url::fromPath('director/importsource', ['id' => $this->newSource->get('id')]);
     }
 }

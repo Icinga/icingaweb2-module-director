@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class ScheduledDowntimeApplyDashlet extends Dashlet
 {
     protected $icon = 'plug';
@@ -15,7 +17,7 @@ class ScheduledDowntimeApplyDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/scheduled-downtimes');
+        return [Permission::SCHEDULED_DOWNTIMES];
     }
 
     public function getUrl()

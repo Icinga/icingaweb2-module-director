@@ -19,7 +19,7 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
     {
         if ($name !== null) {
             /** @var IcingaTemplateChoice $class - cheating IDE */
-            $class = $this->getObjectClassName();
+            $class = $this->getObjectClassname();
             $this->setObject($class::load($name, $this->getDb()));
         }
 
@@ -133,7 +133,7 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
         /** @var IcingaTemplateChoice $object */
         $object = $this->object();
         $this->setSuccessUrl(
-            'director/templatechoice/' . $object->getObjectshortTableName(),
+            'director/templatechoice/' . $object->getObjectShortTableName(),
             $object->getUrlParams()
         );
     }

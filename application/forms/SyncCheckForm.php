@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Web\Form\DirectorForm;
 
@@ -31,16 +32,20 @@ class SyncCheckForm extends DirectorForm
             $this->notifySuccess(
                 $this->translate(('This Sync Rule would apply new changes'))
             );
-            $sum = array('create' => 0, 'modify' => 0, 'delete' => 0);
+            $sum = [
+                DirectorActivityLog::ACTION_CREATE => 0,
+                DirectorActivityLog::ACTION_MODIFY => 0,
+                DirectorActivityLog::ACTION_DELETE => 0
+            ];
 
             // TODO: Preview them? Like "hosta, hostb and 4 more would be...
             foreach ($this->rule->getExpectedModifications() as $object) {
                 if ($object->shouldBeRemoved()) {
-                    $sum['delete']++;
+                    $sum[DirectorActivityLog::ACTION_DELETE]++;
                 } elseif (! $object->hasBeenLoadedFromDb()) {
-                    $sum['create']++;
+                    $sum[DirectorActivityLog::ACTION_CREATE]++;
                 } elseif ($object->hasBeenModified()) {
-                    $sum['modify']++;
+                    $sum[DirectorActivityLog::ACTION_MODIFY]++;
                 }
             }
 
@@ -50,7 +55,7 @@ class SyncCheckForm extends DirectorForm
             } elseif ($sum['modify'] > 1) {
             }
             */
-            $html = '<pre>' . print_r($sum, 1) . '</pre>';
+            $html = '<pre>' . print_r($sum, true) . '</pre>';
 
             $this->addHtml($html);
         } elseif ($this->rule->get('sync_state') === 'in-sync') {

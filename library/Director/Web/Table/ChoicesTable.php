@@ -44,7 +44,7 @@ class ChoicesTable extends ZfQueryBasedTable
     public function renderRow($row)
     {
         $type = $this->getType();
-        $url = Url::fromPath("director/templatechoice/${type}", [
+        $url = Url::fromPath("director/templatechoice/{$type}", [
             'name' => $row->object_name
         ]);
 
@@ -56,7 +56,7 @@ class ChoicesTable extends ZfQueryBasedTable
     protected function prepareQuery()
     {
         $type = $this->getType();
-        $table = "icinga_${type}_template_choice";
+        $table = "icinga_{$type}_template_choice";
         return $this->db()
             ->select()
             ->from(['o' => $table], 'object_name')

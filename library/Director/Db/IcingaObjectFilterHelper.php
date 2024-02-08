@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\TemplateTree;
 use InvalidArgumentException;
+use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
 use Zend_Db_Select as ZfSelect;
 
@@ -30,7 +31,7 @@ class IcingaObjectFilterHelper
             throw new InvalidArgumentException(sprintf(
                 'Numeric ID or IcingaObject expected, got %s',
                 // TODO: just type/class info?
-                var_export($id, 1)
+                var_export($id, true)
             ));
         }
     }
@@ -46,20 +47,49 @@ class IcingaObjectFilterHelper
         ZfSelect $query,
         $template,
         $tableAlias = 'o',
-        $inheritanceType = self::INHERIT_DIRECT
+        $inheritanceType = self::INHERIT_DIRECT,
+        UuidInterface $branchuuid = null
     ) {
         $i = $tableAlias . 'i';
         $o = $tableAlias;
         $type = $template->getShortTableName();
         $db = $template->getDb();
         $id = static::wantId($template);
+
+        if ($branchuuid) {
+            if ($inheritanceType === self::INHERIT_DIRECT) {
+                return $query->where('imports LIKE \'%"' . $template->getObjectName() . '"%\'');
+            } elseif ($inheritanceType === self::INHERIT_INDIRECT
+                || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
+            ) {
+                $tree = new TemplateTree($type, $template->getConnection());
+                $templateNames = $tree->getDescendantsFor($template);
+
+                if ($inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT) {
+                    $templateNames[] = $template->getObjectName();
+                }
+
+                if (empty($templateNames)) {
+                    $condition = '(1 = 0)';
+                } else {
+                    $condition = 'imports LIKE \'%"' . array_pop($templateNames) . '"%\'';
+
+                    foreach ($templateNames as $templateName) {
+                        $condition .= " OR imports LIKE '%\"$templateName\"%'";
+                    }
+                }
+
+                return $query->where($condition);
+            }
+        }
+
         $sub = $db->select()->from(
-            array($i => "icinga_${type}_inheritance"),
+            array($i => "icinga_{$type}_inheritance"),
             array('e' => '(1)')
-        )->where("$i.${type}_id = $o.id");
+        )->where("$i.{$type}_id = $o.id");
 
         if ($inheritanceType === self::INHERIT_DIRECT) {
-            $sub->where("$i.parent_${type}_id = ?", $id);
+            $sub->where("$i.parent_{$type}_id = ?", $id);
         } elseif ($inheritanceType === self::INHERIT_INDIRECT
             || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
         ) {
@@ -72,7 +102,7 @@ class IcingaObjectFilterHelper
             if (empty($ids)) {
                 $sub->where('(1 = 0)');
             } else {
-                $sub->where("$i.parent_${type}_id IN (?)", $ids);
+                $sub->where("$i.parent_{$type}_id IN (?)", $ids);
             }
         } else {
             throw new RuntimeException(sprintf(
@@ -95,12 +125,12 @@ class IcingaObjectFilterHelper
             $query->where('(1 = 0)');
         } else {
             $sub = $query->getAdapter()->select()->from(
-                array('go' => "icinga_${type}group_${type}"),
+                array('go' => "icinga_{$type}group_{$type}"),
                 array('e' => '(1)')
             )->join(
-                array('g' => "icinga_${type}group"),
-                "go.${type}group_id = g.id"
-            )->where("go.${type}_id = ${tableAlias}.id")
+                array('g' => "icinga_{$type}group"),
+                "go.{$type}group_id = g.id"
+            )->where("go.{$type}_id = {$tableAlias}.id")
                 ->where('g.object_name IN (?)', $groups);
 
             $query->where('EXISTS ?', $sub);
@@ -118,13 +148,13 @@ class IcingaObjectFilterHelper
             $query->where('(1 = 0)');
         } else {
             $sub = $query->getAdapter()->select()->from(
-                array('go' => "icinga_${type}group_${type}_resolved"),
+                array('go' => "icinga_{$type}group_{$type}_resolved"),
                 array('e' => '(1)')
             )->join(
-                array('g' => "icinga_${type}group"),
-                "go.${type}group_id = g.id",
+                array('g' => "icinga_{$type}group"),
+                "go.{$type}group_id = g.id",
                 []
-            )->where("go.${type}_id = ${tableAlias}.id")
+            )->where("go.{$type}_id = {$tableAlias}.id")
                 ->where('g.object_name IN (?)', $groups);
 
             $query->where('EXISTS ?', $sub);

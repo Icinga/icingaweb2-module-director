@@ -3,6 +3,10 @@
 namespace Icinga\Module\Director\Web\Widget;
 
 use gipfl\Json\JsonString;
+use Icinga\Module\Director\Data\FieldReferenceLoader;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use Icinga\Date\DateFormatter;
@@ -82,8 +86,7 @@ class ActivityLogInfo extends HtmlDocument
         /** @var Url $url */
         $url = $url->without('checksum')->without('show');
         $div = Html::tag('div', [
-            'class' => 'pagination-control',
-            'style' => 'float: right; width: 5em'
+            'class' => ['pagination-control', 'activity-log-control'],
         ]);
 
         $ul = Html::tag('ul', ['class' => 'nav tab-nav']);
@@ -343,7 +346,6 @@ class ActivityLogInfo extends HtmlDocument
     /**
      * @param Url|null $url
      * @return Tabs
-     * @throws ProgrammingError
      */
     public function getTabs(Url $url = null)
     {
@@ -357,13 +359,12 @@ class ActivityLogInfo extends HtmlDocument
     /**
      * @param Url $url
      * @return Tabs
-     * @throws ProgrammingError
      */
     public function createTabs(Url $url)
     {
         $entry = $this->entry;
         $tabs = new Tabs();
-        if ($entry->action_name === 'modify') {
+        if ($entry->action_name === DirectorActivityLog::ACTION_MODIFY) {
             $tabs->add('diff', [
                 'label' => $this->translate('Diff'),
                 'url'   => $url->without('show')->with('id', $entry->id)
@@ -372,7 +373,10 @@ class ActivityLogInfo extends HtmlDocument
             $this->defaultTab = 'diff';
         }
 
-        if (in_array($entry->action_name, ['create', 'modify'])) {
+        if (in_array($entry->action_name, [
+            DirectorActivityLog::ACTION_CREATE,
+            DirectorActivityLog::ACTION_MODIFY,
+        ])) {
             $tabs->add('new', [
                 'label' => $this->translate('New object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'new'])
@@ -383,7 +387,10 @@ class ActivityLogInfo extends HtmlDocument
             }
         }
 
-        if (in_array($entry->action_name, ['delete', 'modify'])) {
+        if (in_array($entry->action_name, [
+            DirectorActivityLog::ACTION_DELETE,
+            DirectorActivityLog::ACTION_MODIFY,
+        ])) {
             $tabs->add('old', [
                 'label' => $this->translate('Former object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'old'])
@@ -429,9 +436,28 @@ class ActivityLogInfo extends HtmlDocument
     {
         if ($object instanceof IcingaService) {
             return $this->previewService($object);
+        } elseif ($object instanceof IcingaServiceSet) {
+            return $this->previewServiceSet($object);
         } else {
             return $object->toSingleIcingaConfig();
         }
+    }
+
+    /**
+     * Render service set to be previewed
+     *
+     * @param IcingaServiceSet $object
+     *
+     * @return IcingaConfig
+     */
+    protected function previewServiceSet(IcingaServiceSet $object)
+    {
+        $config = $object->toSingleIcingaConfig();
+        foreach ($object->getCachedServices() as $service) {
+            $service->renderToConfig($config);
+        }
+
+        return $config;
     }
 
     protected function previewService(IcingaService $service)
@@ -572,13 +598,13 @@ class ActivityLogInfo extends HtmlDocument
     public function getTitle()
     {
         switch ($this->entry->action_name) {
-            case 'create':
+            case DirectorActivityLog::ACTION_CREATE:
                 $msg = $this->translate('%s "%s" has been created');
                 break;
-            case 'delete':
+            case DirectorActivityLog::ACTION_DELETE:
                 $msg = $this->translate('%s "%s" has been deleted');
                 break;
-            case 'modify':
+            case DirectorActivityLog::ACTION_MODIFY:
                 $msg = $this->translate('%s "%s" has been modified');
                 break;
             default:
@@ -620,10 +646,27 @@ class ActivityLogInfo extends HtmlDocument
             $newProps['object_type'] = $props->object_type;
         }
 
-        return IcingaObject::createByType(
+        $object = IcingaObject::createByType(
             $type,
             $newProps,
             $this->db
-        )->setProperties((array) $props);
+        );
+
+        if ($type === 'icinga_service_set' && isset($props->services)) {
+            $services = [];
+            foreach ($props->services as $service) {
+                $services[$service->object_name] = IcingaObject::createByType(
+                    'icinga_service',
+                    (array) $service,
+                    $this->db
+                );
+            }
+
+            /** @var IcingaServiceSet $object */
+            $object->setCachedServices($services);
+            unset($props->services);
+        }
+
+        return $object->setProperties((array) $props);
     }
 }

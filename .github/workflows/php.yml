@@ -1,0 +1,219 @@
+name: PHP Tests
+
+on:
+  push:
+    branches:
+      - master
+      - release/*
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    name: Static analysis for php ${{ matrix.php }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
+        os: ['ubuntu-latest']
+
+    steps:
+      - name: Checkout code base
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: phpcs
+
+      - name: Setup dependencies
+        run: |
+          composer require -n --no-progress overtrue/phplint phpunit/phpunit phpstan/phpstan
+          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2.git /icingaweb2
+          sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git /usr/share/icinga-php/vendor
+          sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git /usr/share/icinga-php/ipl
+          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-cube.git /usr/share/icingaweb2-modules/cube
+          sudo git clone --depth 1 https://github.com/Icinga/icingadb-web.git /usr/share/icingaweb2-modules/icingadb
+
+      - name: Setup Incubator
+        run: |
+          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator /usr/share/icingaweb2-modules/incubator
+          cd /usr/share/icingaweb2-modules/incubator
+          composer require --no-update \
+          "gipfl/calendar": "dev-master as 99.x-dev" \
+          "gipfl/cli": "dev-master as 99.x-dev" \
+          "gipfl/curl": "dev-master as 99.x-dev" \
+          "gipfl/data-type": "dev-master as 99.x-dev" \
+          "gipfl/db-migration": "dev-master as 99.x-dev" \
+          "gipfl/diff": "dev-master as 99.x-dev" \
+          "gipfl/format": "dev-master as 99.x-dev" \
+          "gipfl/icinga-bundles": "dev-master as 99.x-dev" \
+          "gipfl/icinga-cli-daemon": "dev-master as 99.x-dev" \
+          "gipfl/icingaweb2": "dev-master as 99.x-dev" \
+          "gipfl/influxdb": "dev-master as 99.x-dev" \
+          "gipfl/json": "dev-master as 99.x-dev" \
+          "gipfl/linux-health": "dev-master as 99.x-dev" \
+          "gipfl/log": "dev-master as 99.x-dev" \
+          "gipfl/process": "dev-master as 99.x-dev" \
+          "gipfl/protocol-jsonrpc": "dev-master as 99.x-dev" \
+          "gipfl/protocol-netstring": "dev-master as 99.x-dev" \
+          "gipfl/react-utils": "dev-master as 99.x-dev" \
+          "gipfl/simple-daemon": "dev-master as 99.x-dev" \
+          "gipfl/socket": "dev-master as 99.x-dev" \
+          "gipfl/stream": "dev-master as 99.x-dev" \
+          "gipfl/systemd": "dev-master as 99.x-dev" \
+          "gipfl/translation": "dev-master as 99.x-dev" \
+          "gipfl/web": "dev-master as 99.x-dev" \
+          "gipfl/zfdb": "dev-master as 99.x-dev" \
+          "gipfl/zfdbstore": "dev-master as 99.x-dev"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          bin/make-release.sh snapshot
+
+      - name: PHP Lint
+        if: ${{ ! cancelled() }}
+        run: ./vendor/bin/phplint -n --exclude={^vendor/.*} -- .
+
+      - name: PHP CodeSniffer
+        if: ${{ ! cancelled() }}
+        run: phpcs
+
+      - name: PHPStan
+        if: ${{ ! cancelled() }}
+        run: ./vendor/bin/phpstan analyse
+
+  test:
+    name: Unit tests with php ${{ matrix.php }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    env:
+      phpunit-version: 9.5
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
+        os: ['ubuntu-latest']
+        include:
+          - php: '7.2'
+            phpunit-version: 8.5
+
+    services:
+      mysql:
+        image: mariadb
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: director_test
+          MYSQL_USER: director_test
+          MYSQL_PASSWORD: director_test
+        options: >-
+          --health-cmd "mariadb -s -uroot -proot -e'SHOW DATABASES;' 2> /dev/null | grep director_test > test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3306/tcp
+
+      pgsql:
+        image: postgres
+        env:
+          POSTGRES_USER: director_test
+          POSTGRES_PASSWORD: director_test
+          POSTGRES_DB: director_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432/tcp
+
+    steps:
+      - name: Checkout code base
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: phpunit:${{ matrix.phpunit-version || env.phpunit-version }}
+          extensions: mysql, pgsql
+
+      - name: Setup Icinga Web
+        run: |
+          git clone --depth 1 https://github.com/Icinga/icingaweb2.git _icingaweb2
+          ln -s `pwd` _icingaweb2/modules/director
+
+      - name: Setup Libraries
+        run: |
+          composer require --working-dir=_icingaweb2 -n --no-progress mockery/mockery
+          mkdir _libraries
+          git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
+          git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
+
+      - name: Setup Incubator
+        run: |
+          git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator _icingaweb2/modules/incubator
+          mkdir -p test/config/enabledModules
+          cd _icingaweb2/modules/incubator
+          ln -s `pwd` ../../../test/config/enabledModules/incubator
+          composer require --no-update \
+          "gipfl/calendar": "dev-master as 99.x-dev" \
+          "gipfl/cli": "dev-master as 99.x-dev" \
+          "gipfl/curl": "dev-master as 99.x-dev" \
+          "gipfl/data-type": "dev-master as 99.x-dev" \
+          "gipfl/db-migration": "dev-master as 99.x-dev" \
+          "gipfl/diff": "dev-master as 99.x-dev" \
+          "gipfl/format": "dev-master as 99.x-dev" \
+          "gipfl/icinga-bundles": "dev-master as 99.x-dev" \
+          "gipfl/icinga-cli-daemon": "dev-master as 99.x-dev" \
+          "gipfl/icingaweb2": "dev-master as 99.x-dev" \
+          "gipfl/influxdb": "dev-master as 99.x-dev" \
+          "gipfl/json": "dev-master as 99.x-dev" \
+          "gipfl/linux-health": "dev-master as 99.x-dev" \
+          "gipfl/log": "dev-master as 99.x-dev" \
+          "gipfl/process": "dev-master as 99.x-dev" \
+          "gipfl/protocol-jsonrpc": "dev-master as 99.x-dev" \
+          "gipfl/protocol-netstring": "dev-master as 99.x-dev" \
+          "gipfl/react-utils": "dev-master as 99.x-dev" \
+          "gipfl/simple-daemon": "dev-master as 99.x-dev" \
+          "gipfl/socket": "dev-master as 99.x-dev" \
+          "gipfl/stream": "dev-master as 99.x-dev" \
+          "gipfl/systemd": "dev-master as 99.x-dev" \
+          "gipfl/translation": "dev-master as 99.x-dev" \
+          "gipfl/web": "dev-master as 99.x-dev" \
+          "gipfl/zfdb": "dev-master as 99.x-dev" \
+          "gipfl/zfdbstore": "dev-master as 99.x-dev"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          bin/make-release.sh snapshot
+
+      - name: PHPUnit with MySQL
+        if: ${{ ! cancelled() }}
+        env:
+          ICINGAWEB_LIBDIR: _libraries
+          ICINGAWEB_CONFIGDIR: test/config
+          DIRECTOR_TESTDB_RES: Director MySQL TestDB
+          DIRECTOR_TESTDB: director_test
+          DIRECTOR_TESTDB_HOST: 127.0.0.1
+          DIRECTOR_TESTDB_PORT: ${{ job.services.mysql.ports['3306'] }}
+          DIRECTOR_TESTDB_USER: director_test
+          DIRECTOR_TESTDB_PASSWORD: director_test
+        run: phpunit --verbose --bootstrap _icingaweb2/test/php/bootstrap.php
+
+      - name: PHPUnit with PostgreSQL
+        if: ${{ ! cancelled() }}
+        env:
+          ICINGAWEB_LIBDIR: _libraries
+          ICINGAWEB_CONFIGDIR: test/config
+          DIRECTOR_TESTDB_RES: Director PostgreSQL TestDB
+          DIRECTOR_TESTDB: director_test
+          DIRECTOR_TESTDB_HOST: 127.0.0.1
+          DIRECTOR_TESTDB_PORT: ${{ job.services.pgsql.ports['5432'] }}
+          DIRECTOR_TESTDB_USER: director_test
+          DIRECTOR_TESTDB_PASSWORD: director_test
+        run: phpunit --verbose --bootstrap _icingaweb2/test/php/bootstrap.php

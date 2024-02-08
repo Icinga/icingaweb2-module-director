@@ -45,7 +45,7 @@ class ImportSourceLdap extends ImportSourceHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
-        Util::addLDAPResourceFormElement($form, 'resource');
+        Util::addLdapResourceFormElement($form, 'resource');
         $form->addElement('text', 'base', array(
             'label'       => $form->translate('LDAP Search Base'),
             'description' => $form->translate(

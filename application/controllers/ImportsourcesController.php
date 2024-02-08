@@ -30,7 +30,7 @@ class ImportsourcesController extends ActionController
         }
 
         $this->addTitle($this->translate('Import source'))
-            ->setAutoRefreshInterval(10)
+            ->setAutorefreshInterval(10)
             ->addAddLink(
                 $this->translate('Add a new Import Source'),
                 'director/importsource/add'

@@ -132,12 +132,13 @@ class ConfigCommand extends Command
             printf("Config '%s' has been deployed\n", $checksum);
         } else {
             echo $deployer->getNoDeploymentReason() . "\n";
+            return;
         }
 
         if ($timeout = $this->getWaitTime()) {
             $deployed = $deployer->waitForStartupAfterDeploy($deployment, $timeout);
             if ($deployed !== true) {
-                $this->fail("Failed to deploy config '%s': %s\n", $checksum, $deployed);
+                $this->fail("Waiting for Icinga restart failed '%s': %s\n", $checksum, $deployed);
             }
         }
     }

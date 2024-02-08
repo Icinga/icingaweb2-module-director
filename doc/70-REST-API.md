@@ -39,12 +39,15 @@ URL scheme and supported methods
 
 We support GET, POST, PUT and DELETE.
 
-| Method | Meaning
-| ------ | ------------------------------------------------------------
-| GET    | Read / fetch data. Not allowed to run operations with the potential to cause any harm
-| POST   | Trigger actions, create or modify objects. Can also be used to partially modify objects
-| PUT    | Creates or replaces objects, cannot be used to modify single object properties
-| DELETE | Remove a specific object
+| Method | Meaning                                                             |
+|--------|---------------------------------------------------------------------|
+| GET    | Read / fetch data. Not allowed to run operations with the potential |
+|        | to cause any harm                                                   |
+| POST   | Trigger actions, create or modify objects. Can also be used to      |
+|        | partially modify objects                                            |
+| PUT    | Creates or replaces objects, cannot be used to modify single object |
+|        | properties                                                          |
+| DELETE | Remove a specific object                                            |
 
 TODO: more examples showing the difference between POST and PUT
 
@@ -113,6 +116,15 @@ Icinga Objects
 
 ### Special parameters
 
+| Parameter      | Description                                                 |
+|----------------|-------------------------------------------------------------|
+| resolved       | Resolve all inherited properties and show a flat object     |
+| withNull       | Retrieve default (null) properties also                     |
+| withServices   | Show services attached to a host. `resolved` and `withNull` |
+|                | are applied for services too                                |
+| allowOverrides | Set variable overrides for virtual Services                 |
+| showStacktrace | Returns the related stack trace, in case an error occurs    |
+
 #### Resolve object properties
 
 In case you add the `resolved` parameter to your URL, all inherited object
@@ -121,15 +133,20 @@ properties will be resolved. Such a URL could look as follows:
     director/host?name=hostname.example.com&resolved
 
 
-#### Retrieve all properties
-
-TODO: adjust the code to fix this, current implementation has `withNull`
+#### Retrieve default (null) properties also
 
 Per default properties with `null` value are skipped when shipping a result.
-You can influence this behavior with the properties parameter. Just append
-`properties=ALL` to your URL:
+You can influence this behavior with the `properties` parameter. Just append
+`&withNull` to your URL:
 
-    director/host?name=hostname.example.com&properties=all
+    director/host?name=hostname.example.com&withNull
+
+
+#### Fetch host with it's services
+
+This is what the `withServices` parameter exists:
+
+    director/host?name=hostname.example.com&withServices
 
 
 #### Retrieve only specific properties
@@ -140,6 +157,23 @@ when they have no (`null`) value:
 
     director/host?name=hostname.example.com&properties=object_name,address,vars
 
+
+#### Override vars for inherited/applied Services
+
+Enabling `allowOverrides` allows you to let Director figure out, whether your
+modified Custom Variables need to be applied to a specific individual Service,
+or whether setting Overrides at Host level is the way to go.
+
+     POST director/service?name=Uptime&host=hostname.example.com&allowOverrides
+
+```json
+{ "vars.uptime_warning": 300 }
+```
+
+In case `Uptime` is an Apply Rule, calling this without `allowOverrides` will
+trigger a 404 response. Please note that when modifying the Host object, the
+body for response 200 will show the Host object, as that's the one that has
+been modified.
 
 ### Example
 
@@ -223,7 +257,7 @@ You can of course also use the API to trigger specific actions. Deploying the co
 More
 ----
 
-Currently we do not handle Last-Modified und ETag headers. This would involve some work, but could be a cool feature. Let us know your ideas!
+Currently, we do not handle Last-Modified und ETag headers. This would involve some work, but could be a cool feature. Let us know your ideas!
 
 
 Sample scenario
@@ -526,8 +560,8 @@ Another possibility is to pass a list of checksums to fetch the status of
 specific deployments and (activity log) activities.
 Following, you can see an example of how to do it:
 
-    GET director/config/deployment-status?config_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be2,
-    617b9cbad9e141cfc3f4cb636ec684bd60073be1&activity_log_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be1,
+    GET director/config/deployment-status?configs=617b9cbad9e141cfc3f4cb636ec684bd60073be2,
+    617b9cbad9e141cfc3f4cb636ec684bd60073be1&activitiess=617b9cbad9e141cfc3f4cb636ec684bd60073be1,
     028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2
     
 ```json

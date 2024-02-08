@@ -206,11 +206,13 @@ class IcingaCommandTest extends BaseTestCase
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $db = $this->getDb();
         if (IcingaCommand::exists($this->testCommandName, $db)) {
             IcingaCommand::load($this->testCommandName, $db)->delete();
         }
+
+        parent::tearDown();
     }
 }

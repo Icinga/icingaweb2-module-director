@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -69,7 +70,8 @@ class IcingaServiceSetForm extends DirectorObjectForm
         }
 
         $this->addHidden('object_type', 'object');
-        $this->addHidden('host_id', $this->host->id);
+        $this->addHidden('host', $this->host->getObjectName());
+        $this->groupMainProperties();
     }
 
     public function setHost(IcingaHost $host)
@@ -77,6 +79,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
         $this->host = $host;
         return $this;
     }
+
     protected function addSingleImportsElement()
     {
         $enum = $this->enumAllowedTemplates();
@@ -111,7 +114,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        if (! $this->hasPermission('director/service_set/apply')) {
+        if (! $this->hasPermission(Permission::SERVICE_SET_APPLY)) {
             return $this;
         }
 

@@ -25,6 +25,9 @@ class IcingaConfig
 
     protected $zoneMap = array();
 
+    /** @var ?array Exists for caching reasons at rendering time */
+    protected $nonGlobalZones = null;
+
     protected $lastActivityChecksum;
 
     /** @var \Zend_Db_Adapter_Abstract */
@@ -349,6 +352,15 @@ class IcingaConfig
         return $this->zoneMap[$id];
     }
 
+    public function listNonGlobalZones(): array
+    {
+        if ($this->nonGlobalZones === null) {
+            $this->nonGlobalZones = array_values($this->connection->enumNonglobalZones());
+        }
+
+        return $this->nonGlobalZones;
+    }
+
     /**
      * @return self
      */
@@ -436,9 +448,9 @@ class IcingaConfig
         $start = microtime(true);
 
         MemoryLimit::raiseTo('1024M');
-        ini_set('max_execution_time', 0);
+        ini_set('max_execution_time', '0');
         // Workaround for https://bugs.php.net/bug.php?id=68606 or similar
-        ini_set('zend.enable_gc', 0);
+        ini_set('zend.enable_gc', '0');
 
         if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
             throw new RuntimeException(
@@ -501,6 +513,7 @@ class IcingaConfig
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
             . $this->renderFlappingLogHelper()
             . $this->renderHostOverridableVars()
+            . $this->renderIfwFallbackTemplate()
         );
 
         return $this;
@@ -564,6 +577,20 @@ if (! globals.contains(DirectorOverrideTemplate)) {
             $settings->override_services_templatename,
             $settings->override_services_varname
         );
+    }
+
+
+    protected function renderIfwFallbackTemplate(): string
+    {
+        return '
+// Make sure config validates for Icinga < 2.14 with IfW 1.11 configuration. This might look weird,
+// but is intentional. get_object() does\'t work as expected at parse time.
+if (! globals.System || ! System.get_template || ! get_template(CheckCommand, "ifw-api-check-command")) {
+  object CheckCommand "ifw-api" {
+    import "plugin-check-command"
+  }
+}
+';
     }
 
     /**

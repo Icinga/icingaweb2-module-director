@@ -5,7 +5,7 @@ Icinga Director is very upgrade-friendly. We never had any complaint referring
 data loss on upgrade. But to be on the safe side, please always [backup](#backup-first)
 your database before running an upgrade.
 
-Then drop the new version to your Icinga Web 2 module folder and you're all done.
+Then drop the new version to your Icinga Web 2 module folder, and you're all done.
 Eventually refresh the page in your browser<sup>[[1]](#footnote1)</sup>, and you
 are ready to go.
 
@@ -15,6 +15,8 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.11.x](#upgrade-to-1.11.x)
+* [Upgrading to 1.10.x](#upgrade-to-1.10.x)
 * [Upgrading to 1.9.x](#upgrade-to-1.9.x)
 * [Upgrading to 1.8.x](#upgrade-to-1.8.x)
 * [Upgrading to 1.7.x](#upgrade-to-1.7.x)
@@ -39,6 +41,24 @@ All you need for backing up your Director is a snapshot of your database. Please
 use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
+
+<a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
+--------------------------------------------------
+
+Before upgrading, please upgrade the [incubator module](https://github.com/Icinga/icingaweb2-module-incubator)
+to (at least) v0.21.0. As always, you'll be prompted to apply pending Database
+Migrations.
+
+<a name="upgrade-to-1.10.x"></a>Upgrading to 1.10.x
+--------------------------------------------------
+
+Please check module dependencies, we raised some of them. In case you're missing
+one of them, the Web UI will tell you after the upgrade. You'll then be prompted
+to apply pending Database Migrations.
+
+PHP 7.3 is now claimed to be required, but we still support 5.6+ on Director
+v1.10.x. Same goes for database dependencies: you should upgrade them to recent
+versions, but v1.10 still works on the ones supported with v1.9.x.
 
 <a name="upgrade-to-1.9.x"></a>Upgrading to 1.9.x
 -------------------------------------------------

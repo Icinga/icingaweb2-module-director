@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use Icinga\Module\Director\Auth\Permission;
 use ipl\Html\HtmlDocument;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -55,7 +56,7 @@ class DeploymentInfo extends HtmlDocument
             'url'   => $request->getUrl()
         ))->activate('deployment');
 
-        if ($dep->config_checksum !== null && $auth->hasPermission('director/showconfig')) {
+        if ($dep->config_checksum !== null && $auth->hasPermission(Permission::SHOW_CONFIG)) {
             $tabs->add('config', array(
                 'label'     => $this->translate('Config'),
                 'url'       => 'director/config/files',
@@ -72,7 +73,8 @@ class DeploymentInfo extends HtmlDocument
     protected function createInfoTable()
     {
         $dep = $this->deployment;
-        $table = new NameValueTable();
+        $table = (new NameValueTable())
+            ->addAttributes(['class' => 'deployment-details']);
         $table->addNameValuePairs([
             $this->translate('Deployment time') => $dep->start_time,
             $this->translate('Sent to')         => $dep->peer_identity,
@@ -135,16 +137,21 @@ class DeploymentInfo extends HtmlDocument
             } else {
                 return [$this->translate('Unknown, failed to collect related information'), new Icon('help')];
             }
-        } elseif ($dep->startup_succeeded === 'y') {
-            return $this->colored('green', [$this->translate('Succeeded'), new Icon('ok')]);
         } else {
-            return $this->colored('red', [$this->translate('Failed'), new Icon('cancel')]);
-        }
-    }
+            $div = Html::tag('div')->setSeparator(' ');
 
-    protected function colored($color, array $content)
-    {
-        return Html::tag('div', ['style' => "color: $color;"], $content)->setSeparator(' ');
+            if ($dep->startup_succeeded === 'y') {
+                $div
+                    ->addAttributes(['class' => 'succeeded'])
+                    ->add([$this->translate('Succeeded'), new Icon('ok')]);
+            } else {
+                $div
+                    ->addAttributes(['class' => 'failed'])
+                    ->add([$this->translate('Failed'), new Icon('cancel')]);
+            }
+
+            return $div;
+        }
     }
 
     public function render()

@@ -17,11 +17,19 @@ trait DbHelper
 
     public function quoteBinary($binary)
     {
+        if ($binary === '') {
+            return '';
+        }
+
+        if (is_array($binary)) {
+            return array_map([$this, 'quoteBinary'], $binary);
+        }
+
         if ($this->isPgsql()) {
             return new Expr("'\\x" . bin2hex($binary) . "'");
         }
 
-        return $binary;
+        return new Expr('0x' . bin2hex($binary));
     }
 
     public function isPgsql()

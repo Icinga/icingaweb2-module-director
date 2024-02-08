@@ -15,26 +15,45 @@ class BranchedObjectHint extends HtmlDocument
 {
     use TranslationHelper;
 
-    public function __construct(Branch $branch, Auth $auth, BranchedObject $object)
+    public function __construct(Branch $branch, Auth $auth, BranchedObject $object = null, $hasPreferredBranch = false)
     {
         if (! $branch->isBranch()) {
+            if ($hasPreferredBranch) {
+                $main = true;
+                $hintMethod = 'warning';
+                $link = $this->translate('the main configuration branch');
+                $deployHint = ' ' . $this->translate('This will be part of the next deployment');
+            } else {
+                return;
+            }
+        } else {
+            $main = false;
+            $hintMethod = 'info';
+            $deployHint = ' ' . $this->translate('This will not be part of any deployment, unless being merged');
+            $hook = Branch::requireHook();
+            $name = $branch->getName();
+            if (substr($name, 0, 1) === '/') {
+                $label = $this->translate('this configuration branch');
+            } else {
+                $label = $name;
+            }
+            $link = $hook->linkToBranch($branch, $auth, $label);
+        }
+
+        if ($object === null) {
+            $this->add(Hint::$hintMethod(Html::sprintf($this->translate(
+                'This object will be created in %s.'
+            ) . $deployHint, $link)));
             return;
         }
-        $hook = Branch::requireHook();
-
-        $name = $branch->getName();
-        if (substr($name, 0, 1) === '/') {
-            $label = $this->translate('this configuration branch');
-        } else {
-            $label = $name;
-        }
-        $link = $hook->linkToBranch($branch, $auth, $label);
 
         if (! $object->hasBeenTouchedByBranch()) {
-            $this->add(Hint::info(Html::sprintf($this->translate(
-                'Your changes will be stored in %s. The\'ll not be part of any deployment'
-                . ' unless being merged'
-            ), $link)));
+            $this->add(Hint::$hintMethod(Html::sprintf($this->translate(
+                'Your changes are going to be stored in %s.'
+            ) . $deployHint, $link)));
+            return;
+        }
+        if ($main) {
             return;
         }
 

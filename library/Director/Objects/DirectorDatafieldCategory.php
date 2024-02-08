@@ -21,6 +21,7 @@ class DirectorDatafieldCategory extends DbObject
     ];
 
     /**
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
      * @return object
      */
     public function export()

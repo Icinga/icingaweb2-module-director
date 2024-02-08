@@ -103,7 +103,7 @@ class SyncJob extends JobHook
             )
         ));
 
-        if (! strlen($form->getSentOrObjectValue('job_name'))) {
+        if ((string) $form->getSentOrObjectValue('job_name') !== '') {
             if (($ruleId = $form->getSentValue('rule_id')) && array_key_exists($ruleId, $rules)) {
                 $name = sprintf('Sync job: %s', $rules[$ruleId]);
                 $form->getElement('job_name')->setValue($name);

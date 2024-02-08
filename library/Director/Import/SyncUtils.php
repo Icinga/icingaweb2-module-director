@@ -91,12 +91,15 @@ class SyncUtils
             if (! property_exists($row, $main)) {
                 return null;
             }
+            if ($row->$main === null) {
+                return null;
+            }
 
             if (! is_object($row->$main)) {
                 throw new InvalidArgumentException(sprintf(
                     'Data is not nested, cannot access %s: %s',
                     $var,
-                    var_export($row, 1)
+                    var_export($row, true)
                 ));
             }
 
@@ -107,12 +110,12 @@ class SyncUtils
     /**
      * Fill variables in the given string pattern
      *
-     * This replaces all occurances of ${var_name} with the corresponding
+     * This replaces all occurrences of ${var_name} with the corresponding
      * property $row->var_name of the given row object. Missing variables are
      * replaced by an empty string. This works also fine in case there are
      * multiple variables to be found in your string.
      *
-     * @param  string $string String with opional variables/placeholders
+     * @param  string $string String with optional variables/placeholders
      * @param  object $row    stdClass object providing property values
      *
      * @return string

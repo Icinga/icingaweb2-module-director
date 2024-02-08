@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Forms;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaDependency;
+use Zend_Validate_Callback;
 
 class IcingaDependencyForm extends DirectorObjectForm
 {
@@ -164,7 +165,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         ], null);
 
         $this->addBoolean('disable_notifications', [
-            'label'       => $this->translate('Disable Notificiations'),
+            'label'       => $this->translate('Disable Notifications'),
             'description' => $this->translate(
                 'Whether to disable notifications when this dependency fails.'
                 . ' Defaults to true.'
@@ -192,38 +193,83 @@ class IcingaDependencyForm extends DirectorObjectForm
         $parentHost = $dependency->get('parent_host');
         if ($parentHost === null) {
             $parentHostVar = $dependency->get('parent_host_var');
-            if (\strlen($parentHostVar) > 0) {
+            if ($parentHostVar !== null && \strlen($parentHostVar) > 0) {
                 $parentHost = '$' . $dependency->get('parent_host_var') . '$';
             }
         }
+
+        $parentHostDescription = $this->translate('Optional. The parent host.');
+        $applyTo = $this->getSentOrObjectValue('apply_to');
+        $parentHostValidator = new Zend_Validate_Callback(function ($value) use ($applyTo) {
+            if ($applyTo === 'host' && $this->isCustomVar($value)) {
+                return explode('.', trim($value, '$'))[0] === 'host';
+            }
+
+            return true;
+        });
+
+        $parentHostValidator->setMessage(
+            $this->translate('The parent host cannot be a service custom variable for a host dependency'),
+            Zend_Validate_Callback::INVALID_VALUE
+        );
+
+        if ($applyTo === 'service') {
+            $additionalDescription = $this->translate(
+                'You might want to refer to Host or Service Custom Variables via $host|service.vars.varname$'
+            );
+        } else {
+            $additionalDescription = $this->translate(
+                'You might want to refer to Host Custom Variables via $host.vars.varname$'
+            );
+        }
+
+        $parentHostDescription .= ' ' . $additionalDescription;
+
         $this->addElement('text', 'parent_host', [
-            'label' => $this->translate('Parent Host'),
-            'description' => $this->translate(
-                'The parent host. You might want to refer Host Custom Variables'
-                . ' via $host.vars.varname$'
-            ),
-            'class' => "autosubmit director-suggest",
+            'label'                   => $this->translate('Parent Host'),
+            'description'             => $parentHostDescription,
+            'class'                   => "autosubmit director-suggest",
             'data-suggestion-context' => 'hostnames',
-            'order' => 10,
-            'required' => $this->isObject(),
-            'value' => $parentHost
+            'order'                   => 10,
+            'required'                => $this->isObject(),
+            'value'                   => $parentHost,
+            'validators'               => [$parentHostValidator]
         ]);
         $sentParent = $this->getSentOrObjectValue('parent_host');
 
         if (!empty($sentParent) || $dependency->isApplyRule()) {
             $parentService = $dependency->get('parent_service');
+            if ($parentService === null) {
+                $parentServiceVar = $dependency->get('parent_service_by_name');
+                if ($parentServiceVar) {
+                    $parentService = '$' . $parentServiceVar . '$';
+                }
+            }
+
+            $parentServiceDescription = $this->translate(
+                'Optional. The parent service. If omitted this dependency'
+                . ' object is treated as host dependency.'
+            );
+
+            $parentServiceDescription .= ' ' . $additionalDescription;
+
+            $parentServiceValidator = clone $parentHostValidator;
+
+            $parentServiceValidator->setMessage(
+                $this->translate('The parent service cannot be a service custom variable for a host dependency'),
+                Zend_Validate_Callback::INVALID_VALUE
+            );
+
             $this->addElement('text', 'parent_service', [
-                    'label' => $this->translate('Parent Service'),
-                    'description' => $this->translate(
-                        'Optional. The parent service. If omitted this dependency'
-                         . ' object is treated as host dependency.'
-                    ),
-                    'class' => "autosubmit director-suggest",
-                    'data-suggestion-context' => 'servicenames',
-                    'data-suggestion-for-host' => $sentParent,
-                    'order' => 20,
-                    'value' => $parentService
-                ]);
+                'label'                    => $this->translate('Parent Service'),
+                'description'              => $parentServiceDescription,
+                'class'                    => "autosubmit director-suggest",
+                'data-suggestion-context'  => 'servicenames',
+                'data-suggestion-for-host' => $sentParent,
+                'order'                    => 20,
+                'value'                    => $parentService,
+                'validators'               => [$parentServiceValidator]
+            ]);
         }
 
         // If configuring Object, allow selection of child host and/or service,
@@ -290,11 +336,22 @@ class IcingaDependencyForm extends DirectorObjectForm
     protected function handleProperties(DbObject $object, &$values)
     {
         if ($this->hasBeenSent()) {
-            if (isset($values['parent_host'])
-                && $this->isCustomVar($values['parent_host'])
-            ) {
-                $values['parent_host_var'] = \trim($values['parent_host'], '$');
-                $values['parent_host'] = '';
+            if (isset($values['parent_host'])) {
+                if ($this->isCustomVar($values['parent_host'])) {
+                    $values['parent_host_var'] = \trim($values['parent_host'], '$');
+                    $values['parent_host'] = '';
+                } else {
+                    $values['parent_host_var'] = '';
+                }
+            }
+
+            if (isset($values['parent_service'])) {
+                if ($this->isCustomVar($values['parent_service'])) {
+                    $values['parent_service_by_name'] = trim($values['parent_service'], '$');
+                    $values['parent_service'] = '';
+                } else {
+                    $values['parent_service_by_name'] = '';
+                }
             }
         }
 
@@ -303,7 +360,6 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function isCustomVar($string)
     {
-        return \preg_match('/^\$(?:host)\.vars\..+\$$/', $string);
-        // Eventually: return \preg_match('/^\$(?:host|service)\.vars\..+\$$/', $string);
+        return preg_match('/^\$(?:host|service)\.vars\..+\$$/', $string);
     }
 }
