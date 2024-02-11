@@ -27,6 +27,7 @@ class HealthCommand extends Command
      *
      *   --check <name>     Run only a specific set of checks
      *                      valid names: config, sync, import, jobs, deployment
+     *   --name <name>	    Name of a single Import Source or Sync Rule
      *   --db <name>        Use a specific Icinga Web DB resource
      *   --watch <seconds>  Refresh every <second>. For interactive use only
      */
@@ -37,9 +38,21 @@ class HealthCommand extends Command
             $health->setDbResourceName($name);
         }
 
+        if ($this->params->get('name')){
+            $check_name = $this->params->get('name');
+        } else { 
+			$check_name = null; 
+		}
+
+
         if ($name = $this->params->get('check')) {
-            $check = $health->getCheck($name);
-            echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
+	    if (is_null($check_name)){
+		$check = $health->getCheck($name);
+		echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
+	    } else {
+		$check = $health->getCheck($name, $check_name);
+		echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
+	    }
 
             exit($check->getState()->getNumeric());
         } else {
