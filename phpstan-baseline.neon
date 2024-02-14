@@ -506,16 +506,6 @@ parameters:
 			path: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php
 
 		-
-			message: "#^Call to an undefined method ipl\\\\Stdlib\\\\Filter\\\\Rule\\:\\:getValue\\(\\)\\.$#"
-			count: 3
-			path: library/Director/ProvidedHook/IcingaDbCubeLinks.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Test\\\\TestSuiteUnit\\:\\:newTempfile\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Test/TestSuiteUnit.php
-
-		-
 			message: "#^Access to an undefined property Zend_Controller_Action_HelperBroker\\:\\:\\$viewRenderer\\.$#"
 			count: 1
 			path: library/Director/Web/Controller/ActionController.php
@@ -594,11 +584,6 @@ parameters:
 			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
 			count: 1
 			path: library/Director/Web/Controller/TemplateController.php
-
-		-
-			message: "#^Undefined variable\\: \\$elementValue$#"
-			count: 1
-			path: library/Director/Web/Form/CsrfToken.php
 
 		-
 			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getShortTableName\\(\\)\\.$#"

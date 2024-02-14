@@ -747,7 +747,7 @@ class IcingaHostTest extends BaseTestCase
                 }
             }
 
-            $kill = array('___TEST___zone');
+            $kill = ['___TEST___zone', '___TEST___zone2'];
             foreach ($kill as $name) {
                 if (IcingaZone::exists($name, $db)) {
                     IcingaZone::load($name, $db)->delete();
@@ -756,6 +756,8 @@ class IcingaHostTest extends BaseTestCase
 
             $this->deleteDatafields();
         }
+
+        parent::tearDown();
     }
 
     protected function deleteDatafields()

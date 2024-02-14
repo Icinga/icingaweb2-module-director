@@ -43,13 +43,15 @@ abstract class IcingaObjectGroup extends IcingaObject implements ExportInterface
                 return;
             }
         } else {
-            if ($this->get('assign_filter') === null) {
+            if ($this->hasProperty('assign_filter') && $this->get('assign_filter') === null) {
                 $this->memberShipShouldBeRefreshed = false;
                 return;
             }
         }
 
-        $this->memberShipShouldBeRefreshed = true;
+        if ($this->hasProperty('assign_filter')) {
+            $this->memberShipShouldBeRefreshed = true;
+        }
     }
 
     protected function notifyResolvers()

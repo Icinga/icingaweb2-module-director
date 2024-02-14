@@ -569,7 +569,7 @@ constants
             'icon_image_alt'        => 'icon_image_alt',
         ];
 
-        if (version_compare($this->getVersion(), '2.8.0', '>=')) {
+        if (version_compare($this->getVersion() ?? '', '2.8.0', '>=')) {
             $params['flapping_threshold_high'] = 'flapping_threshold_high';
             $params['flapping_threshold_low'] = 'flapping_threshold_low';
         }

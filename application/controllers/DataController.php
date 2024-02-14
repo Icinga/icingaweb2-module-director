@@ -216,7 +216,7 @@ class DataController extends ActionController
             $subTitle = $this->translate('Add a new instance');
         }
 
-        $this->content()->add(Html::tag('h2', ['style' => 'margin-top: 2em'], $subTitle));
+        $this->content()->add(Html::tag('h2', ['class' => 'dictionary-header'], $subTitle));
         $form->handleRequest($this->getRequest());
         $this->content()->add($form);
         if ($form->succeeded()) {
@@ -326,7 +326,7 @@ class DataController extends ActionController
             Table::row([
                 $this->translate('Key / Instance'),
                 $this->translate('Properties')
-            ], ['style' => 'text-align: left'], 'th')
+            ], ['class' => 'text-align-left'], 'th')
         );
         foreach ($currentValue as $key => $item) {
             $table->add(Table::row([

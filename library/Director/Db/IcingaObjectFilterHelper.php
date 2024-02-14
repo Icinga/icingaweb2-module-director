@@ -31,7 +31,7 @@ class IcingaObjectFilterHelper
             throw new InvalidArgumentException(sprintf(
                 'Numeric ID or IcingaObject expected, got %s',
                 // TODO: just type/class info?
-                var_export($id, 1)
+                var_export($id, true)
             ));
         }
     }

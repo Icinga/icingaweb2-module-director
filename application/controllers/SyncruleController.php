@@ -48,7 +48,7 @@ class SyncruleController extends ActionController
      */
     public function indexAction()
     {
-        $this->setAutoRefreshInterval(10);
+        $this->setAutorefreshInterval(10);
         $rule = $this->requireSyncRule();
         $this->tabs(new SyncRuleTabs($rule))->activate('show');
         $ruleName = $rule->get('rule_name');
@@ -380,10 +380,7 @@ class SyncruleController extends ActionController
     protected function firstNames($objects, $max = 50)
     {
         $names = [];
-        $list = new UnorderedList();
-        $list->addAttributes([
-            'style' => 'list-style-type: none; marign: 0; padding: 0',
-        ]);
+        $list = new UnorderedList([], ['class' => 'unordred-list']);
         $total = count($objects);
         $i = 0;
         PrefetchCache::forget();
@@ -645,7 +642,7 @@ class SyncruleController extends ActionController
      */
     public function historyAction()
     {
-        $this->setAutoRefreshInterval(30);
+        $this->setAutorefreshInterval(30);
         $rule = $this->requireSyncRule();
         $this->tabs(new SyncRuleTabs($rule))->activate('history');
         $this->addTitle($this->translate('Sync history') . ': ' . $rule->get('rule_name'));

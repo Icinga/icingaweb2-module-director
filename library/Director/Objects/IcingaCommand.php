@@ -127,10 +127,8 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
             // return $value;
         }
 
-        if (self::$pluginDir !== null) {
-            if (($pos = strpos($value, self::$pluginDir)) === 0) {
-                $value = substr($value, strlen(self::$pluginDir) + 1);
-            }
+        if (isset($value, self::$pluginDir) && strpos($value, self::$pluginDir) === 0) {
+            $value = substr($value, strlen(self::$pluginDir) + 1);
         }
 
         return $value;

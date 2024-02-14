@@ -228,7 +228,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         } else {
             throw new RuntimeException(
                 'Invalid group object: %s',
-                var_export($group, 1)
+                var_export($group, true)
             );
         }
 

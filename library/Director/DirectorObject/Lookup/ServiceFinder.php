@@ -51,38 +51,4 @@ class ServiceFinder
 
         return false;
     }
-
-    /**
-     * @param $serviceName
-     * @return Url
-     */
-    public function getRedirectionUrl($serviceName)
-    {
-        if ($this->auth === null) {
-            throw new RuntimeException('Auth is required for ServiceFinder when dealing when asking for URLs');
-        }
-        if ($this->auth->hasPermission(Permission::HOSTS)) {
-            if ($info = $this::find($this->host, $serviceName)) {
-                return $info->getUrl();
-            }
-        }
-        if ($this->auth->hasPermission(Permission::MONITORING_HOSTS)) {
-            if ($info = $this::find($this->host, $serviceName)) {
-                if ((new Monitoring($this->auth))->canModifyServiceByName($this->host->getObjectName(), $serviceName)) {
-                    return $info->getUrl();
-                }
-            }
-        }
-        if ($this->auth->hasPermission(Permission::MONITORING_SERVICES_RO)) {
-            return Url::fromPath('director/host/servicesro', [
-                'name'    => $this->host->getObjectName(),
-                'service' => $serviceName
-            ]);
-        }
-
-        return Url::fromPath('director/host/invalidservice', [
-            'name'    => $this->host->getObjectName(),
-            'service' => $serviceName,
-        ]);
-    }
 }

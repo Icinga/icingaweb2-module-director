@@ -154,5 +154,7 @@ class IcingaTemplateResolverTest extends BaseTestCase
                 IcingaHost::load($name, $db)->delete();
             }
         }
+
+        parent::tearDown();
     }
 }

@@ -51,7 +51,7 @@ class DirectorDatalistEntry extends DbObject
         } else {
             throw new RuntimeException(
                 'Expected array or null for allowed_roles, got %s',
-                var_export($roles, 1)
+                var_export($roles, true)
             );
         }
     }

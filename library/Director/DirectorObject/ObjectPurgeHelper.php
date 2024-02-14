@@ -44,11 +44,11 @@ class ObjectPurgeHelper
                 // TODO: this is object-specific and to be found in the ::import() function!
                 unset($properties['fields']);
                 $object = $class::fromPlainObject($properties);
-            } elseif (\get_class($object) !== $class) {
+            } elseif (get_class($object) !== $class) {
                 throw new InvalidArgumentException(
                     'Can keep only matching objects, expected "%s", got "%s',
                     $class,
-                    \get_class($keep)
+                    get_class($object)
                 );
             }
             $key = [];

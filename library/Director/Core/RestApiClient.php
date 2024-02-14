@@ -206,14 +206,14 @@ class RestApiClient
     }
 
     /**
-     * @return resource
+     * @throws RuntimeException
      */
     protected function curl()
     {
         if ($this->curl === null) {
             $this->curl = curl_init(sprintf('https://%s:%d', $this->peer, $this->port));
             if (! $this->curl) {
-                throw new RuntimeException('CURL INIT ERROR: ' . curl_error($this->curl));
+                throw new RuntimeException('CURL INIT FAILED');
             }
         }
 
@@ -260,13 +260,11 @@ class RestApiClient
 
     public function disconnect()
     {
-        if ($this->curl !== null) {
-            if (is_resource($this->curl)) {
-                @curl_close($this->curl);
-            }
-
-            $this->curl = null;
+        if ($this->curl) {
+            @curl_close($this->curl);
         }
+
+        $this->curl = null;
     }
 
     public function __destruct()

@@ -225,7 +225,7 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
         } else {
             throw new ProgrammingError(
                 'Expected array or null for allowed_roles, got %s',
-                var_export($roles, 1)
+                var_export($roles, true)
             );
         }
     }

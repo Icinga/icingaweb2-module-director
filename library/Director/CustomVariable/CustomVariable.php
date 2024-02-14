@@ -236,7 +236,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
             // TODO: check for specific class/stdClass/interface?
             return new CustomVariableDictionary($key, $value);
         } else {
-            throw new LogicException(sprintf('WTF (%s): %s', $key, var_export($value, 1)));
+            throw new LogicException(sprintf('WTF (%s): %s', $key, var_export($value, true)));
         }
     }
 

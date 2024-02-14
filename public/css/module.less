@@ -49,6 +49,15 @@ div.action-bar > a {
   margin-right: 1em;
 }
 
+.controls.compact {
+  display: none;
+}
+
+.controls > .pagination-control.activity-log-control {
+  float: right;
+  width: 5em;
+}
+
 .controls > .pagination-control li > a {
   padding: 0.5em 0 0.5em 0;
 }
@@ -337,6 +346,10 @@ table.avp th {
     left: -100%;
 }
 
+form.remove-link-form {
+  float: right;
+}
+
 form.director-form input[type=file] {
   padding-right: 1em;
 }
@@ -462,6 +475,11 @@ form.director-form dl {
     padding: 0;
 }
 
+form.director-form .host-group-links {
+  line-height: 2.5em;
+  padding-left: 0.5em;
+}
+
 .strike-links a, table.common-table .strike-links a {
   text-decoration: line-through;
   &:hover {
@@ -500,6 +518,12 @@ form.director-form.editor {
   .tree li a {
     padding: 0;
   }
+}
+
+ul.unordred-list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
 }
 
 ul.extensible-set {
@@ -917,6 +941,10 @@ form.director-form dd.active li.active input.related-action[type='submit'] {
 }
 
 form.director-form {
+  select.config-diff {
+    width: auto;
+  }
+
   p.description {
     color: @gray;
     font-style: italic;
@@ -1222,6 +1250,17 @@ table.icinga-objects {
 div.content.compact table.icinga-objects thead {
     display: none;
 }
+
+table.deployment-details {
+  .succeeded {
+    color: @state-ok;
+  }
+
+  .failed {
+    color: @color-critical;
+  }
+}
+
 
 table.deployment-log {
 
@@ -1832,4 +1871,37 @@ table.table-basket-changes {
     text-align: left;
     min-width: 10em;
   }
+}
+
+.font-italic {
+  font-style: italic;
+}
+
+.table-basket-changes {
+  .basket-new {
+    color: green;
+    font-weight: bold
+  }
+
+  .basket-modified {
+    color: orange;
+    font-weight: bold
+  }
+
+  .basket-unchanged {
+    color: green;
+  }
+}
+
+.seviceset-obj-link {
+  float: right;
+  font-weight: normal
+}
+
+.dictionary-header {
+  margin-top: 2em;
+}
+
+.text-align-left {
+  text-align: left
 }

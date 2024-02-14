@@ -205,7 +205,7 @@ class IcingaObjectInspection extends BaseHtmlElement
             $this->add(Html::tag('p')->add(Html::sprintf(
                 'The configuration for this object has been rendered by Icinga'
                 . ' Director %s to %s',
-                DateFormatter::timeAgo(strtotime($deployment->start_time, false)),
+                DateFormatter::timeAgo(strtotime($deployment->start_time)),
                 $this->linkToSourceLocation($deployment, $source)
             )));
         }
