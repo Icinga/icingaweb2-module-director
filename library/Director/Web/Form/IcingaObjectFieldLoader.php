@@ -420,6 +420,7 @@ class IcingaObjectFieldLoader
     protected function prepareObjectFields($object)
     {
         $fields = $this->loadResolvedFieldsForObject($object);
+        $relation = null;
         if ($object->hasRelation('check_command')) {
             #for checks
             $relation = "check_command";
