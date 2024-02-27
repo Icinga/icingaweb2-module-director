@@ -4,13 +4,12 @@ namespace Icinga\Module\Director\Web\Table;
 
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use RuntimeException;
 
-class BasketSnapshotTable extends ZfQueryBasedTable
+class BasketSnapshotTable extends IntlZfQueryBasedTable
 {
     use DbHelper;
 

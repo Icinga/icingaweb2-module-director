@@ -2,22 +2,17 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use gipfl\Format\LocalTimeFormat;
 use Icinga\Module\Director\Objects\SyncRule;
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 
-class SyncRunTable extends ZfQueryBasedTable
+class SyncRunTable extends IntlZfQueryBasedTable
 {
     /** @var SyncRule */
     protected $rule;
 
-    protected $timeFormat;
-
     public function __construct(SyncRule $rule)
     {
         parent::__construct($rule->getConnection());
-        $this->timeFormat = new LocalTimeFormat();
         $this->getAttributes()
             ->set('data-base-target', '_self')
             ->add('class', 'history');
@@ -31,7 +26,7 @@ class SyncRunTable extends ZfQueryBasedTable
         return $this::tr([
             $this::td($this->makeSummary($row)),
             $this::td(new Link(
-                $this->timeFormat->getTime($time),
+                $this->getTime($time),
                 'director/syncrule/history',
                 [
                     'id'     => $row->rule_id,
