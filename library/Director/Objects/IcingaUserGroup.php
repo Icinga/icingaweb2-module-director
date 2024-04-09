@@ -18,10 +18,6 @@ class IcingaUserGroup extends IcingaObjectGroup
         'zone_id'       => null,
     ];
 
-    protected $relations = [
-        'zone' => 'IcingaZone',
-    ];
-
     protected function prefersGlobalZone()
     {
         return false;
