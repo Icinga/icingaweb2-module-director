@@ -553,6 +553,20 @@ if (! globals.contains(DirectorOverrideTemplate)) {
       )
     }
   }
+  globals.directorMergeOverrideConfig = function(existing,overrides) {
+    if (existing) {
+      for (service => conf in overrides) {
+        if (existing[service]) {
+          existing[service] += conf
+        } else {
+          existing[service] = conf
+        }
+      }
+      return existing
+    } else {
+      return overrides
+    }
+  }
 
   template Service DirectorOverrideTemplate {
     /**
