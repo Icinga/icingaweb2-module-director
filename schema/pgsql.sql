@@ -1115,11 +1115,18 @@ CREATE TABLE icinga_hostgroup (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
-  PRIMARY KEY (id)
+  zone_id integer DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_hostgroup_zone
+    FOREIGN KEY (zone_id)
+    REFERENCES icinga_zone (id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX hostgroup_object_name ON icinga_hostgroup (object_name);
 CREATE INDEX hostgroup_search_idx ON icinga_hostgroup (display_name);
+CREATE INDEX hostgroup_zone ON icinga_hostgroup (zone_id);
 
 
 -- -- TODO: probably useless
@@ -1153,11 +1160,18 @@ CREATE TABLE icinga_servicegroup (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
-  PRIMARY KEY (id)
+  zone_id integer DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_servicegroup_zone
+    FOREIGN KEY (zone_id)
+    REFERENCES icinga_zone (id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX servicegroup_object_name ON icinga_servicegroup (object_name);
 CREATE INDEX servicegroup_search_idx ON icinga_servicegroup (display_name);
+CREATE INDEX servicegroup_zone ON icinga_servicegroup (zone_id);
 
 CREATE TABLE icinga_servicegroup_service_resolved (
   servicegroup_id integer NOT NULL,
@@ -2803,4 +2817,4 @@ CREATE INDEX usergroup_user_resolved_usergroup ON icinga_usergroup_user_resolved
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (192, NOW());
+  VALUES (193, NOW());
