@@ -7,12 +7,49 @@ on:
 
 jobs:
   phpstan:
-    uses: icinga/github-actions/.github/workflows/phpstan.yml@main
-    with:
-      dependencies: |
-        {
-          "/icingaweb2"                             : "https://github.com/Icinga/icingaweb2.git",
-          "/usr/share/icingaweb2-modules/icingadb"  : "https://github.com/Icinga/icingadb-web.git",
-         "/usr/share/icingaweb2-modules/cube"       : "https://github.com/Icinga/icingaweb2-module-cube.git"
-         "/usr/share/icingaweb2-modules/incubator"  : "-b stable/0.22.0 https://github.com/Icinga/icingaweb2-module-incubator"
-        }
+    steps:
+      - name: Setup Incubator
+        run: |
+          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator /usr/share/icingaweb2-modules/incubator
+          cd /usr/share/icingaweb2-modules/incubator
+          composer require --no-update \
+          "gipfl/calendar": "dev-master as 99.x-dev" \
+          "gipfl/cli": "dev-master as 99.x-dev" \
+          "gipfl/curl": "dev-master as 99.x-dev" \
+          "gipfl/data-type": "dev-master as 99.x-dev" \
+          "gipfl/db-migration": "dev-master as 99.x-dev" \
+          "gipfl/diff": "dev-master as 99.x-dev" \
+          "gipfl/format": "dev-master as 99.x-dev" \
+          "gipfl/icinga-bundles": "dev-master as 99.x-dev" \
+          "gipfl/icinga-cli-daemon": "dev-master as 99.x-dev" \
+          "gipfl/icingaweb2": "dev-master as 99.x-dev" \
+          "gipfl/influxdb": "dev-master as 99.x-dev" \
+          "gipfl/json": "dev-master as 99.x-dev" \
+          "gipfl/linux-health": "dev-master as 99.x-dev" \
+          "gipfl/log": "dev-master as 99.x-dev" \
+          "gipfl/process": "dev-master as 99.x-dev" \
+          "gipfl/protocol-jsonrpc": "dev-master as 99.x-dev" \
+          "gipfl/protocol-netstring": "dev-master as 99.x-dev" \
+          "gipfl/react-utils": "dev-master as 99.x-dev" \
+          "gipfl/simple-daemon": "dev-master as 99.x-dev" \
+          "gipfl/socket": "dev-master as 99.x-dev" \
+          "gipfl/stream": "dev-master as 99.x-dev" \
+          "gipfl/systemd": "dev-master as 99.x-dev" \
+          "gipfl/translation": "dev-master as 99.x-dev" \
+          "gipfl/web": "dev-master as 99.x-dev" \
+          "gipfl/zfdb": "dev-master as 99.x-dev" \
+          "gipfl/zfdbstore": "dev-master as 99.x-dev"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          bin/make-release.sh snapshot
+
+      - name: real-stan
+        uses: icinga/github-actions/.github/workflows/phpstan.yml@main
+        with:
+          dependencies: |
+            {
+              "/icingaweb2"                             : "https://github.com/Icinga/icingaweb2.git",
+              "/usr/share/icingaweb2-modules/icingadb"  : "https://github.com/Icinga/icingadb-web.git",
+             "/usr/share/icingaweb2-modules/cube"       : "https://github.com/Icinga/icingaweb2-module-cube.git"
+             "/usr/share/icingaweb2-modules/incubator"  : "-b stable/0.22.0 https://github.com/Icinga/icingaweb2-module-incubator"
+            }
