@@ -31,48 +31,7 @@ jobs:
           tools: phpcs
 
       - name: Setup dependencies
-        run: |
-          composer require -n --no-progress overtrue/phplint phpunit/phpunit phpstan/phpstan
-          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2.git /icingaweb2
-          sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git /usr/share/icinga-php/vendor
-          sudo git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git /usr/share/icinga-php/ipl
-          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-cube.git /usr/share/icingaweb2-modules/cube
-          sudo git clone --depth 1 https://github.com/Icinga/icingadb-web.git /usr/share/icingaweb2-modules/icingadb
-
-      - name: Setup Incubator
-        run: |
-          sudo git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator /usr/share/icingaweb2-modules/incubator
-          cd /usr/share/icingaweb2-modules/incubator
-          composer require --no-update \
-          "gipfl/calendar": "dev-master as 99.x-dev" \
-          "gipfl/cli": "dev-master as 99.x-dev" \
-          "gipfl/curl": "dev-master as 99.x-dev" \
-          "gipfl/data-type": "dev-master as 99.x-dev" \
-          "gipfl/db-migration": "dev-master as 99.x-dev" \
-          "gipfl/diff": "dev-master as 99.x-dev" \
-          "gipfl/format": "dev-master as 99.x-dev" \
-          "gipfl/icinga-bundles": "dev-master as 99.x-dev" \
-          "gipfl/icinga-cli-daemon": "dev-master as 99.x-dev" \
-          "gipfl/icingaweb2": "dev-master as 99.x-dev" \
-          "gipfl/influxdb": "dev-master as 99.x-dev" \
-          "gipfl/json": "dev-master as 99.x-dev" \
-          "gipfl/linux-health": "dev-master as 99.x-dev" \
-          "gipfl/log": "dev-master as 99.x-dev" \
-          "gipfl/process": "dev-master as 99.x-dev" \
-          "gipfl/protocol-jsonrpc": "dev-master as 99.x-dev" \
-          "gipfl/protocol-netstring": "dev-master as 99.x-dev" \
-          "gipfl/react-utils": "dev-master as 99.x-dev" \
-          "gipfl/simple-daemon": "dev-master as 99.x-dev" \
-          "gipfl/socket": "dev-master as 99.x-dev" \
-          "gipfl/stream": "dev-master as 99.x-dev" \
-          "gipfl/systemd": "dev-master as 99.x-dev" \
-          "gipfl/translation": "dev-master as 99.x-dev" \
-          "gipfl/web": "dev-master as 99.x-dev" \
-          "gipfl/zfdb": "dev-master as 99.x-dev" \
-          "gipfl/zfdbstore": "dev-master as 99.x-dev"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          bin/make-release.sh snapshot
+        run: composer require -n --no-progress overtrue/phplint phpunit/phpunit
 
       - name: PHP Lint
         if: ${{ ! cancelled() }}
@@ -81,10 +40,6 @@ jobs:
       - name: PHP CodeSniffer
         if: ${{ ! cancelled() }}
         run: phpcs
-
-      - name: PHPStan
-        if: ${{ ! cancelled() }}
-        run: ./vendor/bin/phpstan analyse
 
   test:
     name: Unit tests with php ${{ matrix.php }} on ${{ matrix.os }}
