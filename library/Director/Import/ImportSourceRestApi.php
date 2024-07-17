@@ -273,11 +273,9 @@ class ImportSourceRestApi extends ImportSourceHook
                     ),
                 ]);
 
-                $passRequired = strlen($form->getSentOrObjectSetting('proxy_user')) > 0;
-
                 $form->addElement('storedPassword', 'proxy_pass', [
                     'label'    => $form->translate('Proxy Password'),
-                    'required' => $passRequired
+                    'required' => strlen((string) $form->getSentOrObjectSetting('proxy_user')) > 0
                 ]);
             }
         }
