@@ -1619,9 +1619,6 @@ CREATE TABLE import_row_modifier (
 );
 
 CREATE INDEX import_row_modifier_search_idx ON import_row_modifier (property_name);
-CREATE UNIQUE INDEX import_row_modifier_prio
-  ON import_row_modifier (source_id, priority);
-
 
 CREATE TABLE import_row_modifier_setting (
   row_modifier_id serial,
@@ -2637,7 +2634,6 @@ CREATE TABLE branched_icinga_service (
           ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX service_branch_object_name ON branched_icinga_service (branch_uuid, object_name);
 CREATE INDEX branched_service_search_object_name ON branched_icinga_service (object_name);
 CREATE INDEX branched_service_search_display_name ON branched_icinga_service (display_name);
 
