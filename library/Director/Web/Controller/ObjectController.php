@@ -218,12 +218,14 @@ abstract class ObjectController extends ActionController
         $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
             ->addBackToObjectLink();
 
-        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Templates'))) {
-            return;
-        }
+        if (! $object instanceof IcingaServiceSet) {
+            if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Templates'))) {
+                return;
+            }
 
-        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Apply Rules'))) {
-            return;
+            if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Apply Rules'))) {
+                return;
+            }
         }
 
         $form = IcingaCloneObjectForm::load()
