@@ -82,7 +82,6 @@ class Basket extends DbObject implements ExportInterface
         if (empty($objects)) {
             $this->chosenObjects = [];
         } else {
-            $this->chosenObjects = [];
             foreach ((array) $objects as $type => $object) {
                 $this->addObjects($type, $object);
             }
