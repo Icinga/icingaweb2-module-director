@@ -109,6 +109,12 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
 
         if (! empty($fieldsWithDataLists)) {
+            if ($this->db()->getDbType() === 'pgsql') {
+                $joinCondition = 'CAST(dds.setting_value AS INTEGER) = dde.list_id';
+            } else {
+                $joinCondition = 'dds.setting_value = dde.list_id';
+            }
+
             $dataListEntries = $db->select()->from(
                 ['dds' => 'director_datafield_setting'],
                 [
@@ -118,7 +124,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                 ]
             )->join(
                 ['dde' => 'director_datalist_entry'],
-                'dds.setting_value = dde.list_id',
+                $joinCondition,
                 []
             )->where('dds.datafield_id', array_keys($fieldsWithDataLists))
                 ->where('dds.setting_name', 'datalist_id');
