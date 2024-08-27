@@ -22,6 +22,9 @@ class CustomVarRenderer extends CustomVarRendererHook
     /** @var array Related datalists and their keys and values */
     protected $datalistMaps = [];
 
+    /** @var array Related dictionary field names */
+    protected $dictionaryNames = [];
+
     /**
      * Get a database connection to the director database
      *
@@ -85,6 +88,8 @@ class CustomVarRenderer extends CustomVarRendererHook
 
             if ($field->get('datatype') === 'Icinga\Module\Director\DataType\DataTypeDatalist') {
                 $fieldsWithDataLists[$field->get('id')] = $field;
+            } elseif ($field->get('datatype') === 'Icinga\Module\Director\DataType\DataTypeDictionary') {
+                $this->dictionaryNames[] = $field->get('varname');
             }
         }
 
@@ -136,6 +141,8 @@ class CustomVarRenderer extends CustomVarRendererHook
 
             if (isset($this->datalistMaps[$key][$value])) {
                 return $this->datalistMaps[$key][$value];
+            } elseif ($value !== null && in_array($key, $this->dictionaryNames)) {
+                return $this->renderDictionaryVal((array) $value);
             }
         }
 
@@ -149,5 +156,28 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
 
         return null;
+    }
+
+    /**
+     * Render the value of the dictionary
+     *
+     * @param array $value
+     *
+     * @return array
+     */
+    protected function renderDictionaryVal(array $value): array
+    {
+        $newValue = [];
+        foreach ($value as $key => $val) {
+            if (is_array($val)) {
+                foreach ($val as $subKey => $subVal) {
+                    $label = $this->renderCustomVarKey($subKey) ?? $subKey;
+                    $subVal = $this->renderCustomVarValue($subKey, $subVal) ?? $subVal;
+                    $newValue[$key][$label] = $subVal;
+                }
+            }
+        }
+
+        return $newValue;
     }
 }
