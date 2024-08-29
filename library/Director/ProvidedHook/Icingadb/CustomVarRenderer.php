@@ -6,9 +6,12 @@ use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaTemplateResolver;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
+use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Icingadb\Hook\CustomVarRendererHook;
 use Icinga\Module\Icingadb\Model\Host;
 use Icinga\Module\Icingadb\Model\Service;
@@ -72,11 +75,82 @@ class CustomVarRenderer extends CustomVarRendererHook
 
         try {
             $directorHostObj = IcingaHost::load($host->name, $db);
+            $directorServiceObj = null;
             if ($service !== null) {
-                $directorServiceObj = IcingaService::load([
-                    'host_id'     => $directorHostObj->get('id'),
-                    'object_name' => $service->name
-                ], $db);
+                $serviceOrigin = ['direct', 'applied', 'inherited', 'service-set'];
+                $serviceName = $service->name;
+                $i = 0;
+                do {
+                    if ($i > 3) {
+                        return false;
+                    } elseif ($serviceOrigin[$i] === 'direct') {
+                        $directorServiceObj = IcingaService::loadOptional([
+                            'host_id'     => $directorHostObj->get('id'),
+                            'object_name' => $serviceName
+                        ], $db);
+                    } elseif ($serviceOrigin[$i] === 'inherited') {
+                        $templateResolver =  new IcingaTemplateResolver($directorHostObj);
+
+                        $parentIds = $templateResolver->listParentIds();
+
+                        $query = $db->getDbAdapter()->select()->from('icinga_service')
+                            ->where('object_name = ?', $serviceName)
+                            ->where('host_id IN (?)', $parentIds);
+
+                        $directorServices = IcingaService::loadAll(
+                            $db,
+                            $query,
+                            'object_name'
+                        );
+
+                        $directorServiceObj = current($directorServices);
+                    } elseif ($serviceOrigin[$i] === 'applied') {
+                        $appliedFilterQuery = IcingaHostAppliedServicesTable::load($directorHostObj)->getQuery();
+
+                        foreach ($appliedFilterQuery->fetchAll() as $appliedService) {
+                            if ($appliedService->name === $serviceName) {
+                                $query = $db->getDbAdapter()->select()->from('icinga_service')
+                                    ->where('object_name = ?', $serviceName)
+                                    ->where("object_type = 'apply'")
+                                    ->where('assign_filter = ?', $appliedService->assign_filter);
+
+                                $directorAppliedServices = IcingaService::loadAll(
+                                    $db,
+                                    $query,
+                                    'object_name'
+                                );
+
+                                $directorServiceObj = current($directorAppliedServices);
+
+                                break;
+                            }
+                        }
+                    } elseif ($serviceOrigin[$i] === 'service-set') {
+                        $templateResolver =  new IcingaTemplateResolver($directorHostObj);
+
+                        $hostServiceSets = $directorHostObj->fetchServiceSets()
+                            + AppliedServiceSetLoader::fetchForHost($directorHostObj);
+
+                        $parents = $templateResolver->fetchParents();
+
+                        foreach ($parents as $parent) {
+                            $hostServiceSets += $parent->fetchServiceSets();
+                            $hostServiceSets += AppliedServiceSetLoader::fetchForHost($parent);
+                        }
+
+                        foreach ($hostServiceSets as $hostServiceSet) {
+                            foreach ($hostServiceSet->getServiceObjects() as $setServiceObject) {
+                                if ($setServiceObject->getObjectName() === $serviceName) {
+                                    $directorServiceObj = $setServiceObject;
+
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+
+                    $i++;
+                } while (! $directorServiceObj);
             }
         } catch (NotFoundError $_) {
             return false;
