@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -22,6 +23,7 @@ use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
+use Throwable;
 
 class CustomVarRenderer extends CustomVarRendererHook
 {
@@ -62,185 +64,208 @@ class CustomVarRenderer extends CustomVarRendererHook
 
     public function prefetchForObject(MonitoredObject $object)
     {
-        if ($object instanceof Host) {
-            $host = $object;
-            $service = null;
-        } elseif ($object instanceof Service) {
-            $host = $object->getHost();
-            $service = $object;
-        } else {
-            return false;
-        }
-
-        $db = $this->db();
-
         try {
-            $directorHostObj = IcingaHost::load($host->getName(), $db);
-            if ($service !== null) {
-                $serviceOrigin = ['direct', 'inherited', 'applied', 'service-set'];
-                $serviceName = $service->getName();
-                $i = 0;
-                $directorServiceObj = null;
-                do {
-                    if ($i > 3) {
-                        return false;
-                    } elseif ($serviceOrigin[$i] === 'direct') {
-                        $directorServiceObj = IcingaService::loadOptional([
-                            'host_id'     => $directorHostObj->get('id'),
-                            'object_name' => $serviceName
-                        ], $db);
-                    } elseif ($serviceOrigin[$i] == 'inherited') {
-                        $templateResolver =  new IcingaTemplateResolver($directorHostObj);
+            if ($object instanceof Host) {
+                $host = $object;
+                $service = null;
+            } elseif ($object instanceof Service) {
+                $host = $object->getHost();
+                $service = $object;
+            } else {
+                return false;
+            }
 
-                        $parentIds = $templateResolver->listParentIds();
+            $db = $this->db();
 
-                        $query = $db->getDbAdapter()->select()->from('icinga_service')
-                            ->where('object_name = ?', $serviceName)
-                            ->where('host_id IN (?)', $parentIds);
+            try {
+                $directorHostObj = IcingaHost::load($host->getName(), $db);
+                if ($service !== null) {
+                    $serviceOrigin = ['direct', 'inherited', 'applied', 'service-set'];
+                    $serviceName = $service->getName();
+                    $i = 0;
+                    $directorServiceObj = null;
+                    do {
+                        if ($i > 3) {
+                            Logger::error("Failed to find service %s on host %s", $serviceName, $host->getName());
 
-                        $directorServices = IcingaService::loadAll(
-                            $db,
-                            $query,
-                            'object_name'
-                        );
+                            return false;
+                        } elseif ($serviceOrigin[$i] === 'direct') {
+                            $directorServiceObj = IcingaService::loadOptional([
+                                'host_id'     => $directorHostObj->get('id'),
+                                'object_name' => $serviceName
+                            ], $db);
+                        } elseif ($serviceOrigin[$i] == 'inherited') {
+                            $templateResolver =  new IcingaTemplateResolver($directorHostObj);
 
-                        $directorServiceObj = current($directorServices);
-                    } elseif ($serviceOrigin[$i] === 'applied') {
-                        $appliedFilterQuery = IcingaHostAppliedServicesTable::load($directorHostObj)->getQuery();
+                            $parentIds = $templateResolver->listParentIds();
 
-                        foreach ($appliedFilterQuery->fetchAll() as $appliedService) {
-                            if ($appliedService->name === $serviceName) {
-                                $query = $db->getDbAdapter()->select()->from('icinga_service')
-                                    ->where('object_name = ?', $serviceName)
-                                    ->where("object_type = 'apply'")
-                                    ->where('assign_filter = ?', $appliedService->assign_filter);
+                            $query = $db->getDbAdapter()->select()->from('icinga_service')
+                                ->where('object_name = ?', $serviceName)
+                                ->where('host_id IN (?)', $parentIds);
 
-                                $directorAppliedServices = IcingaService::loadAll(
-                                    $db,
-                                    $query,
-                                    'object_name'
-                                );
+                            $directorServices = IcingaService::loadAll(
+                                $db,
+                                $query,
+                                'object_name'
+                            );
 
-                                $directorServiceObj = current($directorAppliedServices);
+                            $directorServiceObj = current($directorServices);
+                        } elseif ($serviceOrigin[$i] === 'applied') {
+                            $appliedFilterQuery = IcingaHostAppliedServicesTable::load($directorHostObj)->getQuery();
 
-                                break;
-                            }
-                        }
-                    } elseif ($serviceOrigin[$i] === 'service-set') {
-                        $templateResolver =  new IcingaTemplateResolver($directorHostObj);
+                            foreach ($appliedFilterQuery->fetchAll() as $appliedService) {
+                                if ($appliedService->name === $serviceName) {
+                                    $query = $db->getDbAdapter()->select()->from('icinga_service')
+                                        ->where('object_name = ?', $serviceName)
+                                        ->where("object_type = 'apply'")
+                                        ->where('assign_filter = ?', $appliedService->assign_filter);
 
-                        $hostServiceSets = $directorHostObj->fetchServiceSets()
-                            + AppliedServiceSetLoader::fetchForHost($directorHostObj);
+                                    $directorAppliedServices = IcingaService::loadAll(
+                                        $db,
+                                        $query,
+                                        'object_name'
+                                    );
 
-                        $parents = $templateResolver->fetchParents();
+                                    $directorServiceObj = current($directorAppliedServices);
 
-                        foreach ($parents as $parent) {
-                            $hostServiceSets += $parent->fetchServiceSets();
-                            $hostServiceSets += AppliedServiceSetLoader::fetchForHost($parent);
-                        }
-
-                        foreach ($hostServiceSets as $hostServiceSet) {
-                            foreach ($hostServiceSet->getServiceObjects() as $setServiceObject) {
-                                if ($setServiceObject->getObjectName() === $serviceName) {
-                                    $directorServiceObj = $setServiceObject;
-
-                                    break 2;
+                                    break;
                                 }
                             }
+                        } elseif ($serviceOrigin[$i] === 'service-set') {
+                            $templateResolver =  new IcingaTemplateResolver($directorHostObj);
+
+                            $hostServiceSets = $directorHostObj->fetchServiceSets()
+                                + AppliedServiceSetLoader::fetchForHost($directorHostObj);
+
+                            $parents = $templateResolver->fetchParents();
+
+                            foreach ($parents as $parent) {
+                                $hostServiceSets += $parent->fetchServiceSets();
+                                $hostServiceSets += AppliedServiceSetLoader::fetchForHost($parent);
+                            }
+
+                            foreach ($hostServiceSets as $hostServiceSet) {
+                                foreach ($hostServiceSet->getServiceObjects() as $setServiceObject) {
+                                    if ($setServiceObject->getObjectName() === $serviceName) {
+                                        $directorServiceObj = $setServiceObject;
+
+                                        break 2;
+                                    }
+                                }
+                            }
+                        } else {
+                            return false;
                         }
-                    } else {
-                        return false;
-                    }
 
-                    $i++;
-                } while (! $directorServiceObj);
+                        $i++;
+                    } while (! $directorServiceObj);
+                }
+            } catch (NotFoundError $_) {
+                if ($service !== null) {
+                    Logger::error("Failed to find service '%s' on host '%s'", $service->getName(), $host->getName());
+                } else {
+                    Logger::error("Failed to find host '%s'", $host->getName());
+                }
+
+                return false;
             }
-        } catch (NotFoundError $_) {
-            return false;
-        }
 
-        if ($service === null) {
-            $fields = (new IcingaObjectFieldLoader($directorHostObj))->getFields();
-        } else {
-            $fields = (new IcingaObjectFieldLoader($directorServiceObj))->getFields();
-        }
-
-        if (empty($fields)) {
-            return false;
-        }
-
-        $fieldsWithDataLists = [];
-        foreach ($fields as $field) {
-            $this->fieldConfig[$field->get('varname')] = [
-                'label'      => $field->get('caption'),
-                'group'      => $field->getCategoryName(),
-                'visibility' => $field->getSetting('visibility')
-            ];
-
-            if ($field->get('datatype') === 'Icinga\Module\Director\DataType\DataTypeDatalist') {
-                $fieldsWithDataLists[$field->get('id')] = $field;
-            } elseif ($field->get('datatype') === 'Icinga\Module\Director\DataType\DataTypeDictionary') {
-                $this->dictionaryNames[] = $field->get('varname');
-            }
-        }
-
-        if (! empty($fieldsWithDataLists)) {
-            if ($this->db()->getDbType() === 'pgsql') {
-                $joinCondition = 'CAST(dds.setting_value AS INTEGER) = dde.list_id';
+            if ($service === null) {
+                $fields = (new IcingaObjectFieldLoader($directorHostObj))->getFields();
             } else {
-                $joinCondition = 'dds.setting_value = dde.list_id';
+                $fields = (new IcingaObjectFieldLoader($directorServiceObj))->getFields();
             }
 
-            $dataListEntries = $db->select()->from(
-                ['dds' => 'director_datafield_setting'],
-                [
-                    'dds.datafield_id',
-                    'dde.entry_name',
-                    'dde.entry_value'
-                ]
-            )->join(
-                ['dde' => 'director_datalist_entry'],
-                $joinCondition,
-                []
-            )->where('dds.datafield_id', array_keys($fieldsWithDataLists))
-                ->where('dds.setting_name', 'datalist_id');
-
-            foreach ($dataListEntries as $dataListEntry) {
-                $field = $fieldsWithDataLists[$dataListEntry->datafield_id];
-                $this->datalistMaps[$field->get('varname')][$dataListEntry->entry_name] = $dataListEntry->entry_value;
+            if (empty($fields)) {
+                return false;
             }
+
+            $fieldsWithDataLists = [];
+            foreach ($fields as $field) {
+                $this->fieldConfig[$field->get('varname')] = [
+                    'label'      => $field->get('caption'),
+                    'group'      => $field->getCategoryName(),
+                    'visibility' => $field->getSetting('visibility')
+                ];
+
+                if ($field->get('datatype') === 'Icinga\Module\Director\DataType\DataTypeDatalist') {
+                    $fieldsWithDataLists[$field->get('id')] = $field;
+                } elseif ($field->get('datatype') === 'Icinga\Module\Director\DataType\DataTypeDictionary') {
+                    $this->dictionaryNames[] = $field->get('varname');
+                }
+            }
+
+            if (! empty($fieldsWithDataLists)) {
+                if ($this->db()->getDbType() === 'pgsql') {
+                    $joinCondition = 'CAST(dds.setting_value AS INTEGER) = dde.list_id';
+                } else {
+                    $joinCondition = 'dds.setting_value = dde.list_id';
+                }
+
+                $dataListEntries = $db->select()->from(
+                    ['dds' => 'director_datafield_setting'],
+                    [
+                        'dds.datafield_id',
+                        'dde.entry_name',
+                        'dde.entry_value'
+                    ]
+                )->join(
+                    ['dde' => 'director_datalist_entry'],
+                    $joinCondition,
+                    []
+                )->where('dds.datafield_id', array_keys($fieldsWithDataLists))
+                    ->where('dds.setting_name', 'datalist_id');
+
+                foreach ($dataListEntries as $dataListEntry) {
+                    $field = $fieldsWithDataLists[$dataListEntry->datafield_id];
+                    $this->datalistMaps[$field->get('varname')][$dataListEntry->entry_name]
+                        = $dataListEntry->entry_value;
+                }
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            Logger::error("%s\n%s", $e, $e->getTraceAsString());
+
+            return false;
         }
-
-        return true;
     }
 
     public function renderCustomVarKey($key)
     {
-        if (isset($this->fieldConfig[$key]['label'])) {
-            return new HtmlElement(
-                'span',
-                Attributes::create(['title' => $this->fieldConfig[$key]['label'] . " [$key]"]),
-                Text::create($this->fieldConfig[$key]['label'])
-            );
+        try {
+            if (isset($this->fieldConfig[$key]['label'])) {
+                return new HtmlElement(
+                    'span',
+                    Attributes::create(['title' => $this->fieldConfig[$key]['label'] . " [$key]"]),
+                    Text::create($this->fieldConfig[$key]['label'])
+                );
+            }
+        } catch (Throwable $e) {
+            Logger::error("%s\n%s", $e, $e->getTraceAsString());
         }
     }
 
     public function renderCustomVarValue($key, $value)
     {
-        if (isset($this->fieldConfig[$key])) {
-            if ($this->fieldConfig[$key]['visibility'] === 'hidden') {
-                return '***';
-            }
+        try {
+            if (isset($this->fieldConfig[$key])) {
+                if ($this->fieldConfig[$key]['visibility'] === 'hidden') {
+                    return '***';
+                }
 
-            if (isset($this->datalistMaps[$key][$value])) {
-                return new HtmlElement(
-                    'span',
-                    Attributes::create(['title' => $this->datalistMaps[$key][$value] . " [$value]"]),
-                    Text::create($this->datalistMaps[$key][$value])
-                );
-            } elseif ($value !== null && in_array($key, $this->dictionaryNames)) {
-                return $this->renderDictionaryVal($key, (array) $value);
+                if (isset($this->datalistMaps[$key][$value])) {
+                    return new HtmlElement(
+                        'span',
+                        Attributes::create(['title' => $this->datalistMaps[$key][$value] . " [$value]"]),
+                        Text::create($this->datalistMaps[$key][$value])
+                    );
+                } elseif ($value !== null && in_array($key, $this->dictionaryNames)) {
+                    return $this->renderDictionaryVal($key, (array) $value);
+                }
             }
+        } catch (Throwable $e) {
+            Logger::error("%s\n%s", $e, $e->getTraceAsString());
         }
 
         return null;
