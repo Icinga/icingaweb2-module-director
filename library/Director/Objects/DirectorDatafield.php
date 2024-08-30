@@ -74,7 +74,8 @@ class DirectorDatafield extends DbObjectWithSettings
         if ($this->category) {
             return $this->category;
         } elseif ($id = $this->get('category_id')) {
-            return DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
+            $this->category = DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
+            return $this->category;
         } else {
             return null;
         }

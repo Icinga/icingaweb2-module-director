@@ -241,11 +241,6 @@ parameters:
 			path: application/views/helpers/FormStoredPassword.php
 
 		-
-			message: "#^Binary operation \"\\*\\=\" between string and 1024 results in an error\\.$#"
-			count: 1
-			path: library/Director/Application/MemoryLimit.php
-
-		-
 			message: "#^Constructor of class Icinga\\\\Module\\\\Director\\\\Core\\\\RestApiClient has an unused parameter \\$cn\\.$#"
 			count: 1
 			path: library/Director/Core/RestApiClient.php
@@ -394,21 +389,6 @@ parameters:
 			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getRequest\\(\\)\\.$#"
 			count: 1
 			path: library/Director/IcingaConfig/AgentWizard.php
-
-		-
-			message: "#^Binary operation \"\\*\" between string and 3600 results in an error\\.$#"
-			count: 1
-			path: library/Director/IcingaConfig/IcingaConfigHelper.php
-
-		-
-			message: "#^Binary operation \"\\*\" between string and 60 results in an error\\.$#"
-			count: 1
-			path: library/Director/IcingaConfig/IcingaConfigHelper.php
-
-		-
-			message: "#^Binary operation \"\\*\" between string and 86400 results in an error\\.$#"
-			count: 1
-			path: library/Director/IcingaConfig/IcingaConfigHelper.php
 
 		-
 			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Form\\\\QuickForm\\:\\:getSentOrObjectSetting\\(\\)\\.$#"
