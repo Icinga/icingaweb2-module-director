@@ -24,6 +24,7 @@ use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\IcingaWeb2\Widget\Tabs;
+use ipl\Html\Text;
 
 class ActivityLogInfo extends HtmlDocument
 {
@@ -126,6 +127,26 @@ class ActivityLogInfo extends HtmlDocument
 
         $this->getTabs()->activate($tabName);
         $this->add($this->getInfoTable());
+
+        if ($this->entry->object_type === 'icinga_host') {
+            $newBlacklistedService = $this->newObject()->vars()->get('blacklisted_service');
+            $oldBlackListedService = $this->oldObject()->vars()->get('blacklisted_service');
+            $action = $newBlacklistedService !== null ? 'deactivated' : 'reactivated';
+
+            if ($newBlacklistedService || $oldBlackListedService) {
+                $this->addHtml(
+                    new HtmlElement('div', null, new Text(sprintf(
+                        'Service %s has been %s on host %s',
+                        $newBlacklistedService ?? $oldBlackListedService,
+                        $action,
+                        $this->newObject()->getObjectName()
+                    )))
+                );
+
+                return $this;
+            }
+        }
+
         if ($tabName === 'old') {
             // $title = sprintf('%s former config', $this->entry->object_name);
             $diffs = IcingaConfigDiff::getDiffs($this->oldConfig(), $this->emptyConfig());
@@ -571,7 +592,14 @@ class ActivityLogInfo extends HtmlDocument
             $this->translate('Checksum'),
             $entry->checksum
         );
-        if ($this->entry->old_properties) {
+
+        if (
+            $this->entry->old_properties
+            && (
+                $this->newObject()->vars()->get('blacklisted_service') === null
+                && $this->oldObject()->vars()->get('blacklisted_service') === null
+            )
+        ) {
             $table->addNameValueRow(
                 $this->translate('Actions'),
                 $this->getRestoreForm()
