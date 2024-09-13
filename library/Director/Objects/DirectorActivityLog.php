@@ -173,6 +173,44 @@ class DirectorActivityLog extends DbObject
         return static::create($data)->store($db);
     }
 
+    public static function logServiceBlacklist(IcingaHost $host, Db $db, bool $blacklist = true)
+    {
+        $name = $host->getObjectName();
+        $type = $host->getTableName();
+
+        if ($blacklist) {
+            $oldProps = json_encode($host->getPlainUnmodifiedObject());
+            $newProps = $host->toJson(null, true);
+        } else {
+            $oldProps = $host->toJson(null, true);
+            $newProps = json_encode($host->getPlainUnmodifiedObject());
+        }
+
+        $data = [
+            'object_name'           => $name,
+            'action_name'           => self::ACTION_MODIFY,
+            'author'                => static::username(),
+            'object_type'           => $type,
+            'old_properties'        => $oldProps,
+            'new_properties'        => $newProps,
+            'change_time'           => date('Y-m-d H:i:s'),
+            'parent_checksum'       => $db->getLastActivityChecksum()
+        ];
+
+        $data['checksum'] = sha1(json_encode($data), true);
+        $data['parent_checksum'] = hex2bin($data['parent_checksum']);
+
+        static::audit($db, [
+            'action'      => self::ACTION_MODIFY,
+            'object_type' => $type,
+            'object_name' => $name,
+            'old_props'   => $oldProps,
+            'new_props'   => $newProps
+        ]);
+
+        return static::create($data)->store($db);
+    }
+
     public static function logRemoval(IcingaObject $object, Db $db)
     {
         $name = $object->getObjectName();

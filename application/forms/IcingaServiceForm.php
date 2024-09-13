@@ -9,6 +9,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -286,6 +287,9 @@ class IcingaServiceForm extends DirectorObjectForm
             'host_id'    => $host->get('id'),
             'service_id' => $service->get('id')
         ])) {
+            $host->vars()->set('blacklisted_service', $service->getObjectName());
+            DirectorActivityLog::logServiceBlacklist($host, $this->getDb());
+
             $msg = sprintf(
                 $this->translate('%s has been deactivated on %s'),
                 $service->getObjectName(),
@@ -327,6 +331,9 @@ class IcingaServiceForm extends DirectorObjectForm
                 $service->getObjectName(),
                 $host->getObjectName()
             );
+
+            $host->vars()->set('blacklisted_service', $service->getObjectName());
+            DirectorActivityLog::logServiceBlacklist($host, $this->getDb(), false);
             $this->redirectOnSuccess($msg);
         }
     }
