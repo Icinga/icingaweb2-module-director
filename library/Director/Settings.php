@@ -12,6 +12,7 @@ class Settings
 
     protected $defaults = [
         'default_global_zone'              => 'director-global',
+        'default_group_behaviour'          => 'assign',
         'icinga_package_name'              => 'director',
         'config_format'                    => 'v2',
         'override_services_varname'        => '_override_servicevars',
