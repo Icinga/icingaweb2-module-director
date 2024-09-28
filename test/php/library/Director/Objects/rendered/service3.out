@@ -1,4 +1,5 @@
 apply Service "___TEST___service_$not_replaced$" {
+    name = "___TEST___service_" + not_replaced
     display_name = "Service: " + host.vars.replaced
     assign where match("127.*", host.address)
     vars.custom_var = "$host.vars.replaced$"

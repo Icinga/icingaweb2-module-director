@@ -346,20 +346,22 @@ class IcingaService extends IcingaObject implements ExportInterface
      */
     protected function renderObjectHeader()
     {
-        if ($this->isApplyRule()
-            && !$this->hasBeenAssignedToHostTemplate()
-            && $this->get('apply_for') !== null
-        ) {
-            $name = $this->getObjectName();
-            $extraName = '';
+        $name = $this->getObjectName();
+        $extraName = '';
 
+        if ($this->isApplyRule()) {
             if (c::stringHasMacro($name)) {
                 $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
                 $name = '';
             } elseif ($name !== '') {
                 $name = ' ' . c::renderString($name);
             }
+        }
 
+        if ($this->isApplyRule()
+            && !$this->hasBeenAssignedToHostTemplate()
+            && $this->get('apply_for') !== null
+        ) {
             return sprintf(
                 "%s %s%s for (config in %s) {\n",
                 $this->getObjectTypeName(),
@@ -369,7 +371,7 @@ class IcingaService extends IcingaObject implements ExportInterface
             ) . $extraName;
         }
 
-        return parent::renderObjectHeader();
+        return parent::renderObjectHeader() . $extraName;
     }
 
     /**
