@@ -16,7 +16,7 @@ class SyncRunDetails extends NameValueTable
 {
     use TranslationHelper;
 
-    const URL_ACTIVITIES = 'director/config/activities';
+    public const URL_ACTIVITIES = 'director/config/activities';
 
     /** @var SyncRun */
     protected $run;

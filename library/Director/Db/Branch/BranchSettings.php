@@ -12,11 +12,11 @@ use function in_array;
 class BranchSettings
 {
     // TODO: Ranges is weird. key = scheduled_downtime_id, range_type, range_key
-    const ENCODED_ARRAYS = ['imports', 'groups', 'ranges', 'users', 'usergroups'];
+    public const ENCODED_ARRAYS = ['imports', 'groups', 'ranges', 'users', 'usergroups'];
 
-    const ENCODED_DICTIONARIES = ['vars', 'arguments'];
+    public const ENCODED_DICTIONARIES = ['vars', 'arguments'];
 
-    const BRANCH_SPECIFIC_PROPERTIES = [
+    public const BRANCH_SPECIFIC_PROPERTIES = [
         'uuid',
         'branch_uuid',
         'branch_created',
@@ -24,12 +24,12 @@ class BranchSettings
         'set_null',
     ];
 
-    const BRANCH_BOOLEANS = [
+    public const BRANCH_BOOLEANS = [
         'branch_created',
         'branch_deleted',
     ];
 
-    const RELATED_SETS = [
+    public const RELATED_SETS = [
         'types',
         'states',
     ];

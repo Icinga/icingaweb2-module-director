@@ -4,7 +4,7 @@ namespace Icinga\Module\Director;
 
 class PlainObjectRenderer
 {
-    const INDENTATION = '  ';
+    public const INDENTATION = '  ';
 
     public static function render($object)
     {

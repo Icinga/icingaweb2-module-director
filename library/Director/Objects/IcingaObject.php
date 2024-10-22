@@ -26,8 +26,8 @@ use RuntimeException;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
-    const RESOLVE_ERROR = '(unable to resolve)';
-    const ALL_NON_GLOBAL_ZONES = '(all non-global zones)';
+    public const RESOLVE_ERROR = '(unable to resolve)';
+    public const ALL_NON_GLOBAL_ZONES = '(all non-global zones)';
 
     protected $keyName = 'object_name';
 

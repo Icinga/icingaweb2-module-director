@@ -13,5 +13,5 @@ class Restriction
     public const SCHEDULED_DOWNTIME_APPLY_FILTER_BY_NAME = 'director/scheduled-downtime/apply/filter-by-name';
     public const SERVICE_APPLY_FILTER_BY_NAME = 'director/service/apply/filter-by-name';
     public const SERVICE_SET_FILTER_BY_NAME = 'director/service_set/filter-by-name';
-    const DB_RESOURCE = 'director/db_resource';
+    public const DB_RESOURCE = 'director/db_resource';
 }

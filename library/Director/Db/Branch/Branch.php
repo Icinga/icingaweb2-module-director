@@ -18,7 +18,7 @@ use stdClass;
  */
 class Branch
 {
-    const PREFIX_SYNC_PREVIEW = '/syncpreview';
+    public const PREFIX_SYNC_PREVIEW = '/syncpreview';
 
     /** @var UuidInterface|null */
     protected $branchUuid;

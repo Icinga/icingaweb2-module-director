@@ -11,7 +11,7 @@ use Iterator;
 
 class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 {
-    const COMMENT_DSL_UNSUPPORTED = '/* Icinga 2 does not export DSL function bodies via API */';
+    public const COMMENT_DSL_UNSUPPORTED = '/* Icinga 2 does not export DSL function bodies via API */';
 
     /** @var IcingaCommandArgument[] */
     protected $storedArguments = [];

@@ -11,9 +11,9 @@ use Zend_Db_Select as ZfSelect;
 
 class IcingaObjectFilterHelper
 {
-    const INHERIT_DIRECT = 'direct';
-    const INHERIT_INDIRECT = 'indirect';
-    const INHERIT_DIRECT_OR_INDIRECT = 'total';
+    public const INHERIT_DIRECT = 'direct';
+    public const INHERIT_INDIRECT = 'indirect';
+    public const INHERIT_DIRECT_OR_INDIRECT = 'total';
 
     /**
      * @param IcingaObject|int|string $id

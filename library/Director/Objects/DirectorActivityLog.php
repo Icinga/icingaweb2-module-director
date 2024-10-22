@@ -11,12 +11,12 @@ use stdClass;
 
 class DirectorActivityLog extends DbObject
 {
-    const ACTION_CREATE = 'create';
-    const ACTION_DELETE = 'delete';
-    const ACTION_MODIFY = 'modify';
+    public const ACTION_CREATE = 'create';
+    public const ACTION_DELETE = 'delete';
+    public const ACTION_MODIFY = 'modify';
 
     /** @deprecated */
-    const AUDIT_REMOVE = 'remove';
+    public const AUDIT_REMOVE = 'remove';
 
     protected $table = 'director_activity_log';
 

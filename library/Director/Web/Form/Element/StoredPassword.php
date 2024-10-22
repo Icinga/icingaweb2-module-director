@@ -31,7 +31,7 @@ use Zend_Form_Element_Text as ZfText;
  */
 class StoredPassword extends ZfText
 {
-    const UNCHANGED = '__UNCHANGED_VALUE__';
+    public const UNCHANGED = '__UNCHANGED_VALUE__';
 
     public $helper = 'formStoredPassword';
 
