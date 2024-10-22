@@ -298,18 +298,20 @@ class IcingaConfigHelper
                 ));
             }
 
+            $duration = (int) $m[1];
+
             switch ($m[2]) {
                 case 'd':
-                    $value += $m[1] * 86400;
+                    $value += $duration * 86400;
                     break;
                 case 'h':
-                    $value += $m[1] * 3600;
+                    $value += $duration * 3600;
                     break;
                 case 'm':
-                    $value += $m[1] * 60;
+                    $value += $duration * 60;
                     break;
                 default:
-                    $value += (int) $m[1];
+                    $value += $duration;
             }
         }
 
