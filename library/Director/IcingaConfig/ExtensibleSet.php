@@ -46,7 +46,7 @@ class ExtensibleSet
 
     public static function forIcingaObject(IcingaObject $object, $propertyName)
     {
-        $set = new static;
+        $set = new static();
         $set->object = $object;
         $set->propertyName = $propertyName;
 
@@ -118,7 +118,7 @@ class ExtensibleSet
         if ($this->fromDb === null) {
             return null;
         }
-        
+
         $old = $this->fromDb;
 
         if ($old['override'] !== null) {
@@ -164,7 +164,8 @@ class ExtensibleSet
 
             return false;
         } else {
-            if ($this->ownValues === null
+            if (
+                $this->ownValues === null
                 && empty($this->plusValues)
                 && empty($this->minusValues)
             ) {

@@ -342,7 +342,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
     protected function getGroupClass()
     {
-        return __NAMESPACE__ . '\\Icinga' .ucfirst($this->object->getShortTableName()) . 'Group';
+        return __NAMESPACE__ . '\\Icinga' . ucfirst($this->object->getShortTableName()) . 'Group';
     }
 
     public static function loadForStoredObject(IcingaObject $object)
@@ -380,7 +380,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $type = $this->object->getLegacyObjectType();
-        return c1::renderKeyValue($type.'groups', c1::renderArray($groups));
+        return c1::renderKeyValue($type . 'groups', c1::renderArray($groups));
     }
 
     public function __toString()

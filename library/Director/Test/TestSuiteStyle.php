@@ -59,7 +59,7 @@ class TestSuiteStyle extends TestSuite
 
         `$cmd`;
         echo $cmd . "\n";
-        echo $out ."\n";
+        echo $out . "\n";
         echo file_get_contents($out);
         unlink($out);
     }

@@ -209,7 +209,8 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addGroupsElement()
     {
-        if ($this->hasHostGroupRestriction()
+        if (
+            $this->hasHostGroupRestriction()
             && ! $this->getAuth()->hasPermission(Permission::GROUPS_FOR_RESTRICTED_HOSTS)
         ) {
             return $this;

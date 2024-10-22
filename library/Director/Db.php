@@ -528,7 +528,7 @@ class Db extends DbConnection
     {
         $filters = array(
             'methods_execute IN (?)' => array('PluginCheck', 'IcingaCheck'),
-            
+
         );
         return $this->enumIcingaObjects('command', $filters);
     }

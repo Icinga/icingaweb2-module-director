@@ -54,7 +54,8 @@ class IcingaCloneObjectForm extends DirectorForm
             ));
         }
 
-        if (!$branchOnly && ($this->object instanceof IcingaHost
+        if (
+            !$branchOnly && ($this->object instanceof IcingaHost
             || $this->object instanceof IcingaServiceSet)
         ) {
             $this->addBoolean('clone_services', [
@@ -97,7 +98,8 @@ class IcingaCloneObjectForm extends DirectorForm
             }
         }
 
-        if (($this->object->isTemplate() || $this->object instanceof IcingaCommand)
+        if (
+            ($this->object->isTemplate() || $this->object instanceof IcingaCommand)
             && $this->object->supportsFields()
         ) {
             $this->addBoolean('clone_fields', [

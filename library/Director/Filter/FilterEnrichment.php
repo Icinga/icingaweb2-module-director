@@ -16,7 +16,8 @@ class FilterEnrichment
             }
         } elseif ($filter instanceof FilterChain) {
             foreach ($filter->filters() as $subFilter) {
-                if ($subFilter instanceof FilterExpression
+                if (
+                    $subFilter instanceof FilterExpression
                     && CidrExpression::isCidrFormat($subFilter->getExpression())
                 ) {
                     $filter->replaceById($subFilter->getId(), CidrExpression::fromExpression($subFilter));

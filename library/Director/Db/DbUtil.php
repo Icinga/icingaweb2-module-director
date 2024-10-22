@@ -8,6 +8,7 @@ use gipfl\ZfDb\Expr;
 use Zend_Db_Adapter_Abstract;
 use Zend_Db_Adapter_Pdo_Pgsql;
 use Zend_Db_Expr;
+
 use function bin2hex;
 use function is_array;
 use function is_resource;

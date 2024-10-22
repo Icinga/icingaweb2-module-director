@@ -144,7 +144,8 @@ class AssignRenderer
 
         if (is_string($rawExpression) && ctype_digit($rawExpression)) {
             // TODO: doing this for compat reasons, should work for all filters
-            if ($filter instanceof FilterEqualOrGreaterThan
+            if (
+                $filter instanceof FilterEqualOrGreaterThan
                 || $filter instanceof FilterGreaterThan
                 || $filter instanceof FilterEqualOrLessThan
                 || $filter instanceof FilterLessThan

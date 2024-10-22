@@ -174,7 +174,8 @@ abstract class ObjectController extends ActionController
         $this->tabs()->activate('modify');
         $this->addObjectTitle();
         // Hint: Service Sets are 'templates' (as long as not being assigned to a host
-        if ($this->getTableName() !== 'icinga_service_set'
+        if (
+            $this->getTableName() !== 'icinga_service_set'
             && $object->isTemplate()
             && $this->showNotInBranch($this->translate('Modifying Templates'))
         ) {
@@ -460,7 +461,8 @@ abstract class ObjectController extends ActionController
 
     protected function redirectToPreviewForExternals()
     {
-        if ($this->object
+        if (
+            $this->object
             && $this->object->isExternal()
             && ! in_array($this->object->getShortTableName(), $this->allowedExternals)
         ) {
@@ -566,7 +568,8 @@ abstract class ObjectController extends ActionController
         }
         if ($showHint) {
             $hasPreferredBranch = $this->hasPreferredBranch();
-            if (($hasPreferredBranch || $branch->isBranch())
+            if (
+                ($hasPreferredBranch || $branch->isBranch())
                 && $object->isObject()
                 && ! $this->getRequest()->isApiRequest()
             ) {

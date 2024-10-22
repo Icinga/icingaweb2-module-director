@@ -63,7 +63,8 @@ class FormFieldSuggestion
                     }
                 }
 
-                if (($arg->set_if_format === 'string' || $arg->set_if_format === null)
+                if (
+                    ($arg->set_if_format === 'string' || $arg->set_if_format === null)
                     && $val = self::getMacroIfStringIsSingleMacro($arg->set_if)
                 ) {
                     $this->addSuggestion($val, $arg->description, $this->booleans);

@@ -43,9 +43,9 @@ abstract class IntlZfQueryBasedTable extends ZfQueryBasedTable
         $timeFormatter = $this->getDateFormatter();
 
         $timeFormatter->setPattern(
-            in_array(Locale::getDefault(), ['en_US', 'en_US.UTF-8']) ? 'h:mm:ss a': 'H:mm:ss'
+            in_array(Locale::getDefault(), ['en_US', 'en_US.UTF-8']) ? 'h:mm:ss a' : 'H:mm:ss'
         );
-        
+
         return $timeFormatter->format((new DateTime())->setTimestamp($timeStamp));
     }
 }

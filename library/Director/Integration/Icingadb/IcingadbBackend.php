@@ -47,7 +47,8 @@ class IcingadbBackend implements BackendInterface
 
     public function canModifyHost(?string $hostName): bool
     {
-        if ($hostName === null
+        if (
+            $hostName === null
             || ! $this->getAuth()->hasPermission(Permission::ICINGADB_HOSTS)
         ) {
             return false;
@@ -60,7 +61,8 @@ class IcingadbBackend implements BackendInterface
 
     public function canModifyService(?string $hostName, ?string $serviceName): bool
     {
-        if ($hostName === null
+        if (
+            $hostName === null
             || $serviceName === null
             || ! $this->getAuth()->hasPermission(Permission::ICINGADB_SERVICES)
         ) {

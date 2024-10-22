@@ -1,7 +1,6 @@
 <?php
 
 use Icinga\Application\Icinga;
-
 use Icinga\Exception\IcingaException;
 use Icinga\Web\Url;
 

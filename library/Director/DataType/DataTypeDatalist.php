@@ -76,10 +76,12 @@ class DataTypeDatalist extends DataTypeHook
      */
     protected function createEntryIfNotExists(Db $db, $listId, $entry)
     {
-        if (! DirectorDatalistEntry::exists([
+        if (
+            ! DirectorDatalistEntry::exists([
             'list_id'    => $listId,
             'entry_name' => $entry,
-        ], $db)) {
+            ], $db)
+        ) {
             DirectorDatalistEntry::create([
                 'list_id'     => $listId,
                 'entry_name'  => $entry,

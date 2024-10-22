@@ -35,19 +35,20 @@ class MemoryLimit
         $val = trim($string);
 
         if (preg_match('/^(\d+)([KMG])$/', $val, $m)) {
-            $val = $m[1];
+            $val = (int) $m[1];
+
             switch ($m[2]) {
                 case 'G':
                     $val *= 1024;
-                // Intentional fall-through
+                    // no break
                 case 'M':
                     $val *= 1024;
-                // Intentional fall-through
+                    // no break
                 case 'K':
                     $val *= 1024;
             }
         }
 
-        return intval($val);
+        return (int) $val;
     }
 }

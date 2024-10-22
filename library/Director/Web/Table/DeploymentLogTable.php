@@ -54,7 +54,8 @@ class DeploymentLogTable extends IntlZfQueryBasedTable
             $classes = ['notsent'];
         }
 
-        if ($this->activeStageName !== null
+        if (
+            $this->activeStageName !== null
             && $row->stage_name === $this->activeStageName
         ) {
             $classes[] = 'running';

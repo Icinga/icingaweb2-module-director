@@ -11,7 +11,7 @@ use Iterator;
 
 class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 {
-    const COMMENT_DSL_UNSUPPORTED = '/* Icinga 2 does not export DSL function bodies via API */';
+    public const COMMENT_DSL_UNSUPPORTED = '/* Icinga 2 does not export DSL function bodies via API */';
 
     /** @var IcingaCommandArgument[] */
     protected $storedArguments = [];
@@ -216,10 +216,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             $this->set($arg, $val);
         }
 
-        foreach (array_diff(
-            array_keys($this->arguments),
-            array_keys($arguments)
-        ) as $arg) {
+        foreach (
+            array_diff(
+                array_keys($this->arguments),
+                array_keys($arguments)
+            ) as $arg
+        ) {
             if ($this->arguments[$arg]->hasBeenLoadedFromDb()) {
                 $this->arguments[$arg]->markForRemoval();
                 $this->modified = true;

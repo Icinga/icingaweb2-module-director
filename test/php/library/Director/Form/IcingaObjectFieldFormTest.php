@@ -50,7 +50,7 @@ class IcingaObjectFieldFormTest extends BaseTestCase
                 $db
             );
             $this->testIcingaCommand->store($db);
-            
+
             $this->testHost = IcingaHost::create([
                 'object_name'  => self::HOST_NAME,
                 'object_type'  => 'object',

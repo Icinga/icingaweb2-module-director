@@ -282,10 +282,12 @@ class IcingaServiceForm extends DirectorObjectForm
         $db = $this->db->getDbAdapter();
         $host->unsetOverriddenServiceVars($this->object->getObjectName())->store();
 
-        if ($db->insert('icinga_host_service_blacklist', [
+        if (
+            $db->insert('icinga_host_service_blacklist', [
             'host_id'    => $host->get('id'),
             'service_id' => $service->get('id')
-        ])) {
+            ])
+        ) {
             $msg = sprintf(
                 $this->translate('%s has been deactivated on %s'),
                 $service->getObjectName(),

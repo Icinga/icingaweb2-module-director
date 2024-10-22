@@ -8,7 +8,7 @@ use Zend_Validate_Abstract;
 
 class IsDataListEntry extends Zend_Validate_Abstract
 {
-    const INVALID = 'intInvalid';
+    public const INVALID = 'intInvalid';
 
     /** @var Db */
     private $db;

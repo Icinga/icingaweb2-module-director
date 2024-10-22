@@ -10,6 +10,7 @@ use Icinga\Module\Director\Objects\DirectorJob;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 use React\Promise\Promise;
+
 use function React\Promise\resolve;
 
 class JobRunner implements DbBasedComponent
@@ -139,9 +140,11 @@ class JobRunner implements DbBasedComponent
     {
         $db = $this->db->getDbAdapter();
 
-        foreach ($db->fetchCol(
-            $db->select()->from('director_job', 'id')->where('disabled = ?', 'n')
-        ) as $id) {
+        foreach (
+            $db->fetchCol(
+                $db->select()->from('director_job', 'id')->where('disabled = ?', 'n')
+            ) as $id
+        ) {
             $this->scheduledIds[] = (int) $id;
         };
     }

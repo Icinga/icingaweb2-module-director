@@ -8,6 +8,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+
 use function is_int;
 use function is_resource;
 use function is_string;
