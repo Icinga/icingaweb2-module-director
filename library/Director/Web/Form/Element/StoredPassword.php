@@ -37,7 +37,8 @@ class StoredPassword extends ZfText
 
     public function setValue($value)
     {
-        if (\is_array($value) && isset($value['_value'], $value['_sent'])
+        if (
+            \is_array($value) && isset($value['_value'], $value['_sent'])
             && $value['_sent'] === 'y'
         ) {
             $value = $sentValue = $value['_value'];

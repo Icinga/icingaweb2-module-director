@@ -222,8 +222,10 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
 
         $inherited = $this->getInheritedProperties();
 
-        if ($this->get('is_string') === 'y' || ($this->get('is_string') === null
-                && property_exists($inherited, 'is_string') && $inherited->is_string === 'y')) {
+        if (
+            $this->get('is_string') === 'y' || ($this->get('is_string') === null
+                && property_exists($inherited, 'is_string') && $inherited->is_string === 'y')
+        ) {
             return c::renderKeyValue('command', $prefix . c::renderString($command));
         } else {
             $parts = preg_split('/\s+/', $command, -1, PREG_SPLIT_NO_EMPTY);
@@ -267,11 +269,11 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
         if (preg_match('~^(\$USER\d+\$/?)(.+)$~', $command)) {
             // should be fine, since the user decided to use a macro
         } elseif (! $this->isAbsolutePath($command)) {
-            $command = '$USER1$/'.$command;
+            $command = '$USER1$/' . $command;
         }
 
         return c1::renderKeyValue(
-            $this->getLegacyObjectType().'_line',
+            $this->getLegacyObjectType() . '_line',
             c1::renderString($command)
         );
     }

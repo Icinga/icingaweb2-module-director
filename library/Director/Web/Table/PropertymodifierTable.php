@@ -82,7 +82,7 @@ class PropertymodifierTable extends ZfQueryBasedTable
             $class = $row->provider_class;
             try {
                 /** @var ImportSourceHook $hook */
-                $hook = new $class;
+                $hook = new $class();
                 $caption .= ': ' . $hook->getName();
             } catch (Exception $e) {
                 $caption = $this->createErrorCaption($caption, $e);

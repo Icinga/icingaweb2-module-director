@@ -122,7 +122,7 @@ class SuggestController extends ActionController
 
     protected function suggestServicenames()
     {
-        $r=array();
+        $r = array();
         $this->assertPermission('director/services');
         $db = $this->db()->getDbAdapter();
         $for_host = $this->getRequest()->getPost('for_host');
@@ -152,7 +152,7 @@ class SuggestController extends ActionController
             $matcher = HostApplyMatches::prepare($tmp_host);
             foreach ($this->getAllApplyRules() as $rule) {
                 if ($matcher->matchesFilter($rule->filter)) { //TODO
-                    $r[]=$rule->name;
+                    $r[] = $rule->name;
                 }
             }
         }
@@ -291,7 +291,7 @@ class SuggestController extends ActionController
         $db = $this->db()->getDbAdapter();
 
         $query = $db->select()
-            ->from(['f' =>'director_datafield'], [])
+            ->from(['f' => 'director_datafield'], [])
             ->join(
                 ['sid' => 'director_datafield_setting'],
                 'sid.datafield_id = f.id AND sid.setting_name = \'datalist_id\'',
@@ -369,7 +369,7 @@ class SuggestController extends ActionController
 
     protected function getAllApplyRules()
     {
-        $allApplyRules=$this->fetchAllApplyRules();
+        $allApplyRules = $this->fetchAllApplyRules();
         foreach ($allApplyRules as $rule) {
             $rule->filter = Filter::fromQueryString($rule->assign_filter);
         }

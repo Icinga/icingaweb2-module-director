@@ -411,11 +411,13 @@ class Sync
 
             foreach ($objects as $object) {
                 if ($object instanceof IcingaService) {
-                    if (strstr($destinationKeyPattern, '${host}')
+                    if (
+                        strstr($destinationKeyPattern, '${host}')
                         && $object->get('host_id') === null
                     ) {
                         continue;
-                    } elseif (strstr($destinationKeyPattern, '${service_set}')
+                    } elseif (
+                        strstr($destinationKeyPattern, '${service_set}')
                         && $object->get('service_set_id') === null
                     ) {
                         continue;
@@ -450,7 +452,8 @@ class Sync
                 if ($ruleObjectType === 'service' || $ruleObjectType === 'serviceSet') {
                     foreach ($this->syncProperties as $prop) {
                         $configuredObjectType = $prop->get('source_expression');
-                        if ($prop->get('destination_field') === 'object_type'
+                        if (
+                            $prop->get('destination_field') === 'object_type'
                             && (
                                 $configuredObjectType === 'template'
                                 || ($configuredObjectType === 'apply' && $ruleObjectType === 'serviceSet')
@@ -659,10 +662,12 @@ class Sync
     protected function getHostGroupMembershipResolver()
     {
         if ($this->hostGroupMembershipResolver === null) {
-            if (in_array(
-                $this->rule->get('object_type'),
-                ['host', 'hostgroup']
-            )) {
+            if (
+                in_array(
+                    $this->rule->get('object_type'),
+                    ['host', 'hostgroup']
+                )
+            ) {
                 $this->hostGroupMembershipResolver = new HostGroupMembershipResolver(
                     $this->db
                 );
@@ -788,7 +793,8 @@ class Sync
 
         switch ($policy) {
             case 'override':
-                if ($object instanceof IcingaHost
+                if (
+                    $object instanceof IcingaHost
                     && !in_array('api_key', $this->rule->getSyncProperties())
                 ) {
                     $this->objects[$key]->replaceWith($object, ['api_key']);

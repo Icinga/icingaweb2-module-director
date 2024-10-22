@@ -67,7 +67,7 @@ class ServiceSetQueryBuilder
     {
         return $this->db
             ->select()
-            ->from(['o' =>self::TABLE], [])
+            ->from(['o' => self::TABLE], [])
             ->joinLeft(['os' => self::SET_TABLE], 'os.id = o.service_set_id', [])
             ->where('os.uuid = ?', $this->connection->quoteBinary($set->getUniqueId()->getBytes()));
     }

@@ -614,7 +614,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
-        if ($this instanceof ObjectWithArguments
+        if (
+            $this instanceof ObjectWithArguments
             && $this->gotArguments()
             && $this->arguments()->hasBeenModified()
         ) {
@@ -758,8 +759,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this;
         }
 
-        if ($this instanceof ObjectWithArguments
-            && substr($key, 0, 10) === 'arguments.') {
+        if (
+            $this instanceof ObjectWithArguments
+            && substr($key, 0, 10) === 'arguments.'
+        ) {
             $this->arguments()->set(substr($key, 10), $value);
             return $this;
         }
@@ -1764,7 +1767,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $deploymentMode = $config->getDeploymentMode();
         if ($deploymentMode === 'active-passive') {
-            if ($this->getSingleResolvedProperty('zone_id')
+            if (
+                $this->getSingleResolvedProperty('zone_id')
                 && array_key_exists('enable_active_checks', $this->defaultProperties)
             ) {
                 $passive = clone($this);
@@ -2115,7 +2119,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             );
         }
 
-        if (substr($key, -3) === '_id'
+        if (
+            substr($key, -3) === '_id'
              && $this->hasRelation($relKey = substr($key, 0, -3))
         ) {
             return $this->renderRelationProperty($relKey, $value);
@@ -2173,7 +2178,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             );
         }
 
-        if (substr($key, -3) === '_id'
+        if (
+            substr($key, -3) === '_id'
              && $this->hasRelation($relKey = substr($key, 0, -3))
         ) {
             return $this->renderLegacyRelationProperty($relKey, $value);
@@ -2401,7 +2407,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $str = '';
 
         // Set notification settings for the object to suppress warnings
-        if (array_key_exists('enable_notifications', $this->defaultProperties)
+        if (
+            array_key_exists('enable_notifications', $this->defaultProperties)
             && $this->isTemplate()
         ) {
             $str .= c1::renderKeyValue('notification_period', 'notification_none');
@@ -2411,7 +2418,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         // force rendering of check_command when ARG1 is set
         if ($this->supportsCustomVars() && array_key_exists('check_command_id', $this->defaultProperties)) {
-            if ($this->get('check_command') === null
+            if (
+                $this->get('check_command') === null
                 && $this->vars()->get('ARG1') !== null
             ) {
                 $command = $this->getResolvedRelated('check_command');
@@ -2701,7 +2709,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if (PrefetchCache::shouldBeUsed()
+        if (
+            PrefetchCache::shouldBeUsed()
             && $query === null
             && $keyColumn === static::getKeyColumnName()
         ) {
@@ -3119,7 +3128,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getOnDeleteUrl()
     {
-        $plural= preg_replace('/cys$/', 'cies', strtolower($this->getShortTableName()) . 's');
+        $plural = preg_replace('/cys$/', 'cies', strtolower($this->getShortTableName()) . 's');
         return 'director/' . $plural;
     }
 

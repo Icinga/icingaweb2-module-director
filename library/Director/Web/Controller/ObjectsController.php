@@ -73,7 +73,8 @@ abstract class ObjectsController extends ActionController
     {
         $request = $this->getRequest();
         $table = $this->getTable();
-        if ($request->getControllerName() === 'services'
+        if (
+            $request->getControllerName() === 'services'
             && $host = $this->params->get('host')
         ) {
             $host = IcingaHost::load($host, $this->db());

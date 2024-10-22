@@ -13,6 +13,7 @@ use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use RuntimeException;
 use SplObjectStorage;
+
 use function React\Promise\reject;
 use function React\Promise\resolve;
 

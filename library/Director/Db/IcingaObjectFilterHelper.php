@@ -59,7 +59,8 @@ class IcingaObjectFilterHelper
         if ($branchuuid) {
             if ($inheritanceType === self::INHERIT_DIRECT) {
                 return $query->where('imports LIKE \'%"' . $template->getObjectName() . '"%\'');
-            } elseif ($inheritanceType === self::INHERIT_INDIRECT
+            } elseif (
+                $inheritanceType === self::INHERIT_INDIRECT
                 || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
             ) {
                 $tree = new TemplateTree($type, $template->getConnection());
@@ -90,7 +91,8 @@ class IcingaObjectFilterHelper
 
         if ($inheritanceType === self::INHERIT_DIRECT) {
             $sub->where("$i.parent_{$type}_id = ?", $id);
-        } elseif ($inheritanceType === self::INHERIT_INDIRECT
+        } elseif (
+            $inheritanceType === self::INHERIT_INDIRECT
             || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
         ) {
             $tree = new TemplateTree($type, $template->getConnection());

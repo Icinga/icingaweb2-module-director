@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Icinga\Module\Director\Field;
 
 use Icinga\Module\Director\Objects\DirectorDatafield;

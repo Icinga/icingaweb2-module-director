@@ -49,8 +49,8 @@ class BranchActivity
     protected $formerProperties;
 
     public function __construct(
-        UuidInterface     $objectUuid,
-        UuidInterface     $branchUuid,
+        UuidInterface $objectUuid,
+        UuidInterface $branchUuid,
         $action,
         $objectType,
         $author,

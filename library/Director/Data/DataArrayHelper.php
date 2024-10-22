@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Data;
 
 use InvalidArgumentException;
+
 use function array_diff;
 use function array_key_exists;
 use function implode;

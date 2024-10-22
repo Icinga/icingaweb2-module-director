@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\IcingaConfig;
 
 use InvalidArgumentException;
+
 use function ctype_digit;
 use function explode;
 use function floor;

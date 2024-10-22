@@ -120,7 +120,8 @@ class ObjectImporter
      */
     protected function loadExistingObject(string $implementation, stdClass $plain): ?DbObject
     {
-        if (isset($plain->uuid)
+        if (
+            isset($plain->uuid)
             && $instance = $implementation::loadWithUniqueId(Uuid::fromString($plain->uuid), $this->db)
         ) {
             return $instance;

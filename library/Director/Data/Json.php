@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Data;
 
 use Icinga\Module\Director\Exception\JsonEncodeException;
+
 use function json_decode;
 use function json_encode;
 use function json_last_error;

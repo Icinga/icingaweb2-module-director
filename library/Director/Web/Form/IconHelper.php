@@ -47,7 +47,7 @@ class IconHelper
     public static function instance()
     {
         if (self::$instance === null) {
-            self::$instance = new static;
+            self::$instance = new static();
         }
 
         return self::$instance;

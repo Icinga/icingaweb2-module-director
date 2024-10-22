@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Db\Branch;
 
 use Icinga\Module\Director\Data\Json;
+
 use function in_array;
 
 /**

@@ -216,10 +216,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             $this->set($arg, $val);
         }
 
-        foreach (array_diff(
-            array_keys($this->arguments),
-            array_keys($arguments)
-        ) as $arg) {
+        foreach (
+            array_diff(
+                array_keys($this->arguments),
+                array_keys($arguments)
+            ) as $arg
+        ) {
             if ($this->arguments[$arg]->hasBeenLoadedFromDb()) {
                 $this->arguments[$arg]->markForRemoval();
                 $this->modified = true;
