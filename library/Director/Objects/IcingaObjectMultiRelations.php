@@ -383,6 +383,8 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         foreach ($this->relations as $k => $v) {
             $this->stored[$k] = clone($v);
         }
+
+        $this->modified = false;
     }
 
     protected function getRelatedClassName()
