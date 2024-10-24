@@ -85,4 +85,30 @@ properties based on custom conditions and so on.
 Now you are all done and ready to a) launch the Import and b) trigger your synchronization
 run.
 
+Hints
+--------
 
+### Importing assign filters
+
+The Director uses Icinga Web 2 filters as assign filters which are then rendered to Icinga 2 assign rules.
+This is great for graphical use, but requires some special formatting for automatic import. In addition the
+value has to be urlencoded which can be done by the corresponding property modifier.
+
+Icinga 2 (assign rule)         | Director (graphical representation) | Director (filter)
+-------------------------------|-------------------------------------|-----------------------------
+host.vars.os == "Linux"        | host.vars.os = Linux                | host.vars.os=%22Linux%22
+host.vars.os != "Linux"        | host.vars.os != Linux               | host.vars.os!=%22Linux%22
+match("Linux*",host.vars.os)   | host.vars.os = Linux*               | host.vars.os=%22Linux%2A%22
+! match("Linux*",host.vars.os) | host.vars.os != Linux*              | host.vars.os!=%22Linux%2A%22
+"Linux" in host.vars.os        | host.vars.os contains Linux         | "Linux"=host.vars.os
+host.vars.os in [ "Linux" ]    | host.vars.os in Linux               | host.vars.os=%5B%22Linux%22%5D
+host.vars.os                   | host.vars.os is true (or set)       | host.vars.os=true
+ 
+The following example creates a host group for every application and assigns hosts which contain the application
+in an array for host.vars.applications.
+
+![Synchronization properties](screenshot/director/08_import-and-sync/088_director_sync_assign_filter_01.png)
+
+This results in groups like this one for JBoss.
+
+![Synchronization result](screenshot/director/08_import-and-sync/088_director_sync_assign_filter_02.png)
