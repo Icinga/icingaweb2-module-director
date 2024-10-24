@@ -230,6 +230,9 @@ class IcingaMultiEditForm extends DirectorObjectForm
             $checksum = sha1($json) . '_' . sha1(json_encode($objects));
 
             $v = clone($element);
+            if ($key == "imports") {
+                $v->setAttrib('hideOptions', []);
+            }
             $v->setName($key . '_' . $checksum);
             $v->setDescription($description . ' ' . $this->descriptionForObjects($objects));
             $v->setLabel($label . $this->labelCount($objects));
