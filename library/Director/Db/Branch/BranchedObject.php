@@ -3,10 +3,12 @@
 namespace Icinga\Module\Director\Db\Branch;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Data\Json;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Ramsey\Uuid\UuidInterface;
 use stdClass;
 
@@ -198,7 +200,17 @@ class BranchedObject
             }
         }
 
+        $dummyObject = IcingaObject::createByType(
+            $this->objectTable,
+            [],
+            $connection
+        );
+
         foreach ($activity->getModifiedProperties()->jsonSerialize() as $key => $value) {
+            if ($dummyObject->propertyIsBoolean($key)) {
+                $value = DbDataFormatter::normalizeBoolean($value);
+            }
+
             $this->changes[$key] = $value;
         }
 
