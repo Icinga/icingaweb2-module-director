@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Data;
 
 use gipfl\Json\JsonDecodeException;
 use gipfl\Json\JsonString;
+use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
@@ -106,9 +107,13 @@ class ObjectImporter
                 unset($settings->source);
             }
             $rule = $settings->rule ?? null;
-            if ($rule && !isset($settings->rule_id)) {
-                $settings->rule_id = SyncRule::load($rule, $this->db)->get('id');
-                unset($settings->rule);
+            if ($rule) {
+                if (! isset($settings->rule_id)) {
+                    $settings->rule_id = SyncRule::load($rule, $this->db)->get('id');
+                    unset($settings->rule);
+                }
+
+                $settings->apply_changes = DbDataFormatter::normalizeBoolean($settings->apply_changes);
             }
         }
     }
