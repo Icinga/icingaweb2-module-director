@@ -36,11 +36,17 @@ class Health
         return $this;
     }
 
-    public function getCheck($name)
+    public function getCheck($name,$check_name = null)
     {
         if (array_key_exists($name, $this->checks)) {
-            $func = $this->checks[$name];
-            $check = $this->$func();
+            if(!$check_name){
+                    $func = $this->checks[$name];
+                    $check = $this->$func();
+            } else {
+                $func = $this->checks[$name];
+                    $check = $this->$func($check_name);
+            }
+
         } else {
             $check = new CheckResults('Invalid Parameter');
             $check->fail("There is no check named '$name'");
@@ -142,7 +148,7 @@ class Health
         return $check;
     }
 
-    public function checkSyncRules()
+    public function checkSyncRules($check_name = null)
     {
         $check = new CheckResults('Sync Rules');
         $rules = SyncRule::loadAll($this->getConnection(), null, 'rule_name');
@@ -155,6 +161,7 @@ class Health
         foreach ($rules as $rule) {
             $state = $rule->get('sync_state');
             $name = $rule->get('rule_name');
+            if( isset($check_name) && $name !== $check_name){ continue; }
             if ($state === 'failing') {
                 $message = $rule->get('last_error_message');
                 $check->fail("'$name' is failing: $message");
@@ -170,7 +177,7 @@ class Health
         return $check;
     }
 
-    public function checkImportSources()
+    public function checkImportSources($check_name = null)
     {
         $check = new CheckResults('Import Sources');
         $sources = ImportSource::loadAll($this->getConnection(), null, 'source_name');
@@ -183,6 +190,8 @@ class Health
         foreach ($sources as $src) {
             $state = $src->get('import_state');
             $name = $src->get('source_name');
+            if(isset($check_name) && $name !== $check_name){ continue; }
+
             if ($state === 'failing') {
                 $message = $src->get('last_error_message');
                 $check->fail("'$name' is failing: $message");
