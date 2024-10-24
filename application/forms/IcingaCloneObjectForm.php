@@ -148,7 +148,8 @@ class IcingaCloneObjectForm extends DirectorForm
             $object->getObjectName()
         );
 
-        if ($object->isTemplate() && $this->branch && $this->branch->isBranch()) {
+        $isBranch = $this->branch && $this->branch->isBranch();
+        if ($object->isTemplate() && $isBranch) {
             throw new IcingaException('Cloning templates is not available for Branches');
         }
 
@@ -211,7 +212,11 @@ class IcingaCloneObjectForm extends DirectorForm
                 );
 
                 if ($new instanceof IcingaHost) {
-                    $clone->set('host_id', $newId);
+                    if ($isBranch) {
+                        $clone->set('host', $newName);
+                    } else {
+                        $clone->set('host_id', $newId);
+                    }
                 } elseif ($new instanceof IcingaServiceSet) {
                     $clone->set('service_set_id', $newId);
                 }
@@ -222,7 +227,14 @@ class IcingaCloneObjectForm extends DirectorForm
                 $newSet = IcingaServiceSet::fromPlainObject(
                     $set->toPlainObject(),
                     $connection
-                )->set('host_id', $newId);
+                );
+
+                if ($isBranch) {
+                    $newSet->set('host', $newName);
+                } else {
+                    $newSet->set('host_id', $newId);
+                }
+
                 $store->store($newSet);
             }
 
