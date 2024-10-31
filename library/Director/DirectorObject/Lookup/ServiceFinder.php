@@ -36,13 +36,15 @@ class ServiceFinder
 
     public static function find(IcingaHost $host, $serviceName)
     {
-        foreach ([
+        foreach (
+            [
             SingleServiceInfo::class,
             InheritedServiceInfo::class,
             ServiceSetServiceInfo::class,
             AppliedServiceInfo::class,
             AppliedServiceSetServiceInfo::class,
-        ] as $class) {
+            ] as $class
+        ) {
             /** @var ServiceInfo $class */
             if ($info = $class::find($host, $serviceName)) {
                 return $info;

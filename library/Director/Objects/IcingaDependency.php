@@ -408,7 +408,8 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     public function renderChild_service_id()
     {
         // @codingStandardsIgnoreEnd
-        if ($this->hasBeenAssignedToServiceTemplate()
+        if (
+            $this->hasBeenAssignedToServiceTemplate()
             || $this->hasBeenAssignedToHostTemplateService()
             || $this->hasBeenAssignedToServiceApply()
         ) {
@@ -467,7 +468,8 @@ class IcingaDependency extends IcingaObject implements ExportInterface
 
     public function isApplyRule()
     {
-        if ($this->hasBeenAssignedToHostTemplate()
+        if (
+            $this->hasBeenAssignedToHostTemplate()
             || $this->hasBeenAssignedToServiceTemplate()
             || $this->hasBeenAssignedToServiceApply()
         ) {
@@ -612,7 +614,8 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         $related = parent::getRelatedProperty($key);
         // handle special case for plain string parent service on Dependency
         // Apply rules
-        if ($related === null
+        if (
+            $related === null
             && $key === 'parent_service'
             && (
                 $this->get('parent_service_by_name')

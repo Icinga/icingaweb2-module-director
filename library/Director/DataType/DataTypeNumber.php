@@ -12,7 +12,7 @@ class DataTypeNumber extends DataTypeHook
     {
         $element = $form->createElement('text', $name)
             ->addValidator('int')
-            ->addFilter(new FilterInt);
+            ->addFilter(new FilterInt());
 
         return $element;
     }

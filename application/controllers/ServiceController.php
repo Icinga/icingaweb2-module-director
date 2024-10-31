@@ -29,7 +29,8 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->host
+        if (
+            $this->host
             && $this->object
             && $this->backend()->canModifyService($this->host->getObjectName(), $this->object->getObjectName())
         ) {
@@ -190,7 +191,8 @@ class ServiceController extends ObjectController
         }
 
         try {
-            if ($object->isTemplate()
+            if (
+                $object->isTemplate()
                 && $object->getResolvedProperty('check_command_id')
             ) {
                 $this->view->actionLinks .= ' ' . $this->view->qlink(

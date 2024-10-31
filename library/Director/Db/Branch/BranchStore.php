@@ -9,8 +9,8 @@ use Ramsey\Uuid\UuidInterface;
 
 class BranchStore
 {
-    const TABLE = 'director_branch';
-    const TABLE_ACTIVITY = 'director_branch_activity';
+    public const TABLE = 'director_branch';
+    public const TABLE_ACTIVITY = 'director_branch_activity';
 
     protected $connection;
 

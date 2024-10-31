@@ -17,13 +17,13 @@ class RestApiResponse
 
     public static function fromJsonResult($json)
     {
-        $response = new static;
+        $response = new static();
         return $response->parseJsonResult($json);
     }
 
     public static function fromErrorMessage($error)
     {
-        $response = new static;
+        $response = new static();
         $response->errorMessage = $error;
 
         return $response;

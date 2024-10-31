@@ -18,11 +18,11 @@ use RuntimeException;
 
 class BranchActivity
 {
-    const DB_TABLE = 'director_branch_activity';
+    public const DB_TABLE = 'director_branch_activity';
 
-    const ACTION_CREATE = DirectorActivityLog::ACTION_CREATE;
-    const ACTION_MODIFY = DirectorActivityLog::ACTION_MODIFY;
-    const ACTION_DELETE = DirectorActivityLog::ACTION_DELETE;
+    public const ACTION_CREATE = DirectorActivityLog::ACTION_CREATE;
+    public const ACTION_MODIFY = DirectorActivityLog::ACTION_MODIFY;
+    public const ACTION_DELETE = DirectorActivityLog::ACTION_DELETE;
 
     /** @var int */
     protected $timestampNs;
@@ -49,8 +49,8 @@ class BranchActivity
     protected $formerProperties;
 
     public function __construct(
-        UuidInterface     $objectUuid,
-        UuidInterface     $branchUuid,
+        UuidInterface $objectUuid,
+        UuidInterface $branchUuid,
         $action,
         $objectType,
         $author,

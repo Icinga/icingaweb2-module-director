@@ -30,7 +30,7 @@ class InheritedServiceInfo implements ServiceInfo
     {
         $this->hostName = $hostName;
         $this->hostTemplateName = $hostTemplateName;
-        $this->serviceName= $serviceName;
+        $this->serviceName = $serviceName;
         $this->uuid = $uuid;
     }
 

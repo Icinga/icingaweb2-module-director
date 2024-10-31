@@ -70,7 +70,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
     {
         if ($this->job === null) {
             $class = $this->get('job_class');
-            $this->job = new $class;
+            $this->job = new $class();
             $this->job->setDb($this->connection);
             $this->job->setDefinition($this);
         }
@@ -207,7 +207,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
     protected static function existsWithNameAndId($name, $id, Db $connection)
     {
         $db = $connection->getDbAdapter();
-        $dummy = new static;
+        $dummy = new static();
         $idCol = $dummy->autoincKeyName;
         $keyCol = $dummy->keyName;
 

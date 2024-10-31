@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\PropertyModifier;
 
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
+
 use function array_unique;
 use function array_values;
 use function is_array;

@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use React\EventLoop\LoopInterface;
+
 use function React\Promise\resolve;
 
 class DeploymentChecker implements DbBasedComponent

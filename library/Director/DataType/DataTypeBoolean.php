@@ -21,7 +21,7 @@ class DataTypeBoolean extends DataTypeHook
         $vhClass = 'Zend_Form_Decorator_ViewHelper';
         $decorators = $element->getDecorators();
         if (array_key_exists($vhClass, $decorators)) {
-            $decorators[$vhClass] = new ViewHelperRaw;
+            $decorators[$vhClass] = new ViewHelperRaw();
             $element->setDecorators($decorators);
         }
 

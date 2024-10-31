@@ -227,7 +227,7 @@ class ActivityLogInfo extends HtmlDocument
                 $this->oldProperties = JsonString::decodeOptional($this->entry->old_properties);
             }
             if ($this->oldProperties === null) {
-                $this->oldProperties = new \stdClass;
+                $this->oldProperties = new \stdClass();
             }
         }
 
@@ -241,7 +241,7 @@ class ActivityLogInfo extends HtmlDocument
                 $this->newProperties = JsonString::decodeOptional($this->entry->new_properties);
             }
             if ($this->newProperties === null) {
-                $this->newProperties = new \stdClass;
+                $this->newProperties = new \stdClass();
             }
         }
 
@@ -373,10 +373,12 @@ class ActivityLogInfo extends HtmlDocument
             $this->defaultTab = 'diff';
         }
 
-        if (in_array($entry->action_name, [
+        if (
+            in_array($entry->action_name, [
             DirectorActivityLog::ACTION_CREATE,
             DirectorActivityLog::ACTION_MODIFY,
-        ])) {
+            ])
+        ) {
             $tabs->add('new', [
                 'label' => $this->translate('New object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'new'])
@@ -387,10 +389,12 @@ class ActivityLogInfo extends HtmlDocument
             }
         }
 
-        if (in_array($entry->action_name, [
+        if (
+            in_array($entry->action_name, [
             DirectorActivityLog::ACTION_DELETE,
             DirectorActivityLog::ACTION_MODIFY,
-        ])) {
+            ])
+        ) {
             $tabs->add('old', [
                 'label' => $this->translate('Former object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'old'])

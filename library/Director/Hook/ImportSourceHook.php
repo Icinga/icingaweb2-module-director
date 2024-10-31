@@ -48,7 +48,7 @@ abstract class ImportSourceHook
         }
 
         /** @var ImportSourceHook $obj */
-        $obj = new $className;
+        $obj = new $className();
         $obj->setSettings($settings);
         return $obj;
     }
@@ -77,7 +77,7 @@ abstract class ImportSourceHook
             );
         }
         /** @var ImportSourceHook $obj */
-        $obj = new $source->provider_class;
+        $obj = new $source->provider_class();
         $obj->setSettings($settings);
 
         return $obj;

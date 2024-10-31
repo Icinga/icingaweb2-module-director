@@ -27,7 +27,7 @@ class IcingaTimePeriodRanges extends IcingaRanges implements Iterator, Countable
             );
         }
         if ($out !== '') {
-            $out = "\n".$out;
+            $out = "\n" . $out;
         }
 
         return $out;
