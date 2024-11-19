@@ -115,11 +115,24 @@ class AssignRenderer
 
     protected function renderContains(FilterExpression $filter)
     {
-        return sprintf(
-            '%s in %s',
-            $this->renderExpressionValue(json_decode($filter->getColumn())),
-            $filter->getExpression()
-        );
+        // Note: expression and column is flipped in this mode
+        $value = json_decode($filter->getColumn());
+        $expression = $this->renderExpressionValue($value);
+        $column = $filter->getExpression();
+
+        if (strpos($value, '*') !== false) {
+            return sprintf(
+                'match(%s, %s, MatchAny)',
+                $expression,
+                $column
+            );
+        } else {
+            return sprintf(
+                '%s in %s',
+                $expression,
+                $column
+            );
+        }
     }
 
     protected function renderFilterExpression(FilterExpression $filter)
