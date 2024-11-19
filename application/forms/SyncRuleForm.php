@@ -98,7 +98,7 @@ class SyncRuleForm extends DirectorObjectForm
                     'Sync only part of your imported objects with this rule. Icinga Web 2'
                     . ' filter syntax is allowed, so this could look as follows: %s'
                 ),
-                '(host=a|host=b)&!ip=127.*'
+                '(host=a|host=b)&!ip=127.*&host_is_enabled=1'
             ) . ' ' . $this->translate(
                 'Be careful: this is usually NOT what you want, as it makes Sync "blind"'
                 . ' for objects matching this filter. This means that "Purge" will not'
