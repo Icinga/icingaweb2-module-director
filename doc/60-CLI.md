@@ -397,10 +397,12 @@ Health. This will run all or just one of the following test suites:
 
 #### Options
 
-| Option           | Description                           |
-|------------------|---------------------------------------|
-| `--check <name>` | Run only a specific test suite        |
-| `--<db> <name>`  | Use a specific Icinga Web DB resource |
+| Option               | Description                           |
+|---------------------------------|------------------------------------------------------------------------|
+| `--check <name>`                | Run only a specific test suite                                         |
+| `--<db> <name>`                 | Use a specific Icinga Web DB resource                                  |
+| `--critical_undeploy <integer>` | Use a specific value as critical for pending deploymemts. Default is 3 |
+| `--critical_undeploy <integer>` | Use a specific value as warning for pending deploymemts. Default is 2  |
 
 #### Examples
 
@@ -425,6 +427,18 @@ Director configuration: 5 tests OK
 [OK] There is a single un-deployed change
 ```
 
+Example for running a check only for the deployments:
+```shell
+icingacli director health --check deployment --critical_undeploy 2 --warning_undeploy 1
+```
+
+Sample output:
+```
+Director Deployments: 2 tests OK, 1x CRITICAL
+[OK] Deployment endpoint is 'prod-mon1.com'
+[CRITICAL] There are a 2 un-deployed change
+[OK] The last Deployment was successful at 23:57
+```
 
 Kickstart and schema handling
 -----------------------------
