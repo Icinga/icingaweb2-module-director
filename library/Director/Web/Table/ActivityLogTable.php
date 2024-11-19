@@ -211,16 +211,15 @@ class ActivityLogTable extends IntlZfQueryBasedTable
             // multi column key :(
             if ($type === 'service' || $this->hasObjectFilter) {
                 $object = "\"$name\"";
-            } elseif ($type === 'scheduled_downtime') {
+            } else {
+                $delimiter = $type === 'scheduled_downtime' ? '-' : '';
                 $object = Link::create(
                     "\"$name\"",
-                    'director/' . str_replace('_', '-', $type),
+                    'director/' . str_replace('_', $delimiter, $type),
                     ['name' => $name],
                     ['title' => $this->translate('Jump to this object')]
                 );
-            } else {
-                $object = Link::create(
-                    "\"$name\"",
+            }
                     'director/' . str_replace('_', '', $type),
                     ['name' => $name],
                     ['title' => $this->translate('Jump to this object')]
