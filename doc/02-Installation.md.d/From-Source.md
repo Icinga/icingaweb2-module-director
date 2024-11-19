@@ -41,7 +41,7 @@ and extract it to a folder named `director` in one of your Icinga Web module pat
 You might want to use a script as follows for this task:
 
 ```shell
-MODULE_VERSION="1.11.1"
+MODULE_VERSION="1.11.2"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
@@ -60,7 +60,7 @@ Simply clone the repository in one of your Icinga web module path directories.
 You might want to use a script as follows for this task:
 
 ```shell
-MODULE_VERSION="1.11.1"
+MODULE_VERSION="1.11.2"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
