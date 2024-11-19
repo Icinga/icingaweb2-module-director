@@ -1,6 +1,6 @@
 Name: Icinga Director
 Version: 1.11.1
-Depends: reactbundle (>=0.9.0), ipl (>=0.5.0), incubator (>=0.21.0)
+Depends: reactbundle (>=0.9.0), ipl (>=0.5.0), incubator (>=0.22.0)
 Description: Director - Config tool for Icinga 2
  Icinga Director is a configuration tool that has been designed to make
  Icinga 2 configuration easy and understandable.
