@@ -12,6 +12,7 @@ use gipfl\IcingaWeb2\Table\Extension\ZfSortablePriority;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Web\Form\PropertyTableSortForm;
+use Icinga\Module\Director\Web\Form\QuickForm;
 use ipl\Html\Form;
 use ipl\Html\HtmlString;
 
@@ -59,7 +60,7 @@ class PropertymodifierTable extends ZfQueryBasedTable
         return (new PropertyTableSortForm($this->getUniqueFormName(), new HtmlString(parent::render())))
             ->setAction($this->request->getUrl()->getAbsoluteUrl())
             ->on(Form::ON_SENT, function (PropertyTableSortForm $form) {
-                $csrf = $form->getElement('CSRFToken');
+                $csrf = $form->getElement(QuickForm::CSRF);
                 if ($csrf !== null && $csrf->isValid()) {
                     $this->reallyHandleSortPriorityActions();
                 }
