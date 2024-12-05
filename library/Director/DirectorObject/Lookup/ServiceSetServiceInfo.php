@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\DirectorObject\Lookup;
 
 use gipfl\IcingaWeb2\Url;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Ramsey\Uuid\Uuid;
@@ -75,7 +76,7 @@ class ServiceSetServiceInfo implements ServiceInfo
                 $host->getObjectName(),
                 $serviceName,
                 $row->service_set_name,
-                Uuid::fromBytes($row->uuid)
+                Uuid::fromBytes(DbUtil::binaryResult($row->uuid))
             );
         }
 
