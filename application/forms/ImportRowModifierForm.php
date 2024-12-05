@@ -214,4 +214,13 @@ class ImportRowModifierForm extends DirectorObjectForm
 
         return $this;
     }
+
+    public function onSuccess()
+    {
+        if ($this->getValue('use_filter') === 'n') {
+            $this->getObject()->set('filter_expression', null);
+        }
+
+        parent::onSuccess();
+    }
 }
