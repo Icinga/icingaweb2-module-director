@@ -153,12 +153,12 @@ class ObjectSetTable extends ZfQueryBasedTable
                 ['bo' => "branched_icinga_{$type}"],
                 "bo.{$type}_set = bos.object_name",
                 []
-            )->group(['bo.object_name', 'o.object_name']);
+            );
             $query->joinLeft(
                 ['bo' => "branched_icinga_{$type}"],
                 "bo.{$type}_set = bos.object_name",
                 []
-            )->group(['bo.object_name', 'o.object_name']);
+            );
             $this->queries = [
                 $query,
                 $right
