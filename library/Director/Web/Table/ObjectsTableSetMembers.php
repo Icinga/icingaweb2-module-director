@@ -197,9 +197,12 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
                 ->where('bos.branch_uuid = ?', $conn->quoteBinary($this->branchUuid->getBytes()));
             $query->group('COALESCE(os.uuid, bos.uuid)');
             $right->group('COALESCE(os.uuid, bos.uuid)');
+            $middle = clone($query);
+            $middle->reset('columns');
             if ($conn->isPgsql()) {
                 // This is ugly, might want to modify the query - even a subselect looks better
                 $query->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid')->group('o.id');
+                $middle->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid')->group('o.id');
                 $right->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid')->group('o.id');
             }
             $right->joinLeft(
@@ -212,9 +215,20 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
                 "bo.{$type}_set = bos.object_name",
                 []
             )->group(['bo.object_name', 'o.object_name', 'bo.uuid']);
+            $columns['branch_uuid'] = 'bo.branch_uuid';
+            $columns['id'] = '(NULL)' ;
+            $middle->columns($columns)->joinLeft(
+                ['bo' => "branched_icinga_{$type}"],
+                $this->db()->quoteInto(
+                    "bo.{$type}_set = os.object_name AND bo.branch_uuid = ?",
+                    $conn->quoteBinary($this->branchUuid->getBytes())
+                ),
+                []
+            )->group(['bo.object_name', 'o.object_name', 'bo.uuid', 'bo.branch_uuid', 'bo.imports']);
 
             $query = $this->db()->select()->union([
                 'l' => new DbSelectParenthesis($query),
+                'm' => new DbSelectParenthesis($middle),
                 'r' => new DbSelectParenthesis($right),
             ]);
             $query = $this->db()->select()->from(['u' => $query]);

@@ -33,7 +33,7 @@ class ServiceTemplateUsageTable extends TemplateUsageTable
                 $templateType,
                 $connection,
                 $auth
-            )
+            )->setBranchUuid($this->branchUuid)
         ];
     }
 }
