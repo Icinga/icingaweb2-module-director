@@ -3,10 +3,9 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Icinga\Date\DateFormatter;
 
-class DeploymentLogTable extends ZfQueryBasedTable
+class DeploymentLogTable extends IntlZfQueryBasedTable
 {
     use DbHelper;
 
@@ -55,7 +54,8 @@ class DeploymentLogTable extends ZfQueryBasedTable
             $classes = ['notsent'];
         }
 
-        if ($this->activeStageName !== null
+        if (
+            $this->activeStageName !== null
             && $row->stage_name === $this->activeStageName
         ) {
             $classes[] = 'running';

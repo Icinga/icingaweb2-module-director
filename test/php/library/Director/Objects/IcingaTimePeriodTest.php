@@ -180,5 +180,7 @@ class IcingaTimePeriodTest extends BaseTestCase
                 IcingaTimePeriod::load($name, $db)->delete();
             }
         }
+
+        parent::tearDown();
     }
 }

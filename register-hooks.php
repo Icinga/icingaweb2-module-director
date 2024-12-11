@@ -66,8 +66,13 @@ use Icinga\Module\Director\ProvidedHook\IcingaDbCubeLinks;
 if ($this->getConfig()->get('frontend', 'disabled', 'no') !== 'yes') {
     $this->provideHook('monitoring/HostActions');
     $this->provideHook('monitoring/ServiceActions');
+    $this->provideHook('icingadb/HostActions');
+    $this->provideHook('icingadb/ServiceActions');
+    $this->provideHook('icingadb/icingadbSupport');
     $this->provideHook('cube/Actions', CubeLinks::class);
     $this->provideHook('cube/IcingaDbActions', IcingaDbCubeLinks::class);
+    $this->provideHook('Icingadb/CustomVarRenderer');
+    $this->provideHook('Monitoring/CustomVarRenderer');
 }
 
 $directorHooks = [

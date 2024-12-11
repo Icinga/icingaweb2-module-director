@@ -410,7 +410,7 @@ class BasketSnapshot extends DbObject
                     try {
                         JsonString::encode($object);
                     } catch (JsonEncodeException $singleError) {
-                        $dump = var_export($object, 1);
+                        $dump = var_export($object, true);
                         if (function_exists('iconv')) {
                             $dump = iconv('UTF-8', 'UTF-8//IGNORE', $dump);
                         }
@@ -443,7 +443,8 @@ class BasketSnapshot extends DbObject
                 foreach ($filter as $column => $value) {
                     $select->where("$column = ?", $value);
                 }
-            } elseif (! $dummy->isGroup()
+            } elseif (
+                ! $dummy->isGroup()
                 // TODO: this is ugly.
                 && ! $dummy instanceof IcingaDependency
                 && ! $dummy instanceof IcingaTimePeriod

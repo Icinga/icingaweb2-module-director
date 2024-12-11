@@ -28,7 +28,7 @@ class ExtensibleSet extends FormElement
         if (! is_array($value)) {
             throw new InvalidArgumentException(sprintf(
                 'ExtensibleSet expects to work with Arrays, got %s',
-                var_export($value, 1)
+                var_export($value, true)
             ));
         }
         $value = array_filter($value, 'strlen');

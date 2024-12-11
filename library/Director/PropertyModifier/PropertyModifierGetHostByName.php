@@ -34,7 +34,15 @@ class PropertyModifierGetHostByName extends PropertyModifierHook
         }
 
         $host = gethostbyname($value);
-        if (strlen(@inet_pton($host)) !== 4) {
+
+        // Workaround for "inet_pton: unrecognized address" error in PHP 7.2
+        if ($host !== $value) {
+            $inAddr = inet_pton($host);
+        } else {
+            $inAddr = false;
+        }
+
+        if (! $inAddr || strlen($inAddr) !== 4) {
             switch ($this->getSetting('on_failure')) {
                 case 'null':
                     return null;

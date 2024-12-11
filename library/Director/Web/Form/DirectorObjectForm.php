@@ -26,16 +26,16 @@ use Zend_Form_Element_Select as ZfSelect;
 
 abstract class DirectorObjectForm extends DirectorForm
 {
-    const GROUP_ORDER_OBJECT_DEFINITION = 20;
-    const GROUP_ORDER_RELATED_OBJECTS = 25;
-    const GROUP_ORDER_ASSIGN = 30;
-    const GROUP_ORDER_CHECK_EXECUTION = 40;
-    const GROUP_ORDER_CUSTOM_FIELDS = 50;
-    const GROUP_ORDER_CUSTOM_FIELD_CATEGORIES = 60;
-    const GROUP_ORDER_EVENT_FILTERS = 700;
-    const GROUP_ORDER_EXTRA_INFO = 750;
-    const GROUP_ORDER_CLUSTERING = 800;
-    const GROUP_ORDER_BUTTONS = 1000;
+    public const GROUP_ORDER_OBJECT_DEFINITION = 20;
+    public const GROUP_ORDER_RELATED_OBJECTS = 25;
+    public const GROUP_ORDER_ASSIGN = 30;
+    public const GROUP_ORDER_CHECK_EXECUTION = 40;
+    public const GROUP_ORDER_CUSTOM_FIELDS = 50;
+    public const GROUP_ORDER_CUSTOM_FIELD_CATEGORIES = 60;
+    public const GROUP_ORDER_EVENT_FILTERS = 700;
+    public const GROUP_ORDER_EXTRA_INFO = 750;
+    public const GROUP_ORDER_CLUSTERING = 800;
+    public const GROUP_ORDER_BUTTONS = 1000;
 
     /** @var IcingaObject */
     protected $object;
@@ -791,7 +791,9 @@ abstract class DirectorObjectForm extends DirectorForm
             return;
         }
 
-        $post = $values = $this->getRequest()->getPost();
+        /** @var array $post */
+        $post = $this->getRequest()->getPost();
+        $values = $post;
 
         foreach ($post as $key => $value) {
             if (preg_match('/^(.+?)_(\d+)__(MOVE_DOWN|MOVE_UP|REMOVE)$/', $key, $m)) {
@@ -1519,6 +1521,7 @@ abstract class DirectorObjectForm extends DirectorForm
             return [];
         }
 
+        /** @var int|string $id */
         $id = $object->get('id');
 
         if (array_key_exists($id, $tpl)) {

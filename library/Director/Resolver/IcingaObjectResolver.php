@@ -176,7 +176,7 @@ class IcingaObjectResolver
             $object->groups = $groups;
         }
 
-        $templates = $this->getTemplateNamesById($id);
+        $templates = $this->getTemplateNamesByID($id);
         if (! empty($templates)) {
             $object->templates = \array_reverse($templates);
         }

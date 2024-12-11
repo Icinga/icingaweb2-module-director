@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
+use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
@@ -33,17 +35,20 @@ class HostController extends ObjectController
     {
         $host = $this->getHostObject();
         $auth = $this->Auth();
-        $mon = $this->monitoring();
-        if ($this->isServiceAction() && $mon->canModifyService($host, $this->getParam('service'))) {
+        $backend = $this->backend();
+        if (
+            $this->isServiceAction()
+            && $backend->canModifyService($host->getObjectName(), $this->getParam('service'))
+        ) {
             return;
         }
-        if ($auth->hasPermission(Permission::MONITORING_SERVICES_RO) && $this->isServicesReadOnlyAction()) {
+        if ($this->isServicesReadOnlyAction() && $auth->hasPermission($this->getServicesReadOnlyPermission())) {
             return;
         }
         if ($auth->hasPermission(Permission::HOSTS)) { // faster
             return;
         }
-        if ($mon->canModifyHost($host)) {
+        if ($backend->canModifyHost($host->getObjectName())) {
             return;
         }
         $this->assertPermission(Permission::HOSTS); // complain about default hosts permission
@@ -134,11 +139,36 @@ class HostController extends ObjectController
 
     public function findserviceAction()
     {
+        $auth = $this->Auth();
         $host = $this->getHostObject();
-        $this->redirectNow(
-            (new ServiceFinder($host, $this->getAuth()))
-                ->getRedirectionUrl($this->params->get('service'))
-        );
+        $hostName = $host->getObjectName();
+        $serviceName = $this->params->get('service');
+        $info = ServiceFinder::find($host, $serviceName);
+        $backend = $this->backend();
+
+        if ($info && $auth->hasPermission(Permission::HOSTS)) {
+            $redirectUrl = $info->getUrl();
+        } elseif (
+            $info
+            && (($backend instanceof Monitoring && $auth->hasPermission(Permission::MONITORING_HOSTS))
+                || ($backend instanceof IcingadbBackend && $auth->hasPermission(Permission::ICINGADB_HOSTS))
+            )
+            && $backend->canModifyService($hostName, $serviceName)
+        ) {
+            $redirectUrl = $info->getUrl();
+        } elseif ($auth->hasPermission($this->getServicesReadOnlyPermission())) {
+            $redirectUrl = Url::fromPath('director/host/servicesro', [
+                'name'    => $hostName,
+                'service' => $serviceName
+            ]);
+        } else {
+            $redirectUrl = Url::fromPath('director/host/invalidservice', [
+                'name'    => $hostName,
+                'service' => $serviceName,
+            ]);
+        }
+
+        $this->redirectNow($redirectUrl);
     }
 
     /**
@@ -261,7 +291,7 @@ class HostController extends ObjectController
      */
     public function servicesroAction()
     {
-        $this->assertPermission(Permission::MONITORING_SERVICES_RO);
+        $this->assertPermission($this->getServicesReadOnlyPermission());
         $host = $this->getHostObject();
         $service = $this->params->getRequired('service');
         $db = $this->db();
@@ -564,13 +594,20 @@ class HostController extends ObjectController
     {
         $host = $this->object;
         try {
-            if ($host->isObject() && $host instanceof IcingaHost && $this->monitoring()->hasHost($host)) {
-                $this->actions()->add(Link::create($this->translate('Show'), 'monitoring/host/show', [
-                    'host' => $host->getObjectName()
-                ], [
-                    'class'            => 'icon-globe critical',
-                    'data-base-target' => '_next'
-                ]));
+            $backend = $this->backend();
+            if (
+                $host instanceof IcingaHost
+                && $host->isObject()
+                && $backend->hasHost($host->getObjectName())
+            ) {
+                $this->actions()->add(
+                    Link::create(
+                        $this->translate('Show'),
+                        $backend->getHostUrl($host->getObjectName()),
+                        null,
+                        ['class' => 'icon-globe critical', 'data-base-target' => '_next']
+                    )
+                );
 
                 // Intentionally placed here, show it only for deployed Hosts
                 $this->addOptionalInspectLink();
@@ -610,5 +647,17 @@ class HostController extends ObjectController
             assert($this->object instanceof IcingaHost);
         }
         return $this->object;
+    }
+
+    /**
+     * Get readOnly permission of the service for the current backend
+     *
+     * @return string permission
+     */
+    protected function getServicesReadOnlyPermission(): string
+    {
+        return $this->backend() instanceof IcingadbBackend
+            ? Permission::ICINGADB_SERVICES_RO
+            : Permission::MONITORING_SERVICES_RO;
     }
 }

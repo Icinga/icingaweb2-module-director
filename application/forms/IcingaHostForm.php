@@ -209,7 +209,8 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addGroupsElement()
     {
-        if ($this->hasHostGroupRestriction()
+        if (
+            $this->hasHostGroupRestriction()
             && ! $this->getAuth()->hasPermission(Permission::GROUPS_FOR_RESTRICTED_HOSTS)
         ) {
             return $this;
@@ -264,15 +265,6 @@ class IcingaHostForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function strikeGroupLinks(BaseHtmlElement $links)
-    {
-        /** @var BaseHtmlElement $link */
-        foreach ($links->getContent() as $link) {
-            $link->getAttributes()->add('style', 'text-decoration: strike');
-        }
-        $links->add('aha');
-    }
-
     protected function getInheritedGroups()
     {
         if ($this->hasObject()) {
@@ -297,9 +289,7 @@ class IcingaHostForm extends DirectorObjectForm
             );
         }
 
-        return Html::tag('span', [
-            'style' => 'line-height: 2.5em; padding-left: 0.5em'
-        ], $links);
+        return Html::tag('span', ['class' => 'host-group-links'], $links);
     }
 
     protected function getAppliedGroups()

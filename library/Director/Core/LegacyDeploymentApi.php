@@ -55,7 +55,8 @@ class LegacyDeploymentApi implements DeploymentApiInterface
                 continue;
             }
 
-            if (in_array('startup.log', $availableFiles)
+            if (
+                in_array('startup.log', $availableFiles)
                 && in_array('status', $availableFiles)
             ) {
                 $status = $this->getStagedFile($stage, 'status');
@@ -91,7 +92,8 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         // try to expire old deployments
         foreach ($uncollected as $name => $deployment) {
             /** @var DirectorDeploymentLog $deployment */
-            if ($deployment->get('dump_succeeded') === 'n'
+            if (
+                $deployment->get('dump_succeeded') === 'n'
                 || $deployment->get('startup_succeeded') === null
             ) {
                 $start_time = strtotime($deployment->start_time);
@@ -106,7 +108,8 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         }
 
         foreach ($this->listPackageStages($packageName) as $stage) {
-            if (array_key_exists($stage, $uncollected)
+            if (
+                array_key_exists($stage, $uncollected)
                 && $uncollected[$stage]->get('startup_succeeded') === null
             ) {
                 continue;
@@ -128,6 +131,10 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         if (file_exists($path)) {
             if (is_link($path)) {
                 $linkTarget = readlink($path);
+                if (! $linkTarget) {
+                    throw new IcingaException('Failed to read symlink');
+                }
+
                 $linkTargetDir = dirname($linkTarget);
                 $linkTargetName = basename($linkTarget);
 
@@ -165,7 +172,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         $this->assertDeploymentPath();
 
         $dh = @opendir($this->deploymentPath);
-        if ($dh === null) {
+        if ($dh === false) {
             throw new IcingaException('Can not list contents of %s', $this->deploymentPath);
         }
 
@@ -173,7 +180,8 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         while ($file = readdir($dh)) {
             if ($file === '.' || $file === '..') {
                 continue;
-            } elseif (is_dir($this->deploymentPath . DIRECTORY_SEPARATOR . $file)
+            } elseif (
+                is_dir($this->deploymentPath . DIRECTORY_SEPARATOR . $file)
                 && substr($file, 0, 9) === 'director-'
             ) {
                 $stages[] = $file;
@@ -230,7 +238,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
             // 'module_name'    => $moduleName,
         ));
 
-        $stage_name = 'director-' .date('Ymd-His');
+        $stage_name = 'director-' . date('Ymd-His');
         $deployment->set('stage_name', $stage_name);
 
         try {
@@ -279,7 +287,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
                 $this->mkdir(dirname($fullPath), true);
 
                 $fh = @fopen($fullPath, 'w');
-                if ($fh === null) {
+                if ($fh === false) {
                     throw new IcingaException('Could not open file "%s" for writing.', $fullPath);
                 }
                 chmod($fullPath, $this->file_mode);
@@ -334,7 +342,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     protected function listDirectoryContents($path, $depth = 0)
     {
         $dh = @opendir($path);
-        if ($dh === null) {
+        if ($dh === false) {
             throw new IcingaException('Can not list contents of %s', $path);
         }
 

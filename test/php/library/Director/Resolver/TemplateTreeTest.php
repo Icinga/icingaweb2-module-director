@@ -255,5 +255,7 @@ class TemplateTreeTest extends BaseTestCase
             $this->removeHosts($db);
             $this->removeServices($db);
         }
+
+        parent::tearDown();
     }
 }

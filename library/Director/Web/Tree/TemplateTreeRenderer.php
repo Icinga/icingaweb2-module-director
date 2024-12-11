@@ -73,7 +73,7 @@ class TemplateTreeRenderer extends BaseHtmlElement
                 $tree['name'],
                 "director/{$type}template/usage",
                 array('name' => $tree['name']),
-                array('class' => 'icon-' .$type)
+                array('class' => 'icon-' . $type)
             ));
         }
 

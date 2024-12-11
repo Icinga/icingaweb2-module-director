@@ -124,7 +124,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
             $url = 'director/host/servicesetservice';
         } else {
             if (is_resource($row->uuid)) {
-                $row->uuid =stream_get_contents($row->uuid);
+                $row->uuid = stream_get_contents($row->uuid);
             }
 
             $params = [
@@ -219,8 +219,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     protected function createFakeRemoveLinkForReadonlyView()
     {
         return Html::tag('span', [
-            'class' => 'icon-paste',
-            'style' => 'float: right; font-weight: normal',
+            'class' => ['icon-paste', 'seviceset-obj-link'],
         ], $this->host->getObjectName());
     }
 
@@ -228,8 +227,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     {
         $hostname = $host->getObjectName();
         return Link::create($hostname, 'director/host/services', ['name' => $hostname], [
-            'class' => 'icon-paste',
-            'style' => 'float: right; font-weight: normal',
+            'class' => ['icon-paste', 'seviceset-obj-link'],
             'data-base-target' => '_next',
             'title' => sprintf(
                 $this->translate('This set has been inherited from %s'),

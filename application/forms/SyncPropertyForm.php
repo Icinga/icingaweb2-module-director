@@ -25,7 +25,7 @@ class SyncPropertyForm extends DirectorObjectForm
 
     private $dummyObject;
 
-    const EXPRESSION = '__EXPRESSION__';
+    public const EXPRESSION = '__EXPRESSION__';
 
     /**
      * @throws \Zend_Form_Exception

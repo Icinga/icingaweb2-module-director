@@ -3,13 +3,14 @@
 namespace Icinga\Module\Director\Data;
 
 use Icinga\Module\Director\Exception\JsonEncodeException;
+
 use function json_decode;
 use function json_encode;
 use function json_last_error;
 
 class Json
 {
-    const DEFAULT_FLAGS = JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+    public const DEFAULT_FLAGS = JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
 
     /**
      * Encode with well-known flags, as we require the result to be reproducible

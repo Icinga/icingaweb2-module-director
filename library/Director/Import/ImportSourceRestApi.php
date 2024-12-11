@@ -69,6 +69,7 @@ class ImportSourceRestApi extends ImportSourceHook
         $data = $result;
         foreach ($parts as $part) {
             // un-escape any dots
+            /** @var string $part */
             $part = preg_replace('~\\\\.~', '.', $part);
 
             if (property_exists($data, $part)) {
@@ -272,11 +273,9 @@ class ImportSourceRestApi extends ImportSourceHook
                     ),
                 ]);
 
-                $passRequired = strlen($form->getSentOrObjectSetting('proxy_user')) > 0;
-
                 $form->addElement('storedPassword', 'proxy_pass', [
                     'label'    => $form->translate('Proxy Password'),
-                    'required' => $passRequired
+                    'required' => strlen((string) $form->getSentOrObjectSetting('proxy_user')) > 0
                 ]);
             }
         }

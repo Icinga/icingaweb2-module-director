@@ -13,9 +13,9 @@ use Icinga\Module\Director\Data\Db\DbObject;
  */
 class Basket extends DbObject implements ExportInterface
 {
-    const SELECTION_ALL = 'ALL';
-    const SELECTION_NONE = 'IGNORE';
-    const SELECTION_CUSTOM = '[]';
+    public const SELECTION_ALL = 'ALL';
+    public const SELECTION_NONE = 'IGNORE';
+    public const SELECTION_CUSTOM = '[]';
 
     protected $table = 'director_basket';
 
@@ -82,7 +82,6 @@ class Basket extends DbObject implements ExportInterface
         if (empty($objects)) {
             $this->chosenObjects = [];
         } else {
-            $this->chosenObjects = [];
             foreach ((array) $objects as $type => $object) {
                 $this->addObjects($type, $object);
             }

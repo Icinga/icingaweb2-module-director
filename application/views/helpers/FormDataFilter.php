@@ -44,14 +44,16 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     {
         $info = $this->_getInfo($name, $value, $attribs);
         extract($info); // id, name, value, attribs, options, listsep, disable
-        if (array_key_exists('columns', $attribs)) {
-            $this->setColumns($attribs['columns']);
-            unset($attribs['columns']);
-        }
+        if ($attribs) {
+            if (array_key_exists('columns', $attribs)) {
+                $this->setColumns($attribs['columns']);
+                unset($attribs['columns']);
+            }
 
-        if (array_key_exists('suggestionContext', $attribs)) {
-            $this->setSuggestionContext($attribs['suggestionContext']);
-            unset($attribs['suggestionContext']);
+            if (array_key_exists('suggestionContext', $attribs)) {
+                $this->setSuggestionContext($attribs['suggestionContext']);
+                unset($attribs['suggestionContext']);
+            }
         }
 
         // TODO: check for columns in attribs, preserve & remove them from the

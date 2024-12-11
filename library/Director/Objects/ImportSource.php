@@ -132,7 +132,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     protected static function existsWithNameAndId($name, $id, Db $connection)
     {
         $db = $connection->getDbAdapter();
-        $dummy = new static;
+        $dummy = new static();
         $idCol = $dummy->autoincKeyName;
         $keyCol = $dummy->keyName;
 
@@ -479,7 +479,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     protected function raiseLimits()
     {
         MemoryLimit::raiseTo('1024M');
-        ini_set('max_execution_time', 0);
+        ini_set('max_execution_time', '0');
 
         return $this;
     }

@@ -103,7 +103,8 @@ abstract class DbObject
      */
     protected function __construct()
     {
-        if ($this->table === null
+        if (
+            $this->table === null
             || $this->keyName === null
             || $this->defaultProperties === null
         ) {
@@ -366,7 +367,8 @@ abstract class DbObject
             ));
         }
 
-        if ((is_numeric($value) || is_string($value))
+        if (
+            (is_numeric($value) || is_string($value))
             && (string) $value === (string) $this->get($key)
         ) {
             return $this;
@@ -385,7 +387,8 @@ abstract class DbObject
             return $this;
         }
         if ($key === 'id' || substr($key, -3) === '_id') {
-            if ($value !== null
+            if (
+                $value !== null
                 && $this->properties[$key] !== null
                 && (int) $value === (int) $this->properties[$key]
             ) {
@@ -984,7 +987,7 @@ abstract class DbObject
                 $this->table,
                 $this->getLogId(),
                 $e->getMessage(),
-                var_export($this->getProperties(), 1) // TODO: Remove properties
+                var_export($this->getProperties(), true) // TODO: Remove properties
             ));
         }
 
@@ -1206,7 +1209,8 @@ abstract class DbObject
     {
         $class = get_called_class();
         if (static::hasPrefetched($key)) {
-            if (is_string($key)
+            if (
+                is_string($key)
                 && array_key_exists($class, self::$prefetchedNames)
                 && array_key_exists($key, self::$prefetchedNames[$class])
             ) {
@@ -1239,7 +1243,8 @@ abstract class DbObject
         }
 
         if (array_key_exists($class, self::$prefetched)) {
-            if (is_string($key)
+            if (
+                is_string($key)
                 && array_key_exists($class, self::$prefetchedNames)
                 && array_key_exists($key, self::$prefetchedNames[$class])
             ) {
@@ -1283,7 +1288,7 @@ abstract class DbObject
             return $prefetched;
         }
 
-        $obj = new static;
+        $obj = new static();
         if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
@@ -1311,7 +1316,7 @@ abstract class DbObject
             return $prefetched;
         }
         /** @var DbObject $obj */
-        $obj = new static;
+        $obj = new static();
 
         if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();
@@ -1373,7 +1378,7 @@ abstract class DbObject
         $db = $connection->getDbAdapter();
 
         if ($query === null) {
-            $dummy = new static;
+            $dummy = new static();
             $select = $db->select()->from($dummy->table);
         } else {
             $select = $query;
@@ -1382,7 +1387,7 @@ abstract class DbObject
 
         foreach ($rows as $row) {
             /** @var DbObject $obj */
-            $obj = new static;
+            $obj = new static();
             $obj->setConnection($connection)->setDbProperties($row);
             if ($keyColumn === null) {
                 $objects[] = $obj;
@@ -1452,7 +1457,7 @@ abstract class DbObject
         }
 
         /** @var DbObject $obj */
-        $obj = new static;
+        $obj = new static();
         if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
@@ -1471,7 +1476,7 @@ abstract class DbObject
     public static function uniqueIdExists(UuidInterface $uuid, DbConnection $connection)
     {
         $db = $connection->getDbAdapter();
-        $obj = new static;
+        $obj = new static();
         $column = $obj->getUuidColumn();
         $query = $db->select()
             ->from($obj->getTableName(), $column)
@@ -1490,7 +1495,7 @@ abstract class DbObject
 
         throw new NotFoundError(sprintf(
             'No %s with UUID=%s has been found',
-            (new static)->getTableName(),
+            (new static())->getTableName(),
             $uuid->toString()
         ));
     }
@@ -1498,7 +1503,7 @@ abstract class DbObject
     public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection): ?DbObject
     {
         $db = $connection->getDbAdapter();
-        $obj = new static;
+        $obj = new static();
 
         if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();

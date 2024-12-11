@@ -11,7 +11,7 @@ class JobsController extends ActionController
     public function indexAction()
     {
         $this->addTitle($this->translate('Jobs'))
-            ->setAutoRefreshInterval(10)
+            ->setAutorefreshInterval(10)
             ->addAddLink($this->translate('Add a new Job'), 'director/job/add')
             ->tabs(new ImportTabs())->activate('jobs');
 

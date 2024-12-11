@@ -3,7 +3,10 @@
 namespace Icinga\Module\Director\Web\Widget;
 
 use gipfl\Json\JsonString;
+use Icinga\Module\Director\Data\FieldReferenceLoader;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use Icinga\Date\DateFormatter;
@@ -83,8 +86,7 @@ class ActivityLogInfo extends HtmlDocument
         /** @var Url $url */
         $url = $url->without('checksum')->without('show');
         $div = Html::tag('div', [
-            'class' => 'pagination-control',
-            'style' => 'float: right; width: 5em'
+            'class' => ['pagination-control', 'activity-log-control'],
         ]);
 
         $ul = Html::tag('ul', ['class' => 'nav tab-nav']);
@@ -225,7 +227,7 @@ class ActivityLogInfo extends HtmlDocument
                 $this->oldProperties = JsonString::decodeOptional($this->entry->old_properties);
             }
             if ($this->oldProperties === null) {
-                $this->oldProperties = new \stdClass;
+                $this->oldProperties = new \stdClass();
             }
         }
 
@@ -239,7 +241,7 @@ class ActivityLogInfo extends HtmlDocument
                 $this->newProperties = JsonString::decodeOptional($this->entry->new_properties);
             }
             if ($this->newProperties === null) {
-                $this->newProperties = new \stdClass;
+                $this->newProperties = new \stdClass();
             }
         }
 
@@ -371,10 +373,12 @@ class ActivityLogInfo extends HtmlDocument
             $this->defaultTab = 'diff';
         }
 
-        if (in_array($entry->action_name, [
+        if (
+            in_array($entry->action_name, [
             DirectorActivityLog::ACTION_CREATE,
             DirectorActivityLog::ACTION_MODIFY,
-        ])) {
+            ])
+        ) {
             $tabs->add('new', [
                 'label' => $this->translate('New object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'new'])
@@ -385,10 +389,12 @@ class ActivityLogInfo extends HtmlDocument
             }
         }
 
-        if (in_array($entry->action_name, [
+        if (
+            in_array($entry->action_name, [
             DirectorActivityLog::ACTION_DELETE,
             DirectorActivityLog::ACTION_MODIFY,
-        ])) {
+            ])
+        ) {
             $tabs->add('old', [
                 'label' => $this->translate('Former object'),
                 'url'   => $url->with(['id' => $entry->id, 'show' => 'old'])
@@ -434,9 +440,28 @@ class ActivityLogInfo extends HtmlDocument
     {
         if ($object instanceof IcingaService) {
             return $this->previewService($object);
+        } elseif ($object instanceof IcingaServiceSet) {
+            return $this->previewServiceSet($object);
         } else {
             return $object->toSingleIcingaConfig();
         }
+    }
+
+    /**
+     * Render service set to be previewed
+     *
+     * @param IcingaServiceSet $object
+     *
+     * @return IcingaConfig
+     */
+    protected function previewServiceSet(IcingaServiceSet $object)
+    {
+        $config = $object->toSingleIcingaConfig();
+        foreach ($object->getCachedServices() as $service) {
+            $service->renderToConfig($config);
+        }
+
+        return $config;
     }
 
     protected function previewService(IcingaService $service)
@@ -625,10 +650,27 @@ class ActivityLogInfo extends HtmlDocument
             $newProps['object_type'] = $props->object_type;
         }
 
-        return IcingaObject::createByType(
+        $object = IcingaObject::createByType(
             $type,
             $newProps,
             $this->db
-        )->setProperties((array) $props);
+        );
+
+        if ($type === 'icinga_service_set' && isset($props->services)) {
+            $services = [];
+            foreach ($props->services as $service) {
+                $services[$service->object_name] = IcingaObject::createByType(
+                    'icinga_service',
+                    (array) $service,
+                    $this->db
+                );
+            }
+
+            /** @var IcingaServiceSet $object */
+            $object->setCachedServices($services);
+            unset($props->services);
+        }
+
+        return $object->setProperties((array) $props);
     }
 }

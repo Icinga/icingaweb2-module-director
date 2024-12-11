@@ -80,7 +80,8 @@ class HostServiceBlacklist
 
     public function getPreLoadedMappingsForService(IcingaService $service)
     {
-        if ($this->mappings !== null
+        if (
+            $this->mappings !== null
             && array_key_exists($service->get('id'), $this->mappings)
         ) {
             return $this->mappings[$service->get('id')];

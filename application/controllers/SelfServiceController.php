@@ -194,7 +194,7 @@ class SelfServiceController extends ActionController
         } else {
             throw new ProgrammingError(
                 'Expected boolean value, got %s',
-                var_export($value, 1)
+                var_export($value, true)
             );
         }
     }
@@ -275,7 +275,7 @@ class SelfServiceController extends ActionController
             // PluginsUrl => framework_plugins_url
         ];
         $username = $settings->get('self-service/icinga_service_user');
-        if ($username !== null && strlen($username) > 0) {
+        if ($username) {
             $params['icinga_service_user'] = $username;
         }
 
@@ -397,14 +397,14 @@ class SelfServiceController extends ActionController
         $params['parent_zone']      = $zoneName;
         $params['ca_server']        = $master->getObjectName();
         $params['parent_endpoints'] = $endpointNames;
-        $params['accept_config']    = $host->getSingleResolvedProperty('accept_config')=== 'y';
+        $params['accept_config']    = $host->getSingleResolvedProperty('accept_config') === 'y';
     }
 
     protected function addStringSettingsToParams(Settings $settings, array $keys, array &$params)
     {
         foreach ($keys as $key) {
             $value = $settings->get("self-service/$key");
-            if (strlen($value)) {
+            if ($value) {
                 $params[$key] = $value;
             }
         }

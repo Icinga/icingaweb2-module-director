@@ -29,14 +29,15 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->hasPermission(Permission::MONITORING_SERVICES)) {
-            if ($this->host && $service = $this->object) {
-                if ($this->monitoring()->canModifyService($this->host, $service->getObjectName())) {
-                    return;
-                }
-            }
+        if (
+            $this->host
+            && $this->object
+            && $this->backend()->canModifyService($this->host->getObjectName(), $this->object->getObjectName())
+        ) {
+            return;
         }
-        $this->assertPermission('director/hosts');
+
+        $this->assertPermission(Permission::HOSTS);
     }
 
     public function init()
@@ -190,7 +191,8 @@ class ServiceController extends ObjectController
         }
 
         try {
-            if ($object->isTemplate()
+            if (
+                $object->isTemplate()
                 && $object->getResolvedProperty('check_command_id')
             ) {
                 $this->view->actionLinks .= ' ' . $this->view->qlink(

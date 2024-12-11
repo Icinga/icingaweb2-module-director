@@ -73,7 +73,8 @@ abstract class ObjectsController extends ActionController
     {
         $request = $this->getRequest();
         $table = $this->getTable();
-        if ($request->getControllerName() === 'services'
+        if (
+            $request->getControllerName() === 'services'
             && $host = $this->params->get('host')
         ) {
             $host = IcingaHost::load($host, $this->db());
@@ -85,8 +86,9 @@ abstract class ObjectsController extends ActionController
         } elseif ($request->getActionName() === 'applyrules') {
             $table->filterObjectType('apply');
         }
+        /** @var ?string $search */
         $search = $this->params->get('q');
-        if ($search !== null && \strlen($search) > 0) {
+        if ($search) {
             $table->search($search);
         }
 

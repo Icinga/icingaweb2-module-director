@@ -7,15 +7,16 @@ use Icinga\Module\Director\Db;
 use Icinga\Authentication\Auth;
 use Icinga\Application\Icinga;
 use Icinga\Application\Logger;
+use stdClass;
 
 class DirectorActivityLog extends DbObject
 {
-    const ACTION_CREATE = 'create';
-    const ACTION_DELETE = 'delete';
-    const ACTION_MODIFY = 'modify';
+    public const ACTION_CREATE = 'create';
+    public const ACTION_DELETE = 'delete';
+    public const ACTION_MODIFY = 'modify';
 
     /** @deprecated */
-    const AUDIT_REMOVE = 'remove';
+    public const AUDIT_REMOVE = 'remove';
 
     protected $table = 'director_activity_log';
 
@@ -176,7 +177,19 @@ class DirectorActivityLog extends DbObject
     {
         $name = $object->getObjectName();
         $type = $object->getTableName();
-        $oldProps = json_encode($object->getPlainUnmodifiedObject());
+        /** @var stdClass $plainUnmodifiedObject */
+        $plainUnmodifiedObject = $object->getPlainUnmodifiedObject();
+
+        if ($object instanceof IcingaServiceSet) {
+            $services = [];
+            foreach ($object->getCachedServices() as $service) {
+                $services[$service->getObjectName()] = $service->toPlainObject();
+            }
+
+            $plainUnmodifiedObject->services = $services;
+        }
+
+        $oldProps = json_encode($plainUnmodifiedObject);
 
         $data = [
             'object_name'     => $name,

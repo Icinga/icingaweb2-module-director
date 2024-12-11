@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 class PropertyModifierTrim extends PropertyModifierHook
 {
-    const VALID_METHODS = ['trim', 'ltrim', 'rtrim'];
+    public const VALID_METHODS = ['trim', 'ltrim', 'rtrim'];
 
     public static function addSettingsFormFields(QuickForm $form)
     {

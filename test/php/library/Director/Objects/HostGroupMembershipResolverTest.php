@@ -12,11 +12,12 @@ use Icinga\Module\Director\Test\BaseTestCase;
 
 class HostGroupMembershipResolverTest extends BaseTestCase
 {
-    const PREFIX = '__groupmembership';
-    const TYPE = 'host';
+    public const PREFIX = '__groupmembership';
+    public const TYPE = 'host';
 
     public function setUp(): void
     {
+        parent::setUp();
         IcingaTemplateRepository::clear();
     }
 

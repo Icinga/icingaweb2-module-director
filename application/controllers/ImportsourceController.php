@@ -180,9 +180,7 @@ class ImportsourceController extends ActionController
                 'target' => '_blank',
                 'class'  => 'icon-download',
             ]
-        ))->add(Link::create('[..]', '#', null, [
-            'onclick' => 'javascript:$("table.raw-data-table").toggleClass("collapsed");'
-        ]));
+        ));
         try {
             (new ImportsourceHookTable())->setImportSource($source)->renderTo($this);
         } catch (Exception $e) {

@@ -16,9 +16,9 @@ use RuntimeException;
  */
 abstract class QuickForm extends QuickBaseForm
 {
-    const ID = '__FORM_NAME';
+    public const ID = '__FORM_NAME';
 
-    const CSRF = '__FORM_CSRF';
+    public const CSRF = '__FORM_CSRF';
 
     /**
      * The name of this form
@@ -622,6 +622,13 @@ abstract class QuickForm extends QuickBaseForm
                 $post = $req->getPost();
                 $this->hasBeenSent = array_key_exists(self::ID, $post) &&
                     $post[self::ID] === $this->getName();
+
+                if (
+                    $this->hasBeenSent
+                    && (! isset($post[self::CSRF]) || ! CsrfToken::isValid($post[self::CSRF]))
+                ) {
+                    die('Invalid CSRF token provided');
+                }
             } else {
                 $this->hasBeenSent = false;
             }

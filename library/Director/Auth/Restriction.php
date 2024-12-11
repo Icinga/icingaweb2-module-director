@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Auth;
 class Restriction
 {
     public const MONITORING_RW_OBJECT_FILTER = 'director/monitoring/rw-object-filter';
+    public const ICINGADB_RW_OBJECT_FILTER = 'director/icingadb/rw-object-filter';
     public const FILTER_HOSTGROUPS = 'director/filter/hostgroups';
 
     // Hint: by-name-Filters are being fetched with variable names, like "director/$type/apply/filter-by-name"
@@ -12,5 +13,5 @@ class Restriction
     public const SCHEDULED_DOWNTIME_APPLY_FILTER_BY_NAME = 'director/scheduled-downtime/apply/filter-by-name';
     public const SERVICE_APPLY_FILTER_BY_NAME = 'director/service/apply/filter-by-name';
     public const SERVICE_SET_FILTER_BY_NAME = 'director/service_set/filter-by-name';
-    const DB_RESOURCE = 'director/db_resource';
+    public const DB_RESOURCE = 'director/db_resource';
 }

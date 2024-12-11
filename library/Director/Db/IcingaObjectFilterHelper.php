@@ -11,9 +11,9 @@ use Zend_Db_Select as ZfSelect;
 
 class IcingaObjectFilterHelper
 {
-    const INHERIT_DIRECT = 'direct';
-    const INHERIT_INDIRECT = 'indirect';
-    const INHERIT_DIRECT_OR_INDIRECT = 'total';
+    public const INHERIT_DIRECT = 'direct';
+    public const INHERIT_INDIRECT = 'indirect';
+    public const INHERIT_DIRECT_OR_INDIRECT = 'total';
 
     /**
      * @param IcingaObject|int|string $id
@@ -31,7 +31,7 @@ class IcingaObjectFilterHelper
             throw new InvalidArgumentException(sprintf(
                 'Numeric ID or IcingaObject expected, got %s',
                 // TODO: just type/class info?
-                var_export($id, 1)
+                var_export($id, true)
             ));
         }
     }
@@ -59,7 +59,8 @@ class IcingaObjectFilterHelper
         if ($branchuuid) {
             if ($inheritanceType === self::INHERIT_DIRECT) {
                 return $query->where('imports LIKE \'%"' . $template->getObjectName() . '"%\'');
-            } elseif ($inheritanceType === self::INHERIT_INDIRECT
+            } elseif (
+                $inheritanceType === self::INHERIT_INDIRECT
                 || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
             ) {
                 $tree = new TemplateTree($type, $template->getConnection());
@@ -90,7 +91,8 @@ class IcingaObjectFilterHelper
 
         if ($inheritanceType === self::INHERIT_DIRECT) {
             $sub->where("$i.parent_{$type}_id = ?", $id);
-        } elseif ($inheritanceType === self::INHERIT_INDIRECT
+        } elseif (
+            $inheritanceType === self::INHERIT_INDIRECT
             || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
         ) {
             $tree = new TemplateTree($type, $template->getConnection());

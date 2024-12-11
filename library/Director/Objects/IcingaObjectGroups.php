@@ -183,6 +183,10 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
+        if (is_int($group)) {
+            $group = (string) $group;
+        }
+
         /** @var IcingaObjectGroup $class */
         $class = $this->getGroupClass();
 
@@ -224,7 +228,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         } else {
             throw new RuntimeException(
                 'Invalid group object: %s',
-                var_export($group, 1)
+                var_export($group, true)
             );
         }
 
@@ -338,7 +342,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
     protected function getGroupClass()
     {
-        return __NAMESPACE__ . '\\Icinga' .ucfirst($this->object->getShortTableName()) . 'Group';
+        return __NAMESPACE__ . '\\Icinga' . ucfirst($this->object->getShortTableName()) . 'Group';
     }
 
     public static function loadForStoredObject(IcingaObject $object)
@@ -376,7 +380,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $type = $this->object->getLegacyObjectType();
-        return c1::renderKeyValue($type.'groups', c1::renderArray($groups));
+        return c1::renderKeyValue($type . 'groups', c1::renderArray($groups));
     }
 
     public function __toString()

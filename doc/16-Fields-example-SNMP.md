@@ -94,7 +94,7 @@ slightly to fit ITL Commands in case you're using those (snmpv3_*_type VS _alg).
 Your Cisco Health checks assigned to all:
 
 * routers or switches
-* manifactured by Cisco
+* manufactured by Cisco
 * with SNMP credentials, regardless of which version
 
 ...might then look as follows:

@@ -7,12 +7,11 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class PropertyModifierReplaceNull extends PropertyModifierHook
 {
-
     public function getName()
     {
         return 'Replace null value with String';
     }
-    
+
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('text', 'string', [

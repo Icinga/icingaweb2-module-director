@@ -36,7 +36,7 @@ class IcingaObjectLegacyAssignments
         $assigns = array();
         $ignores = array();
         foreach ($values as $type => $value) {
-            if (strpos($value, '|') !== false || strpos($value, '&' !== false)) {
+            if (strpos($value, '|') !== false || strpos($value, '&') !== false) {
                 $value = '(' . $value . ')';
             }
 

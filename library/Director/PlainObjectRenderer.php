@@ -4,7 +4,7 @@ namespace Icinga\Module\Director;
 
 class PlainObjectRenderer
 {
-    const INDENTATION = '  ';
+    public const INDENTATION = '  ';
 
     public static function render($object)
     {
@@ -105,7 +105,7 @@ class PlainObjectRenderer
         } elseif (is_string($object)) {
             return self::renderString($object);
         } else {
-            return '(UNKNOWN TYPE) ' . var_export($object, 1);
+            return '(UNKNOWN TYPE) ' . var_export($object, true);
         }
     }
 

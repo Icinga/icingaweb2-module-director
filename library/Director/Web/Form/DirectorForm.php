@@ -34,7 +34,7 @@ abstract class DirectorForm extends QuickForm
     public static function load()
     {
         return new static([
-            'icingaModule' => Icinga::App()->getModuleManager()->getModule('director')
+            'icingaModule' => Icinga::app()->getModuleManager()->getModule('director')
         ]);
     }
 

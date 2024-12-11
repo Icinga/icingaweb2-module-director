@@ -17,13 +17,13 @@ class RestApiResponse
 
     public static function fromJsonResult($json)
     {
-        $response = new static;
+        $response = new static();
         return $response->parseJsonResult($json);
     }
 
     public static function fromErrorMessage($error)
     {
-        $response = new static;
+        $response = new static();
         $response->errorMessage = $error;
 
         return $response;
@@ -113,7 +113,7 @@ class RestApiResponse
                     throw new IcingaException('API request failed: ' . $result->status);
                 }
             } else {
-                throw new IcingaException('API request failed: ' . var_export($result, 1));
+                throw new IcingaException('API request failed: ' . var_export($result, true));
             }
         }
 
