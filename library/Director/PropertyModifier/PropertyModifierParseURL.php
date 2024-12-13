@@ -8,7 +8,6 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class PropertyModifierParseURL extends PropertyModifierHook
 {
-
     /**
      * Array with possible components that can be returned from URL.
      */

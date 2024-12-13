@@ -7,7 +7,7 @@ use Icinga\Exception\ProgrammingError;
 class CustomVariableNumber extends CustomVariable
 {
     // Hint: 'F' is intentional, this MUST NOT respect locales
-    const PRECISION = '%.9F';
+    public const PRECISION = '%.9F';
 
     public function equals(CustomVariable $var)
     {

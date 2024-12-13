@@ -307,7 +307,8 @@ class IcingaService extends IcingaObject implements ExportInterface
 
         $str = parent::toLegacyConfigString();
 
-        if (! $this->isDisabled()
+        if (
+            ! $this->isDisabled()
             && $this->get('host_id')
             && $this->getRelated('host')->isDisabled()
         ) {
@@ -329,7 +330,8 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
         $str = parent::toConfigString();
 
-        if (! $this->isDisabled()
+        if (
+            ! $this->isDisabled()
             && $this->get('host_id')
             && $this->getRelated('host')->isDisabled()
         ) {
@@ -346,7 +348,8 @@ class IcingaService extends IcingaObject implements ExportInterface
      */
     protected function renderObjectHeader()
     {
-        if ($this->isApplyRule()
+        if (
+            $this->isApplyRule()
             && !$this->hasBeenAssignedToHostTemplate()
             && $this->get('apply_for') !== null
         ) {
@@ -609,7 +612,8 @@ class IcingaService extends IcingaObject implements ExportInterface
     {
         $where = parent::createWhere();
         if (! $this->hasBeenLoadedFromDb()) {
-            if (null === $this->get('service_set_id')
+            if (
+                null === $this->get('service_set_id')
                 && null === $this->get('host_id')
                 && null === $this->get('id')
             ) {
@@ -717,7 +721,8 @@ class IcingaService extends IcingaObject implements ExportInterface
     protected function beforeStore()
     {
         parent::beforeStore();
-        if ($this->isObject()
+        if (
+            $this->isObject()
             && $this->get('service_set_id') === null
             && $this->get('host_id') === null
         ) {

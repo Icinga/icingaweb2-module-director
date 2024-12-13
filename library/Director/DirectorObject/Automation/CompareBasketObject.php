@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 use Icinga\Module\Director\Core\Json;
 use ipl\Html\Error;
 use RuntimeException;
+
 use function array_key_exists;
 use function is_array;
 use function is_object;

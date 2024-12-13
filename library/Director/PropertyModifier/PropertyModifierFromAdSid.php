@@ -27,10 +27,10 @@ class PropertyModifierFromAdSid extends PropertyModifierHook
         $sidHex = unpack('H*hex', $value);
         $sidHex = $sidHex['hex'];
         $subAuths = implode('-', unpack('H2/H2/n/N/V*', $sid));
- 
+
         $revLevel = hexdec(substr($sidHex, 0, 2));
         $authIdent = hexdec(substr($sidHex, 4, 12));
- 
+
         return sprintf('S-%s-%s-%s', $revLevel, $authIdent, $subAuths);
     }
 }

@@ -487,7 +487,7 @@ class SyncRule extends DbObject implements ExportInterface
     protected static function existsWithNameAndId($name, $id, Db $connection)
     {
         $db = $connection->getDbAdapter();
-        $dummy = new static;
+        $dummy = new static();
         $idCol = $dummy->autoincKeyName;
         $keyCol = $dummy->keyName;
 

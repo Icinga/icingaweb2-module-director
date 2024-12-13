@@ -31,13 +31,14 @@ use Zend_Form_Element_Text as ZfText;
  */
 class StoredPassword extends ZfText
 {
-    const UNCHANGED = '__UNCHANGED_VALUE__';
+    public const UNCHANGED = '__UNCHANGED_VALUE__';
 
     public $helper = 'formStoredPassword';
 
     public function setValue($value)
     {
-        if (\is_array($value) && isset($value['_value'], $value['_sent'])
+        if (
+            \is_array($value) && isset($value['_value'], $value['_sent'])
             && $value['_sent'] === 'y'
         ) {
             $value = $sentValue = $value['_value'];

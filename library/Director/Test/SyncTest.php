@@ -14,9 +14,9 @@ use Icinga\Module\Director\Objects\SyncRule;
 abstract class SyncTest extends BaseTestCase
 {
     protected $objectType;
-    
+
     protected $keyColumn;
-    
+
     /** @var  ImportSource */
     protected $source;
 

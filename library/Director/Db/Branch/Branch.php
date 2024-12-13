@@ -18,7 +18,7 @@ use stdClass;
  */
 class Branch
 {
-    const PREFIX_SYNC_PREVIEW = '/syncpreview';
+    public const PREFIX_SYNC_PREVIEW = '/syncpreview';
 
     /** @var UuidInterface|null */
     protected $branchUuid;
@@ -40,7 +40,7 @@ class Branch
 
     public static function fromDbRow(stdClass $row)
     {
-        $self = new static;
+        $self = new static();
         if (is_resource($row->uuid)) {
             $row->uuid = stream_get_contents($row->uuid);
         }
@@ -85,7 +85,7 @@ class Branch
             return $hook->getBranchForRequest($request, $store, $auth);
         }
 
-        return new Branch;
+        return new Branch();
     }
 
     /**
