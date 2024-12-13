@@ -523,7 +523,10 @@ class HostController extends ObjectController
             'object_name' => $this->params->get('set'),
             'host_id'     => $host->get('id')
         ];
-        $setTemplate = IcingaServiceSet::load($this->params->get('set'), $db);
+        $setTemplate = IcingaServiceSet::load(
+            ['object_name' => $this->params->get('set'), 'object_type' => 'template'],
+            $db
+        );
         if (IcingaServiceSet::exists($setParams, $db)) {
             $set = IcingaServiceSet::load($setParams, $db);
         } else {
@@ -555,7 +558,7 @@ class HostController extends ObjectController
             ->setDb($db)
             ->setBranch($this->getBranch())
             ->setHost($host)
-            ->setServiceSet($set)
+            ->setServiceSet($setTemplate)
             ->setObject($service)
             ->handleRequest();
         $this->tabs()->activate('services');

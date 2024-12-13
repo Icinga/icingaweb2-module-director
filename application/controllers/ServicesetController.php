@@ -123,7 +123,7 @@ class ServicesetController extends ObjectController
     {
         if ($this->object === null) {
             if (null !== ($name = $this->params->get('name'))) {
-                $params = ['object_name' => $name];
+                $params = ['object_name' => $name, 'object_type' => 'template'];
                 $db = $this->db();
 
                 if ($this->host) {
