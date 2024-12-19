@@ -4,6 +4,17 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.3
+-------
+
+### UI
+* FIX: Property sort tables does not cause CSRF token validation anymore (#2937)
+* FIX: No error when clicking `modify` action link for services belonging to service set in Icinga DB (#2938)
+* FIX: No crashing of Host template form when invalid check command is entered (#2941)
+
+### Internals
+* FIX: Filter can be now removed in import source modifiers (#2939)
+
 v1.11.2
 -------
 
