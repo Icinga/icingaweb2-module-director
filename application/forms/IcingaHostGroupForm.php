@@ -2,10 +2,11 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-
-class IcingaHostGroupForm extends DirectorObjectForm
+class IcingaHostGroupForm extends IcingaGroupForm
 {
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->addHidden('object_type', 'object');
@@ -18,6 +19,7 @@ class IcingaHostGroupForm extends DirectorObjectForm
 
         $this->addGroupDisplayNameElement()
              ->addAssignmentElements()
+             ->addZoneElements()
              ->setButtons();
     }
 
