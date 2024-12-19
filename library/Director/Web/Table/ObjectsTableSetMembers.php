@@ -8,6 +8,7 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Db\DbSelectParenthesis;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
@@ -97,7 +98,7 @@ class ObjectsTableSetMembers extends ZfQueryBasedTable
     {
         $url = Url::fromPath('director/service/edit', [
             'name' => $row->object_name,
-            'uuid' => Uuid::fromBytes($row->uuid)->toString(),
+            'uuid' => Uuid::fromBytes(DbUtil::binaryResult($row->uuid))->toString(),
         ]);
 
         return static::tr([
