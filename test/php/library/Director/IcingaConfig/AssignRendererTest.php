@@ -93,6 +93,15 @@ class AssignRendererTest extends BaseTestCase
             $expected,
             $this->renderer($string)->renderAssign()
         );
+
+        $string = json_encode('member*') . '=host.vars.some_array';
+
+        $expected = 'assign where match("member*", host.vars.some_array, MatchAny)';
+
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
     }
 
     public function testInArrayIsRenderedCorrectly()
