@@ -28,6 +28,7 @@ class Zend_View_Helper_FormStoredPassword extends Zend_View_Helper_FormElement
             'type' => 'password',
             'name' => "{$name}[_value]",
             'id'   => $id,
+            'autocomplete' => 'new-password'
         ]);
         $res->add($el);
 
