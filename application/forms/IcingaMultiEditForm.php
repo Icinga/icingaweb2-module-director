@@ -51,6 +51,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $loader = new IcingaObjectFieldLoader($object);
         $loader->prepareElements($this);
         $loader->addFieldsToForm($this);
+        $this->varNameMap = $loader->getNameMap();
 
         if ($form = $this->relatedForm) {
             if ($form instanceof DirectorObjectForm) {
@@ -236,10 +237,6 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $key = $element->getName();
         $this->removeElement($key);
         $label = $element->getLabel();
-
-        if ($this->isCustomVar($key)) {
-            $this->varNameMap[$key] = $label;
-        }
 
         $group = $this->getDisplayGroupForElement($element);
         $description = $element->getDescription();
