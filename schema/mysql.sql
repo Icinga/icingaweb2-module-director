@@ -347,8 +347,8 @@ CREATE TABLE director_job (
   run_interval INT(10) UNSIGNED NOT NULL, -- seconds
   timeperiod_id INT(10) UNSIGNED DEFAULT NULL,
   last_attempt_succeeded ENUM('y', 'n') DEFAULT NULL,
-  ts_last_attempt TIMESTAMP NULL DEFAULT NULL,
-  ts_last_error TIMESTAMP NULL DEFAULT NULL,
+  ts_last_attempt BIGINT(20) NULL DEFAULT NULL,
+  ts_last_error BIGINT(20) NULL DEFAULT NULL,
   last_error_message TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY (job_name),
@@ -2446,4 +2446,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (188, NOW());
+  VALUES (189, NOW());
