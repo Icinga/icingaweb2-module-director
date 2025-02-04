@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Daemon\DaemonUtil;
 use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
@@ -84,7 +85,8 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
     public function run()
     {
         $job = $this->getInstance();
-        $this->set('ts_last_attempt', date('Y-m-d H:i:s'));
+        $currentTimestamp = DaemonUtil::timestampWithMilliseconds();
+        $this->set('ts_last_attempt', $currentTimestamp);
 
         try {
             $job->run();
@@ -92,7 +94,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
             $success = true;
         } catch (Exception $e) {
             Logger::error($e->getMessage());
-            $this->set('ts_last_error', date('Y-m-d H:i:s'));
+            $this->set('ts_last_error', $currentTimestamp);
             $this->set('last_error_message', $e->getMessage());
             $this->set('last_attempt_succeeded', 'n');
             $success = false;
@@ -123,8 +125,8 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
         }
 
         return (
-            strtotime((int) $this->get('ts_last_attempt')) + $this->get('run_interval') * 2
-        ) < time();
+            $this->get('ts_last_attempt') + $this->get('run_interval') * 2 * 1000
+        ) < DaemonUtil::timestampWithMilliseconds();
     }
 
     public function hasBeenDisabled()
@@ -141,7 +143,9 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
             return $this->isWithinTimeperiod();
         }
 
-        if (strtotime($this->get('ts_last_attempt')) + $this->get('run_interval') < time()) {
+        if (
+            $this->get('ts_last_attempt') + $this->get('run_interval') * 1000 < DaemonUtil::timestampWithMilliseconds()
+        ) {
             return $this->isWithinTimeperiod();
         }
 
