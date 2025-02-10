@@ -303,6 +303,20 @@ class IcingaDependencyForm extends DirectorObjectForm
             }
         }
 
+        $redundancyGroup = $dependency->get('redundancy_group');
+        $this->addElement('text', 'redundancy_group', [
+            'label' => $this->translate('Redundancy Group'),
+            'description' => $this->translate(
+                'The dependency redundancy group. A name for a group of which'
+                . ' at least one single dependency must be fulfilled for the'
+                . ' whole dependency to be fulfilled.'
+            ),
+            'class' => "director-suggest",
+            'data-suggestion-context' => 'dependencyredundancygroups',
+            'required' => false,
+            'value' => $redundancyGroup
+        ]);
+
         $elements = ['parent_host', 'child_host', 'parent_service', 'child_service'];
         $this->addDisplayGroup($elements, 'related_objects', [
             'decorators' => [
