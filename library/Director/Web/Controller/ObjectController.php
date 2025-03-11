@@ -10,7 +10,6 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
-use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -18,6 +17,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
+use Icinga\Module\Director\Forms\ObjectPropertyForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
@@ -34,6 +34,8 @@ use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
+use Icinga\Module\Director\Web\Widget\ObjectPropertyTable;
+use Icinga\Web\Notification;
 use ipl\Html\Html;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -266,6 +268,72 @@ abstract class ObjectController extends ActionController
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));
         }
+    }
+
+    public function propertiesAction()
+    {
+        $this->assertPermission('director/admin');
+        $object = $this->requireObject();
+        $type = $this->getType();
+
+        $this->addTitle(
+            $this->translate('Custom properties: %s'),
+            $object->getObjectName()
+        );
+        $this->tabs()->activate('properties');
+
+        try {
+            $this->addPropertiesFormAndTable($object);
+        } catch (NestingError $e) {
+            $this->content()->add(Hint::error($e->getMessage()));
+        }
+    }
+
+    protected function addPropertiesFormAndTable($object)
+    {
+        $propertyUuid = $this->params->get('property_uuid');
+        $objectUuid = $this->object->get('uuid');
+        $objectType = $this->object->getShortTableName();
+        if ($propertyUuid) {
+            $propertyUuid = Uuid::fromString($propertyUuid);
+        }
+
+        $form = (new ObjectPropertyForm($this->db(), $object, $propertyUuid))
+            ->on(ObjectPropertyForm::ON_SUCCESS, function (ObjectPropertyForm $form) {
+                Notification::success(sprintf(
+                    $this->translate('Property has successfully been added')
+                ));
+            })
+            ->handleRequest($this->getServerRequest());
+
+        if ($propertyUuid) {
+            $this->actions()->add(Link::create(
+                $this->translate('back'),
+                $this->url()->without('property_uuid'),
+                null,
+                ['class' => 'icon-left-big']
+            ));
+            $objectPropertiesQuery = $this->db()->select()->from('icinga_host_property', ['required'])
+                ->where('property_uuid', UUid::fromString($propertyUuid)->getBytes())
+                ->where($objectType . '_uuid ', $objectUuid);
+
+            $form->populate(['property' => $propertyUuid, 'required' => $this->db()->fetchOne($objectPropertiesQuery)]);
+        }
+
+        $objectPropertiesQuery = $this->db()->select()
+            ->from(['dp' => 'director_property'], ['*'])
+            ->join(
+                ['iop' => 'icinga_' . $objectType . '_property'],
+                'dp.uuid = iop.property_uuid',
+                ['required']
+            )
+            ->where('iop.' . $objectType . '_uuid', $objectUuid);
+
+        $this->content()->add($form);
+        $this->content()->add(new ObjectPropertyTable(
+            Uuid::fromBytes($objectUuid),
+            $this->db()->fetchAll($objectPropertiesQuery)
+        ));
     }
 
     protected function addFieldsFormAndTable($object, $type)
