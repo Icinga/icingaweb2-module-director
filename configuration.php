@@ -175,3 +175,9 @@ $section->add(N_('Deployments'))
     ->setUrl('director/config/deployments')
     ->setPriority(902)
     ->setPermission(Permission::DEPLOYMENTS);
+$section->add(N_('Properties'))
+    ->setUrl('director/properties')
+    ->setPriority(903);
+
+$this->provideCssFile('property-table.less');
+$this->provideCssFile('custom-properties-form.less');
