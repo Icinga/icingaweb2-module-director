@@ -731,7 +731,7 @@
                 url = $container.data('icingaUrl');
                 $actions = $('.main-actions', $('#col1'));
             }
-            if (! $actions.length) {
+            if ($actions) {
                 return;
             }
 
