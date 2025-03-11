@@ -1,0 +1,29 @@
+.custom-properties-form {
+  .control-group:has(> fieldset) {
+    position: relative;
+    padding-right: 2em;
+
+    fieldset:not(.array-input) {
+      border: 1px solid @gray-light;
+      padding: 1em;
+      margin-bottom: 1em;
+      &.dictionary-item legend {
+        background-color: @icinga-blue-light;
+        width: 100%;
+      }
+
+      .remove-button {
+        position: absolute;
+        top: 0;
+        right: 2em;
+        width: 2em;
+        border: none;
+        justify-content: center;
+        color: @color-critical;
+        &:not(:hover) {
+          background-color: @low-sat-blue;
+        }
+      }
+    }
+  }
+}
