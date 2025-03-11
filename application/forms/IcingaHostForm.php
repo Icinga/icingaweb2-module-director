@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Exception;
 use Icinga\Exception\AuthenticationException;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Auth\Restriction;
@@ -83,7 +84,13 @@ class IcingaHostForm extends DirectorObjectForm
             'class' => 'autosubmit',
         ]);
 
-        if ($this->getSentOrResolvedObjectValue('has_agent') === 'y') {
+        try {
+            $hasAgent = $this->getSentOrResolvedObjectValue('has_agent') === 'y';
+        } catch (Exception $e) {
+            $hasAgent = false;
+        }
+
+        if ($hasAgent) {
             $this->addBoolean('master_should_connect', [
                 'label'       => $this->translate('Establish connection'),
                 'description' => $this->translate(
@@ -209,7 +216,8 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addGroupsElement()
     {
-        if ($this->hasHostGroupRestriction()
+        if (
+            $this->hasHostGroupRestriction()
             && ! $this->getAuth()->hasPermission(Permission::GROUPS_FOR_RESTRICTED_HOSTS)
         ) {
             return $this;

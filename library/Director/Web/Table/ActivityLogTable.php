@@ -80,7 +80,7 @@ class ActivityLogTable extends IntlZfQueryBasedTable
     {
         $this->currentRow = $row;
         $this->splitByDay($row->ts_change_time);
-        $action = 'action-' . $row->action. ' ';
+        $action = 'action-' . $row->action . ' ';
         if ($row->id > $this->lastDeployedId) {
             $action .= 'undeployed';
         } else {

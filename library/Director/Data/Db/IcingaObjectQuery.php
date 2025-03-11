@@ -12,7 +12,7 @@ use Zend_Db_Select as ZfDbSelect;
 
 class IcingaObjectQuery
 {
-    const BASE_ALIAS = 'o';
+    public const BASE_ALIAS = 'o';
 
     /** @var Db */
     protected $connection;

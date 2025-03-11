@@ -175,7 +175,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
             $error = $e->getMessage();
             $types = $this->optionalEnum(array());
         }
-        
+
         $this->addElement('select', 'datatype', array(
             'label'         => $this->translate('Data type'),
             'description'   => $this->translate('Field type'),

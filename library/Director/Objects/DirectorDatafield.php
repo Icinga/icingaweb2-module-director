@@ -74,7 +74,8 @@ class DirectorDatafield extends DbObjectWithSettings
         if ($this->category) {
             return $this->category;
         } elseif ($id = $this->get('category_id')) {
-            return DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
+            $this->category = DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
+            return $this->category;
         } else {
             return null;
         }
@@ -207,11 +208,12 @@ class DirectorDatafield extends DbObjectWithSettings
         }
 
         /** @var DataTypeHook $dataType */
-        $dataType = new $className;
+        $dataType = new $className();
         $dataType->setSettings($this->getSettings());
         $el = $dataType->getFormElement($name, $form);
 
-        if ($this->getSetting('icinga_type') !== 'command'
+        if (
+            $this->getSetting('icinga_type') !== 'command'
             && $this->getSetting('is_required') === 'y'
         ) {
             $el->setRequired(true);

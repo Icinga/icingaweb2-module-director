@@ -16,10 +16,10 @@ class ServiceSetQueryBuilder
 {
     use TableWithBranchSupport;
 
-    const TABLE = BranchSupport::TABLE_ICINGA_SERVICE;
-    const BRANCHED_TABLE = BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE;
-    const SET_TABLE = BranchSupport::TABLE_ICINGA_SERVICE_SET;
-    const BRANCHED_SET_TABLE = BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE_SET;
+    public const TABLE = BranchSupport::TABLE_ICINGA_SERVICE;
+    public const BRANCHED_TABLE = BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE;
+    public const SET_TABLE = BranchSupport::TABLE_ICINGA_SERVICE_SET;
+    public const BRANCHED_SET_TABLE = BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE_SET;
 
     /** @var Db */
     protected $connection;
@@ -67,7 +67,7 @@ class ServiceSetQueryBuilder
     {
         return $this->db
             ->select()
-            ->from(['o' =>self::TABLE], [])
+            ->from(['o' => self::TABLE], [])
             ->joinLeft(['os' => self::SET_TABLE], 'os.id = o.service_set_id', [])
             ->where('os.uuid = ?', $this->connection->quoteBinary($set->getUniqueId()->getBytes()));
     }

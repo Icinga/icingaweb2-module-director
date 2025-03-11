@@ -47,7 +47,8 @@ class CoreApi implements DeploymentApiInterface
     {
         $version = $this->getVersion();
 
-        if ($version === null ||
+        if (
+            $version === null ||
             ((version_compare($version, '2.8.2', '>=') && version_compare($version, '2.10.2', '<')))
         ) {
             $this->client->disconnect();
@@ -681,7 +682,8 @@ constants
                 continue;
             }
 
-            if (in_array('startup.log', $availableFiles)
+            if (
+                in_array('startup.log', $availableFiles)
                 && in_array('status', $availableFiles)
             ) {
                 if ($this->getStagedFile($stage, 'status') === '0') {

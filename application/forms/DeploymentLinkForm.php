@@ -157,7 +157,7 @@ class DeploymentLinkForm extends DirectorForm
 
     protected function deploymentFailed($checksum, $error = null)
     {
-        $extra = $error ? ': ' . $error: '';
+        $extra = $error ? ': ' . $error : '';
 
         if ($this->getRequest()->isApiRequest()) {
             throw new IcingaException('Not yet');
