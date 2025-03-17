@@ -274,7 +274,24 @@ class CustomVarRenderer extends CustomVarRendererHook
                     return '***';
                 }
 
-                if (isset($this->datalistMaps[$key][$value])) {
+                if (is_array($value)) {
+                    $renderedValue = [];
+                    foreach ($value as $v) {
+                        if (is_string($v) && isset($this->datalistMaps[$key][$v])) {
+                            $renderedValue[] = new HtmlElement(
+                                'span',
+                                Attributes::create(['title' => $this->datalistMaps[$key][$v] . " [$v]"]),
+                                Text::create($this->datalistMaps[$key][$v])
+                            );
+                        } else {
+                            $renderedValue[] = $v;
+                        }
+                    }
+
+                    return $renderedValue;
+                }
+
+                if (is_string($value) && isset($this->datalistMaps[$key][$value])) {
                     return new HtmlElement(
                         'span',
                         Attributes::create(['title' => $this->datalistMaps[$key][$value] . " [$value]"]),
