@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\CustomVariable\CustomVariableArray;
 use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
@@ -114,22 +115,42 @@ class CustomVarRenderer extends CustomVarRendererHook
                             $appliedFilterQuery = IcingaHostAppliedServicesTable::load($directorHostObj)->getQuery();
 
                             foreach ($appliedFilterQuery->fetchAll() as $appliedService) {
-                                if ($appliedService->name === $serviceName) {
-                                    $query = $db->getDbAdapter()->select()->from('icinga_service')
-                                        ->where('object_name = ?', $serviceName)
-                                        ->where("object_type = 'apply'")
-                                        ->where('assign_filter = ?', $appliedService->assign_filter);
+                                if ($appliedService->apply_for === null) {
+                                    $isAppliedService = $appliedService->name === $serviceName;
+                                } else {
+                                    /** @var ?CustomVariableArray $hostVar */
+                                    $hostVar = $directorHostObj->vars()->get((substr($appliedService->apply_for, 10)));
+                                    if ($hostVar) {
+                                        $appliedServiceName = $appliedService->name;
+                                        $appliedForServiceLookup = [];
+                                        foreach ($hostVar->getValue() as $val) {
+                                            $appliedForServiceLookup[$appliedServiceName . $val] = true;
+                                        }
 
-                                    $directorAppliedServices = IcingaService::loadAll(
-                                        $db,
-                                        $query,
-                                        'object_name'
-                                    );
-
-                                    $directorServiceObj = current($directorAppliedServices);
-
-                                    break;
+                                        $isAppliedService = isset($appliedForServiceLookup[$serviceName]);
+                                    } else {
+                                        $isAppliedService = false;
+                                    }
                                 }
+
+                                if (! $isAppliedService) {
+                                    continue;
+                                }
+
+                                $query = $db->getDbAdapter()->select()->from('icinga_service')
+                                    ->where('object_name = ?', $appliedService->name)
+                                    ->where("object_type = 'apply'")
+                                    ->where('assign_filter = ?', $appliedService->assign_filter);
+
+                                $directorAppliedServices = IcingaService::loadAll(
+                                    $db,
+                                    $query,
+                                    'object_name'
+                                );
+
+                                $directorServiceObj = current($directorAppliedServices);
+
+                                break;
                             }
                         } elseif ($serviceOrigin[$i] === 'service-set') {
                             $templateResolver =  new IcingaTemplateResolver($directorHostObj);
