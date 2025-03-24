@@ -20,15 +20,14 @@ use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
-use Icinga\Module\Director\Web\Form\Element\FormElement;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Web\Widget\Link;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
-use Zend_Form_Element_Xhtml;
 
 abstract class DirectorObjectForm extends DirectorForm
 {
@@ -61,8 +60,6 @@ abstract class DirectorObjectForm extends DirectorForm
     protected $resolvedImports;
 
     protected $listUrl;
-
-    protected $customPropertyElements = [];
 
     /** @var Auth */
     private $auth;
@@ -1003,8 +1000,97 @@ abstract class DirectorObjectForm extends DirectorForm
                     }
                 } else {
 //                    $defaultElement = new HtmlElement('dl', null , new Link('Test', Url::fromPath('')));
-                    $link = new FormElement('link');
-                    $propertyGroupElements = [$link];
+
+                    $originalItems = $value ? count($value) : 0;
+
+//                    var_dump($this->getSentValue('add-item'));
+                    $addedItems = 0;
+
+                    $addItem = $this->createElement(
+                        'button',
+                        'add_item',
+                        [
+                            'class' => 'control-button',
+                            'type' => 'submit',
+                            'value' => 'y',
+                            'label' => $this->translate('Add Item')
+                        ]
+                    );
+
+                    $propertyGroupElements = [];
+                    if ($originalItems > 0) {
+                        $propertyDescendants = $this->fetchPropertyItems($propertyUuid);
+                        $i = 0;
+                        foreach ($value as $key => $nestedItems) {
+
+//                            $nestedProperty->addDecorator()
+
+//                            $nestedProperty = (new FieldsetElement(
+//                                'test',
+//                                [
+//                                    'label' => $key,
+//                                    'description' => 'Test',
+//                                    'legend' => $key
+//                                ]
+//                            ));
+
+//                            $nestedProperty->addElement(
+//                                'text',
+//                                'fstest',
+//                                [
+//                                    'label' => $key,
+//                                    'description' => $this->translate('Jira host name or IP address')
+//                                ]
+//                            );
+
+//                            $this->addHtmlHint($nestedProperty->render());
+
+                            $label = $this->createElement(
+                                'text',
+                                $property['key_name'] . "_key_" . $i,
+                                [
+                                    'label' => $this->translate('Label'),
+                                    'value' => $key
+                                ]
+                            );
+
+                            $this->addElement($label);
+                            $nestedElements = [$label];
+
+                            foreach ($propertyDescendants as $descendant) {
+                                $nestedElement = $this->createElement(
+                                    $this->fetchFieldType($descendant['value_type'], $descendant['instantiable'] === 'y'),
+                                    $key . '_' . $descendant['key_name'],
+                                    [
+                                        'label' => $descendant['label'],
+                                        'value' => $nestedItems[$descendant['key_name']] ?? null
+                                    ]
+                                );
+
+                                $nestedElements[] = $nestedElement;
+                                $this->addElement($nestedElement);
+                            }
+
+                            $nestedProperty = $this->createElement(
+                                'formFieldset',
+                                $property['key_name'] . "$key",
+                                [
+                                    'decorators' => ['Fieldset'],
+                                    'legend' => $key,
+                                    'label' => $key
+                                ]
+                            );
+
+                            $nestedProperty->addElements($nestedElements);
+//                            $this->addDisplayGroups([$nestedProperty]);
+                            $propertyGroupElements[] = $nestedProperty;
+                            $i++;
+                        }
+                    }
+
+                    $this->addElement($addItem);
+
+                    $propertyGroupElements[] = $addItem;
                 }
 
                 if (! empty($propertyGroupElements)) {
@@ -1013,10 +1099,11 @@ abstract class DirectorObjectForm extends DirectorForm
                         'decorators' => [
                             'FormElements',
                             ['HtmlTag', ['tag' => 'dl']],
-                            'Fieldset',
+                            'Fieldset'
                         ],
-                        'order' =>$order,
-                        'legend' => $property['label']
+                        'order' => $order,
+                        'legend' => $property['label'],
+                        'count' => count($propertyGroupElements) - 1
                     ]);
                 }
             }
