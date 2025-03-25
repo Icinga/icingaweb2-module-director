@@ -4,6 +4,35 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.4
+-------
+
+### Security
+
+- Rest API endpoints accessible to restricted users ([GHSA-3233-ggc5-m3qg](https://github.com/Icinga/icingaweb2-module-director/security/advisories/GHSA-3233-ggc5-m3qg))
+
+### UI
+
+- Fix editing of custom variables for multi-selected objects [#2950](https://github.com/Icinga/icingaweb2-module-director/issues/2950)
+- Fix: Check for the existence of service templates to add services [#1249](https://github.com/Icinga/icingaweb2-module-director/issues/1249)
+
+### Import and Sync
+
+- Fix erratic job behavior during summer and winter time change (no issue)
+
+### Integration
+
+- Fix custom variable renderer for service apply for rules (no issue)
+- Fix custom variable renderer for array type data lists [#2960](https://github.com/Icinga/icingaweb2-module-director/issues/2960)
+
+### Database Schema
+
+- Fix MySQL 8.4 nonstandard foreign keys deprecation [#2885](https://github.com/Icinga/icingaweb2-module-director/issues/2885)
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/39?closed=1)
+
 v1.11.3
 -------
 
