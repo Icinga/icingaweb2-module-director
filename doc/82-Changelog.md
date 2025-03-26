@@ -4,6 +4,21 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.10.4
+-------
+
+### Security
+
+- Rest API endpoints accessible to restricted users ([GHSA-3233-ggc5-m3qg](https://github.com/Icinga/icingaweb2-module-director/security/advisories/GHSA-3233-ggc5-m3qg))
+
+### Import and Sync
+
+- Fix erratic job behavior during summer and winter time change (no issue)
+
+### Database Schema
+
+- Fix MySQL 8.4 nonstandard foreign keys deprecation [#2885](https://github.com/Icinga/icingaweb2-module-director/issues/2885)
+
 v1.10.3
 -------
 
