@@ -229,10 +229,14 @@ class ObjectsTable extends ZfQueryBasedTable
         $db = $this->connection();
         $auth = $this->getAuth();
 
-        return [
-            new HostgroupRestriction($db, $auth),
-            new FilterByNameRestriction($db, $auth, $this->getDummyObject()->getShortTableName())
-        ];
+        $dummyObject = $this->getDummyObject();
+        $type = $dummyObject->getShortTableName();
+
+        if ($dummyObject->isApplyRule()) {
+            return [new FilterByNameRestriction($db, $auth, $type)];
+        } else {
+            return [new HostgroupRestriction($db, $auth)];
+        }
     }
 
     /**
@@ -298,6 +302,7 @@ class ObjectsTable extends ZfQueryBasedTable
             $query->order('object_name')->limit(100);
         } else {
             $this->applyObjectTypeFilter($query);
+            $this->applyRestrictions($query);
             $query->order('o.object_name')->limit(100);
         }
 
