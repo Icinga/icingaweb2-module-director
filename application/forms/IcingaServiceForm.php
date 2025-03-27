@@ -689,9 +689,21 @@ class IcingaServiceForm extends DirectorObjectForm
         );
         $this->addZoneElement();
 
+        $this->addElement('select', 'command_endpoint_id', [
+            'label' => $this->translate('Command endpoint'),
+            'description' => $this->translate(
+                'Setting a command endpoint allows you to force service checks'
+                . ' to be executed by a specific endpoint. Please carefully'
+                . ' study the related Icinga documentation before using this'
+                . ' feature. Overrides "Run on agent" setting'
+            ),
+            'multiOptions' => $this->optionalEnum($this->enumEndpoints())
+        ]);
+        
         $elements = array(
             'use_agent',
             'zone_id',
+            'command_endpoint_id'
         );
         $this->addDisplayGroup($elements, 'clustering', array(
             'decorators' => array(
@@ -706,6 +718,20 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    protected function enumEndpoints()
+    {
+        $db = $this->db->getDbAdapter();
+        $select = $db->select()->from('icinga_endpoint', [
+            'id',
+            'object_name'
+        ])->where(
+            'object_type IN (?)',
+            ['object', 'external_object']
+        )->order('object_name');
+
+        return $db->fetchPairs($select);
+    }
+    
     protected function enumHostsAndTemplates()
     {
         if ($this->branch && $this->branch->isBranch()) {
