@@ -45,7 +45,7 @@ class JobDetails extends HtmlDocument
 
         $tsLastAttempt = $job->get('ts_last_attempt');
         if ($tsLastAttempt) {
-            $ts = \strtotime($tsLastAttempt);
+            $ts = $tsLastAttempt / 1000;
             $timeAgo = Html::tag('span', [
                 'class' => 'time-ago',
                 'title' => DateFormatter::formatDateTime($ts)

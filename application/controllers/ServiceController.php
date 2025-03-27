@@ -49,14 +49,6 @@ class ServiceController extends ObjectController
         $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
         $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');
         parent::init();
-        if ($this->object) {
-            if ($this->host === null) {
-                $this->host = $this->loadOptionalRelatedObject($this->object, 'host');
-            }
-            if ($this->set === null) {
-                $this->set = $this->loadOptionalRelatedObject($this->object, 'service_set');
-            }
-        }
         $this->addOptionalHostTabs();
         $this->addOptionalSetTabs();
     }
@@ -75,6 +67,20 @@ class ServiceController extends ObjectController
         }
 
         return null;
+    }
+
+    protected function loadOptionalObject(): void
+    {
+        parent::loadOptionalObject();
+
+        if ($this->object) {
+            if ($this->host === null) {
+                $this->host = $this->loadOptionalRelatedObject($this->object, 'host');
+            }
+            if ($this->set === null) {
+                $this->set = $this->loadOptionalRelatedObject($this->object, 'service_set');
+            }
+        }
     }
 
     protected function loadOptionalRelatedObject(IcingaObject $object, $relation)

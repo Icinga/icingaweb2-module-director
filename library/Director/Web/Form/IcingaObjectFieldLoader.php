@@ -60,6 +60,16 @@ class IcingaObjectFieldLoader
         return $this;
     }
 
+    /**
+     * Get element names to variable names map (Example: ['elName' => 'varName'])
+     *
+     * @return array
+     */
+    public function getNameMap(): array
+    {
+        return $this->nameMap;
+    }
+
     public function loadFieldsForMultipleObjects($objects)
     {
         $fields = array();
