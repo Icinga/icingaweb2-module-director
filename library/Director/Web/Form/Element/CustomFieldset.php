@@ -6,12 +6,12 @@ use Zend_Form_Element;
 use Zend_View_Interface;
 
 // TODO: Still not completely implemented
-class FormFieldset extends FormElement
+class CustomFieldset extends FormElement
 {
-    public $helper = 'formFieldset';
+    public $helper = 'customFieldset';
 
     /** @var array will be set via options */
-    protected $elements = [];
+    protected $content = [];
 
     public function isValid($value, $context = null)
     {
@@ -25,7 +25,7 @@ class FormFieldset extends FormElement
 
     public function addElement(Zend_Form_Element $element)
     {
-        $this->elements[] = $element;
+        $this->content[] = $element;
     }
 
     public function addElements(array $elements)
@@ -37,6 +37,11 @@ class FormFieldset extends FormElement
 
     public function render(?Zend_View_Interface $view = null)
     {
+//        $content = $this->getAttrib('elements');
+//        var_dump($content);
+//        $decorator = $this->getDecorator('Fieldset');
+//        $this->getDecorator('Fieldset')->render();
+
         return parent::render($view);
     }
 }

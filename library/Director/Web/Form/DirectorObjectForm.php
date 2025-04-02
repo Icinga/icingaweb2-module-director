@@ -25,6 +25,7 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
+use Zend_Loader;
 
 abstract class DirectorObjectForm extends DirectorForm
 {
@@ -1087,6 +1088,7 @@ abstract class DirectorObjectForm extends DirectorForm
                             $this->addElement($label);
                             $nestedElements = [$label];
 
+                            $nestedElementsRendered = $label->render();
                             foreach ($propertyDescendants as $descendant) {
                                 $nestedElement = $this->createElement(
                                     $this->fetchFieldType(
@@ -1101,20 +1103,27 @@ abstract class DirectorObjectForm extends DirectorForm
                                 );
 
                                 $nestedElements[] = $nestedElement;
+                                $nestedElementsRendered .= $nestedElement->render();
                                 $this->addElement($nestedElement);
                             }
 
                             $nestedProperty = $this->createElement(
-                                'formFieldset',
+                                'customFieldset',
                                 'var_' . $property['key_name'] . "_$key",
                                 [
-                                    'decorators' => ['Fieldset'],
+                                    'decorators' => [
+                                        ['FormElements'],
+                                        ['HtmlTag', ['tag' => 'dl']],
+                                        'CustomFieldset',
+                                    ],
                                     'legend' => $key,
-                                    'label' => $key
+                                    'label' => $key,
+//                                    'form' => $this,
+                                    'elements' => $nestedElements,
                                 ]
                             );
 
-                            $nestedProperty->addElements($nestedElements);
+//                            $nestedProperty->addElements($nestedElements);
 //                            $this->addDisplayGroups([$nestedProperty]);
                             $propertyGroupElements[] = $nestedProperty;
                             $i++;
@@ -1148,12 +1157,13 @@ abstract class DirectorObjectForm extends DirectorForm
                         }
 
                         $nestedProperty = $this->createElement(
-                            'formFieldset',
+                            'customFieldset',
                             'var_' . $property['key_name'] . "_property$i",
                             [
-                                'decorators' => ['Fieldset'],
+                                'decorators' => ['CustomFieldset', ['elements' => $nestedElements]],
                                 'legend' => "New Property",
-                                'label' => "New Property"
+                                'label' => "New Property",
+//                                'elements' => $nestedElements,
                             ]
                         );
 
