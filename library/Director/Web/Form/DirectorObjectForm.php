@@ -21,6 +21,8 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 
@@ -30,6 +32,7 @@ abstract class DirectorObjectForm extends DirectorForm
     public const GROUP_ORDER_RELATED_OBJECTS = 25;
     public const GROUP_ORDER_ASSIGN = 30;
     public const GROUP_ORDER_CHECK_EXECUTION = 40;
+    public const GROUP_ORDER_CUSTOM_PROPERTIES = 51;
     public const GROUP_ORDER_CUSTOM_FIELDS = 50;
     public const GROUP_ORDER_CUSTOM_FIELD_CATEGORIES = 60;
     public const GROUP_ORDER_EVENT_FILTERS = 700;
@@ -464,8 +467,97 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected function setCustomVarValues($values)
     {
-        if ($this->fieldLoader) {
-            $this->fieldLoader->setValues($values, 'var_');
+        if ($this->object->getShortTableName() !== 'host') {
+            if ($this->fieldLoader) {
+                $this->fieldLoader->setValues($values, 'var_');
+            }
+
+            return $this;
+        }
+
+        $prefix = 'var_';
+        $len = strlen($prefix);
+
+        $vars = $this->object->vars();
+
+        $customProperties = $this->fetchObjectProperties();
+
+        foreach ($customProperties as $key => $property) {
+            $varName = $prefix . $key;
+            $type = $property['value_type'];
+            if (
+                ($type === 'array' || $type === 'dict')
+                && $property['instantiable'] === 'n'
+            ) {
+                $items = $this->fetchPropertyItems(Uuid::fromBytes($property['uuid']));
+                $value = [];
+                foreach ($items as $item) {
+                    $idx = $item['key_name'];
+                    $itemKey = $varName . '_' . $idx;
+                    $el = $this->getElement($itemKey);
+                    if ($el === null) {
+                        // throw new IcingaException('No such element %s', $key);
+                        // Same here.
+                        continue;
+                    }
+
+                    $el->setValue($values[$itemKey]);
+                    $value[$idx] = $el->getValue();
+
+                    if (! is_int($idx) && empty($values[$itemKey])) {
+                        unset($value[$idx]);
+                    }
+                }
+
+                $value = array_filter($value) === [] ? null : $value;
+            } elseif ($type === 'dict' && $property['instantiable'] === 'y') {
+                $items = $this->fetchPropertyItems(Uuid::fromBytes($property['uuid']));
+                $value = [];
+                $i = 0;
+                while ($this->hasElement($varName . "_property_label_$i")) {
+                    $propertyLabel = $this->getValue($varName . "_property_label_$i");
+
+                    if (! empty($propertyLabel)) {
+                        foreach ($items as $item) {
+                            $idx = $item['key_name'];
+                            $itemKey = $varName . "_property$i" . "_$idx";
+                            $el = $this->getElement($itemKey);
+                            if ($el === null) {
+                                // throw new IcingaException('No such element %s', $key);
+                                // Same here.
+                                continue;
+                            }
+
+                            $el->setValue($values[$itemKey]);
+                            $value[$propertyLabel][$idx] = $el->getValue();
+
+                            if (! is_int($idx) && empty($values[$itemKey])) {
+                                unset($value[$propertyLabel][$idx]);
+                            }
+                        }
+                    }
+
+                    $i++;
+                }
+
+                $value = array_filter($value) === [] ? null : $value;
+            } else {
+                $el = $this->getElement($varName);
+                if ($el === null) {
+                    // throw new IcingaException('No such element %s', $key);
+                    // Same here.
+                    continue;
+                }
+
+                $el->setValue($values[$varName]);
+                $value = $el->getValue();
+            }
+
+            if ($value === '' || $value === []) {
+                $value = null;
+            }
+
+            $vars->set($key, $value);
         }
 
         return $this;
@@ -777,12 +869,12 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected function moveUpInSet(&$set, $key)
     {
-        list($set[$key - 1], $set[$key]) = array($set[$key], $set[$key - 1]);
+        [$set[$key - 1], $set[$key]] = array($set[$key], $set[$key - 1]);
     }
 
     protected function moveDownInSet(&$set, $key)
     {
-        list($set[$key + 1], $set[$key]) = array($set[$key], $set[$key + 1]);
+        [$set[$key + 1], $set[$key]] = array($set[$key], $set[$key + 1]);
     }
 
     protected function beforeSetup()
@@ -815,24 +907,346 @@ abstract class DirectorObjectForm extends DirectorForm
         }
     }
 
+    private function fetchObjectProperties(): array
+    {
+        $objectUuid = $this->object->get('uuid');
+
+        if ($objectUuid === null) {
+            return [];
+        }
+
+        $type = $this->object->getShortTableName();
+        $query = $this->db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'instantiable' => 'dp.instantiable',
+                    'required' => 'iop.required'
+                ]
+            )
+            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid')
+            ->where('iop.' . $type . '_uuid = ?', $this->object->get('uuid'));
+
+        return $this->db->getDbAdapter()->fetchAssoc($query);
+    }
+
+    private function fetchNonInstantiableArrayOptions(UuidInterface $parentUuid): ?array
+    {
+        $db = $this->db->getDbAdapter();
+        $query = $db
+            ->select()
+            ->from(
+                'director_property',
+                ['key_name', 'label']
+            )->where('parent_uuid = ?', $parentUuid->getBytes());
+
+        return $db->fetchPairs($query);
+    }
+
+    protected function addProperties(): self
+    {
+        $propertyElements = [];
+        $inheritedVars = $this->object->getInheritedVars();
+        $originVars = $this->object->getOriginsVars();
+        $order = self::GROUP_ORDER_CUSTOM_PROPERTIES;
+        foreach ($this->fetchObjectProperties() as $property) {
+            $var = $this->object->vars()->get($property['key_name']);
+            $value = $var?->getValue();
+
+            $type = $this->fetchFieldType(
+                $property['value_type'],
+                $property['instantiable'] === 'y'
+            );
+
+            $key = $property['key_name'];
+            $elementName = 'var_' . $key;
+
+            $propertyUuid = Uuid::fromBytes($property['uuid']);
+            if ($type !== 'displayGroup') {
+                $propertyElement = $this->createElement(
+                    $type,
+                    $elementName,
+                    [
+                        'label' => $property['label'],
+                        'value' => $value,
+                        'placeholder' => isset($inheritedVars->$key)
+                            ? sprintf(
+                                $this->translate('%s (inherited from %s)'),
+                                $this->stringifyInheritedValue($inheritedVars->$key),
+                                $originVars->$key
+                            )
+                            : null,
+                    ]
+                );
+
+                if ($type === 'extensibleSet') {
+                    $propertyElement->setAttribs([
+                        'value' => $value ?? []
+                    ]);
+                }
+
+                $this->addElement($propertyElement);
+
+                $propertyElements[] = $elementName;
+            } else {
+                $propertyGroupElements = [];
+                $value = json_decode(json_encode($value), true);
+                if ($property['instantiable'] === 'n') {
+                    foreach ($this->fetchPropertyItems($propertyUuid) as $propertyItem) {
+                        $type = $this->fetchFieldType(
+                            $propertyItem['value_type'],
+                            $propertyItem['instantiable'] === 'y'
+                        );
+
+                        $itemKey = $propertyItem['key_name'];
+                        $itemName = 'var_' . $property['key_name'] . '_' . $itemKey;
+
+                        $propertyGroupElement = $this->createElement(
+                            $type,
+                            $itemName,
+                            [
+                                'label' => $propertyItem['label'],
+                                'value' => $value[$itemKey] ?? null,
+                                'placeholder' => isset($inheritedVars->$key)
+                                    ? sprintf(
+                                        $this->translate('%s (inherited from %s)'),
+                                        $this->stringifyInheritedValue($inheritedVars->$key[$itemKey]),
+                                        $originVars->$key
+                                    )
+                                    : null,
+                            ]
+                        );
+
+                        $this->addElement($propertyGroupElement);
+
+                        $propertyGroupElements[] = $propertyGroupElement;
+                    }
+                } else {
+//                    $defaultElement = new HtmlElement('dl', null , new Link('Test', Url::fromPath('')));
+
+                    $originalItems = $value ? count($value) : 0;
+
+//                    var_dump($this->getSentValue('add-item'));
+//                    $addedItems = (int) $this->getSentValue('added_items') ?? 0;
+
+                    $addItem = $this->createElement(
+                        'button',
+                        'var_' . $property['key_name'] . '_add_item',
+                        [
+                            'class' => 'control-button',
+                            'type' => 'submit',
+                            'value' => 'y',
+                            'label' => $this->translate('Add Item'),
+                            'formnovalidate' => 'formnovalidate'
+                        ]
+                    );
+
+//                    $this->addElement('hidden', 'added_items', $addedItems);
+                    $propertyDescendants = $this->fetchPropertyItems($propertyUuid);
+
+                    $propertyGroupElements = [];
+                    if ($originalItems > 0) {
+                        $i = 0;
+                        foreach ($value as $key => $nestedItems) {
+//                            $nestedProperty->addDecorator()
+
+//                            $nestedProperty = (new FieldsetElement(
+//                                'test',
+//                                [
+//                                    'label' => $key,
+//                                    'description' => 'Test',
+//                                    'legend' => $key
+//                                ]
+//                            ));
+
+//                            $nestedProperty->addElement(
+//                                'text',
+//                                'fstest',
+//                                [
+//                                    'label' => $key,
+//                                    'description' => $this->translate('Jira host name or IP address')
+//                                ]
+//                            );
+
+//                            $this->addHtmlHint($nestedProperty->render());
+                            $label = $this->createElement(
+                                'text',
+                                'var_' . $property['key_name'] . "_property_label_" . $i,
+                                [
+                                    'label' => $this->translate('Label'),
+                                    'value' => $key,
+                                    'required' => true
+                                ]
+                            );
+
+                            $this->addElement($label);
+                            $nestedElements = [$label];
+
+                            foreach ($propertyDescendants as $descendant) {
+                                $nestedElement = $this->createElement(
+                                    $this->fetchFieldType(
+                                        $descendant['value_type'],
+                                        $descendant['instantiable'] === 'y'
+                                    ),
+                                    'var_' . $property['key_name'] . "_property$i" . '_' . $descendant['key_name'],
+                                    [
+                                        'label' => $descendant['label'],
+                                        'value' => $nestedItems[$descendant['key_name']] ?? null
+                                    ]
+                                );
+
+                                $nestedElements[] = $nestedElement;
+                                $this->addElement($nestedElement);
+                            }
+
+                            $nestedProperty = $this->createElement(
+                                'formFieldset',
+                                'var_' . $property['key_name'] . "_$key",
+                                [
+                                    'decorators' => ['Fieldset'],
+                                    'legend' => $key,
+                                    'label' => $key
+                                ]
+                            );
+
+                            $nestedProperty->addElements($nestedElements);
+//                            $this->addDisplayGroups([$nestedProperty]);
+                            $propertyGroupElements[] = $nestedProperty;
+                            $i++;
+                        }
+                    }
+
+                    if ($this->getSentValue('var_' . $property['key_name'] . '_add_item') === 'y') {
+                        $label = $this->createElement(
+                            'text',
+                            'var_' . $property['key_name'] . "_property_label_" . $i,
+                            [
+                                'label' => $this->translate('Label')
+                            ]
+                        );
+
+                        $this->addElement($label);
+                        foreach ($propertyDescendants as $descendant) {
+                            $nestedElement = $this->createElement(
+                                $this->fetchFieldType(
+                                    $descendant['value_type'],
+                                    $descendant['instantiable'] === 'y'
+                                ),
+                                'var_' . $property['key_name'] . "_property$i" . '_' . $descendant['key_name'],
+                                [
+                                    'label' => $descendant['label']
+                                ]
+                            );
+
+                            $nestedElements[] = $nestedElement;
+                            $this->addElement($nestedElement);
+                        }
+
+                        $nestedProperty = $this->createElement(
+                            'formFieldset',
+                            'var_' . $property['key_name'] . "_added_property_$i",
+                            [
+                                'decorators' => ['Fieldset'],
+                                'legend' => "New Property",
+                                'label' => "New Property"
+                            ]
+                        );
+
+                        $nestedProperty->addElements($nestedElements);
+//                            $this->addDisplayGroups([$nestedProperty]);
+                        $propertyGroupElements[] = $nestedProperty;
+                    } else {
+                        $this->addElement($addItem);
+                        $propertyGroupElements[] = $addItem;
+                    }
+                }
+
+                if (! empty($propertyGroupElements)) {
+                    $order += 1;
+                    $this->addDisplayGroup($propertyGroupElements, $property['key_name'], [
+                        'decorators' => [
+                            'FormElements',
+                            ['HtmlTag', ['tag' => 'dl']],
+                            'Fieldset'
+                        ],
+                        'order' => $order,
+                        'legend' => $property['label'],
+                        'count' => count($propertyGroupElements) - 1
+                    ]);
+                }
+            }
+        }
+
+        if (! empty($propertyElements)) {
+            $this->addDisplayGroup($propertyElements, 'custom_properties', [
+                'decorators' => [
+                    'FormElements',
+                    ['HtmlTag', ['tag' => 'dl']],
+                    'Fieldset',
+                ],
+                'order' => self::GROUP_ORDER_CUSTOM_PROPERTIES,
+                'legend' => $this->translate('Custom properties')
+            ]);
+        }
+
+        return $this;
+    }
+
+    protected function fetchFieldType(string $propertyType, bool $instantiable = false): string
+    {
+        // works only in PHP 8.0 and greater
+        return match ($propertyType) {
+            'bool' => 'OptionalYesNo',
+            'array' => $instantiable
+                ? 'extensibleSet'
+                : 'displayGroup',
+            'dict' => 'displayGroup',
+            default => 'text',
+        };
+    }
+
+    private function fetchPropertyItems(UuidInterface $parentUuid): array
+    {
+        $db = $this->db->getDbAdapter();
+        $query = $db->select()
+            ->from('director_property')
+            ->where('parent_uuid = ?', $parentUuid->getBytes());
+
+        return $db->fetchAll($query, [], \Zend_Db::FETCH_ASSOC);
+    }
+
     protected function onRequest()
     {
         if ($this->object !== null) {
             $this->setDefaultsFromObject($this->object);
         }
+
         $this->prepareFields($this->object());
         IcingaObjectFormHook::callOnSetup($this);
-        if ($this->hasBeenSent()) {
-            $this->handlePost();
-        }
+
         try {
             $this->loadInheritedProperties();
-            $this->addFields();
+//            $this->addFields();
+            if ($this->object->getShortTableName() !== 'host') {
+                $this->addFields();
+            } else {
+                $this->addProperties();
+            }
+
             $this->callOnRequestCallables();
         } catch (Exception $e) {
             $this->addUniqueException($e);
 
             return;
+        }
+
+        if ($this->hasBeenSent()) {
+            $this->handlePost();
         }
 
         if ($this->shouldBeDeleted()) {
@@ -850,6 +1264,13 @@ abstract class DirectorObjectForm extends DirectorForm
 
         if ($object instanceof IcingaObject) {
             $this->setCustomVarValues($post);
+            $values = array_filter(
+                $values,
+                function ($key) {
+                    return substr($key, 0, 4) !== 'var_';
+                },
+                ARRAY_FILTER_USE_KEY
+            );
         }
 
         $this->handleProperties($object, $values);
