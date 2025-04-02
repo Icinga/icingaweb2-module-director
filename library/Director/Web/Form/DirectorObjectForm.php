@@ -21,9 +21,6 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
-use ipl\Html\HtmlElement;
-use ipl\Html\Text;
-use ipl\Web\Widget\Link;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Zend_Form_Element as ZfElement;
@@ -510,6 +507,37 @@ abstract class DirectorObjectForm extends DirectorForm
                     if (! is_int($idx) && empty($values[$itemKey])) {
                         unset($value[$idx]);
                     }
+                }
+
+                $value = array_filter($value) === [] ? null : $value;
+            } elseif ($type === 'dict' && $property['instantiable'] === 'y') {
+                $items = $this->fetchPropertyItems(Uuid::fromBytes($property['uuid']));
+                $value = [];
+                $i = 0;
+                while ($this->hasElement($varName . "_property_label_$i")) {
+                    $propertyLabel = $this->getValue($varName . "_property_label_$i");
+
+                    if (! empty($propertyLabel)) {
+                        foreach ($items as $item) {
+                            $idx = $item['key_name'];
+                            $itemKey = $varName . "_property$i" . "_$idx";
+                            $el = $this->getElement($itemKey);
+                            if ($el === null) {
+                                // throw new IcingaException('No such element %s', $key);
+                                // Same here.
+                                continue;
+                            }
+
+                            $el->setValue($values[$itemKey]);
+                            $value[$propertyLabel][$idx] = $el->getValue();
+
+                            if (! is_int($idx) && empty($values[$itemKey])) {
+                                unset($value[$propertyLabel][$idx]);
+                            }
+                        }
+                    }
+
+                    $i++;
                 }
 
                 $value = array_filter($value) === [] ? null : $value;
@@ -1004,25 +1032,27 @@ abstract class DirectorObjectForm extends DirectorForm
                     $originalItems = $value ? count($value) : 0;
 
 //                    var_dump($this->getSentValue('add-item'));
-                    $addedItems = 0;
+//                    $addedItems = (int) $this->getSentValue('added_items') ?? 0;
 
                     $addItem = $this->createElement(
                         'button',
-                        'add_item',
+                        'var_' . $property['key_name'] . '_add_item',
                         [
                             'class' => 'control-button',
                             'type' => 'submit',
                             'value' => 'y',
-                            'label' => $this->translate('Add Item')
+                            'label' => $this->translate('Add Item'),
+                            'formnovalidate' => 'formnovalidate'
                         ]
                     );
 
+//                    $this->addElement('hidden', 'added_items', $addedItems);
+                    $propertyDescendants = $this->fetchPropertyItems($propertyUuid);
+
                     $propertyGroupElements = [];
                     if ($originalItems > 0) {
-                        $propertyDescendants = $this->fetchPropertyItems($propertyUuid);
                         $i = 0;
                         foreach ($value as $key => $nestedItems) {
-
 //                            $nestedProperty->addDecorator()
 
 //                            $nestedProperty = (new FieldsetElement(
@@ -1044,13 +1074,13 @@ abstract class DirectorObjectForm extends DirectorForm
 //                            );
 
 //                            $this->addHtmlHint($nestedProperty->render());
-
                             $label = $this->createElement(
                                 'text',
-                                $property['key_name'] . "_key_" . $i,
+                                'var_' . $property['key_name'] . "_property_label_" . $i,
                                 [
                                     'label' => $this->translate('Label'),
-                                    'value' => $key
+                                    'value' => $key,
+                                    'required' => true
                                 ]
                             );
 
@@ -1059,8 +1089,11 @@ abstract class DirectorObjectForm extends DirectorForm
 
                             foreach ($propertyDescendants as $descendant) {
                                 $nestedElement = $this->createElement(
-                                    $this->fetchFieldType($descendant['value_type'], $descendant['instantiable'] === 'y'),
-                                    $key . '_' . $descendant['key_name'],
+                                    $this->fetchFieldType(
+                                        $descendant['value_type'],
+                                        $descendant['instantiable'] === 'y'
+                                    ),
+                                    'var_' . $property['key_name'] . "_property$i" . '_' . $descendant['key_name'],
                                     [
                                         'label' => $descendant['label'],
                                         'value' => $nestedItems[$descendant['key_name']] ?? null
@@ -1073,7 +1106,7 @@ abstract class DirectorObjectForm extends DirectorForm
 
                             $nestedProperty = $this->createElement(
                                 'formFieldset',
-                                $property['key_name'] . "$key",
+                                'var_' . $property['key_name'] . "_$key",
                                 [
                                     'decorators' => ['Fieldset'],
                                     'legend' => $key,
@@ -1088,9 +1121,49 @@ abstract class DirectorObjectForm extends DirectorForm
                         }
                     }
 
-                    $this->addElement($addItem);
+                    if ($this->getSentValue('var_' . $property['key_name'] . '_add_item') === 'y') {
+                        $label = $this->createElement(
+                            'text',
+                            'var_' . $property['key_name'] . "_property_label_" . $i,
+                            [
+                                'label' => $this->translate('Label')
+                            ]
+                        );
 
-                    $propertyGroupElements[] = $addItem;
+                        $this->addElement($label);
+                        foreach ($propertyDescendants as $descendant) {
+                            $nestedElement = $this->createElement(
+                                $this->fetchFieldType(
+                                    $descendant['value_type'],
+                                    $descendant['instantiable'] === 'y'
+                                ),
+                                'var_' . $property['key_name'] . "_property$i" . '_' . $descendant['key_name'],
+                                [
+                                    'label' => $descendant['label']
+                                ]
+                            );
+
+                            $nestedElements[] = $nestedElement;
+                            $this->addElement($nestedElement);
+                        }
+
+                        $nestedProperty = $this->createElement(
+                            'formFieldset',
+                            'var_' . $property['key_name'] . "_added_property_$i",
+                            [
+                                'decorators' => ['Fieldset'],
+                                'legend' => "New Property",
+                                'label' => "New Property"
+                            ]
+                        );
+
+                        $nestedProperty->addElements($nestedElements);
+//                            $this->addDisplayGroups([$nestedProperty]);
+                        $propertyGroupElements[] = $nestedProperty;
+                    } else {
+                        $this->addElement($addItem);
+                        $propertyGroupElements[] = $addItem;
+                    }
                 }
 
                 if (! empty($propertyGroupElements)) {
