@@ -515,7 +515,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 $items = $this->fetchPropertyItems(Uuid::fromBytes($property['uuid']));
                 $value = [];
                 $i = 0;
-                while ($this->hasElement($varName . "_property_label_$i")) {
+                while ($this->hasElement($varName . "_property_$i")) {
                     $propertyLabel = $this->getValue($varName . "_property_label_$i");
 
                     if (! empty($propertyLabel)) {
@@ -1109,12 +1109,12 @@ abstract class DirectorObjectForm extends DirectorForm
 
                             $nestedProperty = $this->createElement(
                                 'customFieldset',
-                                'var_' . $property['key_name'] . "_$key",
+                                'var_' . $property['key_name'] . "_property_$i",
                                 [
                                     'decorators' => [
                                         ['FormElements'],
                                         ['HtmlTag', ['tag' => 'dl']],
-                                        'CustomFieldset',
+                                        'Fieldset',
                                     ],
                                     'legend' => $key,
                                     'label' => $key,
@@ -1158,9 +1158,9 @@ abstract class DirectorObjectForm extends DirectorForm
 
                         $nestedProperty = $this->createElement(
                             'customFieldset',
-                            'var_' . $property['key_name'] . "_property$i",
+                            'var_' . $property['key_name'] . "_property_$i",
                             [
-                                'decorators' => ['CustomFieldset', ['elements' => $nestedElements]],
+                                'decorators' => ['Fieldset'],
                                 'legend' => "New Property",
                                 'label' => "New Property",
 //                                'elements' => $nestedElements,
@@ -1168,9 +1168,12 @@ abstract class DirectorObjectForm extends DirectorForm
                         );
 
                         $nestedProperty->addElements($nestedElements);
+                        $this->addElement($nestedProperty);
 //                            $this->addDisplayGroups([$nestedProperty]);
                         $propertyGroupElements[] = $nestedProperty;
                     } else {
+                        $this->addElement($nestedProperty);
+
                         $this->addElement($addItem);
                         $propertyGroupElements[] = $addItem;
                     }
