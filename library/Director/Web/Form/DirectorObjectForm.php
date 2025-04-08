@@ -1028,13 +1028,7 @@ abstract class DirectorObjectForm extends DirectorForm
                         $propertyGroupElements[] = $propertyGroupElement;
                     }
                 } else {
-//                    $defaultElement = new HtmlElement('dl', null , new Link('Test', Url::fromPath('')));
-
                     $originalItems = $value ? count($value) : 0;
-
-//                    var_dump($this->getSentValue('add-item'));
-//                    $addedItems = (int) $this->getSentValue('added_items') ?? 0;
-
                     $addItem = $this->createElement(
                         'button',
                         'var_' . $property['key_name'] . '_add_item',
@@ -1047,34 +1041,12 @@ abstract class DirectorObjectForm extends DirectorForm
                         ]
                     );
 
-//                    $this->addElement('hidden', 'added_items', $addedItems);
                     $propertyDescendants = $this->fetchPropertyItems($propertyUuid);
 
                     $propertyGroupElements = [];
                     if ($originalItems > 0) {
                         $i = 0;
                         foreach ($value as $key => $nestedItems) {
-//                            $nestedProperty->addDecorator()
-
-//                            $nestedProperty = (new FieldsetElement(
-//                                'test',
-//                                [
-//                                    'label' => $key,
-//                                    'description' => 'Test',
-//                                    'legend' => $key
-//                                ]
-//                            ));
-
-//                            $nestedProperty->addElement(
-//                                'text',
-//                                'fstest',
-//                                [
-//                                    'label' => $key,
-//                                    'description' => $this->translate('Jira host name or IP address')
-//                                ]
-//                            );
-
-//                            $this->addHtmlHint($nestedProperty->render());
                             $label = $this->createElement(
                                 'text',
                                 'var_' . $property['key_name'] . "_property_label_" . $i,
@@ -1123,8 +1095,6 @@ abstract class DirectorObjectForm extends DirectorForm
                                 ]
                             );
 
-//                            $nestedProperty->addElements($nestedElements);
-//                            $this->addDisplayGroups([$nestedProperty]);
                             $propertyGroupElements[] = $nestedProperty;
                             $i++;
                         }
@@ -1162,18 +1132,15 @@ abstract class DirectorObjectForm extends DirectorForm
                             [
                                 'decorators' => ['Fieldset'],
                                 'legend' => "New Property",
-                                'label' => "New Property",
-//                                'elements' => $nestedElements,
+                                'label' => "New Property"
                             ]
                         );
 
                         $nestedProperty->addElements($nestedElements);
                         $this->addElement($nestedProperty);
-//                            $this->addDisplayGroups([$nestedProperty]);
                         $propertyGroupElements[] = $nestedProperty;
                     } else {
                         $this->addElement($nestedProperty);
-
                         $this->addElement($addItem);
                         $propertyGroupElements[] = $addItem;
                     }
@@ -1244,7 +1211,6 @@ abstract class DirectorObjectForm extends DirectorForm
 
         try {
             $this->loadInheritedProperties();
-//            $this->addFields();
             if ($this->object->getShortTableName() !== 'host') {
                 $this->addFields();
             } else {

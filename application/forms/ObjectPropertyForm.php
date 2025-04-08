@@ -2,16 +2,12 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Form\Decorator\ExtensibleSetDecorator;
 use Icinga\Web\Session;
-use ipl\Html\Attributes;
 use ipl\Html\Contract\FormSubmitElement;
-use ipl\Html\FormElement\FieldsetElement;
-use ipl\Html\HtmlElement;
 use ipl\I18n\Translation;
-use ipl\Validator\InArrayValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use Ramsey\Uuid\Uuid;
