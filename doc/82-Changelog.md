@@ -4,6 +4,21 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.5
+-------
+
+## Database Schema
+
+- FIX: Failed schema migration of MySQL to version 188 due Integrity constraint violation ([#2970](https://github.com/Icinga/icingaweb2-module-director/issues/2970))
+
+## Deployment
+
+- Fix: Deprecation notice that sometimes appears on deployment form (no issue)
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/40?closed=1)
+
 v1.11.4
 -------
 
