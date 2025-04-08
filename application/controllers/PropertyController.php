@@ -43,7 +43,7 @@ class PropertyController extends CompatController
 
         $property = $db->fetchRow($query);
 
-        $hasFields = ($property->value_type === 'array' && $property->instantiable === 'y')
+        $hasFields = ($property->value_type === 'array' && $property->instantiable !== 'y')
             || $property->value_type === 'dict';
 
         if ($hasFields) {

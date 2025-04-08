@@ -109,6 +109,14 @@ class ObjectTabs extends Tabs
             ));
         }
 
+        if ($auth->hasPermission(Permission::ADMIN)) {
+            $this->add('variables', array(
+                'url'       => sprintf('director/%s/variables', $type),
+                'urlParams' => $params,
+                'label'     => $this->translate('Custom Variables')
+            ));
+        }
+
         // TODO: remove table check once we resolve all group types
         if (
             $object->isGroup() &&
