@@ -4,6 +4,17 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.5
+-------
+
+## Database Schema
+
+- Migration 188 failed (SQLSTATE[23000]: Integrity constraint violation ([#2970](https://github.com/Icinga/icingaweb2-module-director/issues/2970))
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/40?closed=1)
+
 v1.11.4
 -------
 
