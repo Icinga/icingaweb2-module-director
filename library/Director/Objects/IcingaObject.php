@@ -2833,7 +2833,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($object->supportsCustomVars()) {
             $myVars = $this->vars();
             if ($replaceVars) {
-                $this->set('vars', $vars);
+                $this->set('vars',          );
             } else {
                 /** @var CustomVariables $vars */
                 foreach ($vars as $key => $var) {
