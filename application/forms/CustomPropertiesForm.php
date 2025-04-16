@@ -6,16 +6,11 @@ use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use ipl\Html\Attribute;
-use ipl\Html\FormDecorator\DivDecorator;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
-use ipl\Html\HtmlElement;
 use ipl\I18n\Translation;
-use ipl\Tests\Html\TestDummy\SimpleFormElementDecorator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
-use ipl\Web\FormDecorator\IcingaFormDecorator;
 use ipl\Web\FormElement\TermInput;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -119,6 +114,7 @@ class CustomPropertiesForm extends CompatForm
                 $initialCount = $this->createElement(
                     'hidden',
                     'initial-count',
+                    ['value' => 0]
                 );
 
                 $itemCount = $this->createElement(
@@ -135,8 +131,20 @@ class CustomPropertiesForm extends CompatForm
                 $numberItems = (int) $itemCount->getValue();
 
                 $loadedItems = (int) $initialCount->getValue();
-                for ($i = 0; $i < $loadedItems; $i++) {
-                    $propertyField = new FieldsetElement('property-' . $i);
+
+                $prefixElement = $this->createElement(
+                    'hidden',
+                    'prefixes'
+                );
+
+                $field->addElement($prefixElement);
+
+                $prefixes = $prefixElement->getValue() !== null
+                    ? explode(',', (string) $prefixElement->getValue())
+                    : [];
+
+                foreach ($prefixes as $idx => $prefix) {
+                    $propertyField = new FieldsetElement('property-' . $prefix);
                     $field->addElement($propertyField);
 
                     $propertyItemLabel = $this->createElement(
@@ -154,6 +162,22 @@ class CustomPropertiesForm extends CompatForm
                     foreach ($propertyItems as $propertyItem) {
                         $this->preparePropertyElement($propertyItem, $propertyField);
                     }
+
+                    $removeItem = $this->createElement(
+                        'submit',
+                        "remove-item-$prefix",
+                        [
+                            'label'          => $this->translate('Remove'),
+                            'formnovalidate' => true
+                        ]
+                    );
+
+                    $propertyField->addElement($removeItem);
+                    if ($removeItem->hasBeenPressed()) {
+                        $field->remove($propertyField);
+                        unset($prefixes[$idx]);
+                        $prefixElement->setValue(implode(',', $prefixes));
+                    }
                 }
 
                 if ($addItem->hasBeenPressed()) {
@@ -161,6 +185,7 @@ class CustomPropertiesForm extends CompatForm
                     $itemCount->setValue($numberItems);
                 }
 
+                $removedItems = 0;
                 for ($numberItem = $loadedItems; $numberItem < ($numberItems + $loadedItems); $numberItem++) {
                     $idx = $numberItem - $loadedItems;
                     $propertyField = new FieldsetElement('property-' . $numberItem, [
@@ -181,9 +206,31 @@ class CustomPropertiesForm extends CompatForm
                     foreach ($propertyItems as $propertyItem) {
                         $this->preparePropertyElement($propertyItem, $propertyField);
                     }
+
+                    $removeItem = $this->createElement(
+                        'submit',
+                        "remove-item-$numberItem",
+                        [
+                            'label'          => $this->translate('Remove'),
+                            'formnovalidate' => true
+                        ]
+                    );
+
+                    $propertyField->addElement($removeItem);
+                    if ($removeItem->hasBeenPressed()) {
+                        $field->remove($propertyField);
+                        $removedItems += 1;
+                    }
                 }
 
+                $numberItems -= $removedItems;
+                $itemCount->setValue($numberItems);
+
                 $field->addElement($addItem);
+
+                if ($numberItems > 0) {
+                    $field->remove($addItem);
+                }
             }
         }
     }
@@ -278,7 +325,7 @@ class CustomPropertiesForm extends CompatForm
                     $value = $value ? explode(',', $value) : [];
                 } elseif ($element instanceof FieldsetElement) {
                     foreach ($value as $key => $item) {
-                        if ($key === 'initial-count' || $key === 'count') {
+                        if ($key === 'initial-count' || $key === 'count' || $key === 'prefixes') {
                             unset($value[$key]);
                         } elseif (substr($key, 0, strlen('item')) === 'item') {
                             $idx = (int) substr($key, -1);
@@ -314,6 +361,7 @@ class CustomPropertiesForm extends CompatForm
                 } elseif ($this->isPropertyInstantiable($name) === 'y') {
                     $nestedValues = [];
                     $i = 0;
+                    $prefixes = [];
                     foreach ($value as $key => $item) {
                         if (! is_array($item)) {
                             break;
@@ -323,17 +371,14 @@ class CustomPropertiesForm extends CompatForm
                                 $item,
                             );
 
+                            $prefixes[] = $i;
                             $i += 1;
                         }
                     }
 
                     if (! empty($nestedValues)) {
-                        $newValues[] = array_merge(
-                            ['initial-count' => $i + 1],
-                            $nestedValues,
-                        );
-
                         $nestedValues['initial-count'] = $i;
+                        $nestedValues['prefixes'] = implode(',', $prefixes);
                         unset($values[$name]);
 
                         $values[$name] = $nestedValues;

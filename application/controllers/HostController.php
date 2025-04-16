@@ -107,8 +107,8 @@ class HostController extends ObjectController
         $form = (new CustomPropertiesForm($this->db(), $object))
             ->populate($vars)
             ->on(CustomPropertiesForm::ON_SUCCESS, function ($form) {
-                $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow(Url::fromRequest());
+//                $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
+                $this->redirectNow('__REFRESH__');
             })
             ->handleRequest($this->getServerRequest());
 
