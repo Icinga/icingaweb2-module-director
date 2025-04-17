@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbConnection;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
@@ -264,6 +265,15 @@ class CustomPropertiesForm extends CompatForm
         }
 
         $type = $this->object->getShortTableName();
+
+        $parents = $this->object->getImports();
+
+        $uuids = [];
+        foreach ($parents as $parent) {
+            $uuids[] = IcingaHost::load($parent, $this->db)->get('uuid');
+        }
+
+        $uuids[] = $this->object->get('uuid');
         $query = $this->db->getDbAdapter()
             ->select()
             ->from(
@@ -278,7 +288,7 @@ class CustomPropertiesForm extends CompatForm
                 ],
             )
             ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid')
-            ->where('iop.' . $type . '_uuid = ?', $this->object->uuid);
+            ->where('iop.' . $type . '_uuid IN (?)', $uuids);
 
         return $this->db->getDbAdapter()->fetchAll($query);
     }
@@ -412,6 +422,7 @@ class CustomPropertiesForm extends CompatForm
         $vars = $this->object->vars();
 
         $modified = false;
+        var_dump($this->getValues());die;
         foreach ($this->getValues() as $key => $value) {
             if (is_array($value)) {
                 $value = array_filter($value);
