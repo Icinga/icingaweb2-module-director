@@ -20,6 +20,7 @@
             this.module.on('rendered', this.rendered);
             this.module.on('beforerender', this.beforeRender);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
+            // this.module.on('click', 'fieldset > legend', this.toggleFieldset);
             // Disabled
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
@@ -731,7 +732,7 @@
                 url = $container.data('icingaUrl');
                 $actions = $('.main-actions', $('#col1'));
             }
-            if (! $actions.length) {
+            if ($actions) {
                 return;
             }
 
