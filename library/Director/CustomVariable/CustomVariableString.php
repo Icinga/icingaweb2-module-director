@@ -46,7 +46,17 @@ class CustomVariableString extends CustomVariable
     public function toConfigString($renderExpressions = false)
     {
         if ($renderExpressions) {
-            return c::renderStringWithVariables($this->getValue(), ['config']);
+            $whiteList = ['config'];
+            $value = $this->getValue();
+            if (
+                str_starts_with($value, '$')
+                && str_ends_with($value, '$')
+                && str_contains($value, 'vars.')
+            ) {
+                $whiteList[] = trim($value, '$');
+            }
+
+            return c::renderStringWithVariables($this->getValue(), $whiteList);
         } else {
             return c::renderString($this->getValue());
         }

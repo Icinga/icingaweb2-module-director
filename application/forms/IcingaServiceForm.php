@@ -612,6 +612,35 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    protected function applyForVars(): ?array
+    {
+        $query = $this->db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'instantiable' => 'dp.instantiable',
+                    'required' => 'iop.required'
+                ]
+            )
+            ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
+            ->where("value_type = 'array' AND instantiable = 'y'")
+            ->orWhere("value_type = 'dict'");
+
+        $vars = $this->db->getDbAdapter()->fetchAll($query);
+
+        $properties = [];
+        foreach ($vars as $var) {
+            $properties['host.vars.' . $var->key_name] = $var->label . ' (' . $var->key_name . ')';
+        }
+
+        return [t('director', 'Custom variables') => $properties];
+    }
+
     /**
      * @return $this
      * @throws \Zend_Form_Exception
@@ -619,11 +648,7 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function addApplyForElement()
     {
         if ($this->object->isApplyRule()) {
-            $hostProperties = IcingaHost::enumProperties(
-                $this->object->getConnection(),
-                'host.',
-                new ArrayCustomVariablesFilter()
-            );
+            $hostProperties = $this->applyForVars();
 
             $this->addElement('select', 'apply_for', array(
                 'label' => $this->translate('Apply For'),
