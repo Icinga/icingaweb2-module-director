@@ -346,6 +346,24 @@ class IcingaService extends IcingaObject implements ExportInterface
     /**
      * @return string
      */
+    protected function renderCustomVars()
+    {
+        $vars = '';
+        if (
+            $this->isApplyRule()
+            && !$this->hasBeenAssignedToHostTemplate()
+            && $this->get('apply_for') !== null
+            && $this->isApplyRuleforDictionary(substr($this->get('apply_for'), strlen('host.vars.')))
+        ) {
+            $vars .= "\n    vars += config\n";
+        }
+
+        return $vars . parent::renderCustomVars();
+    }
+
+    /**
+     * @return string
+     */
     protected function renderObjectHeader()
     {
         if (
@@ -363,13 +381,25 @@ class IcingaService extends IcingaObject implements ExportInterface
                 $name = ' ' . c::renderString($name);
             }
 
-            return sprintf(
-                "%s %s%s for (config in %s) {\n",
-                $this->getObjectTypeName(),
-                $this->getType(),
-                $name,
-                $this->get('apply_for')
-            ) . $extraName;
+            if ($this->isApplyRuleforDictionary(substr($this->get('apply_for'), strlen('host.vars.')))) {
+                $applyForConfig = sprintf(
+                    "%s %s%s for (key => config in %s) {\n",
+                    $this->getObjectTypeName(),
+                    $this->getType(),
+                    $name,
+                    $this->get('apply_for')
+                );
+            } else {
+                $applyForConfig = sprintf(
+                    "%s %s%s for (config in %s) {\n",
+                    $this->getObjectTypeName(),
+                    $this->getType(),
+                    $name,
+                    $this->get('apply_for')
+                ) . $extraName;
+            }
+
+            return $applyForConfig;
         }
 
         return parent::renderObjectHeader();
@@ -385,6 +415,30 @@ class IcingaService extends IcingaObject implements ExportInterface
         } else {
             return 'service_description';
         }
+    }
+
+    protected function isApplyRuleforDictionary(string $applyFor): bool
+    {
+        $query = $this->db
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'instantiable' => 'dp.instantiable',
+                    'required' => 'iop.required'
+                ]
+            )
+            ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
+            ->where("value_type = 'dict'")
+            ->where("key_name = ?", $applyFor);
+
+        $result = $this->db->fetchOne($query) ?? false;
+
+        return $result !== false;
     }
 
     protected function rendersConditionalTemplate(): bool
