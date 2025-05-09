@@ -365,7 +365,6 @@ class CustomPropertiesForm extends CompatForm
     public function populate($values)
     {
         foreach ($values as $name => $value) {
-            $newValues = [];
             if (is_array($value)) {
                 if (
                     $this->isPropertyInstantiable($name) === 'y'
@@ -434,7 +433,6 @@ class CustomPropertiesForm extends CompatForm
         $vars = $this->object->vars();
 
         $modified = false;
-        var_dump($this->getValues());die;
         foreach ($this->getValues() as $key => $value) {
             if (is_array($value)) {
                 $value = array_filter($value);
