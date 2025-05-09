@@ -91,11 +91,51 @@ class IcingaObjectHandler extends RequestHandler
             $this->sendJsonError($e);
         }
 
-        if ($this->request->getActionName() !== 'index') {
+        if ($this->request->getActionName() !== 'index' && $this->request->getActionName() !== 'variables') {
             throw new NotFoundError('Not found');
         }
     }
 
+<<<<<<< Updated upstream
+=======
+    public function getCustomProperties(IcingaObject $object): array
+    {
+        if ($object->get('uuid') === null) {
+            return [];
+        }
+
+        $type = $object->getShortTableName();
+        $db = $object->getConnection();
+        $uuids = $object->listAncestorUuIds();
+        $uuids[] = $object->get('uuid');
+        $query = $db->getDbAdapter()
+                    ->select()
+                    ->from(
+                        ['dp' => 'director_property'],
+                        [
+                            'key_name' => 'dp.key_name',
+                            'uuid' => 'dp.uuid',
+                            'value_type' => 'dp.value_type',
+                            'label' => 'dp.label',
+                            'children' => 'COUNT(cdp.uuid)'
+                        ]
+                    )
+                    ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
+                    ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+                    ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+                    ->order('children')
+                    ->order('key_name');
+
+        $result = [];
+        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            $result[$row['key_name']] = $row;
+        }
+
+        return $result;
+    }
+
+>>>>>>> Stashed changes
     protected function handleApiRequest()
     {
         $request = $this->request;
@@ -130,7 +170,11 @@ class IcingaObjectHandler extends RequestHandler
                 $allowsOverrides = $params->get('allowOverrides');
                 $type = $this->getType();
                 if ($object = $this->loadOptionalObject()) {
-                    if ($request->getMethod() === 'POST') {
+                    if ($this->request->getActionName() === 'variables') {
+                        $data = ['vars' => $data];
+
+                        $object->setProperties($data);
+                    } elseif ($request->getMethod() === 'POST') {
                         $object->setProperties($data);
                     } else {
                         $data = array_merge([
