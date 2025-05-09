@@ -1211,7 +1211,7 @@ abstract class DirectorObjectForm extends DirectorForm
 
         try {
             $this->loadInheritedProperties();
-            if ($this->object->getShortTableName() !== 'host') {
+            if (! method_exists($this->object, 'getShortTableName') || $this->object->getShortTableName() !== 'host') {
                 $this->addFields();
             } else {
                 $this->addProperties();
