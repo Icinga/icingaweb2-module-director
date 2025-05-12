@@ -13,6 +13,7 @@ use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormElement\TermInput;
+use ipl\Web\Widget\Icon;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -25,7 +26,7 @@ class CustomPropertiesForm extends CompatForm
         public readonly DbConnection $db,
         public readonly IcingaObject $object,
     ) {
-//        $this->addAttributes(['class' => ['director-form']]);
+        $this->addAttributes(['class' => ['custom-properties-form']]);
     }
 
     protected function assemble(): void
@@ -107,6 +108,7 @@ class CustomPropertiesForm extends CompatForm
                     'add-item',
                     [
                         'label' => $this->translate('Add item'),
+                        'formnovalidate' => true,
                     ],
                 );
 
@@ -145,7 +147,7 @@ class CustomPropertiesForm extends CompatForm
                     : [];
 
                 foreach ($prefixes as $idx => $prefix) {
-                    $propertyField = new FieldsetElement('property-' . $prefix);
+                    $propertyField = new FieldsetElement('property-' . $prefix, ['class' => 'dictionary-item']);
                     $field->addElement($propertyField);
 
                     $propertyItemLabel = $this->createElement(
@@ -153,6 +155,7 @@ class CustomPropertiesForm extends CompatForm
                         'label',
                         [
                             'label' => $this->translate('Item Label'),
+                            'required' => true,
                             'class' => 'autosubmit',
                         ],
                     );
@@ -165,15 +168,18 @@ class CustomPropertiesForm extends CompatForm
                     }
 
                     $removeItem = $this->createElement(
-                        'submit',
-                        "remove-item-$prefix",
+                        'submitButton',
+                        "remove-item",
                         [
-                            'label'          => $this->translate('Remove'),
+                            'class'          => 'remove-button',
+                            'label'          => new Icon('minus', ['title' => 'Remove item']),
+                            'value'          => $idx,
                             'formnovalidate' => true
                         ]
                     );
 
-                    $propertyField->addElement($removeItem);
+                    $propertyField->registerElement($removeItem);
+                    $propertyField->addHtml($removeItem);
                     if ($removeItem->hasBeenPressed()) {
                         $field->remove($propertyField);
                         unset($prefixes[$idx]);
@@ -187,19 +193,27 @@ class CustomPropertiesForm extends CompatForm
                 }
 
                 $removedItems = 0;
+                $removedItemIdx = null;
                 for ($numberItem = $loadedItems; $numberItem < ($numberItems + $loadedItems); $numberItem++) {
-                    $idx = $numberItem - $loadedItems;
-                    $propertyField = new FieldsetElement('property-' . $numberItem, [
+                    $tempNumberItem = $numberItem;
+                    if ($removedItems > 0 && $removedItemIdx < $numberItem) {
+                        $tempNumberItem = $numberItem - 1;
+                    }
+
+                    $idx = $tempNumberItem - $loadedItems;
+
+                    $propertyField = new FieldsetElement('property-' . $tempNumberItem, [
                         'label'   => $this->translate('New Property') . " $idx",
+                        'class'   => ['dictionary-item']
                     ]);
 
                     $field->addElement($propertyField);
-
                     $propertyItemLabel = $this->createElement(
                         'text',
                         'label',
                         [
                             'label' => $this->translate('Item Label'),
+                            'required' => true
                         ],
                     );
 
@@ -209,18 +223,24 @@ class CustomPropertiesForm extends CompatForm
                     }
 
                     $removeItem = $this->createElement(
-                        'submit',
-                        "remove-item-$numberItem",
+                        'submitButton',
+                        "remove-item",
                         [
-                            'label'          => $this->translate('Remove'),
+                            'class'          => ['remove-button', 'autosubmit'],
+                            'label'          => new Icon('minus', ['title' => 'Remove item']),
+                            'value'          => $tempNumberItem,
                             'formnovalidate' => true
                         ]
                     );
 
-                    $propertyField->addElement($removeItem);
-                    if ($removeItem->hasBeenPressed()) {
+                    $propertyField->registerElement($removeItem);
+                    $propertyField->addHtml($removeItem);
+                    if (! $removedItems && $removeItem->hasBeenPressed()) {
                         $field->remove($propertyField);
+                        $removedItemIdx = (int) $removeItem->getValue();
                         $removedItems += 1;
+                    } else {
+                        $propertyField->populate($field->getPopulatedValue('property-' . $numberItem) ?? []);
                     }
                 }
 
@@ -229,9 +249,9 @@ class CustomPropertiesForm extends CompatForm
 
                 $field->addElement($addItem);
 
-                if ($numberItems > 0) {
-                    $field->remove($addItem);
-                }
+//                if ($numberItems > 0) {
+//                    $field->remove($addItem);
+//                }
             }
         }
     }

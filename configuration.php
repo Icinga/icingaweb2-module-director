@@ -180,3 +180,4 @@ $section->add(N_('Properties'))
     ->setPriority(903);
 
 $this->provideCssFile('property-table.less');
+$this->provideCssFile('custom-properties-form.less');
