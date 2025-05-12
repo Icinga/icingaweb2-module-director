@@ -6,7 +6,6 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Forms\DirectorDatalistEntryForm;
 use Icinga\Module\Director\Forms\DirectorDatalistForm;
-use Icinga\Module\Director\Forms\IcingaHostDictionaryMemberForm;
 use Icinga\Module\Director\Forms\IcingaServiceDictionaryMemberForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\IcingaHost;
