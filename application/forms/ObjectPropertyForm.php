@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Web\Form\Decorator\ExtensibleSetDecorator;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\I18n\Translation;
@@ -18,29 +18,28 @@ class ObjectPropertyForm extends CompatForm
     use CsrfCounterMeasure;
     use Translation;
 
+    protected array $properties = [];
+
     public function __construct(
         public readonly DbConnection $db,
         public readonly IcingaObject $object,
         protected ?UuidInterface $propertyUuid = null
     ) {
-//        $this->addAttributes(['class' => ['director-form']]);
+    }
+
+    public function getPropertyName(): string
+    {
+        $propertyUuid = $this->getValue('property');
+        if ($propertyUuid) {
+            return $this->properties[$propertyUuid] ?? '';
+        }
+
+        return '';
     }
 
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
-//        $this->addHtml(HtmlElement::create(
-//            'div',
-//            Attributes::create(['class' => 'hint']),
-//           $this->translate(
-//               'Custom properties allow you to easily fill custom variables with'
-//               . " meaningful data. It's perfectly legal to override inherited properties."
-//               . ' You may for example want to allow "network devices" specifying any'
-//               . ' string for vars.snmp_community, but restrict "customer routers" to'
-//               . ' a specific set, shown as a dropdown.'
-//           )
-//        ));
-
         $this->addElement(
             'select',
             'property',
@@ -68,13 +67,14 @@ class ObjectPropertyForm extends CompatForm
             ]
         );
 
+        $property = $this->getValue('property');
         $this->addElement('submit', 'submit', [
-            'label' => $this->propertyUuid
+            'label' => $this->getValue('property')
                 ? $this->translate('Store')
                 : $this->translate('Add')
         ]);
 
-        if ($this->propertyUuid) {
+        if ($property) {
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
                 'submit',
@@ -95,12 +95,9 @@ class ObjectPropertyForm extends CompatForm
 
     protected function getProperties(): array
     {
-        $type = $this->object->getShortTableName();
         $query = $this->db->getDbAdapter()
             ->select()
             ->from(['dp' => 'director_property'], ['uuid' => 'dp.uuid', 'key_name' => 'dp.key_name'])
-//            ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.' . $type .  '_uuid')
-//            ->where('iop.' . $type . '_uuid = ?', $this->object->uuid)
             ->where('parent_uuid IS NULL');
 
         $properties = $this->db->getDbAdapter()->fetchAll($query);
@@ -109,6 +106,8 @@ class ObjectPropertyForm extends CompatForm
         foreach ($properties as $property) {
             $propUuidKeyPairs[Uuid::fromBytes($property->uuid)->toString()] = $property->key_name;
         }
+
+        $this->properties = $propUuidKeyPairs;
 
         return $propUuidKeyPairs;
     }
@@ -125,14 +124,50 @@ class ObjectPropertyForm extends CompatForm
         return parent::isValid();
     }
 
+    public function hasBeenSubmitted()
+    {
+        if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
+            return true;
+        }
+
+        return parent::hasBeenSubmitted();
+    }
+
     protected function onSuccess()
     {
-        $this->db->insert(
-            'icinga_host_property',
-            [
-                'host_uuid' => $this->object->uuid,
-                'property_uuid' => Uuid::fromString($this->getValue('property'))->getBytes()
-            ]
-        );
+        $formProperty = $this->getValue('property');
+        if ($this->getPressedSubmitElement()->getName() === 'delete') {
+            $this->db->delete(
+                'icinga_host_property',
+                Filter::matchAll(
+                    Filter::where('host_uuid', $this->object->uuid),
+                    Filter::where('property_uuid', Uuid::fromString($this->getValue('property'))->getBytes())
+                )
+            );
+
+            return;
+        }
+
+        if ($this->propertyUuid) {
+            if ($this->propertyUuid->toString() !== $formProperty) {
+                $this->db->delete(
+                    'icinga_host_property',
+                    Filter::matchAll(
+                        Filter::where('host_uuid', $this->object->uuid),
+                        Filter::where('property_uuid', $this->propertyUuid->getBytes())
+                    )
+                );
+            }
+        }
+
+        if (! $this->propertyUuid || ($this->propertyUuid->toString() !== $formProperty)) {
+            $this->db->insert(
+                'icinga_host_property',
+                [
+                    'host_uuid' => $this->object->uuid,
+                    'property_uuid' => Uuid::fromString($this->getValue('property'))->getBytes()
+                ]
+            );
+        }
     }
 }

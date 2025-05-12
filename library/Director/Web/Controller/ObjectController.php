@@ -274,7 +274,6 @@ abstract class ObjectController extends ActionController
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
-        $type = $this->getType();
 
         $this->addTitle(
             $this->translate('Custom properties: %s'),
@@ -294,15 +293,36 @@ abstract class ObjectController extends ActionController
         $propertyUuid = $this->params->get('property_uuid');
         $objectUuid = $this->object->get('uuid');
         $objectType = $this->object->getShortTableName();
+        $formData = [];
         if ($propertyUuid) {
             $propertyUuid = Uuid::fromString($propertyUuid);
+            $objectPropertiesQuery = $this->db()->select()->from('icinga_host_property', ['required'])
+                ->where('property_uuid', UUid::fromString($propertyUuid)->getBytes())
+                ->where($objectType . '_uuid ', $objectUuid);
+
+            $formData = [
+                'property' => $propertyUuid->toString(),
+                'required' => $this->db()->fetchOne($objectPropertiesQuery)
+            ];
         }
 
         $form = (new ObjectPropertyForm($this->db(), $object, $propertyUuid))
+            ->populate($formData)
             ->on(ObjectPropertyForm::ON_SUCCESS, function (ObjectPropertyForm $form) {
-                Notification::success(sprintf(
-                    $this->translate('Property has successfully been added')
-                ));
+                if ($form->getPressedSubmitElement()->getName() === 'delete') {
+                    Notification::success(sprintf(
+                        $this->translate('Property %s  has successfully been deleted'),
+                        $form->getPropertyName()
+                    ));
+                } else {
+                    Notification::success(sprintf(
+                        sprintf($this->translate('Property%s  has successfully been added'), $form->getPropertyName())
+                    ));
+                }
+
+                $this->redirectNow(
+                    $this->url()->without('property_uuid')
+                );
             })
             ->handleRequest($this->getServerRequest());
 
@@ -313,11 +333,6 @@ abstract class ObjectController extends ActionController
                 null,
                 ['class' => 'icon-left-big']
             ));
-            $objectPropertiesQuery = $this->db()->select()->from('icinga_host_property', ['required'])
-                ->where('property_uuid', UUid::fromString($propertyUuid)->getBytes())
-                ->where($objectType . '_uuid ', $objectUuid);
-
-            $form->populate(['property' => $propertyUuid, 'required' => $this->db()->fetchOne($objectPropertiesQuery)]);
         }
 
         $objectPropertiesQuery = $this->db()->select()

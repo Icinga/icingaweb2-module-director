@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\CustomPropertiesForm;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
@@ -15,7 +14,6 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use Exception;
-use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
@@ -30,6 +28,7 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\SelfService;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
+use ipl\Web\Widget\ButtonLink;
 
 class HostController extends ObjectController
 {
@@ -95,19 +94,25 @@ class HostController extends ObjectController
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
-        $type = $this->getType();
 
         $this->addTitle(
             $this->translate('Custom Variables: %s'),
             $object->getObjectName()
         );
 
+        $this->content()->add(
+            (new ButtonLink($this->translate('Add'),
+                Url::fromPath('director/host/properties', ['uuid' => $this->getUuidFromUrl()])->getAbsoluteUrl(),
+                null,
+                ['class' => 'control-button']
+            ))->openInModal()
+        );
+
         $vars = json_decode(json_encode($this->object->getVars()), true);
 
         $form = (new CustomPropertiesForm($this->db(), $object))
             ->populate($vars)
-            ->on(CustomPropertiesForm::ON_SUCCESS, function ($form) {
-//                $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
+            ->on(CustomPropertiesForm::ON_SUCCESS, function () {
                 $this->redirectNow('__REFRESH__');
             })
             ->handleRequest($this->getServerRequest());
