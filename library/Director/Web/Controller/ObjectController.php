@@ -34,7 +34,6 @@ use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
-use Icinga\Module\Director\Web\Widget\ObjectPropertyTable;
 use Icinga\Web\Notification;
 use ipl\Html\Html;
 use Ramsey\Uuid\Uuid;
@@ -270,25 +269,19 @@ abstract class ObjectController extends ActionController
         }
     }
 
-    public function propertiesAction()
+    public function addPropertyAction()
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
-
-        $this->addTitle(
-            $this->translate('Custom properties: %s'),
-            $object->getObjectName()
-        );
-        $this->tabs()->activate('properties');
-
+        $this->view->title = sprintf($this->translate('Add Custom Property: %s'), $this->object->getObjectName());
         try {
-            $this->addPropertiesFormAndTable($object);
+            $this->addPropertyForm($object);
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));
         }
     }
 
-    protected function addPropertiesFormAndTable($object)
+    protected function addPropertyForm($object)
     {
         $propertyUuid = $this->params->get('property_uuid');
         $objectUuid = $this->object->get('uuid');
@@ -326,29 +319,11 @@ abstract class ObjectController extends ActionController
             })
             ->handleRequest($this->getServerRequest());
 
-        if ($propertyUuid) {
-            $this->actions()->add(Link::create(
-                $this->translate('back'),
-                $this->url()->without('property_uuid'),
-                null,
-                ['class' => 'icon-left-big']
-            ));
-        }
-
-        $objectPropertiesQuery = $this->db()->select()
-            ->from(['dp' => 'director_property'], ['*'])
-            ->join(
-                ['iop' => 'icinga_' . $objectType . '_property'],
-                'dp.uuid = iop.property_uuid',
-                ['required']
-            )
-            ->where('iop.' . $objectType . '_uuid', $objectUuid);
-
         $this->content()->add($form);
-        $this->content()->add(new ObjectPropertyTable(
-            Uuid::fromBytes($objectUuid),
-            $this->db()->fetchAll($objectPropertiesQuery)
-        ));
+//        $this->content()->add(new ObjectPropertyTable(
+//            Uuid::fromBytes($objectUuid),
+//            $this->db()->fetchAll($objectPropertiesQuery)
+//        ));
     }
 
     protected function addFieldsFormAndTable($object, $type)

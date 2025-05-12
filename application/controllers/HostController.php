@@ -100,13 +100,16 @@ class HostController extends ObjectController
             $object->getObjectName()
         );
 
-        $this->content()->add(
-            (new ButtonLink($this->translate('Add'),
-                Url::fromPath('director/host/properties', ['uuid' => $this->getUuidFromUrl()])->getAbsoluteUrl(),
-                null,
-                ['class' => 'control-button']
-            ))->openInModal()
-        );
+        if ($this->object->isTemplate()) {
+            $this->actions()->add(
+                (new ButtonLink(
+                    $this->translate('Add Property'),
+                    Url::fromPath('director/host/add-property', ['uuid' => $this->getUuidFromUrl()])->getAbsoluteUrl(),
+                    null,
+                    ['class' => 'control-button']
+                ))->openInModal()
+            );
+        }
 
         $vars = json_decode(json_encode($this->object->getVars()), true);
 
