@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbConnection;
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
@@ -25,6 +24,7 @@ class CustomPropertiesForm extends CompatForm
     public function __construct(
         public readonly DbConnection $db,
         public readonly IcingaObject $object,
+        protected array $objectProperties = []
     ) {
         $this->addAttributes(['class' => ['custom-properties-form']]);
     }
@@ -32,11 +32,8 @@ class CustomPropertiesForm extends CompatForm
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
-        $objectProperties = $this->getObjectProperties();
-        if ($objectProperties) {
-            foreach ($objectProperties as $objectProperty) {
-                $this->preparePropertyElement($objectProperty);
-            }
+        foreach ($this->objectProperties as $objectProperty) {
+            $this->preparePropertyElement($objectProperty);
         }
 
         $this->addElement('submit', 'save', [
@@ -104,7 +101,7 @@ class CustomPropertiesForm extends CompatForm
             } elseif ($objectProperty->value_type === 'dict') {
                 /** @var SubmitButtonElement $addItem */
                 $addItem = $this->createElement(
-                    'submit',
+                    'submitButton',
                     'add-item',
                     [
                         'label' => $this->translate('Add item'),
@@ -167,6 +164,7 @@ class CustomPropertiesForm extends CompatForm
                         $this->preparePropertyElement($propertyItem, $propertyField);
                     }
 
+                    /** @var SubmitButtonElement $removeItem */
                     $removeItem = $this->createElement(
                         'submitButton',
                         "remove-item",
@@ -248,10 +246,6 @@ class CustomPropertiesForm extends CompatForm
                 $itemCount->setValue($numberItems);
 
                 $field->addElement($addItem);
-
-//                if ($numberItems > 0) {
-//                    $field->remove($addItem);
-//                }
             }
         }
     }
@@ -279,45 +273,6 @@ class CustomPropertiesForm extends CompatForm
         };
     }
 
-    protected function getObjectProperties(): ?array
-    {
-        if ($this->object->uuid === null) {
-            return [];
-        }
-
-        $type = $this->object->getShortTableName();
-
-        $parents = $this->object->getImports();
-
-        $uuids = [];
-        foreach ($parents as $parent) {
-            $uuids[] = IcingaHost::load($parent, $this->db)->get('uuid');
-        }
-
-        $uuids[] = $this->object->get('uuid');
-        $query = $this->db->getDbAdapter()
-            ->select()
-            ->from(
-                ['dp' => 'director_property'],
-                [
-                    'key_name' => 'dp.key_name',
-                    'uuid' => 'dp.uuid',
-                    'value_type' => 'dp.value_type',
-                    'label' => 'dp.label',
-                    'instantiable' => 'dp.instantiable',
-                    'required' => 'iop.required',
-                    'children' => 'COUNT(cdp.uuid)'
-                ]
-            )
-            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
-            ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group('dp.uuid')
-            ->order('children ASC');
-
-        return $this->db->getDbAdapter()->fetchAll($query);
-    }
-
     private function isPropertyInstantiable(string $name): string
     {
         $type = $this->object->getShortTableName();
@@ -335,18 +290,6 @@ class CustomPropertiesForm extends CompatForm
             ->where('dp.key_name = ?', $name);
 
         return $this->db->getDbAdapter()->fetchOne($query);
-    }
-
-
-    public function isValid()
-    {
-        if ($this->getPressedSubmitElement()->getName() === 'delete') {
-            $csrfElement = $this->getElement('CSRFToken');
-
-            return $csrfElement->isValid();
-        }
-
-        return parent::isValid();
     }
 
     public function getValues()

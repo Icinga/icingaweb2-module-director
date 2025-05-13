@@ -100,6 +100,7 @@ class HostController extends ObjectController
             $object->getObjectName()
         );
 
+        $objectProperties = $this->getObjectProperties();
         if ($this->object->isTemplate()) {
             $this->actions()->add(
                 (new ButtonLink(
@@ -109,24 +110,82 @@ class HostController extends ObjectController
                     ['class' => 'control-button']
                 ))->openInModal()
             );
+
+            if ($objectProperties) {
+                $this->actions()->add(
+                    (new ButtonLink(
+                        $this->translate('Remove Property'),
+                        Url::fromPath(
+                            'director/host/remove-property',
+                            ['uuid' => $this->getUuidFromUrl()]
+                        )->getAbsoluteUrl(),
+                        null,
+                        ['class' => 'control-button']
+                    ))->openInModal()
+                );
+            }
         }
 
         $vars = json_decode(json_encode($this->object->getVars()), true);
 
-        $form = (new CustomPropertiesForm($this->db(), $object))
-            ->populate($vars)
-            ->on(CustomPropertiesForm::ON_SUCCESS, function () {
-                $this->redirectNow('__REFRESH__');
-            })
-            ->handleRequest($this->getServerRequest());
+        if ($objectProperties) {
+            $form = (new CustomPropertiesForm($this->db(), $object, $objectProperties))
+                ->populate($vars)
+                ->on(CustomPropertiesForm::ON_SUCCESS, function () {
+                    $this->redirectNow('__REFRESH__');
+                })
+                ->handleRequest($this->getServerRequest());
 
-        try {
-            $this->content()->add($form);
-        } catch (NestingError $e) {
-            $this->content()->add(Hint::error($e->getMessage()));
+            try {
+                $this->content()->add($form);
+            } catch (NestingError $e) {
+                $this->content()->add(Hint::error($e->getMessage()));
+            }
         }
 
         $this->tabs()->activate('variables');
+    }
+
+    protected function getObjectProperties(): ?array
+    {
+        if ($this->object->uuid === null) {
+            return [];
+        }
+
+        $type = $this->object->getShortTableName();
+
+        $parents = $this->object->getImports();
+
+        $uuids = [];
+        $db = $this->db();
+        foreach ($parents as $parent) {
+            $uuids[] = IcingaHost::load($parent, $db)->get('uuid');
+        }
+
+        $uuids[] = $this->object->get('uuid');
+        $query = $db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'instantiable' => 'dp.instantiable',
+                    'required' => 'iop.required',
+                    'children' => 'COUNT(cdp.uuid)'
+                ]
+            )
+            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
+            ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dp.instantiable', 'iop.required'])
+            ->order('instantiable DESC')
+            ->order('children')
+            ->order('key_name');
+
+        return $db->getDbAdapter()->fetchAll($query);
     }
 
     public function serviceAction()

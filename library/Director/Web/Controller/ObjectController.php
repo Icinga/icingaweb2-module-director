@@ -34,8 +34,10 @@ use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
+use Icinga\Module\Director\Web\Widget\ObjectPropertyTable;
 use Icinga\Web\Notification;
 use ipl\Html\Html;
+use ipl\Web\Url;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -102,6 +104,10 @@ abstract class ObjectController extends ActionController
 
     protected function initializeWebRequest()
     {
+        if ($this->getRequest()->getActionName() === 'add-property') {
+            return;
+        }
+
         if ($this->getRequest()->getActionName() === 'add') {
             $this->addSingleTab(
                 sprintf($this->translate('Add %s'), ucfirst($this->getType())),
@@ -275,34 +281,50 @@ abstract class ObjectController extends ActionController
         $object = $this->requireObject();
         $this->view->title = sprintf($this->translate('Add Custom Property: %s'), $this->object->getObjectName());
         try {
-            $this->addPropertyForm($object);
+            $this->fetchPropertyForm($object);
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));
         }
     }
 
-    protected function addPropertyForm($object)
+    public function removePropertyAction()
+    {
+        $this->assertPermission('director/admin');
+        $object = $this->requireObject();
+        $this->view->title = sprintf($this->translate('Remove Custom Property: %s'), $this->object->getObjectName());
+        try {
+            $this->fetchPropertyForm($object, true);
+        } catch (NestingError $e) {
+            $this->content()->add(Hint::error($e->getMessage()));
+        }
+    }
+
+    protected function fetchPropertyForm(IcingaObject $object, bool $isRemoval = false)
     {
         $propertyUuid = $this->params->get('property_uuid');
         $objectUuid = $this->object->get('uuid');
         $objectType = $this->object->getShortTableName();
         $formData = [];
+
         if ($propertyUuid) {
             $propertyUuid = Uuid::fromString($propertyUuid);
-            $objectPropertiesQuery = $this->db()->select()->from('icinga_host_property', ['required'])
-                ->where('property_uuid', UUid::fromString($propertyUuid)->getBytes())
-                ->where($objectType . '_uuid ', $objectUuid);
+            $objectPropertyQuery = $this->db()
+                ->select()
+                ->from('icinga_host_property', ['required'])
+                ->where($objectType . '_uuid ', $objectUuid)
+                ->where('property_uuid', $propertyUuid);
 
             $formData = [
                 'property' => $propertyUuid->toString(),
-                'required' => $this->db()->fetchOne($objectPropertiesQuery)
+                'required' => $this->db()->fetchOne($objectPropertyQuery)
             ];
         }
 
-        $form = (new ObjectPropertyForm($this->db(), $object, $propertyUuid))
+        $form = (new ObjectPropertyForm($this->db(), $object, $isRemoval, $propertyUuid))
             ->populate($formData)
-            ->on(ObjectPropertyForm::ON_SUCCESS, function (ObjectPropertyForm $form) {
-                if ($form->getPressedSubmitElement()->getName() === 'delete') {
+            ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->on(ObjectPropertyForm::ON_SUCCESS, function (ObjectPropertyForm $form) use ($objectUuid, $isRemoval) {
+                if ($isRemoval) {
                     Notification::success(sprintf(
                         $this->translate('Property %s  has successfully been deleted'),
                         $form->getPropertyName()
@@ -313,17 +335,14 @@ abstract class ObjectController extends ActionController
                     ));
                 }
 
-                $this->redirectNow(
-                    $this->url()->without('property_uuid')
-                );
+                $this->redirectNow(Url::fromPath(
+                    'director/' . $this->getType() . '/variables',
+                    ['uuid' => UUid::fromBytes($objectUuid)->toString()]
+                ));
             })
             ->handleRequest($this->getServerRequest());
 
         $this->content()->add($form);
-//        $this->content()->add(new ObjectPropertyTable(
-//            Uuid::fromBytes($objectUuid),
-//            $this->db()->fetchAll($objectPropertiesQuery)
-//        ));
     }
 
     protected function addFieldsFormAndTable($object, $type)
