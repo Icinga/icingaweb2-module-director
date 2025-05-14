@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\FieldsetElement;
@@ -32,8 +33,20 @@ class CustomPropertiesForm extends CompatForm
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $inheritedVars = $this->object->getInheritedVars();
+        $origins = $this->object->getOriginsVars();
         foreach ($this->objectProperties as $objectProperty) {
-            $this->preparePropertyElement($objectProperty);
+            $inheritedVar = [];
+            if (isset($inheritedVars->{$objectProperty->key_name})) {
+                $inheritedValue = $inheritedVars->{$objectProperty->key_name};
+                if (is_object($inheritedVars->{$objectProperty->key_name})) {
+                    $inheritedValue = (array) $inheritedValue;
+                }
+
+                $inheritedVar = [$inheritedValue, $origins->{$objectProperty->key_name}];
+            }
+
+            $this->preparePropertyElement($objectProperty, inheritedValue: $inheritedVar);
         }
 
         $this->addElement('submit', 'save', [
@@ -41,10 +54,19 @@ class CustomPropertiesForm extends CompatForm
         ]);
     }
 
-    protected function preparePropertyElement(object $objectProperty, FieldsetElement $parentElement = null)
+    protected function preparePropertyElement(
+        object $objectProperty,
+        FieldsetElement $parentElement = null,
+        $inheritedValue = []
+    ): void
     {
         $isInstantiable = $objectProperty->instantiable === 'y';
         $fieldType = $this->fetchFieldType($objectProperty->value_type, $isInstantiable);
+        $placeholder = '';
+        if ($inheritedValue && ! (is_array($inheritedValue[0]) || $objectProperty->value_type === 'bool')) {
+            $placeholder = $inheritedValue[0]
+                . sprintf($this->translate(' (inherited from "%s")'), $inheritedValue[1]);
+        }
 
         if ($parentElement) {
             $fieldName = $objectProperty->key_name;
@@ -57,20 +79,30 @@ class CustomPropertiesForm extends CompatForm
         }
 
         if ($fieldType === 'boolean') {
+            $options = ['' => sprintf(' - %s - ', $this->translate('Please choose')), 'y' => 'Yes', 'n' => 'No'];
+
+            if (! empty($inheritedValue)) {
+                $options[''] = ($inheritedValue[0] === 'y' ? 'Yes' : 'No')
+                    . sprintf($this->translate(' (inherited from "%s")'), $inheritedValue[1]);
+            }
+
             $field = $this->createElement(
                 'select',
                 $fieldName,
                 [
                     'label'   => $objectProperty->label,
-                    'value'   => 'n',
-                    'options' => ['y' => 'Yes', 'n' => 'No'],
+                    'options' => $options,
+                    'value'   => ''
                 ],
             );
         } elseif ($fieldType === 'extensibleSet') {
-            $field = new TermInput($fieldName, [
-                'label'   => $objectProperty->label,
-                'placeholder' => $this->translate('Separate multiple values by comma'),
-            ]);
+            $placeholder = ! empty($inheritedValue[0])
+                ? implode(', ', $inheritedValue[0])
+                . sprintf($this->translate(' (inherited from "%s")'), $inheritedValue[1])
+                : '';
+            $field = (new ArrayElement($fieldName, [
+                'label'   => $objectProperty->label
+            ]))->setPlaceholder($placeholder);
         } elseif ($fieldType === 'collection') {
             $field = new FieldsetElement($fieldName, [
                 'label'   => $objectProperty->label,
@@ -81,6 +113,7 @@ class CustomPropertiesForm extends CompatForm
                 $fieldName,
                 [
                     'label'   => $objectProperty->label,
+                    'placeholder' => $placeholder
                 ],
             );
         }
@@ -95,8 +128,17 @@ class CustomPropertiesForm extends CompatForm
             $propertyItems = $this->fetchPropertyItems(Uuid::fromBytes($objectProperty->uuid));
 
             if (! $isInstantiable) {
-                foreach ($propertyItems as $propertyItem) {
-                    $this->preparePropertyElement($propertyItem, $field);
+                foreach ($propertyItems as $key => $propertyItem) {
+                    $propertyInherited = [];
+                    if (isset($inheritedValue[0][$propertyItem->key_name])) {
+                        $propertyInherited = [$inheritedValue[0][$propertyItem->key_name], $inheritedValue[1]];
+                    }
+
+                    $this->preparePropertyElement(
+                        $propertyItem,
+                        $field,
+                        $propertyInherited
+                    );
                 }
             } elseif ($objectProperty->value_type === 'dict') {
                 /** @var SubmitButtonElement $addItem */
@@ -153,7 +195,7 @@ class CustomPropertiesForm extends CompatForm
                         [
                             'label' => $this->translate('Item Label'),
                             'required' => true,
-                            'class' => 'autosubmit',
+                            'class' => 'autosubmit'
                         ],
                     );
 
@@ -161,7 +203,16 @@ class CustomPropertiesForm extends CompatForm
                     $field->registerElement($propertyField);
                     $propertyField->setLabel($propertyItemLabel->getValue());
                     foreach ($propertyItems as $propertyItem) {
-                        $this->preparePropertyElement($propertyItem, $propertyField);
+                        $inheritedVar = [];
+                        if (! empty($inheritedValue) && isset($inheritedValue[0][$propertyItemLabel->getValue()])) {
+                            $inheritedVar = [$inheritedValue[0][$propertyItemLabel->getValue()], $inheritedValue[1]];
+                        }
+
+                        $this->preparePropertyElement(
+                            $propertyItem,
+                            $propertyField,
+                            $inheritedVar
+                        );
                     }
 
                     /** @var SubmitButtonElement $removeItem */
