@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Forms\CustomPropertiesForm;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
@@ -12,7 +14,6 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use Exception;
-use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
@@ -25,9 +26,9 @@ use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\SelfService;
-use Icinga\Module\Director\Web\Table\IcingaHostAppliedForServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
+use ipl\Web\Widget\ButtonLink;
 
 class HostController extends ObjectController
 {
@@ -89,6 +90,103 @@ class HostController extends ObjectController
         $this->addOptionalMonitoringLink();
     }
 
+    public function variablesAction()
+    {
+        $this->assertPermission('director/admin');
+        $object = $this->requireObject();
+
+        $this->addTitle(
+            $this->translate('Custom Variables: %s'),
+            $object->getObjectName()
+        );
+
+        $objectProperties = $this->getObjectProperties();
+        if ($this->object->isTemplate()) {
+            $this->actions()->add(
+                (new ButtonLink(
+                    $this->translate('Add Property'),
+                    Url::fromPath('director/host/add-property', ['uuid' => $this->getUuidFromUrl()])->getAbsoluteUrl(),
+                    null,
+                    ['class' => 'control-button']
+                ))->openInModal()
+            );
+
+            if ($objectProperties) {
+                $this->actions()->add(
+                    (new ButtonLink(
+                        $this->translate('Remove Property'),
+                        Url::fromPath(
+                            'director/host/remove-property',
+                            ['uuid' => $this->getUuidFromUrl()]
+                        )->getAbsoluteUrl(),
+                        null,
+                        ['class' => 'control-button']
+                    ))->openInModal()
+                );
+            }
+        }
+
+        $vars = json_decode(json_encode($this->object->getVars()), true);
+
+        if ($objectProperties) {
+            $form = (new CustomPropertiesForm($this->db(), $object, $objectProperties))
+                ->populate($vars)
+                ->on(CustomPropertiesForm::ON_SUCCESS, function () {
+                    $this->redirectNow('__REFRESH__');
+                })
+                ->handleRequest($this->getServerRequest());
+
+            try {
+                $this->content()->add($form);
+            } catch (NestingError $e) {
+                $this->content()->add(Hint::error($e->getMessage()));
+            }
+        }
+
+        $this->tabs()->activate('variables');
+    }
+
+    protected function getObjectProperties(): ?array
+    {
+        if ($this->object->uuid === null) {
+            return [];
+        }
+
+        $type = $this->object->getShortTableName();
+
+        $parents = $this->object->getImports();
+
+        $uuids = [];
+        $db = $this->db();
+        foreach ($parents as $parent) {
+            $uuids[] = IcingaHost::load($parent, $db)->get('uuid');
+        }
+
+        $uuids[] = $this->object->get('uuid');
+        $query = $db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'instantiable' => 'dp.instantiable',
+                    'required' => 'iop.required',
+                    'children' => 'COUNT(cdp.uuid)'
+                ]
+            )
+            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
+            ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dp.instantiable', 'iop.required'])
+            ->order('children')
+            ->order('instantiable');
+
+        return $db->getDbAdapter()->fetchAll($query);
+    }
+
     public function serviceAction()
     {
         $host = $this->getHostObject();
@@ -99,7 +197,7 @@ class HostController extends ObjectController
                 ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setDb($this->db())
-                ->handleRequest()
+                ->handleRequest(),
         );
     }
 
@@ -114,7 +212,7 @@ class HostController extends ObjectController
                 ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setDb($this->db())
-                ->handleRequest()
+                ->handleRequest(),
         );
     }
 
@@ -128,12 +226,12 @@ class HostController extends ObjectController
             $this->translate('Add service'),
             'director/host/service',
             ['name' => $hostname],
-            ['class' => 'icon-plus']
+            ['class' => 'icon-plus'],
         ))->add(Link::create(
             $this->translate('Add service set'),
             'director/host/serviceset',
             ['name' => $hostname],
-            ['class' => 'icon-plus']
+            ['class' => 'icon-plus'],
         ));
     }
 
@@ -159,7 +257,7 @@ class HostController extends ObjectController
         } elseif ($auth->hasPermission($this->getServicesReadOnlyPermission())) {
             $redirectUrl = Url::fromPath('director/host/servicesro', [
                 'name'    => $hostName,
-                'service' => $serviceName
+                'service' => $serviceName,
             ]);
         } else {
             $redirectUrl = Url::fromPath('director/host/invalidservice', [
@@ -179,7 +277,7 @@ class HostController extends ObjectController
         if (! $this->showInfoForNonDirectorService()) {
             $this->content()->add(Hint::error(sprintf(
                 $this->translate('No such service: %s'),
-                $this->params->get('service')
+                $this->params->get('service'),
             )));
         }
 
@@ -199,7 +297,7 @@ class HostController extends ObjectController
                         'The configuration for this object has not been rendered by'
                         . ' Icinga Director. You can find it on line %s in %s.',
                         Html::tag('strong', null, $source->first_line),
-                        Html::tag('strong', null, $source->path)
+                        Html::tag('strong', null, $source->path),
                     )));
                 }
             }
@@ -245,8 +343,8 @@ class HostController extends ObjectController
                 $content->add(
                     $table->setTitle(sprintf(
                         $this->translate('Inherited from %s'),
-                        $parent->getObjectName()
-                    ))
+                        $parent->getObjectName(),
+                    )),
                 );
             }
         }
@@ -268,7 +366,7 @@ class HostController extends ObjectController
                     ->setBranch($branch)
                     ->setAffectedHost($host)
                     ->setTitle($title)
-                    ->removeQueryLimit()
+                    ->removeQueryLimit(),
             );
         }
 
@@ -326,8 +424,8 @@ class HostController extends ObjectController
                 $content->add(
                     $table->setTitle(sprintf(
                         'Inherited from %s',
-                        $parent->getObjectName()
-                    ))
+                        $parent->getObjectName(),
+                    )),
                 );
             }
         }
@@ -348,7 +446,7 @@ class HostController extends ObjectController
                     ->setAffectedHost($host)
                     ->setReadonly()
                     ->highlightService($service)
-                    ->setTitle($title)
+                    ->setTitle($title),
             );
         }
 
@@ -379,15 +477,15 @@ class HostController extends ObjectController
         $query = $db->getDbAdapter()->select()
             ->from(
                 array('ss' => 'icinga_service_set'),
-                'ss.*'
+                'ss.*',
             )->join(
                 array('hsi' => 'icinga_service_set_inheritance'),
                 'hsi.parent_service_set_id = ss.id',
-                array()
+                array(),
             )->join(
                 array('hs' => 'icinga_service_set'),
                 'hs.id = hsi.service_set_id',
-                array()
+                array(),
             )->where('hs.host_id = ?', $host->get('id'));
 
         $sets = IcingaServiceSet::loadAll($db, $query, 'object_name');
@@ -428,7 +526,7 @@ class HostController extends ObjectController
 
         $this->addTitle(
             $this->translate('Applied service: %s'),
-            $serviceName
+            $serviceName,
         );
 
         $this->content()->add(
@@ -438,7 +536,7 @@ class HostController extends ObjectController
                 ->setHost($host)
                 ->setApplyGenerated($parent)
                 ->setObject($service)
-                ->handleRequest()
+                ->handleRequest(),
         );
 
         $this->commonForServices();
@@ -456,7 +554,7 @@ class HostController extends ObjectController
 
         $parent = IcingaService::load([
             'object_name' => $serviceName,
-            'host_id'     => $from->get('id')
+            'host_id'     => $from->get('id'),
         ], $this->db());
 
         // TODO: we want to eventually show the host template name, doesn't work
@@ -493,21 +591,21 @@ class HostController extends ObjectController
         $db = $this->db()->getDbAdapter();
         $query = $db->select()->from(
             array('ss' => 'icinga_service_set'),
-            array('id' => 'ss.id')
+            array('id' => 'ss.id'),
         )->join(
             array('si' => 'icinga_service_set_inheritance'),
             'si.service_set_id = ss.id',
-            array()
+            array(),
         )->where(
             'si.parent_service_set_id = ?',
-            $this->params->get('setId')
+            $this->params->get('setId'),
         )->where('ss.host_id = ?', $this->object->get('id'));
 
         IcingaServiceSet::loadWithAutoIncId($db->fetchOne($query), $this->db())->delete();
         $this->redirectNow(
             Url::fromPath('director/host/services', array(
-                'name' => $this->object->getObjectName()
-            ))
+                'name' => $this->object->getObjectName(),
+            )),
         );
     }
 
@@ -521,7 +619,7 @@ class HostController extends ObjectController
         $serviceName = $this->params->get('service');
         $setParams = [
             'object_name' => $this->params->get('set'),
-            'host_id'     => $host->get('id')
+            'host_id'     => $host->get('id'),
         ];
         $setTemplate = IcingaServiceSet::load($this->params->get('set'), $db);
         if (IcingaServiceSet::exists($setParams, $db)) {
@@ -532,7 +630,7 @@ class HostController extends ObjectController
 
         $service = IcingaService::load([
             'object_name'    => $serviceName,
-            'service_set_id' => $setTemplate->get('id')
+            'service_set_id' => $setTemplate->get('id'),
         ], $this->db());
         $service = IcingaService::create([
             'id'          => $service->get('id'),
@@ -548,7 +646,7 @@ class HostController extends ObjectController
             $this->translate('%s on %s (from set: %s)'),
             $serviceName,
             $host->getObjectName(),
-            $set->getObjectName()
+            $set->getObjectName(),
         );
 
         $form = IcingaServiceForm::load()
@@ -570,7 +668,7 @@ class HostController extends ObjectController
             $this->translate('back'),
             'director/host/services',
             ['name' => $host->getObjectName()],
-            ['class' => 'icon-left-big']
+            ['class' => 'icon-left-big'],
         ));
         $this->tabs()->activate('services');
     }
@@ -605,8 +703,8 @@ class HostController extends ObjectController
                         $this->translate('Show'),
                         $backend->getHostUrl($host->getObjectName()),
                         null,
-                        ['class' => 'icon-globe critical', 'data-base-target' => '_next']
-                    )
+                        ['class' => 'icon-globe critical', 'data-base-target' => '_next'],
+                    ),
                 );
 
                 // Intentionally placed here, show it only for deployed Hosts
@@ -629,12 +727,12 @@ class HostController extends ObjectController
             [
                 'type'   => 'host',
                 'plural' => 'hosts',
-                'name'   => $this->object->getObjectName()
+                'name'   => $this->object->getObjectName(),
             ],
             [
                 'class'            => 'icon-zoom-in',
-                'data-base-target' => '_next'
-            ]
+                'data-base-target' => '_next',
+            ],
         ));
     }
 
