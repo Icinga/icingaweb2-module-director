@@ -63,6 +63,8 @@ class ObjectPropertyForm extends CompatForm
             ]
         );
 
+        $this->addElement($propertyElement);
+
         if (! $this->isRemoval) {
             $propertyElement->addAttributes(
                 [
@@ -77,20 +79,18 @@ class ObjectPropertyForm extends CompatForm
                     })]
                 ]
             );
+
+            $this->addElement(
+                'select',
+                'mandatory',
+                [
+                    'label'     => $this->translate('Mandatory'),
+                    'required'  => true,
+                    'value'   => 'n',
+                    'options'   => ['y' => 'Yes', 'n' => 'No']
+                ]
+            );
         }
-
-        $this->addElement($propertyElement);
-
-        $this->addElement(
-            'select',
-            'mandatory',
-            [
-                'label'     => $this->translate('Mandatory'),
-                'required'  => true,
-                'value'   => 'n',
-                'options'   => ['y' => 'Yes', 'n' => 'No']
-            ]
-        );
 
         $this->addElement('submit', 'submit', [
             'label' => $this->isRemoval

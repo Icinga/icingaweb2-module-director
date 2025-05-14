@@ -181,9 +181,8 @@ class HostController extends ObjectController
             ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
             ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dp.instantiable', 'iop.required'])
-            ->order('instantiable DESC')
             ->order('children')
-            ->order('key_name');
+            ->order('instantiable');
 
         return $db->getDbAdapter()->fetchAll($query);
     }
