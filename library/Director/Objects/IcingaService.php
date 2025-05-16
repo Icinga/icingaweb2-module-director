@@ -346,24 +346,6 @@ class IcingaService extends IcingaObject implements ExportInterface
     /**
      * @return string
      */
-    protected function renderCustomVars()
-    {
-        $vars = '';
-        if (
-            $this->isApplyRule()
-            && !$this->hasBeenAssignedToHostTemplate()
-            && $this->get('apply_for') !== null
-            && $this->isApplyRuleforDictionary(substr($this->get('apply_for'), strlen('host.vars.')))
-        ) {
-            $vars .= "\n    vars += config\n";
-        }
-
-        return $vars . parent::renderCustomVars();
-    }
-
-    /**
-     * @return string
-     */
     protected function renderObjectHeader()
     {
         if (
