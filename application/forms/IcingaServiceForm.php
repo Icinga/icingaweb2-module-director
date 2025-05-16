@@ -628,8 +628,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 ]
             )
             ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
-            ->where("value_type = 'array' AND instantiable = 'y'")
-            ->orWhere("value_type = 'dict'");
+            ->where("value_type IN ('array', 'dict') AND instantiable = 'y'");
 
         $vars = $this->db->getDbAdapter()->fetchAll($query);
 
@@ -659,7 +658,7 @@ class IcingaServiceForm extends DirectorObjectForm
                     'all objects with the custom attribute specified. ' .
                     'E.g selecting "host.vars.custom_attr" will generate "for (config in ' .
                     'host.vars.array_var)" where "config" will be accessible through "$config$". ' .
-                    'NOTE: only custom variables of type "Array" are eligible.'
+                    'NOTE: only custom variables of type "Array" and "Dictionary" are eligible.'
                 )
             ));
         }
