@@ -9,11 +9,13 @@ use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
+use ipl\Html\FormElement\SubmitElement;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Widget\Icon;
+use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -33,49 +35,52 @@ class CustomPropertiesForm extends CompatForm
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
-        $inheritedVars = $this->object->getInheritedVars();
+        $inheritedVars = json_decode(json_encode($this->object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
         $origins = $this->object->getOriginsVars();
+
+        /** @var SubmitElement $submitButton */
+        $submitButton = $this->createElement('submit', 'save', [
+            'label' => $this->translate('Save')
+        ]);
+
+        $this->registerElement($submitButton);
+
+        $duplicateSubmit = $this->duplicateSubmitButton($submitButton);
+
+        $this->addElement($duplicateSubmit);
+
         foreach ($this->objectProperties as $objectProperty) {
             $inheritedVar = [];
-            if (isset($inheritedVars->{$objectProperty->key_name})) {
-                $inheritedValue = $inheritedVars->{$objectProperty->key_name};
-                if (is_object($inheritedVars->{$objectProperty->key_name})) {
-                    $inheritedValue = (array) $inheritedValue;
-                }
-
-                $inheritedVar = [$inheritedValue, $origins->{$objectProperty->key_name}];
+            if (isset($inheritedVars[$objectProperty['key_name']])) {
+                $inheritedVar = [$inheritedVars[$objectProperty['key_name']], $origins->{$objectProperty['key_name']}];
             }
 
             $this->preparePropertyElement($objectProperty, inheritedValue: $inheritedVar);
         }
 
-        $this->addElement('submit', 'save', [
-            'label' => $this->translate('Save'),
-        ]);
+        $this->addElement(
+            $submitButton
+        );
     }
 
     protected function preparePropertyElement(
-        object $objectProperty,
+        array $objectProperty,
         FieldsetElement $parentElement = null,
         $inheritedValue = []
-    ): void
-    {
-        $isInstantiable = $objectProperty->instantiable === 'y';
-        $fieldType = $this->fetchFieldType($objectProperty->value_type, $isInstantiable);
+    ): void {
+        $isInstantiable = $objectProperty['instantiable'] === 'y';
+        $fieldType = $this->fetchFieldType($objectProperty['value_type'], $isInstantiable);
         $placeholder = '';
-        if ($inheritedValue && ! (is_array($inheritedValue[0]) || $objectProperty->value_type === 'bool')) {
+        if ($inheritedValue && ! (is_array($inheritedValue[0]) || $objectProperty['value_type'] === 'bool')) {
             $placeholder = $inheritedValue[0]
                 . sprintf($this->translate(' (inherited from "%s")'), $inheritedValue[1]);
         }
 
+        $fieldName = $objectProperty['key_name'];
         if ($parentElement) {
-            $fieldName = $objectProperty->key_name;
-
             $fieldName = is_numeric($fieldName)
                 ? 'item-' . $fieldName
                 : $fieldName;
-        } else {
-            $fieldName = $objectProperty->key_name;
         }
 
         if ($fieldType === 'boolean') {
@@ -90,7 +95,7 @@ class CustomPropertiesForm extends CompatForm
                 'select',
                 $fieldName,
                 [
-                    'label'   => $objectProperty->label,
+                    'label'   => $objectProperty['label'],
                     'options' => $options,
                     'value'   => ''
                 ],
@@ -101,18 +106,19 @@ class CustomPropertiesForm extends CompatForm
                 . sprintf($this->translate(' (inherited from "%s")'), $inheritedValue[1])
                 : '';
             $field = (new ArrayElement($fieldName, [
-                'label'   => $objectProperty->label
+                'label'   => $objectProperty['label']
             ]))->setPlaceholder($placeholder);
         } elseif ($fieldType === 'collection') {
             $field = new FieldsetElement($fieldName, [
-                'label'   => $objectProperty->label,
+                'label'   => $objectProperty['label'],
+                'class'   => ['dictionary-element']
             ]);
         } else {
             $field = $this->createElement(
                 $fieldType,
                 $fieldName,
                 [
-                    'label'   => $objectProperty->label,
+                    'label'   => $objectProperty['label'],
                     'placeholder' => $placeholder
                 ],
             );
@@ -125,13 +131,13 @@ class CustomPropertiesForm extends CompatForm
         }
 
         if ($field instanceof FieldsetElement) {
-            $propertyItems = $this->fetchPropertyItems(Uuid::fromBytes($objectProperty->uuid));
+            $propertyItems = $this->fetchPropertyItems(Uuid::fromBytes($objectProperty['uuid']));
 
             if (! $isInstantiable) {
-                foreach ($propertyItems as $key => $propertyItem) {
+                foreach ($propertyItems as $propertyItem) {
                     $propertyInherited = [];
-                    if (isset($inheritedValue[0][$propertyItem->key_name])) {
-                        $propertyInherited = [$inheritedValue[0][$propertyItem->key_name], $inheritedValue[1]];
+                    if (isset($inheritedValue[0][$propertyItem['key_name']])) {
+                        $propertyInherited = [$inheritedValue[0][$propertyItem['key_name']], $inheritedValue[1]];
                     }
 
                     $this->preparePropertyElement(
@@ -140,39 +146,35 @@ class CustomPropertiesForm extends CompatForm
                         $propertyInherited
                     );
                 }
-            } elseif ($objectProperty->value_type === 'dict') {
+            } elseif ($objectProperty['value_type'] === 'dict') {
                 /** @var SubmitButtonElement $addItem */
                 $addItem = $this->createElement(
                     'submitButton',
                     'add-item',
                     [
-                        'label' => $this->translate('Add item'),
-                        'formnovalidate' => true,
+                        'label' => $this->translate('Add Item'),
+                        'formnovalidate' => true
                     ],
                 );
 
-                $this->registerElement($addItem);
-
-                $initialCount = $this->createElement(
+                $initialCountElement = $this->createElement(
                     'hidden',
-                    'initial-count',
-                    ['value' => 0]
+                    'initial-count'
                 );
 
-                $itemCount = $this->createElement(
+                $addedCountElement = $this->createElement(
                     'hidden',
-                    'count',
-                    ['value' => 0, 'class' => 'autosubmit'],
+                    'added-count',
+                    ['class' => 'autosubmit'],
                 );
 
-                $field->addElement($initialCount);
-                $field->addElement($itemCount);
+                $field->addElement($initialCountElement);
+                $field->addElement($addedCountElement);
                 $field->registerElement($addItem);
                 $this->registerElement($field);
 
-                $numberItems = (int) $itemCount->getValue();
-
-                $loadedItems = (int) $initialCount->getValue();
+                $addedItemsCount = (int) $addedCountElement->getValue();
+                $initialItemsCount = (int) $initialCountElement->getValue();
 
                 $prefixElement = $this->createElement(
                     'hidden',
@@ -186,7 +188,10 @@ class CustomPropertiesForm extends CompatForm
                     : [];
 
                 foreach ($prefixes as $idx => $prefix) {
-                    $propertyField = new FieldsetElement('property-' . $prefix, ['class' => 'dictionary-item']);
+                    $propertyField = new FieldsetElement(
+                        'property-' . $prefix,
+                        ['class' => ['dictionary-item', 'dictionary-element']]
+                    );
                     $field->addElement($propertyField);
 
                     $propertyItemLabel = $this->createElement(
@@ -222,7 +227,7 @@ class CustomPropertiesForm extends CompatForm
                         [
                             'class'          => 'remove-button',
                             'label'          => new Icon('minus', ['title' => 'Remove item']),
-                            'value'          => $idx,
+                            'value'          => $prefix,
                             'formnovalidate' => true
                         ]
                     );
@@ -232,28 +237,34 @@ class CustomPropertiesForm extends CompatForm
                     if ($removeItem->hasBeenPressed()) {
                         $field->remove($propertyField);
                         unset($prefixes[$idx]);
+                        $initialItemsCount -= 1;
+                        $initialCountElement->setValue($initialItemsCount);
                         $prefixElement->setValue(implode(',', $prefixes));
                     }
                 }
 
                 if ($addItem->hasBeenPressed()) {
-                    $numberItems += 1;
-                    $itemCount->setValue($numberItems);
+                    $addedItemsCount += 1;
+                    $addedCountElement->setValue($addedItemsCount);
                 }
 
                 $removedItems = 0;
                 $removedItemIdx = null;
-                for ($numberItem = $loadedItems; $numberItem < ($numberItems + $loadedItems); $numberItem++) {
+                for (
+                    $numberItem = $initialItemsCount;
+                    $numberItem < ($addedItemsCount + $initialItemsCount);
+                    $numberItem++
+                ) {
                     $tempNumberItem = $numberItem;
                     if ($removedItems > 0 && $removedItemIdx < $numberItem) {
                         $tempNumberItem = $numberItem - 1;
                     }
 
-                    $idx = $tempNumberItem - $loadedItems;
+                    $idx = $tempNumberItem - $initialItemsCount;
 
                     $propertyField = new FieldsetElement('property-' . $tempNumberItem, [
                         'label'   => $this->translate('New Property') . " $idx",
-                        'class'   => ['dictionary-item']
+                        'class'   => ['dictionary-item', 'dictionary-element']
                     ]);
 
                     $field->addElement($propertyField);
@@ -293,8 +304,21 @@ class CustomPropertiesForm extends CompatForm
                     }
                 }
 
-                $numberItems -= $removedItems;
-                $itemCount->setValue($numberItems);
+                $addedItemsCount -= $removedItems;
+                $addedCountElement->setValue($addedItemsCount);
+
+                if ($addedItemsCount === 0 && $initialItemsCount === 0 && ! empty($inheritedValue)) {
+                    $field->addElement(
+                        'textarea',
+                        'inherited-value',
+                        [
+                            'label' => sprintf($this->translate('Inherited from "%s"'), $inheritedValue[1]),
+                            'value' => json_encode($inheritedValue[0], JSON_PRETTY_PRINT),
+                            'readonly' => true,
+                            'rows' => 10
+                        ]
+                    );
+                }
 
                 $field->addElement($addItem);
             }
@@ -308,7 +332,7 @@ class CustomPropertiesForm extends CompatForm
             ->from('director_property')
             ->where('parent_uuid = ?', $parentUuid->getBytes());
 
-        return $db->fetchAll($query);
+        return $db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
 
     protected function fetchFieldType(string $propertyType, bool $instantiable = false): string
@@ -326,21 +350,7 @@ class CustomPropertiesForm extends CompatForm
 
     private function isPropertyInstantiable(string $name): string
     {
-        $type = $this->object->getShortTableName();
-
-        $query = $this->db->getDbAdapter()
-            ->select()
-            ->from(
-                ['dp' => 'director_property'],
-                [
-                    'instantiable' => 'dp.instantiable'
-                ],
-            )
-            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid')
-            ->where('iop.' . $type . '_uuid = ?', $this->object->uuid)
-            ->where('dp.key_name = ?', $name);
-
-        return $this->db->getDbAdapter()->fetchOne($query);
+        return isset($this->objectProperties[$name]) ? $this->objectProperties[$name]['instantiable'] : 'n';
     }
 
     public function getValues()
@@ -353,7 +363,7 @@ class CustomPropertiesForm extends CompatForm
                     $value = $value ? explode(',', $value) : [];
                 } elseif ($element instanceof FieldsetElement) {
                     foreach ($value as $key => $item) {
-                        if ($key === 'initial-count' || $key === 'count' || $key === 'prefixes') {
+                        if (in_array($key, ['initial-count', 'added-count', 'prefixes', 'inherited-value'], true)) {
                             unset($value[$key]);
                         } elseif (substr($key, 0, strlen('item')) === 'item') {
                             $idx = (int) substr($key, -1);
@@ -431,15 +441,16 @@ class CustomPropertiesForm extends CompatForm
         return parent::populate($values);
     }
 
-    public function hasBeenSubmitted()
+    private function filterEmpty(array $array): array
     {
-        $pressedButton = $this->getPressedSubmitElement();
+        return array_filter(array_map(function ($item) {
+            if (! is_array($item)) {
+                // Recursively clean nested arrays
+                return $item;
+            }
 
-        if ($pressedButton && $pressedButton->getName() === 'save') {
-            return true;
-        }
-
-        return false;
+            return $this->filterEmpty($item);
+        }, $array));
     }
 
     protected function onSuccess()
@@ -449,10 +460,14 @@ class CustomPropertiesForm extends CompatForm
         $modified = false;
         foreach ($this->getValues() as $key => $value) {
             if (is_array($value)) {
-                $value = array_filter($value);
+                $value = $this->filterEmpty($value);
             }
 
-            $vars->set($key, $value);
+            if (empty($value)) {
+                $vars->set($key, null);
+            } else {
+                $vars->set($key, $value);
+            }
 
             if ($modified === false && $vars->hasBeenModified()) {
                 $modified = true;
