@@ -51,7 +51,6 @@ class CustomVariableString extends CustomVariable
             if (
                 str_starts_with($value, '$')
                 && str_ends_with($value, '$')
-                && str_contains($value, 'vars.')
             ) {
                 $whiteList[] = trim($value, '$');
             }
