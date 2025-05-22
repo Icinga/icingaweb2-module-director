@@ -795,7 +795,7 @@
                 if ($fieldset.attr('id') === 'fieldset-assign') {
                     return;
                 }
-                if ($fieldset.find('.required').length === 0 && (! self.fieldsetWasOpened($fieldset))) {
+                if (! $fieldset.hasClass('dictionary-element') && $fieldset.find('.required').length === 0 && (! self.fieldsetWasOpened($fieldset))) {
                     $fieldset.addClass('collapsed');
                     self.fixFieldsetInfo($fieldset);
                 }
