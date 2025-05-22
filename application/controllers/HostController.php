@@ -29,6 +29,7 @@ use Icinga\Module\Director\Web\SelfService;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use ipl\Web\Widget\ButtonLink;
+use PDO;
 
 class HostController extends ObjectController
 {
@@ -100,7 +101,7 @@ class HostController extends ObjectController
             $object->getObjectName()
         );
 
-        $objectProperties = $this->getObjectProperties();
+        $objectProperties = $this->getObjectCustomProperties();
         if ($this->object->isTemplate()) {
             $this->actions()->add(
                 (new ButtonLink(
@@ -146,7 +147,12 @@ class HostController extends ObjectController
         $this->tabs()->activate('variables');
     }
 
-    protected function getObjectProperties(): ?array
+    /**
+     * Get custom properties for the host.
+     *
+     * @return array
+     */
+    protected function getObjectCustomProperties(): array
     {
         if ($this->object->uuid === null) {
             return [];
@@ -182,9 +188,15 @@ class HostController extends ObjectController
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
             ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dp.instantiable', 'iop.required'])
             ->order('children')
-            ->order('instantiable');
+            ->order('instantiable')
+            ->order('key_name');
 
-        return $db->getDbAdapter()->fetchAll($query);
+        $result = [];
+        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            $result[$row['key_name']] = $row;
+        }
+
+        return $result;
     }
 
     public function serviceAction()
