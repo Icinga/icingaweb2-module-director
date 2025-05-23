@@ -365,7 +365,7 @@ class IcingaService extends IcingaObject implements ExportInterface
 
             if ($this->isApplyRuleforDictionary(substr($this->get('apply_for'), strlen('host.vars.')))) {
                 $applyForConfig = sprintf(
-                    "%s %s%s for (key => config in %s) {\n",
+                    "%s %s%s for (key => value in %s) {\n",
                     $this->getObjectTypeName(),
                     $this->getType(),
                     $name,
@@ -373,7 +373,7 @@ class IcingaService extends IcingaObject implements ExportInterface
                 );
             } else {
                 $applyForConfig = sprintf(
-                    "%s %s%s for (config in %s) {\n",
+                    "%s %s%s for (value in %s) {\n",
                     $this->getObjectTypeName(),
                     $this->getType(),
                     $name,

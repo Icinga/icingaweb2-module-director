@@ -680,8 +680,8 @@ class IcingaServiceForm extends DirectorObjectForm
                 'description' => $this->translate(
                     'Evaluates the apply for rule for ' .
                     'all objects with the custom attribute specified. ' .
-                    'E.g selecting "host.vars.custom_attr" will generate "for (config in ' .
-                    'host.vars.array_var)" where "config" will be accessible through "$config$". ' .
+                    'E.g selecting "host.vars.custom_attr" will generate "for (value in ' .
+                    'host.vars.array_var)" where "value" will be accessible through "$value$". ' .
                     'NOTE: only custom variables of type "Array" and "Dictionary" are eligible.'
                 )
             ]);
@@ -698,7 +698,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 if (! empty($dictionaryKeys)) {
                     $configVariables = new Table();
                     foreach ($dictionaryKeys as $label => $key) {
-                        $configVariables->add([$label . ' (' . $key . ')', '=>', '$config.' . $key . '$']);
+                        $configVariables->add([$label . ' (' . $key . ')', '=>', '$value.' . $key . '$']);
                     }
 
 
@@ -709,7 +709,7 @@ class IcingaServiceForm extends DirectorObjectForm
                             [
                                 Text::create($this->translate(
                                     'Nested keys of selected host dictionary variable for apply-for-rule'
-                                    . ' are accessible through config as shown below:'
+                                    . ' are accessible through value as shown below:'
                                 )),
                                 $configVariables
                             ]
