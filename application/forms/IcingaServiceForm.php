@@ -7,7 +7,6 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -17,6 +16,9 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\HtmlElement;
+use ipl\Html\Table;
+use ipl\Html\Text;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
@@ -39,6 +41,8 @@ class IcingaServiceForm extends DirectorObjectForm
 
     /** @var bool|null */
     private $blacklisted;
+
+    private $dictionaryUuidMap = [];
 
     public function setApplyGenerated(IcingaService $applyGenerated)
     {
@@ -635,9 +639,29 @@ class IcingaServiceForm extends DirectorObjectForm
         $properties = [];
         foreach ($vars as $var) {
             $properties['host.vars.' . $var->key_name] = $var->label . ' (' . $var->key_name . ')';
+            if ($var->value_type === 'dict') {
+                $this->dictionaryUuidMap['host.vars.' . $var->key_name] = $var->uuid;
+            }
         }
 
         return [t('director', 'Custom variables') => $properties];
+    }
+
+
+
+    private function fetchNestedDictionaryKeys(string $dictionaryUuid)
+    {
+        $query = $this->db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.label',
+                    'label' => 'dp.key_name',
+                ]
+            )->where("parent_uuid = ?", $dictionaryUuid);
+
+        return $this->db->getDbAdapter()->fetchPairs($query);
     }
 
     /**
@@ -649,7 +673,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->object->isApplyRule()) {
             $hostProperties = $this->applyForVars();
 
-            $this->addElement('select', 'apply_for', array(
+            $this->addElement('select', 'apply_for', [
                 'label' => $this->translate('Apply For'),
                 'class' => 'assign-property autosubmit',
                 'multiOptions' => $this->optionalEnum($hostProperties, $this->translate('None')),
@@ -660,7 +684,47 @@ class IcingaServiceForm extends DirectorObjectForm
                     'host.vars.array_var)" where "config" will be accessible through "$config$". ' .
                     'NOTE: only custom variables of type "Array" and "Dictionary" are eligible.'
                 )
-            ));
+            ]);
+
+            if ($this->hasBeenSent()) {
+                $applyFor = $this->getRequest()->getPost('apply_for');
+            } else {
+                $applyFor = $this->object->get('apply_for');
+            }
+
+            if (isset($this->dictionaryUuidMap[$applyFor])) {
+                $dictionaryKeys = $this->fetchNestedDictionaryKeys($this->dictionaryUuidMap[$applyFor]);
+
+                if (! empty($dictionaryKeys)) {
+                    $configVariables = new Table();
+                    foreach ($dictionaryKeys as $label => $key) {
+                        $configVariables->add([$label . ' (' . $key . ')', '=>', '$config.' . $key . '$']);
+                    }
+
+
+                    $this->addHtmlHint(
+                        HtmlElement::create(
+                            'div',
+                            null,
+                            [
+                                Text::create($this->translate(
+                                    'Nested keys of selected host dictionary variable for apply-for-rule'
+                                    . ' are accessible through config as shown below:'
+                                )),
+                                $configVariables
+                            ]
+                        ),
+                        ['name' => 'apply_for_hint']
+                    );
+
+                    $this->addElementsToGroup(
+                        ['apply_for_hint'],
+                        'custom_fields',
+                        DirectorObjectForm::GROUP_ORDER_CUSTOM_FIELDS,
+                        $this->translate('Custom properties')
+                    );
+                }
+            }
         }
 
         return $this;
