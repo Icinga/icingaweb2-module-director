@@ -46,11 +46,12 @@ class CustomVariableString extends CustomVariable
     public function toConfigString($renderExpressions = false)
     {
         if ($renderExpressions) {
-            $whiteList = ['config'];
+            $whiteList = ['value'];
             $value = $this->getValue();
             if (
                 str_starts_with($value, '$')
                 && str_ends_with($value, '$')
+                && str_contains($value, 'value.')
             ) {
                 $whiteList[] = trim($value, '$');
             }
