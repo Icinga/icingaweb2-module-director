@@ -14,11 +14,12 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
+use ipl\Html\Attributes;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\HtmlElement;
-use ipl\Html\Table;
 use ipl\Html\Text;
+use PDO;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
@@ -656,12 +657,14 @@ class IcingaServiceForm extends DirectorObjectForm
             ->from(
                 ['dp' => 'director_property'],
                 [
-                    'key_name' => 'dp.label',
-                    'label' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'key_name' => 'dp.key_name',
+                    'label' => 'dp.label',
+                    'value_type' => 'dp.value_type'
                 ]
             )->where("parent_uuid = ?", $dictionaryUuid);
 
-        return $this->db->getDbAdapter()->fetchPairs($query);
+        return $this->db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
 
     /**
@@ -696,9 +699,63 @@ class IcingaServiceForm extends DirectorObjectForm
                 $dictionaryKeys = $this->fetchNestedDictionaryKeys($this->dictionaryUuidMap[$applyFor]);
 
                 if (! empty($dictionaryKeys)) {
-                    $configVariables = new Table();
-                    foreach ($dictionaryKeys as $label => $key) {
-                        $configVariables->add([$label . ' (' . $key . ')', '=>', '$value.' . $key . '$']);
+                    $configVariables = new HtmlElement('ul', Attributes::create(['class' => 'nested-key-list']));
+                    foreach ($dictionaryKeys as $keyAttributes) {
+                        $content = [
+                            new HtmlElement('div', null, Text::create(
+                                $keyAttributes['label']
+                                . ' ('
+                                . $keyAttributes['key_name']
+                                . ')'
+                            )),
+                            new HtmlElement('div', null, Text::create('=>'))
+                        ];
+
+                        if ($keyAttributes['value_type'] === 'dict') {
+                            $nestedContent = [];
+
+                            foreach ($this->fetchNestedDictionaryKeys($keyAttributes['uuid']) as $nestedKeyAttributes) {
+                                $nestedContent = [
+                                    new HtmlElement('div', null, Text::create(
+                                        $nestedKeyAttributes['label']
+                                        . ' ('
+                                        . $nestedKeyAttributes['key_name']
+                                        . ')'
+                                    )),
+                                    new HtmlElement('div', null, Text::create('=>')),
+                                    new HtmlElement('div', null, Text::create(
+                                        '$value.'
+                                        . $keyAttributes['key_name']
+                                        . '.'
+                                        . $nestedKeyAttributes['key_name']
+                                        . '$'
+                                    ))
+                                ];
+                            }
+
+                            $content[] = new HtmlElement(
+                                'div',
+                                null,
+                                new HtmlElement('div', null, Text::create(
+                                    '$value.'
+                                    . $keyAttributes['key_name']
+                                    . '$'
+                                )),
+                                new HtmlElement(
+                                    'ul',
+                                    null,
+                                    new HtmlElement('li', null, ...$nestedContent)
+                                )
+                            );
+                        } else {
+                            $content[] = new HtmlElement('div', null, Text::create(
+                                '$value.'
+                                . $keyAttributes['key_name']
+                                . '$'
+                            ));
+                        }
+
+                        $configVariables->addHtml(new HtmlElement('li', null, ...$content));
                     }
 
 
