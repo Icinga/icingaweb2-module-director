@@ -155,6 +155,28 @@ class PropertyController extends CompatController
 
         $field = $this->fetchProperty($uuid);
 
+
+        $db = $this->db->getDbAdapter();
+        $query = $db
+            ->select()->from('director_property')
+            ->where('uuid = ?', $uuid->getBytes());
+
+        $property = $db->fetchRow($query);
+
+        $hasFields = ($property->value_type === 'array' && $property->instantiable !== 'y')
+            || $property->value_type === 'dict';
+
+        if ($hasFields) {
+            $itemTypeQuery = $db
+                ->select()->from('director_property', 'value_type')
+                ->where(
+                    'parent_uuid = ? AND key_name = \'0\'',
+                    $uuid->getBytes()
+                );
+
+            $property->item_type = $db->fetchOne($itemTypeQuery);
+        }
+
         $this->addTitleTab(sprintf($this->translate('Edit Field: %s'), $field['key_name']));
 
         $propertyForm = (new PropertyForm($this->db, $uuid, true, $parentUuid))
@@ -181,6 +203,29 @@ class PropertyController extends CompatController
             ->handleRequest($this->getServerRequest());
 
         $this->addContent($propertyForm);
+
+        if ($hasFields) {
+            $this->addContent(new HtmlElement('h2', null, Text::create($this->translate('Fields'))));
+            $button = (new ButtonLink(
+                Text::create($this->translate('Add Field')),
+                Url::fromPath('director/property/add-field', [
+                    'uuid' => $uuid->toString()
+                ]),
+                null,
+                ['class' => 'control-button']
+            ))->openInModal();
+
+            $fieldQuery = $db
+                ->select()
+                ->from('director_property')
+                ->where('parent_uuid = ?', $uuid->getBytes())
+                ->order('key_name');
+
+            $this->addContent($button);
+
+            $fields = new PropertyTable($db->fetchAll($fieldQuery), true);
+            $this->addContent($fields);
+        }
     }
 
     /**
