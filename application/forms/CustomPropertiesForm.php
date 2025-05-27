@@ -205,7 +205,6 @@ class CustomPropertiesForm extends CompatForm
                     );
 
                     $propertyField->addElement($propertyItemLabel);
-                    $field->registerElement($propertyField);
                     $propertyField->setLabel($propertyItemLabel->getValue());
                     foreach ($propertyItems as $propertyItem) {
                         $inheritedVar = [];
