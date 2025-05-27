@@ -27,6 +27,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     protected $idx = array();
 
+    private $whiteList = [];
+
     protected static $allTables = array(
         'icinga_command_var',
         'icinga_host_var',
@@ -157,6 +159,18 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $this->refreshIndex();
 
         return $this;
+    }
+
+    public function setWhiteList(array $whitelist): self
+    {
+        $this->whiteList = $whitelist;
+
+        return $this;
+    }
+
+    public function getWhiteList(array $whitelist): array
+    {
+        return $this->whiteList;
     }
 
     protected function refreshIndex()
@@ -398,6 +412,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
      */
     protected function renderSingleVar($key, $var, $renderExpressions = false)
     {
+        if ($var instanceof CustomVariableString) {
+            $var->setWhiteList($this->whiteList);
+        }
+
         if ($key === $this->overrideKeyName) {
             return c::renderKeyOperatorValue(
                 $this->renderKeyName($key),
