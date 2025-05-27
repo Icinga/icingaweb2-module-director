@@ -14,6 +14,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
+use PDO;
 use RuntimeException;
 
 class IcingaService extends IcingaObject implements ExportInterface
@@ -23,6 +24,8 @@ class IcingaService extends IcingaObject implements ExportInterface
     protected $table = 'icinga_service';
 
     protected $uuidColumn = 'uuid';
+
+    private $vars;
 
     protected $defaultProperties = [
         'id'                      => null,
@@ -658,6 +661,64 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
 
         return $where;
+    }
+
+    public function vars()
+    {
+        $vars = parent::vars();
+
+        if ($this->isApplyRule() && $vars) {
+            $applyFor = substr($this->get('apply_for'), strlen('host.vars.'));
+            $query = $this->db
+                ->select()
+                ->from(
+                    ['dp' => 'director_property'],
+                    [
+                        'key_name' => 'dp.key_name',
+                        'uuid' => 'dp.uuid',
+                        'value_type' => 'dp.value_type'
+                    ]
+                )
+                ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
+                ->where("parent_dp.value_type = 'dict'")
+                ->where("parent_dp.key_name = ?", $applyFor);
+
+            $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+
+            $whiteList = ['value'];
+            foreach ($result as $row) {
+                $whiteList[] = sprintf('value.%s', $row['key_name']);
+
+                if ($row['value_type'] === 'dict') {
+                    foreach ($this->fetchItemsForDictionary($row['uuid']) as $value) {
+                        $whiteList[] = sprintf('value.%s.%s', $row['key_name'], $value['key_name']);
+                    }
+                }
+            }
+
+
+            $vars->setWhiteList($whiteList);
+        }
+
+        return $vars;
+    }
+
+    protected function fetchItemsForDictionary(string $uuid): array
+    {
+        $query = $this->db
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                ]
+            )
+            ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
+            ->where("dp.parent_uuid = ?", $uuid);
+
+        return $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
 
 

@@ -7,6 +7,15 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class CustomVariableString extends CustomVariable
 {
+    private $whiteList = [];
+
+    protected function __construct($key, $value = null, $whiteList = [])
+    {
+        parent::__construct($key, $value);
+
+        $this->whiteList = $whiteList;
+    }
+
     public function equals(CustomVariable $var)
     {
         if (! $var instanceof CustomVariableString) {
@@ -46,17 +55,7 @@ class CustomVariableString extends CustomVariable
     public function toConfigString($renderExpressions = false)
     {
         if ($renderExpressions) {
-            $whiteList = ['value'];
-            $value = $this->getValue();
-            if (
-                str_starts_with($value, '$')
-                && str_ends_with($value, '$')
-                && str_contains($value, 'value.')
-            ) {
-                $whiteList[] = trim($value, '$');
-            }
-
-            return c::renderStringWithVariables($this->getValue(), $whiteList);
+            return c::renderStringWithVariables($this->getValue(), $this->whiteList);
         } else {
             return c::renderString($this->getValue());
         }
@@ -65,5 +64,12 @@ class CustomVariableString extends CustomVariable
     public function toLegacyConfigString()
     {
         return c1::renderString($this->getValue());
+    }
+
+    public function setWhiteList(array $whiteList): self
+    {
+        $this->whiteList = $whiteList;
+
+        return $this;
     }
 }
