@@ -14,7 +14,6 @@ use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use stdClass;
 use Zend_Db;
 
 class PropertyController extends CompatController
@@ -36,15 +35,9 @@ class PropertyController extends CompatController
         $uuid = $this->params->shiftRequired('uuid');
         $uuid = Uuid::fromString($uuid);
         $db = $this->db->getDbAdapter();
-
-        $query = $db
-            ->select()->from('director_property')
-            ->where('uuid = ?', $uuid->getBytes());
-
-        $property = $db->fetchRow($query);
-
-        $hasFields = ($property->value_type === 'array' && $property->instantiable !== 'y')
-            || $property->value_type === 'dict';
+        $property = $this->fetchProperty($uuid);
+        $hasFields = ($property['value_type'] === 'array' && $property['instantiable'] !== 'y')
+            || $property['value_type'] === 'dict';
 
         if ($hasFields) {
             $itemTypeQuery = $db
@@ -54,7 +47,7 @@ class PropertyController extends CompatController
                     $uuid->getBytes()
                 );
 
-            $property->item_type = $db->fetchOne($itemTypeQuery);
+            $property['item_type'] = $db->fetchOne($itemTypeQuery);
         }
 
         $propertyForm = (new PropertyForm($this->db, $uuid))
@@ -108,11 +101,7 @@ class PropertyController extends CompatController
             $this->addContent($fields);
         }
 
-        $this->addTitleTab(
-            $this->translate('Property')
-            . ': '
-            . $property->key_name
-        );
+        $this->addTitleTab($this->translate('Property') . ': ' . $property['key_name']);
     }
 
     public function addFieldAction()
@@ -127,6 +116,7 @@ class PropertyController extends CompatController
 
         $propertyForm = (new PropertyForm($this->db, null, true, $uuid))
             ->setHideKeyNameElement($hideKeyNameField)
+            ->setIsNestedField($parent['parent_uuid'] !== null)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(PropertyForm::ON_SUCCESS, function (PropertyForm $form) {
                 Notification::success(sprintf(
@@ -153,18 +143,11 @@ class PropertyController extends CompatController
         $hideKeyNameField = $parent['value_type'] === 'array'
             && $parent['instantiable'] === 'n';
 
-        $field = $this->fetchProperty($uuid);
-
-
+        $property = $this->fetchProperty($uuid);
         $db = $this->db->getDbAdapter();
-        $query = $db
-            ->select()->from('director_property')
-            ->where('uuid = ?', $uuid->getBytes());
 
-        $property = $db->fetchRow($query);
-
-        $hasFields = ($property->value_type === 'array' && $property->instantiable !== 'y')
-            || $property->value_type === 'dict';
+        $hasFields = ($property['value_type'] === 'array' && $property['instantiable'] !== 'y')
+            || $property['value_type'] === 'dict';
 
         if ($hasFields) {
             $itemTypeQuery = $db
@@ -174,14 +157,15 @@ class PropertyController extends CompatController
                     $uuid->getBytes()
                 );
 
-            $property->item_type = $db->fetchOne($itemTypeQuery);
+            $property['item_type'] = $db->fetchOne($itemTypeQuery);
         }
 
-        $this->addTitleTab(sprintf($this->translate('Edit Field: %s'), $field['key_name']));
+        $this->addTitleTab(sprintf($this->translate('Edit Field: %s'), $property['key_name']));
 
         $propertyForm = (new PropertyForm($this->db, $uuid, true, $parentUuid))
             ->setHideKeyNameElement($hideKeyNameField)
-            ->populate($field)
+            ->setIsNestedField($parent['parent_uuid'] !== null)
+            ->populate($property)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(PropertyForm::ON_SUCCESS, function (PropertyForm $form) {
                 if ($form->getPressedSubmitElement()->getName() === 'delete') {

@@ -20,6 +20,8 @@ class PropertyForm extends CompatForm
     /** @var bool */
     private $hideKeyNameElement = false;
 
+    private $isNestedField = false;
+
     public function __construct(
         protected DbConnection $db,
         protected ?UuidInterface $uuid = null,
@@ -41,6 +43,13 @@ class PropertyForm extends CompatForm
     public function setHideKeyNameElement(bool $hideKeyNameElement): self
     {
         $this->hideKeyNameElement = $hideKeyNameElement;
+
+        return $this;
+    }
+
+    public function setIsNestedField(bool $isNestedField): self
+    {
+        $this->isNestedField = $isNestedField;
 
         return $this;
     }
@@ -88,9 +97,11 @@ class PropertyForm extends CompatForm
             'string' => 'String',
             'number' => 'Number',
             'bool' => 'Boolean',
-            'array' => 'Array',
-            'dict' => 'Dictionary',
         ];
+
+        if (! $this->isNestedField) {
+            $types += ['array' => 'Array', 'dict' => 'Dictionary'];
+        }
 
         $this->addElement(
             'select',
@@ -107,7 +118,7 @@ class PropertyForm extends CompatForm
 
         $type = $this->getValue('value_type');
         if ($type === 'dict' || $type === 'array') {
-            $this->addElement(
+            $instantiableElement = $this->createElement(
                 'checkbox',
                 'instantiable',
                 [
@@ -118,6 +129,13 @@ class PropertyForm extends CompatForm
                     'value'          => 'n'
                 ]
             );
+
+            if ($type === 'dict') {
+                $instantiableElement->getAttributes()->add('disabled', $this->parentUuid !== null);
+            }
+
+            $this->addElement($instantiableElement);
+
 
             if ($type === 'array' && $this->getValue('instantiable') === 'y') {
                 $this->addElement(
