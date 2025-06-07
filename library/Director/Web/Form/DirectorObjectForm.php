@@ -553,6 +553,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'email',
             'pager',
             'enable_notifications',
+            'redundancy_group', //Dependencies
             'disable_checks', //Dependencies
             'disable_notifications',
             'ignore_soft_states',
