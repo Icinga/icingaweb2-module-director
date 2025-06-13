@@ -366,7 +366,7 @@ class IcingaService extends IcingaObject implements ExportInterface
                 $name = ' ' . c::renderString($name);
             }
 
-            if ($this->isApplyRuleforDictionary(substr($this->get('apply_for'), strlen('host.vars.')))) {
+            if ($this->isApplyRuleforDictionary(substr($this->get('apply_for') ?? '', strlen('host.vars.')))) {
                 $applyForConfig = sprintf(
                     "%s %s%s for (key => value in %s) {\n",
                     $this->getObjectTypeName(),
@@ -668,7 +668,7 @@ class IcingaService extends IcingaObject implements ExportInterface
         $vars = parent::vars();
 
         if ($this->isApplyRule() && $vars) {
-            $applyFor = substr($this->get('apply_for'), strlen('host.vars.'));
+            $applyFor = substr($this->get('apply_for') ?? '', strlen('host.vars.'));
             $query = $this->db
                 ->select()
                 ->from(
