@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use ipl\Web\Url;
 
 class IcingaUserGroupForm extends DirectorObjectForm
 {
@@ -20,6 +21,7 @@ class IcingaUserGroupForm extends DirectorObjectForm
         ));
 
         $this->addGroupDisplayNameElement()
+             ->addAssignmentElements()
              ->addZoneElements()
              ->groupMainProperties()
              ->setButtons();
@@ -43,5 +45,12 @@ class IcingaUserGroupForm extends DirectorObjectForm
         ]);
 
         return $this;
+    }
+
+    protected function deleteObject($object): void
+    {
+        $this->redirectAndExit(
+            Url::fromPath('director/usergroup/delete', ['uuid' => $object->getUniqueId()->toString()])
+        );
     }
 }
