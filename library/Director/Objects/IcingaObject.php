@@ -881,9 +881,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getAppliedGroups()
     {
         $this->assertGroupsSupport();
-        if (! $this instanceof IcingaHost) {
-            throw new RuntimeException('getAppliedGroups is only available for hosts currently!');
-        }
         if (! $this->hasBeenLoadedFromDb()) {
             // There are no stored related/resolved groups. We'll also not resolve
             // them here on demand.
