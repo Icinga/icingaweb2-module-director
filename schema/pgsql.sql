@@ -2778,7 +2778,26 @@ CREATE TABLE branched_icinga_dependency (
 CREATE UNIQUE INDEX dependency_branch_object_name ON branched_icinga_dependency (branch_uuid, object_name);
 CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependency (object_name);
 
+CREATE TABLE icinga_usergroup_user_resolved
+(
+  usergroup_id integer NOT NULL,
+  user_id      integer NOT NULL,
+  PRIMARY KEY (usergroup_id, user_id),
+  CONSTRAINT icinga_usergroup_user_resolved_user
+    FOREIGN KEY (user_id)
+      REFERENCES icinga_user (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_usergroup_user_resolved_usergroup
+    FOREIGN KEY (usergroup_id)
+      REFERENCES icinga_usergroup (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
+CREATE INDEX usergroup_user_resolved_user ON icinga_usergroup_user_resolved (user_id);
+CREATE INDEX usergroup_user_resolved_usergroup ON icinga_usergroup_user_resolved (usergroup_id);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (189, NOW());
+  VALUES (191, NOW());
