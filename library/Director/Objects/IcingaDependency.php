@@ -29,6 +29,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'ignore_soft_states'     => null,
         'period_id'              => null,
         'zone_id'                => null,
+        'redundancy_group'       => null,
         'assign_filter'          => null,
         'parent_service_by_name' => null,
     ];
