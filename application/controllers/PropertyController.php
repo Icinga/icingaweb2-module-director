@@ -39,7 +39,7 @@ class PropertyController extends CompatController
         $hasFields = ($property['value_type'] === 'array' && $property['instantiable'] !== 'y')
             || $property['value_type'] === 'dict';
 
-        if ($hasFields) {
+        if ($property['value_type'] === 'array' && $property['instantiable'] === 'y') {
             $itemTypeQuery = $db
                 ->select()->from('director_property', 'value_type')
                 ->where(
@@ -149,7 +149,7 @@ class PropertyController extends CompatController
         $hasFields = ($property['value_type'] === 'array' && $property['instantiable'] !== 'y')
             || $property['value_type'] === 'dict';
 
-        if ($hasFields) {
+        if ($property['value_type'] === 'array' && $property['instantiable'] === 'y') {
             $itemTypeQuery = $db
                 ->select()->from('director_property', 'value_type')
                 ->where(
