@@ -91,7 +91,7 @@ class IcingaObjectHandler extends RequestHandler
             $this->sendJsonError($e);
         }
 
-        if ($this->request->getActionName() !== 'index') {
+        if ($this->request->getActionName() !== 'index' && $this->request->getActionName() !== 'variables') {
             throw new NotFoundError('Not found');
         }
     }
@@ -130,7 +130,11 @@ class IcingaObjectHandler extends RequestHandler
                 $allowsOverrides = $params->get('allowOverrides');
                 $type = $this->getType();
                 if ($object = $this->loadOptionalObject()) {
-                    if ($request->getMethod() === 'POST') {
+                    if ($this->request->getActionName() === 'variables') {
+                        $data = ['vars' => $data];
+
+                        $object->setProperties($data);
+                    } elseif ($request->getMethod() === 'POST') {
                         $object->setProperties($data);
                     } else {
                         $data = array_merge([
