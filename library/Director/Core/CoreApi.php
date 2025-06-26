@@ -835,7 +835,7 @@ constants
         if ($packageName === null) {
             $packageName = $db->settings()->get('icinga_package_name');
         }
-        $username = '';
+        $username = null;
         $auth = Auth::getInstance();
         if ($auth->isAuthenticated()) {
             $username = $auth->getUser()->getUsername();
