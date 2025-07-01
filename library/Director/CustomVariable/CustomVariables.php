@@ -416,7 +416,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $var->setWhiteList($this->whiteList);
         }
 
-        if ($key === $this->overrideKeyName) {
+        if ($key === $this->overrideKeyName || $var instanceof CustomVariableDictionary) {
             return c::renderKeyOperatorValue(
                 $this->renderKeyName($key),
                 '+=',
