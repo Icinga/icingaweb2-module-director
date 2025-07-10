@@ -17,6 +17,8 @@ class TemplateTree
 
     protected $parents;
 
+    protected $parentsUuids;
+
     protected $children;
 
     protected $rootNodes;
@@ -28,6 +30,8 @@ class TemplateTree
     protected $objectMaps;
 
     protected $names;
+
+    protected $uuids;
 
     protected $templateNameToId;
 
@@ -111,6 +115,11 @@ class TemplateTree
         return array_keys($this->getAncestorsFor($object));
     }
 
+    public function listAncestorUuIdsFor(IcingaObject $object)
+    {
+        return $this->getAncestorsUuidsFor($object);
+    }
+
     public function listChildIdsFor(IcingaObject $object)
     {
         return array_keys($this->getChildrenFor($object));
@@ -145,6 +154,19 @@ class TemplateTree
             return $this->getAncestorsForUnstoredObject($object);
         } else {
             return $this->getAncestorsById($object->getProperty('id'));
+        }
+    }
+
+    public function getAncestorsUuidsFor(IcingaObject $object)
+    {
+        if (
+            $object->hasBeenModified()
+            && $object->gotImports()
+            && $object->imports()->hasBeenModified()
+        ) {
+            return $this->getAncestorsUuidsForUnstoredObject($object);
+        } else {
+            return $this->getParentsUuidsById($object->getProperty('id'));
         }
     }
 
@@ -183,6 +205,36 @@ class TemplateTree
         return $ancestors;
     }
 
+    protected function getAncestorsUuidsForUnstoredObject(IcingaObject $object)
+    {
+        $this->requireTree();
+        $ancestors = [];
+        foreach ($object->imports() as $import) {
+            $name = $import->get('uuid');
+            if ($import->hasBeenLoadedFromDb()) {
+                $pid = (int) $import->get('id');
+            } else {
+                if (! array_key_exists($name, $this->templateNameToId)) {
+                    continue;
+                }
+
+                $pid = $this->templateNameToId[$name];
+            }
+
+            $this->getAncestorsUuidsById($pid, $ancestors);
+
+            $uuid = $import->get('uuid');
+            // Hint: inheritance order matters
+            if (false !== ($key = array_search($uuid, $ancestors))) {
+                unset($ancestors[$key]);
+            }
+
+            $ancestors[$pid] = $uuid;
+        }
+
+        return $ancestors;
+    }
+
     protected function requireObjectMaps()
     {
         if ($this->objectMaps === null) {
@@ -206,6 +258,27 @@ class TemplateTree
             }
 
             return $parents;
+        } else {
+            return [];
+        }
+    }
+
+    public function getParentsUuidsById($id)
+    {
+        $this->requireTree();
+
+        if (array_key_exists($id, $this->parentsUuids)) {
+            return $this->parentsUuids[$id];
+        }
+
+        $this->requireObjectMaps();
+        if (array_key_exists($id, $this->objectMaps)) {
+            $parentsUuids = [];
+            foreach ($this->objectMaps[$id] as $pid) {
+                $parentsUuids[$pid] = $this->uuids[$pid];
+            }
+
+            return $parentsUuids;
         } else {
             return [];
         }
@@ -282,6 +355,38 @@ class TemplateTree
             }
             $ancestors[$pid] = $name;
         }
+        unset($path[$id]);
+
+        return $ancestors;
+    }
+
+    /**
+     * Get the ancestorUuids for the given object ID
+     *
+     * @param $id
+     * @param array $ancestors
+     * @param array $path
+     *
+     * @return array
+     */
+    public function getAncestorsUuidsById($id, &$ancestors = [], $path = [])
+    {
+        $path[$id] = true;
+        foreach ($this->getParentsUuidsById($id) as $pid => $uuid) {
+            $this->assertNotInList($pid, $path);
+            $path[$pid] = true;
+
+            $this->getAncestorsUuidsById($pid, $ancestors, $path);
+            unset($path[$pid]);
+
+            // Hint: inheritance order matters
+            if (false !== ($key = array_search($uuid, $ancestors))) {
+                unset($ancestors[$key]);
+            }
+
+            $ancestors[$pid] = $uuid;
+        }
+
         unset($path[$id]);
 
         return $ancestors;
@@ -386,6 +491,8 @@ class TemplateTree
         $rootNodes = [];
         $children = [];
         $names = [];
+        $parentsUuids = [];
+        $uuids = [];
         foreach ($templates as $row) {
             $id = (int) $row->id;
             $pid = (int) $row->parent_id;
@@ -403,7 +510,9 @@ class TemplateTree
             }
 
             $names[$pid] = $row->parent_name;
+            $uuids[$pid] = $row->parent_uuid;
             $parents[$id][$pid] = $row->parent_name;
+            $parentsUuids[$id][$pid] = $row->parent_uuid;
 
             if (! array_key_exists($pid, $children)) {
                 $children[$pid] = [];
@@ -412,10 +521,12 @@ class TemplateTree
             $children[$pid][$id] = $row->name;
         }
 
-        $this->parents   = $parents;
+        $this->parents = $parents;
+        $this->parentsUuids = $parentsUuids;
         $this->children  = $children;
         $this->rootNodes = $rootNodes;
         $this->names = $names;
+        $this->uuids = $uuids;
         $this->templateNameToId = array_flip($names);
         Benchmark::measure(sprintf('"%s" Template Tree ready', $this->type));
     }
@@ -458,6 +569,7 @@ class TemplateTree
                 'object_type' => 'o.object_type',
                 'parent_id'   => 'p.id',
                 'parent_name' => 'p.object_name',
+                'parent_uuid' => 'p.uuid'
             ]
         )->joinLeft(
             ['i' => $table . '_inheritance'],
