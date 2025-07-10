@@ -14,6 +14,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\OverrideHelper;
 use InvalidArgumentException;
+use PDO;
 use RuntimeException;
 
 class IcingaObjectHandler extends RequestHandler
@@ -96,8 +97,6 @@ class IcingaObjectHandler extends RequestHandler
         }
     }
 
-<<<<<<< Updated upstream
-=======
     public function getCustomProperties(IcingaObject $object): array
     {
         if ($object->get('uuid') === null) {
@@ -135,7 +134,6 @@ class IcingaObjectHandler extends RequestHandler
         return $result;
     }
 
->>>>>>> Stashed changes
     protected function handleApiRequest()
     {
         $request = $this->request;
@@ -169,10 +167,30 @@ class IcingaObjectHandler extends RequestHandler
                 $params = $this->request->getUrl()->getParams();
                 $allowsOverrides = $params->get('allowOverrides');
                 $type = $this->getType();
-                if ($object = $this->loadOptionalObject()) {
-                    if ($this->request->getActionName() === 'variables') {
-                        $data = ['vars' => $data];
+                $object = $this->loadOptionalObject();
+                $customProperties = $this->getCustomProperties($object);
+                $overridenCustomVars = $this->getCustomVarsFromData($data);
+                if (! empty($overridenCustomVars)) {
+                    $diff = array_diff(array_keys($data), array_keys($customProperties));
+                    if (! empty($diff)) {
+                        throw new Exception(sprintf(
+                            "The custom properties (%s) are not supported by this object",
+                            implode(", ", $diff)
+                        ));
+                    }
+                }
 
+                if ($object) {
+                    if ($this->request->getActionName() === 'variables') {
+                        $diff = array_diff(array_keys($data), array_keys($customProperties));
+                        if (! empty($diff)) {
+                            throw new Exception(sprintf(
+                                "The custom properties %s are not supported by this object",
+                                implode(", ", $diff)
+                            ));
+                        }
+
+                        $data = ['vars' => $data];
                         $object->setProperties($data);
                     } elseif ($request->getMethod() === 'POST') {
                         $object->setProperties($data);
@@ -236,5 +254,22 @@ class IcingaObjectHandler extends RequestHandler
         } else {
             throw new RuntimeException('Found a single service, which should have been found (and dealt with) before');
         }
+    }
+
+    private function getCustomVarsFromData(array $data): array
+    {
+        $customVars = [];
+
+        foreach ($data as $key => $value) {
+            if ($key === 'vars') {
+                $customVars = $value;
+            }
+
+            if (substr($key, 0, 5) === 'vars.') {
+                $customVars[substr($key, 5)] = $value;
+            }
+        }
+
+        return $customVars;
     }
 }
