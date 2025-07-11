@@ -80,8 +80,8 @@ class BasketSnapshot extends DbObject
         'Command',
         'TimePeriod',
         'HostGroup',
-        'IcingaTemplateChoiceHost',
         'HostTemplate',
+        'IcingaTemplateChoiceHost',
         'ServiceGroup',
         'IcingaTemplateChoiceService',
         'ServiceTemplate',
@@ -291,6 +291,11 @@ class BasketSnapshot extends DbObject
         $importer = new ObjectImporter($connection);
         $changed = [];
         foreach ($objects as $object) {
+            // This relation is unnecessary as the relation is restored using template choice members
+            if (($typeName === 'HostTemplate' || $typeName === 'ServiceTemplate') && isset($object->template_choice)) {
+                unset($object->template_choice);
+            }
+
             $new = $importer->import($class, $object);
             if ($new->hasBeenModified()) {
                 if ($new instanceof IcingaObject && $new->supportsImports()) {
@@ -457,7 +462,16 @@ class BasketSnapshot extends DbObject
         }
         $exporter = new Exporter($connection);
         foreach ($all as $object) {
-            $this->objects[$typeName][$object->getUniqueIdentifier()] = $exporter->export($object);
+            $exportedObject = $exporter->export($object);
+            // This relation is unnecessary as the relation can be restored using template choice members
+            if (
+                $object instanceof IcingaHost || ($object instanceof IcingaService && $object->isTemplate())
+                && isset($exportedObject->template_choice)
+            ) {
+                unset($exportedObject->template_choice);
+            }
+
+            $this->objects[$typeName][$object->getUniqueIdentifier()] = $exportedObject;
         }
     }
 
@@ -515,7 +529,16 @@ class BasketSnapshot extends DbObject
             $connection
         );
         if ($object !== null) {
-            $this->objects[$typeName][$identifier] = $exporter->export($object);
+            $exportedObject = $exporter->export($object);
+            // This relation is unnecessary as the relation can be restored using template choice members
+            if (
+                $object instanceof IcingaHost || ($object instanceof IcingaService && $object->isTemplate())
+                && isset($exportedObject->template_choice)
+            ) {
+                unset($exportedObject->template_choice);
+            }
+
+            $this->objects[$typeName][$identifier] = $exportedObject;
         }
     }
 }
