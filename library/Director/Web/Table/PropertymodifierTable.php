@@ -4,12 +4,17 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Error;
 use Exception;
+use GuzzleHttp\Psr7\ServerRequest;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\Extension\ZfSortablePriority;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
+use Icinga\Module\Director\Web\Form\PropertyTableSortForm;
+use Icinga\Module\Director\Web\Form\QuickForm;
+use ipl\Html\Form;
+use ipl\Html\HtmlString;
 
 class PropertymodifierTable extends ZfQueryBasedTable
 {
@@ -48,10 +53,20 @@ class PropertymodifierTable extends ZfQueryBasedTable
 
     public function render()
     {
-        if ($this->readOnly) {
+        if ($this->readOnly || $this->request === null) {
             return parent::render();
         }
-        return $this->renderWithSortableForm();
+
+        return (new PropertyTableSortForm($this->getUniqueFormName(), new HtmlString(parent::render())))
+            ->setAction($this->request->getUrl()->getAbsoluteUrl())
+            ->on(Form::ON_SENT, function (PropertyTableSortForm $form) {
+                $csrf = $form->getElement(QuickForm::CSRF);
+                if ($csrf !== null && $csrf->isValid()) {
+                    $this->reallyHandleSortPriorityActions();
+                }
+            })
+            ->handleRequest(ServerRequest::fromGlobals())
+            ->render();
     }
 
     protected function assemble()
@@ -82,7 +97,7 @@ class PropertymodifierTable extends ZfQueryBasedTable
             $class = $row->provider_class;
             try {
                 /** @var ImportSourceHook $hook */
-                $hook = new $class;
+                $hook = new $class();
                 $caption .= ': ' . $hook->getName();
             } catch (Exception $e) {
                 $caption = $this->createErrorCaption($caption, $e);

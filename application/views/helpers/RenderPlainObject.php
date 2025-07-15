@@ -1,4 +1,5 @@
 <?php
+
 // Avoid complaints about missing namespace and invalid class name
 // @codingStandardsIgnoreStart
 

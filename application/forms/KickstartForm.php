@@ -41,8 +41,10 @@ class KickstartForm extends DirectorForm
             $this->addResourceConfigElements();
             $this->addResourceDisplayGroup();
 
-            if (!$this->config()->get('db', 'resource')
-                || ($this->config()->get('db', 'resource') !== $this->getResourceName())) {
+            if (
+                !$this->config()->get('db', 'resource')
+                || ($this->config()->get('db', 'resource') !== $this->getResourceName())
+            ) {
                 return;
             }
         }
@@ -353,8 +355,10 @@ class KickstartForm extends DirectorForm
             }
         }
 
-        if ($this->getSubmitLabel() === $this->createDbLabel
-            || $this->getSubmitLabel() === $this->migrateDbLabel) {
+        if (
+            $this->getSubmitLabel() === $this->createDbLabel
+            || $this->getSubmitLabel() === $this->migrateDbLabel
+        ) {
             $this->migrations()->applyPendingMigrations();
             parent::onSuccess();
         }
@@ -448,7 +452,8 @@ class KickstartForm extends DirectorForm
     {
         if ($resourceName = $this->getResourceName()) {
             $resourceConfig = ResourceFactory::getResourceConfig($resourceName);
-            if (!isset($resourceConfig->charset)
+            if (
+                !isset($resourceConfig->charset)
                 || !in_array($resourceConfig->charset, array('utf8', 'utf8mb4', 'UTF8', 'UTF-8'))
             ) {
                 if ($resource = $this->getElement('resource')) {

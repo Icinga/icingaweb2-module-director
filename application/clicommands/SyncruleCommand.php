@@ -167,7 +167,7 @@ class SyncruleCommand extends Command
                 return 'There are pending changes for this Sync Rule. You should'
                     . '  trigger a new Sync Run.';
             case 'failing':
-                return 'This Sync Rule failed: '. $rule->get('last_error_message');
+                return 'This Sync Rule failed: ' . $rule->get('last_error_message');
             default:
                 throw new RuntimeException('Invalid sync state: ' . $rule->get('sync_state'));
         }

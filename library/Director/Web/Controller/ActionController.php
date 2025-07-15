@@ -50,7 +50,8 @@ abstract class ActionController extends Controller implements ControlsAndContent
      */
     public function init()
     {
-        if (! $this->getRequest()->isApiRequest()
+        if (
+            ! $this->getRequest()->isApiRequest()
             && $this->Config()->get('frontend', 'disabled', 'no') === 'yes'
         ) {
             throw new NotFoundError('Not found');

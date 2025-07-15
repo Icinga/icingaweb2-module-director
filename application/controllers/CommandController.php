@@ -90,7 +90,7 @@ class CommandController extends ObjectController
         $o = $this->object;
         $this->tabs()->activate('arguments');
         $this->addTitle($this->translate('Command arguments: %s'), $o->getObjectName());
-        $form = (new IcingaCommandArgumentForm)
+        $form = (new IcingaCommandArgumentForm())
             ->setBranch($this->getBranch())
             ->setCommandObject($o);
         if ($argument = $p->shift('argument')) {

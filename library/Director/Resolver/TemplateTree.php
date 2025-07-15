@@ -137,7 +137,8 @@ class TemplateTree
 
     public function getAncestorsFor(IcingaObject $object)
     {
-        if ($object->hasBeenModified()
+        if (
+            $object->hasBeenModified()
             && $object->gotImports()
             && $object->imports()->hasBeenModified()
         ) {

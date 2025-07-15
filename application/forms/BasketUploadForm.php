@@ -65,7 +65,8 @@ class BasketUploadForm extends DirectorObjectForm
             throw new IcingaException('Got no file');
         }
 
-        if (! isset($_FILES['uploaded_file']['tmp_name'])
+        if (
+            ! isset($_FILES['uploaded_file']['tmp_name'])
             || ! is_uploaded_file($_FILES['uploaded_file']['tmp_name'])
         ) {
             $this->addError('Got no uploaded file');

@@ -94,8 +94,14 @@ class DirectorDatalist extends DbObject implements ExportInterface
 
         $db = $this->getDb();
 
+        if ($this->getConnection()->getDbType() === 'pgsql') {
+            $datalistJoin = 'l.id = CAST(dfs.setting_value AS INTEGER)';
+        } else {
+            $datalistJoin = 'l.id = dfs.setting_value';
+        }
+
         $dataFieldsCheck = $db->select()
-            ->from(['df' =>'director_datafield'], ['varname'])
+            ->from(['df' => 'director_datafield'], ['varname'])
             ->join(
                 ['dfs' => 'director_datafield_setting'],
                 'dfs.datafield_id = df.id AND dfs.setting_name = \'datalist_id\'',
@@ -103,7 +109,7 @@ class DirectorDatalist extends DbObject implements ExportInterface
             )
             ->join(
                 ['l' => 'director_datalist'],
-                'l.id = dfs.setting_value',
+                $datalistJoin,
                 []
             )
             ->where('datatype = ?', DataTypeDatalist::class)
@@ -114,7 +120,7 @@ class DirectorDatalist extends DbObject implements ExportInterface
         }
 
         $syncCheck = $db->select()
-            ->from(['sp' =>'sync_property'], ['source_expression'])
+            ->from(['sp' => 'sync_property'], ['source_expression'])
             ->where('sp.destination_field = ?', 'list_id')
             ->where('sp.source_expression = ?', $id);
 

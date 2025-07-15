@@ -37,14 +37,16 @@ class ObjectsTabs extends Tabs
             ]);
         }
 
-        if ($auth->hasPermission(Permission::ADMIN)
+        if (
+            $auth->hasPermission(Permission::ADMIN)
             || (
             $object->getShortTableName() === 'notification'
             && $auth->hasPermission(Permission::NOTIFICATIONS)
-        ) || (
+            ) || (
             $object->getShortTableName() === 'scheduled_downtime'
             && $auth->hasPermission(Permission::SCHEDULED_DOWNTIMES)
-        )) {
+            )
+        ) {
             if ($object->supportsApplyRules()) {
                 $this->add('applyrules', [
                     'url'   => sprintf('director/%s/applyrules', $plType),

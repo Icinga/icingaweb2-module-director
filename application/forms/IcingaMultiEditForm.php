@@ -21,6 +21,9 @@ class IcingaMultiEditForm extends DirectorObjectForm
 
     private $propertiesToPick;
 
+    /** @var array<string, string> Custom variable name map to its element's name in the form */
+    private $varNameMap = [];
+
     public function setObjects($objects)
     {
         $this->objects = $objects;
@@ -48,6 +51,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $loader = new IcingaObjectFieldLoader($object);
         $loader->prepareElements($this);
         $loader->addFieldsToForm($this);
+        $this->varNameMap = $loader->getNameMap();
 
         if ($form = $this->relatedForm) {
             if ($form instanceof DirectorObjectForm) {
@@ -68,8 +72,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
 
         /** @var \Zend_Form_Element $el */
         foreach ($this->getElements() as $el) {
-            $name = $el->getName();
-            if (substr($name, 0, 4) === 'var_') {
+            if ($this->isCustomVar($el->getName())) {
                 $this->makeVariants($el);
             }
         }
@@ -137,14 +140,26 @@ class IcingaMultiEditForm extends DirectorObjectForm
                 continue;
             }
 
-            if (substr($property, 0, 4) === 'var_') {
-                $property = 'vars.' . substr($property, 4);
+            if ($this->isCustomVar($property)) {
+                $property = 'vars.' . $this->varNameMap[$property];
             }
 
             foreach ($this->getObjects($objects) as $object) {
                 $object->$property = $value;
             }
         }
+    }
+
+    /**
+     * Check if the given property is a custom var
+     *
+     * @param string $property
+     *
+     * @return bool
+     */
+    protected function isCustomVar(string $property): bool
+    {
+        return substr($property, 0, 4) === 'var_';
     }
 
     protected function storeModifiedObjects()
@@ -222,6 +237,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $key = $element->getName();
         $this->removeElement($key);
         $label = $element->getLabel();
+
         $group = $this->getDisplayGroupForElement($element);
         $description = $element->getDescription();
 
@@ -241,11 +257,13 @@ class IcingaMultiEditForm extends DirectorObjectForm
         }
     }
 
+
+
     protected function getVariants($key)
     {
         $variants = array();
-        if (substr($key, 0, 4) === 'var_') {
-            $key = 'vars.' . substr($key, 4);
+        if ($this->isCustomVar($key)) {
+            $key = 'vars.' . $this->varNameMap[$key];
         }
 
         foreach ($this->objects as $name => $object) {

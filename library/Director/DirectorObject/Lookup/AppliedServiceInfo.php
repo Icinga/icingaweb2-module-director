@@ -31,7 +31,7 @@ class AppliedServiceInfo implements ServiceInfo
     public function __construct($hostName, $serviceName, $serviceApplyRuleId, UuidInterface $uuid)
     {
         $this->hostName = $hostName;
-        $this->serviceName= $serviceName;
+        $this->serviceName = $serviceName;
         $this->serviceApplyRuleId = $serviceApplyRuleId;
         $this->uuid = $uuid;
     }
