@@ -17,6 +17,7 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\RestApi\IcingaObjectsHandler;
 use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
 use Icinga\Module\Director\Web\ActionBar\TemplateActionBar;
+use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ObjectSetTable;
@@ -33,6 +34,7 @@ use Ramsey\Uuid\Uuid;
 abstract class ObjectsController extends ActionController
 {
     use BranchHelper;
+    use ObjectRestrictions;
 
     protected $isApified = true;
 
@@ -73,10 +75,15 @@ abstract class ObjectsController extends ActionController
     {
         $request = $this->getRequest();
         $table = $this->getTable();
-        if ($request->getControllerName() === 'services'
-            && $host = $this->params->get('host')
+        if (
+            $request->getControllerName() === 'services'
+            && $hostName = $this->params->get('host')
         ) {
-            $host = IcingaHost::load($host, $this->db());
+            $host = IcingaHost::load($hostName, $this->db());
+            if (! $this->allowsObject($host)) {
+                throw new NotFoundError(sprintf('Failed to load %s "%s"', $host->getTableName(), $hostName));
+            }
+
             $table->getQuery()->where('o.host_id = ?', $host->get('id'));
         }
 

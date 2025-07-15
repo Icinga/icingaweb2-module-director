@@ -7,7 +7,7 @@ use Zend_Validate_Abstract;
 
 class NamePattern extends Zend_Validate_Abstract
 {
-    const INVALID = 'intInvalid';
+    public const INVALID = 'intInvalid';
 
     private $filter;
 

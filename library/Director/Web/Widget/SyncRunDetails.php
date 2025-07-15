@@ -9,13 +9,14 @@ use Icinga\Module\Director\Objects\SyncRun;
 use gipfl\IcingaWeb2\Link;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
+
 use function sprintf;
 
 class SyncRunDetails extends NameValueTable
 {
     use TranslationHelper;
 
-    const URL_ACTIVITIES = 'director/config/activities';
+    public const URL_ACTIVITIES = 'director/config/activities';
 
     /** @var SyncRun */
     protected $run;

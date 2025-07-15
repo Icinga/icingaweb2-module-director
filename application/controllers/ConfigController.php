@@ -482,7 +482,7 @@ class ConfigController extends ActionController
      */
     protected function deploymentFailed($checksum, $error = null)
     {
-        $extra = $error ? ': ' . $error: '';
+        $extra = $error ? ': ' . $error : '';
 
         if ($this->getRequest()->isApiRequest()) {
             $this->sendJsonError($this->getResponse(), 'Config deployment failed' . $extra);
@@ -503,7 +503,8 @@ class ConfigController extends ActionController
     {
         $tabs = $this->tabs();
 
-        if ($this->hasPermission(Permission::DEPLOY)
+        if (
+            $this->hasPermission(Permission::DEPLOY)
             && $deploymentId = $this->params->get('deployment_id')
         ) {
             $tabs->add('deployment', [

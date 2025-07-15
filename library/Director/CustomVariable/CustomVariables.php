@@ -183,7 +183,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             )
         )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->get('id'));
 
-        $vars = new CustomVariables;
+        $vars = new CustomVariables();
         foreach ($db->fetchAll($query) as $row) {
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
@@ -194,7 +194,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     public static function forStoredRows($rows)
     {
-        $vars = new CustomVariables;
+        $vars = new CustomVariables();
         foreach ($rows as $row) {
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
@@ -383,7 +383,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
 
         if ($out !== '') {
-            $out = "\n".$out;
+            $out = "\n" . $out;
         }
 
         return $out;

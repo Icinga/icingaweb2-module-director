@@ -87,9 +87,11 @@ class BasketSnapshotFieldResolver
 
         $db = $this->targetDb->getDbAdapter();
 
-        foreach ($db->fetchAll(
-            $db->select()->from($table)->where("$objectKey = ?", $objectId)
-        ) as $mapping) {
+        foreach (
+            $db->fetchAll(
+                $db->select()->from($table)->where("$objectKey = ?", $objectId)
+            ) as $mapping
+        ) {
             $existingFields[(int) $mapping->datafield_id] = $mapping;
         }
         foreach ($object->fields as $field) {

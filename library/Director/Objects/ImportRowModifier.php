@@ -45,7 +45,7 @@ class ImportRowModifier extends DbObjectWithSettings implements InstantiatedViaH
                     $class
                 ));
             }
-            $obj = new $class;
+            $obj = new $class();
             $obj->setSettings($this->getSettings());
             $obj->setPropertyName($this->get('property_name'));
             $obj->setTargetProperty($this->get('target_property'));

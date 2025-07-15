@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Data;
 use InvalidArgumentException;
 use JsonSerializable;
 use stdClass;
+
 use function get_class;
 use function gettype;
 use function is_array;
@@ -21,7 +22,7 @@ class SerializableValue implements Serializable
      */
     public static function fromSerialization($value)
     {
-        $self = new static;
+        $self = new static();
         static::assertSerializableValue($value);
         $self->value = $value;
 

@@ -7,7 +7,6 @@ use Ramsey\Uuid\UuidInterface;
 
 trait TableWithBranchSupport
 {
-
     /** @var UuidInterface|null */
     protected $branchUuid;
 

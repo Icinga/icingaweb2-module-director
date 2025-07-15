@@ -47,7 +47,8 @@ class IcingaTimePeriodRange extends DbObject
     {
         $hBegin = $mBegin = $hEnd = $mEnd = null;
         if (sscanf($rangeString, '%2d:%2d-%2d:%2d', $hBegin, $mBegin, $hEnd, $mEnd) === 4) {
-            if ($this->timeFromHourMin($hBegin, $mBegin, $now) <= $now
+            if (
+                $this->timeFromHourMin($hBegin, $mBegin, $now) <= $now
                 && $this->timeFromHourMin($hEnd, $mEnd, $now) >= $now
             ) {
                 return true;

@@ -4,6 +4,90 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.5
+-------
+
+## Database Schema
+
+- FIX: Failed schema migration of MySQL to version 188 due Integrity constraint violation ([#2970](https://github.com/Icinga/icingaweb2-module-director/issues/2970))
+
+## Deployment
+
+- Fix: Deprecation notice that sometimes appears on deployment form (no issue)
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/40?closed=1)
+
+v1.11.4
+-------
+
+### Security
+
+- Rest API endpoints accessible to restricted users ([GHSA-3233-ggc5-m3qg](https://github.com/Icinga/icingaweb2-module-director/security/advisories/GHSA-3233-ggc5-m3qg))
+
+### UI
+
+- Fix editing of custom variables for multi-selected objects [#2950](https://github.com/Icinga/icingaweb2-module-director/issues/2950)
+- Fix: Check for the existence of service templates to add services [#1249](https://github.com/Icinga/icingaweb2-module-director/issues/1249)
+
+### Import and Sync
+
+- Fix erratic job behavior during summer and winter time change (no issue)
+
+### Integration
+
+- Fix custom variable renderer for service apply for rules (no issue)
+- Fix custom variable renderer for array type data lists [#2960](https://github.com/Icinga/icingaweb2-module-director/issues/2960)
+
+### Database Schema
+
+- Fix MySQL 8.4 nonstandard foreign keys deprecation [#2885](https://github.com/Icinga/icingaweb2-module-director/issues/2885)
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/39?closed=1)
+
+v1.11.3
+-------
+
+### UI
+* FIX: Property sort tables does not cause CSRF token validation anymore (#2937)
+* FIX: No error when clicking `modify` action link for services belonging to service set in Icinga DB (#2938)
+* FIX: No crashing of Host template form when invalid check command is entered (#2941)
+
+### Internals
+* FIX: Filter can be now removed in import source modifiers (#2939)
+
+v1.11.2
+-------
+
+### UI
+* FIX: No more errors when changing import source modifier priorities (#2270)
+* FIX: Choosing `HTTP proxy` in import source type `REST API` no longer causes deprecation notice (#2889)
+* FIX: Deleting data lists when using PostgreSQL as backend no longer yields errors (#2913)
+* FIX: Previewing sync rules with boolean properties now functions without errors (#2905)
+* FIX: Basket snapshots correctly display content if present (#2901)
+* FIX: Time periods now include `Add to basket` functionality (#2542)
+
+### API
+* FIX: API updates for notifications return 304 instead of 200 when unchanged (#2882)
+
+### Internals
+* FIX: The `apply_changes` setting from sync jobs restored from a basket is applied properly (#2904)
+* FIX: The `Get host by name (DNS lookup)` modifier handles failed lookups without errors (#2877)
+
+### Director Branches
+* FIX: Cloning a host retains its services and service sets (#2897)
+* FIX: Service sets are now clonable (#2890)
+
+### Integrations
+* Show Director labels in monitoring module and Icinga DB custom vars section (#2239)
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/36?closed=1)
+
 v1.11.1
 -------
 

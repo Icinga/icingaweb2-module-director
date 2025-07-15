@@ -29,7 +29,8 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->host
+        if (
+            $this->host
             && $this->object
             && $this->backend()->canModifyService($this->host->getObjectName(), $this->object->getObjectName())
         ) {
@@ -48,14 +49,6 @@ class ServiceController extends ObjectController
         $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
         $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');
         parent::init();
-        if ($this->object) {
-            if ($this->host === null) {
-                $this->host = $this->loadOptionalRelatedObject($this->object, 'host');
-            }
-            if ($this->set === null) {
-                $this->set = $this->loadOptionalRelatedObject($this->object, 'service_set');
-            }
-        }
         $this->addOptionalHostTabs();
         $this->addOptionalSetTabs();
     }
@@ -74,6 +67,20 @@ class ServiceController extends ObjectController
         }
 
         return null;
+    }
+
+    protected function loadOptionalObject(): void
+    {
+        parent::loadOptionalObject();
+
+        if ($this->object) {
+            if ($this->host === null) {
+                $this->host = $this->loadOptionalRelatedObject($this->object, 'host');
+            }
+            if ($this->set === null) {
+                $this->set = $this->loadOptionalRelatedObject($this->object, 'service_set');
+            }
+        }
     }
 
     protected function loadOptionalRelatedObject(IcingaObject $object, $relation)
@@ -190,7 +197,8 @@ class ServiceController extends ObjectController
         }
 
         try {
-            if ($object->isTemplate()
+            if (
+                $object->isTemplate()
                 && $object->getResolvedProperty('check_command_id')
             ) {
                 $this->view->actionLinks .= ' ' . $this->view->qlink(

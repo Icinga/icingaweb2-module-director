@@ -17,7 +17,7 @@ class SimpleNote extends FormElement
      */
     protected $_ignore = true;
     // @codingStandardsIgnoreEnd
-    
+
     public function isValid($value, $context = null)
     {
         return true;

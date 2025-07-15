@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\PropertyModifier;
 
 use Icinga\Module\Director\Hook\PropertyModifierHook;
+
 use function ipl\Stdlib\get_php_type;
 
 class PropertyModifierNegateBoolean extends PropertyModifierHook

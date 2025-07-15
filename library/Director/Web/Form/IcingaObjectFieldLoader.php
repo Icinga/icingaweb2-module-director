@@ -60,6 +60,16 @@ class IcingaObjectFieldLoader
         return $this;
     }
 
+    /**
+     * Get element names to variable names map (Example: ['elName' => 'varName'])
+     *
+     * @return array
+     */
+    public function getNameMap(): array
+    {
+        return $this->nameMap;
+    }
+
     public function loadFieldsForMultipleObjects($objects)
     {
         $fields = array();
@@ -568,7 +578,7 @@ class IcingaObjectFieldLoader
             $id = $r->object_id;
             unset($r->object_id);
             if (! array_key_exists($id, $result)) {
-                $result[$id] = new stdClass;
+                $result[$id] = new stdClass();
             }
 
             $result[$id]->{$r->varname} = DirectorDatafield::fromDbRow(

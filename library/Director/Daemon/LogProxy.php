@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Daemon;
 
 use Exception;
 use Icinga\Module\Director\Db;
+
 use function React\Promise\resolve;
 
 class LogProxy implements DbBasedComponent

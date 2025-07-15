@@ -448,8 +448,8 @@ CREATE TABLE director_job (
   run_interval integer NOT NULL, -- seconds
   timeperiod_id integer DEFAULT NULL,
   last_attempt_succeeded enum_boolean DEFAULT NULL,
-  ts_last_attempt timestamp with time zone DEFAULT NULL,
-  ts_last_error timestamp with time zone DEFAULT NULL,
+  ts_last_attempt bigint DEFAULT NULL,
+  ts_last_error bigint DEFAULT NULL,
   last_error_message text NULL DEFAULT NULL,
   CONSTRAINT director_job_period
     FOREIGN KEY (timeperiod_id)
@@ -1619,9 +1619,6 @@ CREATE TABLE import_row_modifier (
 );
 
 CREATE INDEX import_row_modifier_search_idx ON import_row_modifier (property_name);
-CREATE UNIQUE INDEX import_row_modifier_prio
-  ON import_row_modifier (source_id, priority);
-
 
 CREATE TABLE import_row_modifier_setting (
   row_modifier_id serial,
@@ -2637,7 +2634,6 @@ CREATE TABLE branched_icinga_service (
           ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX service_branch_object_name ON branched_icinga_service (branch_uuid, object_name);
 CREATE INDEX branched_service_search_object_name ON branched_icinga_service (object_name);
 CREATE INDEX branched_service_search_display_name ON branched_icinga_service (display_name);
 
@@ -2785,4 +2781,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (187, NOW());
+  VALUES (189, NOW());

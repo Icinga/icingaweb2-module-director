@@ -397,7 +397,7 @@ class SelfServiceController extends ActionController
         $params['parent_zone']      = $zoneName;
         $params['ca_server']        = $master->getObjectName();
         $params['parent_endpoints'] = $endpointNames;
-        $params['accept_config']    = $host->getSingleResolvedProperty('accept_config')=== 'y';
+        $params['accept_config']    = $host->getSingleResolvedProperty('accept_config') === 'y';
     }
 
     protected function addStringSettingsToParams(Settings $settings, array $keys, array &$params)
