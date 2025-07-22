@@ -13,7 +13,7 @@ trait DeployFormsBug7530
         if (parent::hasBeenSubmitted()) {
             return true;
         } else {
-            return \strlen($this->getSentValue('confirm_7530')) > 0;
+            return strlen($this->getSentValue('confirm_7530', '')) > 0;
         }
     }
 
