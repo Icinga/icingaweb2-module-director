@@ -139,6 +139,21 @@ class IcingaObjectHandler extends RequestHandler
                         ], $data);
                         $object->replaceWith(IcingaObject::createByType($type, $data, $db));
                     }
+
+                    if (in_array((int) $object->get('id'), $object->listAncestorIds())) {
+                        throw new RuntimeException(
+                            'Import loop detected for the object '
+                            . $object->getObjectName() . ' -> Imports: '
+                            . implode(', ', $object->getImports())
+                        );
+                    }
+
+                    if (in_array($object->get('object_name'), $data['imports'])) {
+                        throw new RuntimeException(
+                            'You can not import the same object into itself: ' . $object->getObjectName()
+                        );
+                    }
+
                     $this->persistChanges($object);
                     $this->sendJson($object->toPlainObject(false, true));
                 } elseif ($allowsOverrides && $type === 'service') {
