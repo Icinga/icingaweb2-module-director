@@ -18,11 +18,13 @@ use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Resolver\TemplateTree;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
+use Zend_Validate_Callback;
 
 abstract class DirectorObjectForm extends DirectorForm
 {
@@ -777,12 +779,12 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected function moveUpInSet(&$set, $key)
     {
-        list($set[$key - 1], $set[$key]) = array($set[$key], $set[$key - 1]);
+        [$set[$key - 1], $set[$key]] = array($set[$key], $set[$key - 1]);
     }
 
     protected function moveDownInSet(&$set, $key)
     {
-        list($set[$key + 1], $set[$key]) = array($set[$key], $set[$key + 1]);
+        [$set[$key + 1], $set[$key]] = array($set[$key], $set[$key + 1]);
     }
 
     protected function beforeSetup()
@@ -1283,7 +1285,38 @@ abstract class DirectorObjectForm extends DirectorForm
             // 'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'value'        => $this->presetImports,
-            'class'        => 'autosubmit'
+            'class'        => 'autosubmit',
+            'validators'   => [
+                new Zend_Validate_Callback(function ($value) {
+                    $templateTree = new TemplateTree($this->object->getShortTableName(), $this->getDb());
+                    $importsElement = $this->getElement('imports');
+                    $objectName = $this->object->getObjectName();
+                    if ($this->object->isTemplate()) {
+                        $descendents = $templateTree->getDescendantsFor($this->object);
+                        $loopedImports = array_intersect($templateTree->getDescendantsFor($this->object), $value);
+                        if (! empty($loopedImports)) {
+                            $loopedImport = array_slice($loopedImports, 0, 1);
+                            array_push($loopedImport, ...$descendents);
+                            $importsElement->addErrorMessage(
+                                sprintf(
+                                    $this->translate('Loop detected for imports: %s'),
+                                    implode('->', $loopedImports)
+                                )
+                            );
+
+                            return false;
+                        }
+                    } elseif (in_array($objectName, $value, true)) {
+                        $importsElement->addErrorMessage(
+                            $this->translate('You can not import the same object into itself')
+                        );
+
+                        return false;
+                    }
+
+                    return true;
+                })
+            ]
         ));
 
         return $this;
