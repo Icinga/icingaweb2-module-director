@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Restriction;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
+use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -59,7 +61,7 @@ class HostgroupRestriction extends ObjectRestriction
         // Hint: branched hosts have no id
         if (! $host->hasBeenLoadedFromDb() || $host->hasModifiedGroups() || $host->get('id') === null) {
             foreach ($this->listRestrictedHostgroups() as $group) {
-                if ($host->hasGroup($group)) {
+                if ($host->hasGroup($group) || $this->matchesHostGroupFilter($group, $host)) {
                     return true;
                 }
             }
@@ -74,6 +76,21 @@ class HostgroupRestriction extends ObjectRestriction
 
         $this->filterHostsQuery($query);
         return (int) $this->db->fetchOne($query) === (int) $host->get('id');
+    }
+
+    /**
+     * Check if the given host matches the filter of given host group
+     *
+     * @param string $group
+     * @param IcingaHost $host
+     *
+     * @return bool
+     */
+    private function matchesHostGroupFilter(string $group, IcingaHost $host): bool
+    {
+        return HostApplyMatches::prepare($host)->matchesFilter(
+            Filter::fromQueryString(IcingaHostGroup::load($group, $host->getConnection())->get('assign_filter'))
+        );
     }
 
     /**
