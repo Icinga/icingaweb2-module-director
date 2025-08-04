@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Tabs;
 
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
 
 class ImportTabs extends Tabs
 {
-    use TranslationHelper;
+    use Translation;
 
     public function __construct()
     {

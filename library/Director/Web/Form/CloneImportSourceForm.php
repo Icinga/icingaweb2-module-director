@@ -7,13 +7,13 @@ use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
 use ipl\Html\FormDecorator\DdDtDecorator;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\ImportSource;
 
 class CloneImportSourceForm extends Form
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var ImportSource */
     protected $source;
