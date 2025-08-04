@@ -3,13 +3,13 @@
 namespace Icinga\Module\Director\Web\Tabs;
 
 use Icinga\Authentication\Auth;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use Icinga\Module\Director\Auth\Permission;
 
 class InfraTabs extends Tabs
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var Auth */
     protected $auth;

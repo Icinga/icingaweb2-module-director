@@ -3,12 +3,12 @@
 namespace Icinga\Module\Director\Web\Tabs;
 
 use Icinga\Module\Director\Objects\SyncRule;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
 
 class SyncRuleTabs extends Tabs
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $rule;
 

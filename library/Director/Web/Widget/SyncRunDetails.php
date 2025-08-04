@@ -7,14 +7,14 @@ use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\SyncRun;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 
 use function sprintf;
 
 class SyncRunDetails extends NameValueTable
 {
-    use TranslationHelper;
+    use Translation;
 
     public const URL_ACTIVITIES = 'director/config/activities';
 

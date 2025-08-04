@@ -6,11 +6,11 @@ use Icinga\Module\Director\Objects\IcingaEndpoint;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class InspectTreeRenderer extends BaseHtmlElement
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $tag = 'ul';
 
