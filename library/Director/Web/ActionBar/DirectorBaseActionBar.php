@@ -4,13 +4,13 @@ namespace Icinga\Module\Director\Web\ActionBar;
 
 use Icinga\Module\Director\Dashboard\Dashboard;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\ActionBar;
 use gipfl\IcingaWeb2\Url;
 
 class DirectorBaseActionBar extends ActionBar
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var Url */
     protected $url;

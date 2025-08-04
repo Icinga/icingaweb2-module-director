@@ -4,11 +4,11 @@ namespace Icinga\Module\Director\Web\Table;
 
 use ipl\Html\Html;
 use ipl\Html\Table;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class CoreApiPrototypesTable extends Table
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $defaultAttributes = ['class' => ['common-table']];
 

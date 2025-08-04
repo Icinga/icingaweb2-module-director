@@ -206,11 +206,6 @@ parameters:
 			path: application/forms/RestoreBasketForm.php
 
 		-
-			message: "#^Function translate not found\\.$#"
-			count: 8
-			path: application/locale/translateMe.php
-
-		-
 			message: "#^Call to an undefined method Zend_View_Interface\\:\\:formIplExtensibleSet\\(\\)\\.$#"
 			count: 1
 			path: application/views/helpers/FormDataFilter.php
