@@ -5,12 +5,12 @@ namespace Icinga\Module\Director\Web\Tabs;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaObject;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
 
 class ObjectsTabs extends Tabs
 {
-    use TranslationHelper;
+    use Translation;
 
     public function __construct($type, Auth $auth, $typeUrl)
     {

@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Web\Widget;
 
 use gipfl\IcingaWeb2\Icon;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Daemon\RunningDaemonInfo;
@@ -15,7 +15,7 @@ use ipl\Html\Table;
 
 class BackgroundDaemonDetails extends BaseHtmlElement
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $tag = 'div';
 

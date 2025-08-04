@@ -6,12 +6,12 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Table;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Url;
 
 class CoreApiFieldsTable extends Table
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $defaultAttributes = [
         'class' => ['common-table'/*, 'table-row-selectable'*/],

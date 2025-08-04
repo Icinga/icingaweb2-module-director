@@ -8,11 +8,11 @@ use Icinga\Module\Director\Forms\ImportCheckForm;
 use Icinga\Module\Director\Forms\ImportRunForm;
 use Icinga\Module\Director\Objects\ImportSource;
 use ipl\Html\Html;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class ImportSourceDetails extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $source;
 
