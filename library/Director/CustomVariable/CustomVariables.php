@@ -188,9 +188,11 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         $db    = $object->getDb();
 
+        $type = $object->getShortTableName();
         $query = $db->select()->from(
             array('v' => $object->getVarsTableName()),
             array(
+                'v.' . $type . '_id',
                 'v.varname',
                 'v.varvalue',
                 'v.format',
@@ -355,13 +357,13 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
-    public function toConfigString($renderExpressions = false)
+    public function toConfigString(?IcingaObject $object = null, $renderExpressions = false)
     {
         $out = '';
 
         foreach ($this as $key => $var) {
             // TODO: ctype_alnum + underscore?
-            $out .= $this->renderSingleVar($key, $var, $renderExpressions);
+            $out .= $this->renderSingleVar($key, $var, $object, $renderExpressions);
         }
 
         return $out;
@@ -410,18 +412,52 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
      *
      * @return string
      */
-    protected function renderSingleVar($key, $var, $renderExpressions = false)
+    protected function renderSingleVar($key, $var, ?IcingaObject $object = null, $renderExpressions = false)
     {
         if ($var instanceof CustomVariableString) {
             $var->setWhiteList($this->whiteList);
         }
 
-        if ($key === $this->overrideKeyName || $var instanceof CustomVariableDictionary) {
+        if ($key === $this->overrideKeyName) {
             return c::renderKeyOperatorValue(
                 $this->renderKeyName($key),
                 '+=',
                 $var->toConfigStringPrefetchable($renderExpressions)
             );
+        } elseif ($var instanceof CustomVariableDictionary) {
+            if ($object === null || ($object->getShortTableName() !== 'host')) {
+                return c::renderKeyValue(
+                    $this->renderKeyName($key),
+                    $var->toConfigStringPrefetchable($renderExpressions)
+                );
+            } else {
+                $type = $object->getShortTableName();
+                $objectId = $object->get('id');
+                $ids =  $object->listAncestorIds() + [$object->get('id')];
+                $query = $object->getDb()->select()->from(
+                    ['dp' => 'director_property'],
+                    ['instantiable']
+                )
+                    ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
+                    ->join(['io' => 'icinga_' . $type], 'iop.' . $type . '_uuid = io.uuid', ['object_id' => 'io.id'])
+                    ->join(['iov' => 'icinga_' . $type . '_var'], 'iov.' . $type . '_id = io.id', [])
+                    ->where('dp.key_name = ?', $var->getKey())
+                    ->where('io.id IN (?)', $ids);
+
+                $row = (array) $object->getDb()->fetchRow($query);
+                if ($row['instantiable'] === 'y' && $objectId !== $row['object_id']) {
+                    return c::renderKeyOperatorValue(
+                        $this->renderKeyName($key),
+                        '+=',
+                        $var->toConfigStringPrefetchable($renderExpressions)
+                    );
+                } else {
+                    return c::renderKeyValue(
+                        $this->renderKeyName($key),
+                        $var->toConfigStringPrefetchable($renderExpressions)
+                    );
+                }
+            }
         } else {
             return c::renderKeyValue(
                 $this->renderKeyName($key),
