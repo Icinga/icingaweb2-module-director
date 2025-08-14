@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\CustomVariable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Countable;
+use Icinga\Module\Director\Objects\IcingaObject;
 
 class CustomVariableDictionary extends CustomVariable implements Countable
 {
@@ -30,6 +31,20 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         }
 
         return true;
+    }
+
+    public function isInstantiableForObject(IcingaObject $object): bool
+    {
+        $db = $object->getDb();
+        $type = $object->getShortTableName();
+        $query = $db->select()->from(['dp' => 'director_property'], 'dp.instantiable')
+            ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
+            ->join(['io' => 'icinga_' . $type], 'iop.' . $type . '_uuid = io.uuid', [])
+            ->join(['iov' => 'icinga_' . $type . '_var'], 'iop.' . $type . '_id = io.id', [])
+            ->where('iov.varname = ?', $this->key)
+            ->where('io.uuid', $object->get('uuid'));
+
+        return $db->fetchOne($query) === 'y';
     }
 
     public function getDbFormat()
