@@ -26,7 +26,6 @@ class CustomPropertiesForm extends CompatForm
     use Translation;
 
     public function __construct(
-        public readonly DbConnection $db,
         public readonly IcingaObject $object,
         protected array $objectProperties = []
     ) {
@@ -49,14 +48,16 @@ class CustomPropertiesForm extends CompatForm
         $duplicateSubmit = $this->duplicateSubmitButton($submitButton);
 
         $this->addElement($duplicateSubmit);
-
+        $varCount = 0;
         foreach ($this->objectProperties as $objectProperty) {
             $inheritedVar = [];
             if (isset($inheritedVars[$objectProperty['key_name']])) {
                 $inheritedVar = [$inheritedVars[$objectProperty['key_name']], $origins->{$objectProperty['key_name']}];
             }
 
-            $this->preparePropertyElement($objectProperty, inheritedValue: $inheritedVar);
+            $elementName = "var_$varCount";
+            $this->preparePropertyElement($elementName, $objectProperty, inheritedValue: $inheritedVar);
+            $varCount += 1;
         }
 
         $this->addElement(
@@ -65,10 +66,15 @@ class CustomPropertiesForm extends CompatForm
     }
 
     protected function preparePropertyElement(
+        string $elementName,
         array $objectProperty,
         FieldsetElement $parentElement = null,
-        $inheritedValue = []
+        $inheritedValue = [],
     ): void {
+        if ($parentElement) {
+            $elementName = $parentElement->getName() . '_' . $elementName;
+        }
+
         $isInstantiable = $objectProperty['instantiable'] === 'y';
         $fieldType = $this->fetchFieldType($objectProperty['value_type'], $isInstantiable);
         $placeholder = '';
@@ -78,40 +84,30 @@ class CustomPropertiesForm extends CompatForm
         }
 
         $fieldName = $objectProperty['key_name'];
-        if ($parentElement) {
-            $fieldName = is_numeric($fieldName)
-                ? 'item-' . $fieldName
-                : $fieldName;
-        }
-
         if ($fieldType === 'boolean') {
-//            $options = ['' => sprintf(' - %s - ', $this->translate('Please choose')), 'y' => 'Yes', 'n' => 'No'];
-
-//            if (! empty($inheritedValue)) {
-//                $options[''] = ($inheritedValue[0] === 'y' ? 'Yes' : 'No')
-//                    . sprintf($this->translate(' (inherited from "%s")'), $inheritedValue[1]);
-//            }
-
             $field = new IplBoolean($fieldName, ['label' => $objectProperty['label'],'decorator' => ['ViewHelper']]);
         } elseif ($fieldType === 'extensibleSet') {
             $placeholder = ! empty($inheritedValue[0])
                 ? implode(', ', $inheritedValue[0])
                 . sprintf($this->translate(' (inherited from "%s")'), $inheritedValue[1])
                 : '';
-            $field = (new ArrayElement($fieldName, [
+
+            $field = (new ArrayElement($elementName, [
                 'label'   => $objectProperty['label']
             ]))
                 ->setPlaceholder($placeholder)
                 ->setVerticalTermDirection();
         } elseif ($fieldType === 'collection') {
-            $field = new FieldsetElement($fieldName, [
+            $field = new FieldsetElement($elementName, [
                 'label'   => $objectProperty['label'],
                 'class'   => ['dictionary-element']
             ]);
+
+//            $this->addElement('hidden', $elementName . '_name', ['value' => $fieldName]);
         } else {
             $field = $this->createElement(
                 $fieldType,
-                $fieldName,
+                $elementName,
                 [
                     'label'   => $objectProperty['label'],
                     'placeholder' => $placeholder
@@ -119,23 +115,27 @@ class CustomPropertiesForm extends CompatForm
             );
         }
 
+
         if ($parentElement) {
             $parentElement->addElement($field);
+            $parentElement->addElement('hidden', $elementName . '_name', ['value' => $fieldName]);
         } else {
             $this->addElement($field);
+            $this->addElement('hidden', $elementName . '_name', ['value' => $fieldName]);
         }
 
         if ($field instanceof FieldsetElement) {
             $propertyItems = $this->fetchPropertyItems(Uuid::fromBytes($objectProperty['uuid']));
 
             if (! $isInstantiable) {
-                foreach ($propertyItems as $propertyItem) {
+                foreach ($propertyItems as $itemKey => $propertyItem) {
                     $propertyInherited = [];
                     if (isset($inheritedValue[0][$propertyItem['key_name']])) {
                         $propertyInherited = [$inheritedValue[0][$propertyItem['key_name']], $inheritedValue[1]];
                     }
 
                     $this->preparePropertyElement(
+                        $propertyItems[$itemKey]['var_name'],
                         $propertyItem,
                         $field,
                         $propertyInherited
@@ -184,14 +184,14 @@ class CustomPropertiesForm extends CompatForm
 
                 foreach ($prefixes as $idx => $prefix) {
                     $propertyField = new FieldsetElement(
-                        'property-' . $prefix,
+                        $elementName . '_' . 'var_' . $prefix,
                         ['class' => ['dictionary-item', 'dictionary-element']]
                     );
                     $field->addElement($propertyField);
 
                     $propertyItemLabel = $this->createElement(
                         'text',
-                        'label',
+                        "label",
                         [
                             'label' => $this->translate('Item Label'),
                             'required' => true,
@@ -202,6 +202,8 @@ class CustomPropertiesForm extends CompatForm
                     $propertyField->addElement($propertyItemLabel);
                     $field->registerElement($propertyField);
                     $propertyField->setLabel($propertyItemLabel->getValue());
+
+                    $subVarCount = 0;
                     foreach ($propertyItems as $propertyItem) {
                         $inheritedVar = [];
                         if (! empty($inheritedValue) && isset($inheritedValue[0][$propertyItemLabel->getValue()])) {
@@ -209,10 +211,13 @@ class CustomPropertiesForm extends CompatForm
                         }
 
                         $this->preparePropertyElement(
+                            "var_$subVarCount",
                             $propertyItem,
                             $propertyField,
                             $inheritedVar
                         );
+
+                        $subVarCount += 1;
                     }
 
                     /** @var SubmitButtonElement $removeItem */
@@ -257,7 +262,7 @@ class CustomPropertiesForm extends CompatForm
 
                     $idx = $tempNumberItem - $initialItemsCount;
 
-                    $propertyField = new FieldsetElement('property-' . $tempNumberItem, [
+                    $propertyField = new FieldsetElement($elementName . '_var_' . $tempNumberItem, [
                         'label'   => $this->translate('New Property') . " $idx",
                         'class'   => ['dictionary-item', 'dictionary-element']
                     ]);
@@ -273,8 +278,10 @@ class CustomPropertiesForm extends CompatForm
                     );
 
                     $propertyField->addElement($propertyItemLabel);
+                    $subVarCount = 0;
                     foreach ($propertyItems as $propertyItem) {
-                        $this->preparePropertyElement($propertyItem, $propertyField);
+                        $this->preparePropertyElement("var_$subVarCount", $propertyItem, $propertyField);
+                        $subVarCount += 1;
                     }
 
                     $removeItem = $this->createElement(
@@ -295,7 +302,7 @@ class CustomPropertiesForm extends CompatForm
                         $removedItemIdx = (int) $removeItem->getValue();
                         $removedItems += 1;
                     } else {
-                        $propertyField->populate($field->getPopulatedValue('property-' . $numberItem) ?? []);
+                        $propertyField->populate($field->getPopulatedValue('var_' . $numberItem) ?? []);
                     }
                 }
 
@@ -320,14 +327,22 @@ class CustomPropertiesForm extends CompatForm
         }
     }
 
-    private function fetchPropertyItems(UuidInterface $parentUuid): ?array
+    public function fetchPropertyItems(UuidInterface $parentUuid): ?array
     {
-        $db = $this->db->getDbAdapter();
+        $db = $this->object->getConnection()->getDbAdapter();
         $query = $db->select()
             ->from('director_property')
             ->where('parent_uuid = ?', $parentUuid->getBytes());
 
-        return $db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+        $propertyItems = $db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+
+        foreach ($propertyItems as $idx => $propertyItem) {
+            $propertyItems[$propertyItem['key_name']] = $propertyItem;
+            $propertyItems[$propertyItem['key_name']]['var_name'] = "var_$idx";
+            unset($propertyItems[$idx]);
+        }
+
+        return $propertyItems;
     }
 
     protected function fetchFieldType(string $propertyType, bool $instantiable = false): string
@@ -352,86 +367,65 @@ class CustomPropertiesForm extends CompatForm
     {
         $values = [];
         foreach ($this->getElements() as $element) {
-            if (! $element->isIgnored()) {
+            $name = $element->getName();
+            // TODO: This is a hack and will be removed once the alternative solution is implemented
+            if (! $element->isIgnored() && preg_match('/^var(_\d+)?$/', $name) === 1) {
                 $value = $element->getValue();
+                $fieldName = $this->getElement($name . '_name')->getValue();
                 if ($element instanceof FieldsetElement) {
                     foreach ($value as $key => $item) {
-                        if (in_array($key, ['initial-count', 'added-count', 'prefixes', 'inherited-value'], true)) {
+                        if (preg_match('/^var(_\d+)_var(_\d+)?$/', $key) === 1 && isset($value[$key . '_name'])) {
+                            $value[$value[$key . '_name']]  = $item;
+                            unset($value[$key]);
+                            unset($value[$key . '_name']);
+                        } elseif (
+                            in_array($key, ['initial-count', 'added-count', 'prefixes', 'inherited-value'], true)
+                        ) {
                             unset($value[$key]);
                         } elseif (substr($key, 0, strlen('item')) === 'item') {
                             $idx = (int) substr($key, -1);
                             $value[$idx] = $value[$key];
                             unset($value[$key]);
-                        } elseif (substr($key, 0, strlen('property')) === 'property') {
+                        } elseif (preg_match('/^var(_\d+)_var(_\d+)?$/', $key) === 1 && isset($value[$key]['label'])) {
                             $label = $value[$key]['label'] ?? '';
                             unset($value[$key]['label']);
+                            foreach ($value[$key] as $k => $v) {
+                                if (
+                                    ! $element->isIgnored()
+                                    && preg_match('/^var(_\d+)_var(_\d+)_var(_\d+)?$/', $k) === 1
+                                ) {
+                                    if (! is_array($v) || array_keys($v) === range(0, count($v) - 1)) {
+                                        $value[$label][$value[$key][$k . '_name']] = $v;
+                                    } else {
+                                        foreach ($v as $kk => $vv) {
+                                            if (
+                                                ! $element->isIgnored()
+                                                && preg_match('/^var(_\d+)_var(_\d+)_var(_\d+)_var(_\d+)?$/', $kk) === 1
+                                            ) {
+                                                $v[$v[$kk . '_name']]  = $vv;
+                                            }
 
-                            $value[$label] = $value[$key];
-                            unset($value[$key]);
+                                            unset($v[$kk]);
+                                            unset($v[$kk . '_name']);
+                                        }
+
+                                        $value[$label][$value[$key][$k . '_name']] = $v;
+                                    }
+
+
+                                    unset($value[$key][$k]);
+                                    unset($value[$key][$k . '_name']);
+                                }
+                            }
                         }
                     }
                 }
 
-                $values[$element->getName()] = $value;
+                $values[$fieldName] = $value;
             }
         }
 
         return $values;
-    }
-
-    public function populate($values)
-    {
-        foreach ($values as $name => $value) {
-            if (is_array($value)) {
-                if (
-                    $this->isPropertyInstantiable($name) === 'y'
-                    && array_keys($value) === range(0, count($value) - 1)
-                ) {
-                    $values[$name] = implode(',', $value);
-                } elseif ($this->isPropertyInstantiable($name) === 'y') {
-                    $nestedValues = [];
-                    $i = 0;
-                    $prefixes = [];
-                    foreach ($value as $key => $item) {
-                        if (! is_array($item)) {
-                            break;
-                        } else {
-                            $nestedValues["property-$i"] = array_merge(
-                                ['label' => $key],
-                                $item,
-                            );
-
-                            $prefixes[] = $i;
-                            $i += 1;
-                        }
-                    }
-
-                    if (! empty($nestedValues)) {
-                        $nestedValues['initial-count'] = $i;
-                        $nestedValues['prefixes'] = implode(',', $prefixes);
-                        unset($values[$name]);
-
-                        $values[$name] = $nestedValues;
-                    } elseif (array_keys($value) === range(0, count($value) - 1)) {
-                        $newValue = [];
-                        foreach (array_values($value) as $idx => $item) {
-                            $newValue["item-$idx"] = $item;
-                        }
-
-                        $values[$name] = $newValue;
-                    }
-                } elseif (array_keys($value) === range(0, count($value) - 1)) {
-                    $newValue = [];
-                    foreach (array_values($value) as $idx => $item) {
-                        $newValue["item-$idx"] = $item;
-                    }
-
-                    $values[$name] = $newValue;
-                }
-            }
-        }
-
-        return parent::populate($values);
     }
 
     private function filterEmpty(array $array): array
