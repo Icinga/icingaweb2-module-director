@@ -159,8 +159,8 @@ class IcingaObjectHandler extends RequestHandler
                 $object = $this->requireObject();
                 $object->delete();
                 $this->sendJson($object->toPlainObject(false, true));
-                break;
 
+                break;
             case 'POST':
             case 'PUT':
                 $data = (array) $this->requireJsonBody();
@@ -168,51 +168,58 @@ class IcingaObjectHandler extends RequestHandler
                 $allowsOverrides = $params->get('allowOverrides');
                 $type = $this->getType();
                 $object = $this->loadOptionalObject();
-                $customProperties = $this->getCustomProperties($object);
-                $overridenCustomVars = $this->getCustomVarsFromData($data);
-                if (! empty($overridenCustomVars)) {
-                    $diff = array_diff(array_keys($data), array_keys($customProperties));
-                    if (! empty($diff)) {
-                        throw new Exception(sprintf(
-                            "The custom properties (%s) are not supported by this object",
-                            implode(", ", $diff)
-                        ));
+                $actionName = $this->request->getActionName();
+
+                $overRiddenCustomVars = [];
+                if ($actionName === 'variables') {
+                    $overRiddenCustomVars = ['vars' => $data];
+                } else {
+                    if ($type === 'host') {
+                        $overRiddenCustomVars = $this->getCustomVarsFromData($data);
+                    }
+
+                    if ($object) {
+                        if ($request->getMethod() === 'POST') {
+                            $object->setProperties($data);
+                        } else {
+                            $data = array_merge([
+                                'object_type' => $object->get('object_type'),
+                                'object_name' => $object->getObjectName()
+                            ], $data);
+                            $object->replaceWith(IcingaObject::createByType($type, $data, $db));
+                        }
+
+                        $this->persistChanges($object);
+                    } elseif ($allowsOverrides && $type === 'service') {
+                        if ($request->getMethod() === 'PUT') {
+                            throw new InvalidArgumentException('Overrides are not (yet) available for HTTP PUT');
+                        }
+
+                        $this->setServiceProperties($params->getRequired('host'), $params->getRequired('name'), $data);
+                    } else {
+                        $object = IcingaObject::createByType($type, $data, $db);
+                        $this->persistChanges($object);
                     }
                 }
 
-                if ($object) {
-                    if ($this->request->getActionName() === 'variables') {
-                        $diff = array_diff(array_keys($data), array_keys($customProperties));
+                if ($type !== 'service' && $overRiddenCustomVars) {
+                    $customProperties = $this->getCustomProperties($object);
+                    if (! empty($overRiddenCustomVars)) {
+                        $diff = array_diff(array_keys($overRiddenCustomVars['vars']), array_keys($customProperties));
                         if (! empty($diff)) {
-                            throw new Exception(sprintf(
-                                "The custom properties %s are not supported by this object",
+                            throw new NotFoundError(sprintf(
+                                "The custom properties (%s) are not supported by this object",
                                 implode(", ", $diff)
                             ));
                         }
+                    }
 
-                        $data = ['vars' => $data];
-                        $object->setProperties($data);
-                    } elseif ($request->getMethod() === 'POST') {
-                        $object->setProperties($data);
-                    } else {
-                        $data = array_merge([
-                            'object_type' => $object->get('object_type'),
-                            'object_name' => $object->getObjectName()
-                        ], $data);
-                        $object->replaceWith(IcingaObject::createByType($type, $data, $db));
-                    }
+                    $object->setProperties($overRiddenCustomVars);
                     $this->persistChanges($object);
-                    $this->sendJson($object->toPlainObject(false, true));
-                } elseif ($allowsOverrides && $type === 'service') {
-                    if ($request->getMethod() === 'PUT') {
-                        throw new InvalidArgumentException('Overrides are not (yet) available for HTTP PUT');
-                    }
-                    $this->setServiceProperties($params->getRequired('host'), $params->getRequired('name'), $data);
-                } else {
-                    $object = IcingaObject::createByType($type, $data, $db);
-                    $this->persistChanges($object);
-                    $this->sendJson($object->toPlainObject(false, true));
                 }
+
+                $this->sendJson($object->toPlainObject(false, true));
+
                 break;
 
             case 'GET':
@@ -256,17 +263,21 @@ class IcingaObjectHandler extends RequestHandler
         }
     }
 
-    private function getCustomVarsFromData(array $data): array
+    private function getCustomVarsFromData(array &$data): array
     {
         $customVars = [];
 
         foreach ($data as $key => $value) {
             if ($key === 'vars') {
-                $customVars = $value;
+                $customVars = ['vars' => (array) $value];
+
+                unset($data['vars']);
             }
 
             if (substr($key, 0, 5) === 'vars.') {
-                $customVars[substr($key, 5)] = $value;
+                $customVars['vars'][substr($key, 5)] = $value;
+
+                unset($data[$key]);
             }
         }
 
