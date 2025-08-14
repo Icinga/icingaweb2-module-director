@@ -31,6 +31,8 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
+use Psr\Http\Message\ServerRequestInterface;
+use Ramsey\Uuid\Uuid;
 
 class HostController extends ObjectController
 {
@@ -132,10 +134,86 @@ class HostController extends ObjectController
         $vars = json_decode(json_encode($this->object->getVars()), true);
 
         if ($objectProperties) {
-            $form = (new CustomPropertiesForm($this->db(), $object, $objectProperties))
-                ->populate($vars)
+            $form = (new CustomPropertiesForm($object, $objectProperties))
                 ->on(CustomPropertiesForm::ON_SUCCESS, function () {
                     $this->redirectNow('__REFRESH__');
+                })
+                ->on(CustomPropertiesForm::ON_REQUEST, function (
+                    ServerRequestInterface $request,
+                    CustomPropertiesForm $form
+                ) use (
+                    $vars,
+                    $objectProperties
+                ) {
+                    $values = [];
+                    $varCount = 0;
+                    // TODO: this is a bit of a hack, and will be removed once we have a proper implementation
+                    foreach ($objectProperties as $key => $property) {
+                        $varField = "var_$varCount";
+                        $values[$varField . '_name'] = $key;
+                        if (isset($vars[$key])) {
+                            if (
+                                ! is_array($vars[$key])
+                                || array_keys($vars[$key]) === range(0, count($vars[$key]) - 1)
+                            ) {
+                                $values[$varField] = $vars[$key];
+                            } else {
+                                $subVarCount = 0;
+                                $isInstantiable = false;
+                                $prefixes = [];
+                                foreach ($vars[$key] as $k => $v) {
+                                    $subVarField = $varField . "_var_$subVarCount";
+                                    if (
+                                        ! is_array($vars[$key][$k])
+                                        || array_keys($vars[$key][$k]) === range(0, count($vars[$key]) - 1)
+                                    ) {
+                                        $values[$varField][$subVarField . '_name'] = $k;
+                                        if (is_array($vars[$key][$k])) {
+                                            $values[$varField][$subVarField] = implode(',', $vars[$key][$k]);
+                                        } else {
+                                            $values[$varField][$subVarField] = $vars[$key][$k];
+                                        }
+                                    } else {
+                                        $prefixes[] = $subVarCount;
+                                        $isInstantiable = true;
+
+                                        $itemProperties = $form->fetchPropertyItems(Uuid::fromBytes($property['uuid']));
+                                        $values[$varField][$subVarField]['label'] = $k;
+                                        foreach ($vars[$key][$k] as $kk => $vv) {
+                                            $ssVarField = $subVarField . '_' . $itemProperties[$kk]['var_name'];
+                                            $values[$varField][$subVarField][$ssVarField . '_name'] = $kk;
+                                            if (! is_array($vv) || array_keys($vv) === range(0, count($vv) - 1)) {
+                                                $values[$varField][$subVarField][$ssVarField] = $vv;
+                                            } else {
+                                                $ssVarCount = 0;
+                                                $sssValue = [];
+                                                foreach ($vv as $kkk => $vvv) {
+                                                    $sssubVarField = $ssVarField . "_var_$ssVarCount";
+                                                    $sssValue[$sssubVarField] = $vvv;
+                                                    $sssValue[$sssubVarField . '_name'] = $kkk;
+
+                                                    $ssVarCount++;
+                                                }
+
+                                                $values[$varField][$subVarField][$ssVarField] = $sssValue;
+                                            }
+                                        }
+                                    }
+
+                                    $subVarCount++;
+                                }
+
+                                if ($isInstantiable) {
+                                    $values[$varField]['initial-count'] = $subVarCount;
+                                    $values[$varField]['prefixes'] = implode(',', $prefixes);
+                                }
+                            }
+                        }
+
+                        $varCount++;
+                    }
+
+                    $form->populate($values);
                 })
                 ->handleRequest($this->getServerRequest());
 
@@ -194,6 +272,7 @@ class HostController extends ObjectController
             ->order('key_name');
 
         $result = [];
+        $varCount = 0;
         foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
             $result[$row['key_name']] = $row;
         }
