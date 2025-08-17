@@ -68,6 +68,23 @@ class ImportsourceCommand extends Command
     }
 
     /**
+     * This command deletes the given Import Source.
+     *
+     * USAGE
+     *
+     * icingacli director importsource delete --id <id>
+     *
+     * OPTIONS
+     *
+     *   --id <id>     An Import Source ID. Use the list command to figure out
+     */
+    public function deleteAction()
+    {
+        $source = $this->getImportSource();
+        $source->delete();
+    }
+
+    /**
      * Fetch current data from a given Import Source
      *
      * This command fetches data from the given Import Source and outputs
