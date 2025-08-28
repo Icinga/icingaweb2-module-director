@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\CustomPropertiesForm;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
@@ -31,8 +30,6 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
-use Psr\Http\Message\ServerRequestInterface;
-use Ramsey\Uuid\Uuid;
 
 class HostController extends ObjectController
 {
@@ -94,11 +91,10 @@ class HostController extends ObjectController
         $this->addOptionalMonitoringLink();
     }
 
-    public function variablesAction()
+    public function variablesAction(): void
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
-        $type = $this->getType();
 
         $this->addTitle(
             $this->translate('Custom Variables: %s'),
@@ -131,93 +127,37 @@ class HostController extends ObjectController
             }
         }
 
-        $vars = json_decode(json_encode($this->object->getVars()), true);
-
         if ($objectProperties) {
+            $vars = json_decode(json_encode($this->object->getVars()), true);
+            $inheritedVars = json_decode(json_encode($this->object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
+            $origins = $this->object->getOriginsVars();
+
             $form = (new CustomPropertiesForm($object, $objectProperties))
                 ->on(CustomPropertiesForm::ON_SUCCESS, function () {
                     $this->redirectNow('__REFRESH__');
                 })
-                ->on(CustomPropertiesForm::ON_REQUEST, function (
-                    ServerRequestInterface $request,
-                    CustomPropertiesForm $form
-                ) use (
-                    $vars,
-                    $objectProperties
-                ) {
-                    $values = [];
-                    $varCount = 0;
-                    // TODO: this is a bit of a hack, and will be removed once we have a proper implementation
-                    foreach ($objectProperties as $key => $property) {
-                        $varField = "var_$varCount";
-                        $values[$varField . '_name'] = $key;
-                        if (isset($vars[$key])) {
-                            if (
-                                ! is_array($vars[$key])
-                                || array_keys($vars[$key]) === range(0, count($vars[$key]) - 1)
-                            ) {
-                                $values[$varField] = $vars[$key];
-                            } else {
-                                $subVarCount = 0;
-                                $isInstantiable = false;
-                                $prefixes = [];
-                                foreach ($vars[$key] as $k => $v) {
-                                    $subVarField = $varField . "_var_$subVarCount";
-                                    if (
-                                        ! is_array($vars[$key][$k])
-                                        || array_keys($vars[$key][$k]) === range(0, count($vars[$key]) - 1)
-                                    ) {
-                                        $values[$varField][$subVarField . '_name'] = $k;
-                                        if (is_array($vars[$key][$k])) {
-                                            $values[$varField][$subVarField] = implode(',', $vars[$key][$k]);
-                                        } else {
-                                            $values[$varField][$subVarField] = $vars[$key][$k];
-                                        }
-                                    } else {
-                                        $prefixes[] = $subVarCount;
-                                        $isInstantiable = true;
-
-                                        $itemProperties = $form->fetchPropertyItems(Uuid::fromBytes($property['uuid']));
-                                        $values[$varField][$subVarField]['label'] = $k;
-                                        foreach ($vars[$key][$k] as $kk => $vv) {
-                                            $ssVarField = $subVarField . '_' . $itemProperties[$kk]['var_name'];
-                                            $values[$varField][$subVarField][$ssVarField . '_name'] = $kk;
-                                            if (! is_array($vv) || array_keys($vv) === range(0, count($vv) - 1)) {
-                                                $values[$varField][$subVarField][$ssVarField] = $vv;
-                                            } else {
-                                                $ssVarCount = 0;
-                                                $sssValue = [];
-                                                foreach ($vv as $kkk => $vvv) {
-                                                    $sssubVarField = $ssVarField . "_var_$ssVarCount";
-                                                    $sssValue[$sssubVarField] = $vvv;
-                                                    $sssValue[$sssubVarField . '_name'] = $kkk;
-
-                                                    $ssVarCount++;
-                                                }
-
-                                                $values[$varField][$subVarField][$ssVarField] = $sssValue;
-                                            }
-                                        }
-                                    }
-
-                                    $subVarCount++;
-                                }
-
-                                if ($isInstantiable) {
-                                    $values[$varField]['initial-count'] = $subVarCount;
-                                    $values[$varField]['prefixes'] = implode(',', $prefixes);
-                                }
-                            }
-                        }
-
-                        $varCount++;
-                    }
-
-                    $form->populate($values);
+                ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) use (&$vars) {
+                    $vars = $form->getElement('properties')->getDictionary();
                 })
                 ->handleRequest($this->getServerRequest());
 
             try {
+                $result = [];
+                foreach ($objectProperties as $row) {
+                    if (isset($vars[$row['key_name']])) {
+                        $row['value'] = $vars[$row['key_name']];
+                    }
+
+                    if (isset($inheritedVars[$row['key_name']])) {
+                        $row['inherited'] = $inheritedVars[$row['key_name']];
+                        $row['inherited_from'] = $origins->{$row['key_name']};
+                    }
+
+                    $result[] = $row;
+                }
+
+
+                $form->load($result);
                 $this->content()->add($form);
             } catch (NestingError $e) {
                 $this->content()->add(Hint::error($e->getMessage()));
@@ -271,13 +211,7 @@ class HostController extends ObjectController
             ->order('instantiable')
             ->order('key_name');
 
-        $result = [];
-        $varCount = 0;
-        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
-            $result[$row['key_name']] = $row;
-        }
-
-        return $result;
+        return $db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
 
     public function serviceAction()
