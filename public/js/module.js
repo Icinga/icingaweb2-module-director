@@ -787,6 +787,10 @@
 
         restoreFieldsets: function (idx, form) {
             var $form = $(form);
+            if (! $form.hasClass('director-form')) {
+                return;
+            }
+
             var self = this;
             var $sets = $('fieldset', $form);
 
