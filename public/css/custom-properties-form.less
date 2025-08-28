@@ -3,11 +3,18 @@
     position: relative;
     padding-right: 2em;
 
-    fieldset:not(.array-input) {
+    .dictionary,
+    .nested-dictionary,
+    .nested-dictionary-item {
+      &.no-border {
+        border: none;
+      }
+
       border: 1px solid @gray-light;
       padding: 1em;
       margin-bottom: 1em;
-      &.dictionary-item legend {
+
+      legend {
         background-color: @icinga-blue-light;
         width: 100%;
       }

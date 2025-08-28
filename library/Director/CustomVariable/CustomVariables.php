@@ -445,7 +445,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                     ->where('io.id IN (?)', $ids);
 
                 $row = (array) $object->getDb()->fetchRow($query);
-                if ($row['instantiable'] === 'y' && $objectId !== $row['object_id']) {
+                if (isset($row['instantiable']) && $row['instantiable'] === 'y' && $objectId !== $row['object_id']) {
                     return c::renderKeyOperatorValue(
                         $this->renderKeyName($key),
                         '+=',
