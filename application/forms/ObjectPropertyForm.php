@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\Forms;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Web\Form\Decorator\ExtensibleSetDecorator;
 use Icinga\Web\Session;
 use ipl\I18n\Translation;
 use ipl\Validator\CallbackValidator;
@@ -78,17 +77,6 @@ class ObjectPropertyForm extends CompatForm
 
                         return true;
                     })]
-                ]
-            );
-
-            $this->addElement(
-                'select',
-                'mandatory',
-                [
-                    'label'     => $this->translate('Mandatory'),
-                    'required'  => true,
-                    'value'   => 'n',
-                    'options'   => ['y' => 'Yes', 'n' => 'No']
                 ]
             );
         }

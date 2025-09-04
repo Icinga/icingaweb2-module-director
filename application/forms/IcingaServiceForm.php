@@ -748,11 +748,13 @@ class IcingaServiceForm extends DirectorObjectForm
                                 )
                             );
                         } else {
-                            $content[] = new HtmlElement('div', null, Text::create(
-                                '$value.'
-                                . $keyAttributes['key_name']
-                                . '$'
-                            ));
+                            if (str_contains($keyAttributes['key_name'], ' ')) {
+                                $config = '$value["' . $keyAttributes['key_name'] . '"]$';
+                            } else {
+                                $config = '$value.' . $keyAttributes['key_name'] . '$';
+                            }
+
+                            $content[] = new HtmlElement('div', null, Text::create($config));
                         }
 
                         $configVariables->addHtml(new HtmlElement('li', null, ...$content));

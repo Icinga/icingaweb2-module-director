@@ -17,9 +17,10 @@ class PropertyForm extends CompatForm
     use CsrfCounterMeasure;
     use Translation;
 
-    /** @var bool */
+    /** @var bool Whether to hide the key name element or not (checked for the fixed array) */
     private $hideKeyNameElement = false;
 
+    /** @var bool Whether the field is a nested field or not */
     private $isNestedField = false;
 
     public function __construct(
@@ -57,18 +58,20 @@ class PropertyForm extends CompatForm
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addElement('hidden', 'used_count', ['ignore' => true]);
+        $used = (int) $this->getValue('used_count') > 0;
 
         if ($this->hideKeyNameElement) {
             $db = $this->db->getDbAdapter();
-
             $query = $db->select()
                 ->from('director_property', ['count' => 'COUNT(*)'])
                 ->where('parent_uuid = ?', $this->parentUuid->getBytes());
+
             $this->addElement(
                 'hidden',
                 'key_name',
                 [
-                    'label'     => $this->translate('Key'),
+                    'label'     => $this->translate('Property Key *'),
                     'required'  => true,
                     'value'     => $db->fetchOne($query)
                 ]
@@ -78,7 +81,7 @@ class PropertyForm extends CompatForm
                 'text',
                 'key_name',
                 [
-                    'label'     => $this->translate('Key'),
+                    'label'     => $this->translate('Property Key *'),
                     'required'  => true
                 ]
             );
@@ -87,10 +90,13 @@ class PropertyForm extends CompatForm
         $this->addElement(
             'text',
             'label',
-            [
-                'label'     => $this->translate('Label'),
-                'required'  => true
-            ]
+            ['label'     => $this->translate('Property Label')]
+        );
+
+        $this->addElement(
+            'textarea',
+            'description',
+            ['label' => $this->translate('Property Description')]
         );
 
         $types = [
@@ -100,14 +106,24 @@ class PropertyForm extends CompatForm
         ];
 
         if (! $this->isNestedField) {
-            $types += ['array' => 'Array', 'dict' => 'Dictionary'];
+            $types += [
+                'fixed-array' => 'Fixed Array',
+                'dynamic-array' => 'Dynamic Array',
+                'fixed-dictionary' => 'Fixed Dictionary'
+            ];
+
+            if ($this->parentUuid === null) {
+                $types += [
+                    'dynamic-dictionary' => 'Dynamic Dictionary'
+                ];
+            }
         }
 
         $this->addElement(
             'select',
             'value_type',
             [
-                'label'             => $this->translate('Type'),
+                'label'             => $this->translate('Property Type *'),
                 'class'             => 'autosubmit',
                 'required'          => true,
                 'disabledOptions'   => [''],
@@ -116,39 +132,40 @@ class PropertyForm extends CompatForm
             ]
         );
 
+        if ($used) {
+            $this->getElement('value_type')
+                 ->setAttribute(
+                     'title',
+                     $this->translate(
+                         'This property is used in one or more templates and hence the value type cannot be changed.'
+                     )
+                 )
+                 ->setAttribute('disabled', true);
+        }
+
         $type = $this->getValue('value_type');
-        if ($type === 'dict' || $type === 'array') {
-            $instantiableElement = $this->createElement(
-                'checkbox',
-                'instantiable',
+        if ($type === 'dynamic-array') {
+            $this->addElement(
+                'select',
+                'item_type',
                 [
-                    'label'          => $this->translate('Instantiable by users'),
-                    'class'          => 'autosubmit',
-                    'checkedValue'   => 'y',
-                    'uncheckedValue' => 'n',
-                    'value'          => 'n'
+                    'label'             => $this->translate('Item Type'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => 'string',
+                    'options'           => array_slice($types, 0, 2)
                 ]
             );
 
-            if ($type === 'dict') {
-                $instantiableElement->getAttributes()->add('disabled', $this->parentUuid !== null);
-            }
-
-            $this->addElement($instantiableElement);
-
-
-            if ($type === 'array' && $this->getValue('instantiable') === 'y') {
-                $this->addElement(
-                    'select',
-                    'item_type',
-                    [
-                        'label'             => $this->translate('Item Type'),
-                        'class'             => 'autosubmit',
-                        'disabledOptions'   => [''],
-                        'value'             => 'string',
-                        'options'           => array_slice($types, 0, 2)
-                    ]
-                );
+            if ($used) {
+                $this->getElement('item_type')
+                    ->setAttribute(
+                        'title',
+                        $this->translate(
+                            'This property is used in one or more templates and hence the item type cannot be changed.'
+                        )
+                    )
+                    ->setAttribute('disabled', true);
             }
         }
 
@@ -157,6 +174,7 @@ class PropertyForm extends CompatForm
         ]);
 
         if ($this->uuid) {
+            // TODO: Ask for confirmation before deleting
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
                 'submit',
@@ -175,7 +193,7 @@ class PropertyForm extends CompatForm
         }
     }
 
-    public function hasBeenSubmitted()
+    public function hasBeenSubmitted(): bool
     {
         if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
             return true;
@@ -184,7 +202,7 @@ class PropertyForm extends CompatForm
         return parent::hasBeenSubmitted();
     }
 
-    public function isValid()
+    public function isValid(): bool
     {
         if ($this->getPressedSubmitElement()->getName() === 'delete') {
             $csrfElement = $this->getElement('CSRFToken');
@@ -195,7 +213,7 @@ class PropertyForm extends CompatForm
         return parent::isValid();
     }
 
-    protected function onSuccess()
+    protected function onSuccess(): void
     {
         if ($this->getPressedSubmitElement()->getName() === 'delete') {
             $this->db->delete('director_property', Filter::where('parent_uuid', $this->uuid->getBytes()));
@@ -222,14 +240,13 @@ class PropertyForm extends CompatForm
                 );
             }
 
-            $instantiatedEntry = [];
+            $dynamicArrayItemType = [];
             if (isset($values['item_type'])) {
-                $instantiatedEntry = [
+                $dynamicArrayItemType = [
                     'uuid' => Uuid::uuid4()->getBytes(),
                     'key_name' => '0',
                     'value_type' => $values['item_type'],
-                    'parent_uuid' => $this->uuid->getBytes(),
-                    'instantiable' => 'n',
+                    'parent_uuid' => $this->uuid->getBytes()
                 ];
 
                 unset($values['item_type']);
@@ -237,18 +254,17 @@ class PropertyForm extends CompatForm
 
             $this->db->insert('director_property', $values);
 
-            if (! empty($instantiatedEntry)) {
-                $this->db->insert('director_property', $instantiatedEntry);
+            if (! empty($dynamicArrayItemType)) {
+                $this->db->insert('director_property', $dynamicArrayItemType);
             }
         } else {
-            $instantiatedEntry = [];
-            if (isset($values['item_type']) && $values['instantiable'] === 'y') {
-                $instantiatedEntry = [
+            $dynamicArrayItemType = [];
+            if (isset($values['item_type']) && $values['value_type'] === 'dynamic-array') {
+                $dynamicArrayItemType = [
                     'uuid' => Uuid::uuid4()->getBytes(),
                     'key_name' => '0',
                     'value_type' => $values['item_type'],
-                    'parent_uuid' => $this->uuid->getBytes(),
-                    'instantiable' => 'n',
+                    'parent_uuid' => $this->uuid->getBytes()
                 ];
 
                 unset($values['item_type']);
@@ -268,8 +284,8 @@ class PropertyForm extends CompatForm
                 )
             );
 
-            if (! empty($instantiatedEntry)) {
-                $this->db->insert('director_property', $instantiatedEntry);
+            if (! empty($dynamicArrayItemType)) {
+                $this->db->insert('director_property', $dynamicArrayItemType);
             }
         }
     }

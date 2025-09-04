@@ -32,7 +32,7 @@ class PropertiesController extends CompatController
 
         $this->addControl(Html::tag('div', ['class' => 'property-form'], [
             (new ButtonLink(
-                [Text::create('Add property')],
+                [Text::create('Create property')],
                 Url::fromPath('director/properties/add'),
                 null,
                 [

@@ -6,7 +6,6 @@ use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use ipl\Html\FormElement\SubmitElement;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;

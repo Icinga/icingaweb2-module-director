@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Web\Widget\EmptyStateBar;
 
 /**
  * @phpstan-type DictionaryDataType array<string, mixed>
@@ -40,6 +41,10 @@ class Dictionary extends FieldsetElement
         $count = count($this->items);
         for ($i = 0; $i < $count; $i++) {
             $this->addElement(new DictionaryItem($i, $this->items[$i]));
+        }
+
+        if ($count === 0) {
+            $this->addHtml(new EmptyStateBar($this->translate('No fields configured')));
         }
     }
 
