@@ -2,7 +2,7 @@
 =====================
 
 The [background daemon](75-Background-Daemon.md) is responsible for running
-Jobs accoring our schedule. Director allows you to schedule possibly long-
+jobs according to our schedule. Director allows you to schedule long-
 running tasks, so they can run in the background.
 
 Currently this includes:
