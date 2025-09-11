@@ -20,6 +20,7 @@
             this.module.on('rendered', this.rendered);
             this.module.on('beforerender', this.beforeRender);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
+            // this.module.on('click', 'fieldset > legend', this.toggleFieldset);
             // Disabled
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
@@ -731,7 +732,7 @@
                 url = $container.data('icingaUrl');
                 $actions = $('.main-actions', $('#col1'));
             }
-            if (! $actions.length) {
+            if ($actions) {
                 return;
             }
 
@@ -786,6 +787,10 @@
 
         restoreFieldsets: function (idx, form) {
             var $form = $(form);
+            if (! $form.hasClass('director-form')) {
+                return;
+            }
+
             var self = this;
             var $sets = $('fieldset', $form);
 
@@ -794,7 +799,7 @@
                 if ($fieldset.attr('id') === 'fieldset-assign') {
                     return;
                 }
-                if ($fieldset.find('.required').length === 0 && (! self.fieldsetWasOpened($fieldset))) {
+                if (! $fieldset.hasClass('dictionary-element') && $fieldset.find('.required').length === 0 && (! self.fieldsetWasOpened($fieldset))) {
                     $fieldset.addClass('collapsed');
                     self.fixFieldsetInfo($fieldset);
                 }
