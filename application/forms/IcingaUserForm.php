@@ -2,7 +2,10 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use ipl\Html\Html;
+use ipl\Html\HtmlElement;
 
 class IcingaUserForm extends DirectorObjectForm
 {
@@ -116,6 +119,15 @@ class IcingaUserForm extends DirectorObjectForm
             )
         ));
 
+        $applied = $this->getAppliedGroups();
+        if (! empty($applied)) {
+            $this->addElement('simpleNote', 'applied_groups', [
+                'label'  => $this->translate('Applied groups'),
+                'value'  => $this->createUsergroupLinks($applied),
+                'ignore' => true,
+            ]);
+        }
+
         return $this;
     }
 
@@ -210,5 +222,44 @@ class IcingaUserForm extends DirectorObjectForm
         )->where('object_type = ?', 'object')->order('display');
 
         return $db->fetchPairs($select);
+    }
+
+    /**
+     * Get applied user groups
+     *
+     * @return array
+     */
+    protected function getAppliedGroups(): array
+    {
+        if ($this->isNew()) {
+            return [];
+        }
+
+        return $this->object()->getAppliedGroups();
+    }
+
+    /**
+     * Create links for applied user groups
+     *
+     * @param $groups
+     *
+     * @return HtmlElement
+     */
+    protected function createUsergroupLinks($groups): HtmlElement
+    {
+        $links = [];
+        foreach ($groups as $name) {
+            if (! empty($links)) {
+                $links[] = ', ';
+            }
+            $links[] = Link::create(
+                $name,
+                'director/usergroup',
+                ['name' => $name],
+                ['data-base-target' => '_next']
+            );
+        }
+
+        return Html::tag('span', ['class' => 'user-group-links'], $links);
     }
 }

@@ -1186,6 +1186,7 @@ CREATE TABLE icinga_usergroup (
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
@@ -2444,6 +2445,23 @@ CREATE TABLE branched_icinga_dependency (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_usergroup_user_resolved
+(
+  usergroup_id INT(10) UNSIGNED NOT NULL,
+  user_id      INT(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (usergroup_id, user_id),
+  CONSTRAINT icinga_usergroup_user_resolved_user
+    FOREIGN KEY user (user_id)
+      REFERENCES icinga_user (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_usergroup_user_resolved_usergroup
+    FOREIGN KEY usergroup (usergroup_id)
+      REFERENCES icinga_usergroup (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (189, NOW());
+  VALUES (191, NOW());

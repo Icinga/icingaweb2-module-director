@@ -718,6 +718,31 @@ class Db extends DbConnection
         return $this->db()->fetchAll($select);
     }
 
+    /**
+     * Fetch all distinct user vars.
+     *
+     * @return ?array
+     */
+    public function fetchDistinctUserVars()
+    {
+        $select = $this->db()->select()->distinct()->from(
+            array('u' => 'icinga_user_var'),
+            array(
+                'varname'  => 'u.varname',
+                'format'   => 'u.format',
+                'caption'  => 'df.caption',
+                'datatype' => 'df.datatype'
+            )
+        )->joinLeft(
+            array('df' => 'director_datafield'),
+            'df.varname = u.varname',
+            array()
+        )->order('varname');
+
+        return $this->db()->fetchAll($select);
+    }
+
+
     public function dbHexFunc($column)
     {
         if ($this->isPgsql()) {
