@@ -111,20 +111,6 @@ class HostController extends ObjectController
                     ['class' => 'control-button']
                 ))->openInModal()
             );
-
-            if ($objectProperties) {
-                $this->actions()->add(
-                    (new ButtonLink(
-                        $this->translate('Remove Property'),
-                        Url::fromPath(
-                            'director/host/remove-property',
-                            ['uuid' => $this->getUuidFromUrl()]
-                        )->getAbsoluteUrl(),
-                        null,
-                        ['class' => 'control-button']
-                    ))->openInModal()
-                );
-            }
         }
 
         if ($objectProperties) {
@@ -188,6 +174,7 @@ class HostController extends ObjectController
             $uuids[] = IcingaHost::load($parent, $db)->get('uuid');
         }
 
+        $objectUuid = $this->object->get('uuid');
         $uuids[] = $this->object->get('uuid');
         $query = $db->getDbAdapter()
             ->select()
@@ -196,22 +183,31 @@ class HostController extends ObjectController
                 [
                     'key_name' => 'dp.key_name',
                     'uuid' => 'dp.uuid',
+                    $type . '_uuid' => 'iop.' . $type . '_uuid',
                     'value_type' => 'dp.value_type',
                     'label' => 'dp.label',
-                    'instantiable' => 'dp.instantiable',
-                    'required' => 'iop.required',
                     'children' => 'COUNT(cdp.uuid)'
                 ]
             )
             ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
             ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dp.instantiable', 'iop.required'])
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
             ->order('children')
-            ->order('instantiable')
             ->order('key_name');
 
-        return $db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+        $result = [];
+        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            if ($objectUuid === $row[$type . '_uuid']) {
+                $row['allow_removal'] = true;
+            } else {
+                $row['allow_removal'] = false;
+            }
+
+            $result[$row['key_name']] = $row;
+        }
+
+        return $result;
     }
 
     public function serviceAction()

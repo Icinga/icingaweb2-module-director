@@ -6,7 +6,7 @@ use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
-use InvalidArgumentException;
+use ipl\Html\FormElement\CheckboxElement;
 use ipl\Html\FormElement\FieldsetElement;
 use PDO;
 use Ramsey\Uuid\Uuid;
@@ -25,6 +25,9 @@ class DictionaryItem extends FieldsetElement
     /** @var array Dictionary Item Fields */
     private $fields;
 
+    /** @var bool Whether to allow removal of item */
+    private bool $isRemovable = false;
+
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->fields = $items;
@@ -32,18 +35,32 @@ class DictionaryItem extends FieldsetElement
         parent::__construct($name, $attributes);
     }
 
+    public function setRemovable(bool $isRemovable = false): static
+    {
+        $this->isRemovable = $isRemovable;
+
+        return $this;
+    }
+
     protected function assemble(): void
     {
         $this->addElement('hidden', 'name', ['value' => $this->fields['key_name'] ?? '']);
         $this->addElement('hidden', 'type', ['value' => $this->fields['value_type'] ?? '']);
+        $this->addElement('hidden', 'label', ['value' => $this->fields['key_name'] ?? '']);
+        $this->addElement('hidden', 'parent_type', ['value' => $this->fields['parent_type'] ?? '']);
+
         $this->addElement('hidden', 'inherited');
         $this->addElement('hidden', 'inherited_from');
 
         $valElementName = 'var';
         $type = $this->getElement('type')->getValue();
-        $label = $this->getElement('name')->getValue();
+        $label = $this->getElement('label')->getValue();
 
-        $children = static::fetchChildrenItems(Uuid::fromBytes($this->fields['uuid']));
+        if ($label === null) {
+            $label = $this->getElement('name')->getValue();
+        }
+
+        $children = static::fetchChildrenItems(Uuid::fromBytes($this->fields['uuid']), $this->fields['value_type'] ?? '');
         $inherited = $this->getElement('inherited')->getValue();
         $inheritedFrom = $this->getElement('inherited_from')->getValue();
 
@@ -83,6 +100,22 @@ class DictionaryItem extends FieldsetElement
                 ['label' => $label . ' ('. ucfirst($type) .')', 'placeholder' => $placeholder]
             );
         }
+
+        if ($this->isRemovable && ! isset($this->fields['parent_uuid'])) {
+            $markForRemoval = new CheckboxElement(
+                'delete-' . $this->getName(),
+                [
+                    'label' => 'Mark for removal',
+                    'description' => $this->translate(
+                        'Removing the custom variable from this template,'
+                        .' will also remove it from the objects importing the template'
+                    ),
+                ]
+            );
+
+            $this->registerElement($markForRemoval);
+            $this->addElement($markForRemoval);
+        }
     }
 
     /**
@@ -94,31 +127,17 @@ class DictionaryItem extends FieldsetElement
      */
     public static function prepare(array $property): array
     {
-        $keyName = $property['key_name'] ?? '';
-        if ($keyName !== '' && is_numeric($keyName)) {
-            $keyName = $property['label'];
-        }
-
         $values = [
-            'name' => $keyName,
+            'name' => $property['key_name'] ?? '',
+            'label' => $property['label'] ?? '',
             'type' => $property['value_type'] ?? '',
+            'parent_type' => $property['parent_type'] ?? ''
         ];
 
-        if ($property['value_type'] === 'string' || $property['value_type'] === 'number') {
-            $values['var'] = $property['value'] ?? '';
-            $values['inherited'] = $property['inherited'] ?? '';
-            $values['inherited_from'] = $property['inherited_from'] ?? '';
-        } elseif ($property['value_type'] === 'dynamic-array') {
+        if ($property['value_type'] === 'dynamic-array') {
             $values['var'] = $property['value'] ?? [];
             $values['inherited'] = implode(', ', $property['inherited'] ?? []);
             $values['inherited_from'] = $property['inherited_from'] ?? '';
-
-            if ($property['instantiable'] === 'y') {
-                $values['instantiable'] = 'y';
-            } else {
-                $values['instantiable'] = 'n';
-
-            }
         } elseif ($property['value_type'] === 'fixed-dictionary' || $property['value_type'] === 'fixed-array') {
             $childrenValues = ['value' => $property['value'] ?? []];
 
@@ -127,7 +146,7 @@ class DictionaryItem extends FieldsetElement
                 $childrenValues['inherited_from'] = $property['inherited_from'] ?? '';
             }
 
-            $dictionaryItems = static::fetchChildrenItems(Uuid::fromBytes($property['uuid']), $childrenValues);
+            $dictionaryItems = static::fetchChildrenItems(Uuid::fromBytes($property['uuid']), $property['value_type'], $childrenValues);
             $values['var'] = Dictionary::prepare($dictionaryItems);
         } elseif ($property['value_type'] === 'dynamic-dictionary') {
             $childrenValues = [
@@ -136,7 +155,7 @@ class DictionaryItem extends FieldsetElement
                 'inherited_from' => $property['inherited_from'] ?? ''
             ];
 
-            $dictionaryItems = static::fetchChildrenItems(Uuid::fromBytes($property['uuid']), $childrenValues);
+            $dictionaryItems = static::fetchChildrenItems(Uuid::fromBytes($property['uuid']), $property['value_type'], $childrenValues);
             $values['var'] = NestedDictionary::prepare(
                 $dictionaryItems,
                 $property['value'] ?? []
@@ -145,6 +164,10 @@ class DictionaryItem extends FieldsetElement
             $values['inherited'] = isset($property['inherited'])
                 ? json_encode($property['inherited'], JSON_PRETTY_PRINT)
                 : '';
+            $values['inherited_from'] = $property['inherited_from'] ?? '';
+        } else {
+            $values['var'] = $property['value'] ?? '';
+            $values['inherited'] = $property['inherited'] ?? '';
             $values['inherited_from'] = $property['inherited_from'] ?? '';
         }
 
@@ -155,11 +178,12 @@ class DictionaryItem extends FieldsetElement
      * Fetch children items of the given parent item
      *
      * @param UuidInterface $parentUuid
+     * @param string $parentType
      * @param array $values
      *
      * @return array
      */
-    public static function fetchChildrenItems(UuidInterface $parentUuid, array $values = []): array
+    public static function fetchChildrenItems(UuidInterface $parentUuid, string $parentType, array $values = []): array
     {
         $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
 
@@ -171,15 +195,14 @@ class DictionaryItem extends FieldsetElement
                             'uuid' => 'dp.uuid',
                             'value_type' => 'dp.value_type',
                             'label' => 'dp.label',
-                            'instantiable' => 'dp.instantiable',
+                            'parent_uuid' => 'dp.parent_uuid',
                             'children' => 'COUNT(cdp.uuid)'
                         ]
                     )
                     ->where('dp.parent_uuid = ?', $parentUuid->getBytes())
                     ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dp.instantiable'])
+                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
                     ->order('children')
-                    ->order('instantiable')
                     ->order('key_name');
 
         $propertyItems = $db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
@@ -187,9 +210,9 @@ class DictionaryItem extends FieldsetElement
             return $propertyItems;
         }
 
-
         $result = [];
         foreach ($propertyItems as $propertyItem) {
+            $propertyItem['parent_type'] = $parentType;
             if (isset($values['value'][$propertyItem['key_name']])) {
                 $propertyItem['value'] = $values['value'][$propertyItem['key_name']];
             }
@@ -199,7 +222,7 @@ class DictionaryItem extends FieldsetElement
                 $propertyItem['inherited_from'] = $values['inherited_from'];
             }
 
-            $result[] = $propertyItem;
+            $result[$propertyItem['key_name']] = $propertyItem;
         }
 
         return $result;
@@ -218,10 +241,28 @@ class DictionaryItem extends FieldsetElement
             $values['value'] = $itemValue->getDictionary();
 
             if ($this->getElement('type')->getValue() === 'fixed-array') {
-                $values['value'] = array_values($values['value']);
+                $value = $values['value'];
+                ksort($value);
+                $values['value'] = array_values($value);
             }
         } else {
-            $values['value'] = $itemValue->getValue();
+            $defaultValue = null;
+            if ($this->getElement('parent_type')->getValue() === 'fixed-array') {
+                match($this->getElement('type')->getValue()) {
+                    'string' => $defaultValue = '',
+                    'number' => $defaultValue = 0,
+                    'bool' => $defaultValue = 'n',
+                    'fixed-array', 'dynamic-array' => $defaultValue = [],
+                    default => null
+                };
+            }
+
+            $values['value'] = $itemValue->getValue() ?? $defaultValue;
+        }
+
+        $deleteCheckBox = 'delete-' . $this->getName();
+        if ($this->hasElement($deleteCheckBox)) {
+            $values['delete'] = $this->getElement($deleteCheckBox)->getValue();
         }
 
         return $values;

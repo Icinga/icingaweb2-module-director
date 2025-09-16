@@ -2449,8 +2449,8 @@ CREATE TABLE director_property (
                                    parent_uuid binary(16) NULL DEFAULT NULL,
                                    key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
                                    label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
-                                   value_type enum('string', 'number', 'bool', 'array', 'dict') COLLATE utf8mb4_unicode_ci NOT NULL,
-                                   instantiable enum('y', 'n') NOT NULL DEFAULT 'n',
+                                   description text DEFAULT NULL,
+                                   value_type enum('string', 'number', 'bool', 'fixed-array', 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary') COLLATE utf8mb4_unicode_ci NOT NULL
                                    PRIMARY KEY (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 

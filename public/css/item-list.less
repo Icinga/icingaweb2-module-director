@@ -1,0 +1,73 @@
+// Style
+
+.item-list {
+  .load-more:hover,
+  .page-separator:hover {
+    background: none;
+  }
+
+  > .load-more a {
+    .rounded-corners(.25em);
+    background: @low-sat-blue;
+    text-align: center;
+
+    &:hover {
+      opacity: .8;
+      text-decoration: none;
+    }
+  }
+
+  > .page-separator:after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: @gray;
+    align-self: center;
+    margin-left: .25em;
+  }
+
+  > .page-separator a {
+    color: @gray;
+    font-weight: bold;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  > .page-separator + .list-item .main {
+    border-top: none;
+  }
+}
+
+// Layout
+
+.item-list .load-more {
+  display: flex;
+
+  a {
+    flex: 1;
+    margin: 1.5em 0;
+    padding: .5em 0;
+  }
+}
+
+.item-list {
+  // Not sure what this is for. Maybe user content? (Markdown) But why in the title??
+  .default-item-layout .title {
+    p {
+      margin: 0;
+    }
+  }
+
+  .minimal-item-layout .title {
+    p {
+      display: inline;
+
+      & + p {
+        margin-left: .417em;
+      }
+    }
+  }
+}

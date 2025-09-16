@@ -15,11 +15,27 @@ class Dictionary extends FieldsetElement
     /** @var array Dictionary items */
     protected array $items = [];
 
+    /** @var bool Whether to allow removal of item */
+    protected bool $allowItemRemoval = false;
+
+    /** @var array<string> Items marked to remove from the dictionary */
+    protected array $itemsToRemove = [];
+
+    /** @var bool Whether the dictionary is an array */
+    protected bool $isArray = false;
+
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->setItems($items);
 
         parent::__construct($name, $attributes);
+    }
+
+    public function setAllowItemRemoval(bool $allow = false): static
+    {
+        $this->allowItemRemoval = $allow;
+
+        return $this;
     }
 
     /**
@@ -38,9 +54,16 @@ class Dictionary extends FieldsetElement
 
     protected function assemble(): void
     {
-        $count = count($this->items);
-        for ($i = 0; $i < $count; $i++) {
-            $this->addElement(new DictionaryItem($i, $this->items[$i]));
+        $count = 0;
+        foreach ($this->items as $item) {
+            $element = new DictionaryItem($count, $item);
+
+            if ($this->allowItemRemoval && isset($item['allow_removal'])) {
+                $element->setRemovable($item['allow_removal']);
+            }
+
+            $this->addElement($element);
+            $count++;
         }
 
         if ($count === 0) {
@@ -65,6 +88,11 @@ class Dictionary extends FieldsetElement
         return $values;
     }
 
+    public function getItemsToRemove(): array
+    {
+        return $this->itemsToRemove;
+    }
+
     /**
      * Get the dictionary value
      *
@@ -78,8 +106,12 @@ class Dictionary extends FieldsetElement
         foreach ($this->ensureAssembled()->getElements() as $element) {
             if ($element instanceof DictionaryItem) {
                 $item = $element->ensureAssembled()->getItem();
-                if (! empty($item['name']) && array_key_exists('value', $item)) {
+                if (isset($item['name']) && array_key_exists('value', $item)) {
                     $items[$item['name']] = $item['value'];
+
+                    if (isset($item['delete']) && $item['delete'] === 'y') {
+                        $this->itemsToRemove[$item['name']] = $this->items[$item['name']]['uuid'];
+                    }
                 }
             }
         }

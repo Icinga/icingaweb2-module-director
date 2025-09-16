@@ -4,13 +4,21 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbConnection;
+use Icinga\Module\Director\Web\Widget\CustomVarObjectList;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Url;
+use ipl\Web\Widget\ButtonLink;
+use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use stdClass;
+use Zend_Db;
 
 class PropertyForm extends CompatForm
 {
@@ -29,18 +37,36 @@ class PropertyForm extends CompatForm
         protected bool $field = false,
         protected ?UuidInterface $parentUuid = null
     ) {
+        $this->addAttributes(['class' => ['property-form']]);
     }
 
+    /**
+     * Get the UUID of the property
+     *
+     * @return ?UuidInterface
+     */
     public function getUUid(): ?UuidInterface
     {
         return $this->uuid;
     }
 
+    /**
+     * Get UUID of the parent property
+     *
+     * @return ?UuidInterface
+     */
     public function getParentUUid(): ?UuidInterface
     {
         return $this->parentUuid;
     }
 
+    /**
+     * Set whether to hide the key name element or not (checked for the fixed array)
+     *
+     * @param bool $hideKeyNameElement
+     *
+     * @return $this
+     */
     public function setHideKeyNameElement(bool $hideKeyNameElement): self
     {
         $this->hideKeyNameElement = $hideKeyNameElement;
@@ -48,6 +74,13 @@ class PropertyForm extends CompatForm
         return $this;
     }
 
+    /**
+     * Set whether the field is a nested field (field in a sub dictionary) or not
+     *
+     * @param bool $isNestedField
+     *
+     * @return $this
+     */
     public function setIsNestedField(bool $isNestedField): self
     {
         $this->isNestedField = $isNestedField;
@@ -90,7 +123,10 @@ class PropertyForm extends CompatForm
         $this->addElement(
             'text',
             'label',
-            ['label'     => $this->translate('Property Label')]
+            [
+                'label'     => $this->translate('Property Label'),
+                'required'  => $this->hideKeyNameElement
+            ]
         );
 
         $this->addElement(
@@ -175,54 +211,76 @@ class PropertyForm extends CompatForm
 
         if ($this->uuid) {
             // TODO: Ask for confirmation before deleting
-            /** @var FormSubmitElement $deleteButton */
-            $deleteButton = $this->createElement(
-                'submit',
-                'delete',
-                [
-                    'label'          => $this->translate('Delete'),
-                    'class'          => 'btn-remove',
-                    'formnovalidate' => true
-                ]
-            );
-
-            $this->registerElement($deleteButton);
             $this->getElement('submit')
-                ->getWrapper()
-                ->prepend($deleteButton);
+                 ->getWrapper()
+                ->prepend(
+                    (new ButtonLink(
+                        $this->translate('Delete'),
+                        Url::fromPath(
+                            'director/property/delete',
+                            ['uuid' => $this->uuid->toString()]
+                        ),
+                        null,
+                        ['class' => ['btn-remove']]
+                    ))->openInModal()
+                );
         }
     }
 
-    public function hasBeenSubmitted(): bool
+    /**
+     * Fetch property for the given UUID
+     *
+     * @param UuidInterface $uuid UUID of the given property
+     *
+     * @return array<string, mixed>
+     */
+    private function fetchProperty(UuidInterface $uuid): array
     {
-        if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
-            return true;
-        }
+        $db = $this->db->getDbAdapter();
 
-        return parent::hasBeenSubmitted();
+        $query = $db
+            ->select()
+            ->from(['dp' => 'director_property'], [])
+            ->joinLeft(['ihp' => 'icinga_host_property'], 'ihp.property_uuid = dp.uuid', [])
+            ->columns([
+                'key_name',
+                'uuid',
+                'parent_uuid',
+                'value_type',
+                'label',
+                'description'
+            ])
+            ->where('uuid = ?', $uuid->getBytes());
+
+        return $db->fetchRow($query, [], Zend_Db::FETCH_ASSOC);
     }
 
-    public function isValid(): bool
+    private function updateObjectCustomVars(array $path, array $newPath, array &$item): void
     {
-        if ($this->getPressedSubmitElement()->getName() === 'delete') {
-            $csrfElement = $this->getElement('CSRFToken');
+        $key = array_shift($path);
+        $newKey = array_shift($newPath);
 
-            return $csrfElement->isValid();
+        if (! array_key_exists($key, $item)) {
+            return;
         }
 
-        return parent::isValid();
+        if (empty($path) && empty($newPath) && $key !== $newKey) {
+            $item[$newKey] = $item[$key];
+            unset($item[$key]);
+        } elseif (is_array($item[$key])) {
+            $this->updateObjectCustomVars($path, $newPath, $item[$key]);
+        }
+
+        // Remove empty array items
+        if (isset($item[$key]) && empty($item[$key])) {
+            unset($item[$key]);
+        }
     }
 
     protected function onSuccess(): void
     {
-        if ($this->getPressedSubmitElement()->getName() === 'delete') {
-            $this->db->delete('director_property', Filter::where('parent_uuid', $this->uuid->getBytes()));
-            $this->db->delete('director_property', Filter::where('uuid', $this->uuid->getBytes()));
-
-            return;
-        }
-
         $values = $this->getValues();
+
         if ($this->uuid === null) {
             $this->uuid = Uuid::uuid4();
             if ($this->field) {
@@ -258,16 +316,117 @@ class PropertyForm extends CompatForm
                 $this->db->insert('director_property', $dynamicArrayItemType);
             }
         } else {
-            $dynamicArrayItemType = [];
-            if (isset($values['item_type']) && $values['value_type'] === 'dynamic-array') {
-                $dynamicArrayItemType = [
-                    'uuid' => Uuid::uuid4()->getBytes(),
-                    'key_name' => '0',
-                    'value_type' => $values['item_type'],
-                    'parent_uuid' => $this->uuid->getBytes()
-                ];
+            unset($values['used_count']);
 
-                unset($values['item_type']);
+            $used = $this->getValue('used_count') > 0;
+            if (! $used) {
+                $dbProperty = $this->fetchProperty($this->uuid);
+                if (
+                    $dbProperty['value_type'] !== $values['value_type']
+                    || $dbProperty['value_type'] === 'dynamic-array'
+                ) {
+                    $this->db->delete(
+                        'director_property',
+                        Filter::matchAll(
+                            Filter::where('parent_uuid', $this->uuid->getBytes()),
+                        )
+                    );
+                }
+
+                if (isset($values['item_type']) && $values['value_type'] === 'dynamic-array') {
+                    $this->db->insert('director_property', [
+                        'uuid' => Uuid::uuid4()->getBytes(),
+                        'key_name' => '0',
+                        'value_type' => $values['item_type'],
+                        'parent_uuid' => $this->uuid->getBytes()
+                    ]);
+
+                    unset($values['item_type']);
+                }
+            } else {
+                $this->db->getDbAdapter()->beginTransaction();
+                $storedKeyName = $this->db->fetchOne(
+                    $this->db->select()
+                             ->from('director_property', ['key_name'])
+                             ->where('uuid', $this->uuid->getBytes())
+                );
+
+                if ($storedKeyName !== $values['key_name']) {
+                    $db = $this->db->getDbAdapter();
+                    $parent = [];
+                    if (! $this->parentUuid) {
+                        $rootUuid = $this->uuid;
+                    } elseif ($this->isNestedField) {
+                        $parent = $this->fetchProperty($this->parentUuid);
+                        $rootUuid = Uuid::fromBytes($parent['parent_uuid']);
+                    } else {
+                        $rootUuid = $this->parentUuid;
+                    }
+
+                    $root = $this->fetchProperty($rootUuid);
+
+                    $objectCustomVars = $db->fetchAll(
+                        $db->select()
+                                 ->from(['ihv' => 'icinga_host_var'], [])
+                                 ->columns([
+                                     'host_id',
+                                     'varname',
+                                     'varvalue',
+                                     'property_uuid'
+                                 ])
+                                 ->where('property_uuid = ?', $rootUuid->getBytes()),
+                        [],
+                        PDO::FETCH_ASSOC
+                    );
+
+                    if (! $this->parentUuid) {
+                        foreach ($objectCustomVars as $objectCustomVar) {
+                            $this->db->update(
+                                'icinga_host_var',
+                                ['varname' => $values['key_name']],
+                                Filter::matchAll(
+                                    Filter::where('property_uuid', $rootUuid->getBytes()),
+                                    Filter::where('host_id', $objectCustomVar['host_id'])
+                                )
+                            );
+                        }
+                    } else {
+                        foreach ($objectCustomVars as $objectCustomVar) {
+                            $varValue = json_decode($objectCustomVar['varvalue'], true);
+                            if ($root['value_type'] === 'dynamic-dictionary') {
+                                foreach ($varValue as $key => $value) {
+                                    if ($this->isNestedField) {
+                                        $parenKey = $parent['key_name'];
+                                        $this->updateObjectCustomVars(
+                                            [$parenKey, $storedKeyName],
+                                            [$parenKey, $values['key_name']],
+                                            $value
+                                        );
+                                    } else {
+                                        $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $value);
+                                    }
+
+                                    $varValue[$key] = $value;
+                                }
+                            } else {
+                                if ($this->isNestedField) {
+                                    $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
+                                } else {
+                                    $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
+                                }
+                            }
+
+                            $this->db->update(
+                                'icinga_host_var',
+                                ['varvalue' => json_encode($varValue)],
+                                Filter::matchAll(
+                                    Filter::where('property_uuid', $rootUuid->getBytes()),
+                                    Filter::where('host_id', $objectCustomVar['host_id'])
+                                )
+                            );
+                        }
+                    }
+                }
             }
 
             $this->db->update(
@@ -276,17 +435,7 @@ class PropertyForm extends CompatForm
                 Filter::where('uuid', $this->uuid->getBytes())
             );
 
-            $this->db->delete(
-                'director_property',
-                Filter::matchAll(
-                    Filter::where('parent_uuid', $this->uuid->getBytes()),
-                    Filter::where('key_name', '0')
-                )
-            );
-
-            if (! empty($dynamicArrayItemType)) {
-                $this->db->insert('director_property', $dynamicArrayItemType);
-            }
+            $this->db->getDbAdapter()->commit();
         }
     }
 }
