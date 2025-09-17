@@ -2219,7 +2219,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderCustomVars()
     {
         if ($this->supportsCustomVars()) {
-            return $this->vars()->toConfigString($this->isApplyRule());
+            return $this->vars()->toConfigString($this, $this->isApplyRule());
         }
 
         return '';
@@ -3056,6 +3056,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function listAncestorIds()
     {
         return $this->templateTree()->listAncestorIdsFor($this);
+    }
+
+    public function listAncestorUuIds()
+    {
+        return $this->templateTree()->listAncestorUuIdsFor($this);
     }
 
     protected function templateTree()

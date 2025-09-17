@@ -5,11 +5,12 @@ namespace Icinga\Module\Director\CustomVariable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Countable;
+use Icinga\Module\Director\Objects\IcingaObject;
 
 class CustomVariableDictionary extends CustomVariable implements Countable
 {
     /** @var  CustomVariable[] */
-    protected $value;
+    protected $value = [];
 
     public function equals(CustomVariable $var)
     {
