@@ -187,4 +187,3 @@ $cssFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
 foreach ($cssFiles as $path) {
     $this->provideCssFile(ltrim(substr($path, strlen($cssDirectory)), DIRECTORY_SEPARATOR));
 }
-

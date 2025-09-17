@@ -96,7 +96,7 @@ class NestedDictionary extends FieldsetElement
         }
 
         if ($newCount === 0) {
-            $this->addHtml(new EmptyStateBar($this->translate('No items defined')));
+            $this->addHtml(new EmptyStateBar($this->translate('No items added')));
         }
 
         $this->addElement($addButton);

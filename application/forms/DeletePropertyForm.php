@@ -301,7 +301,10 @@ class DeletePropertyForm extends CompatForm
                     if ($parentProp && $parentProp['value_type'] === 'fixed-array') {
                         $directParentUuid = Uuid::fromBytes($parentProp['uuid']);
                         $propItems = $this->fetchPropertyItems($directParentUuid);
-                        $this->db->delete('director_property', Filter::where('parent_uuid', $directParentUuid->getBytes()));
+                        $this->db->delete(
+                            'director_property',
+                            Filter::where('parent_uuid', $directParentUuid->getBytes())
+                        );
 
                         $count = 0;
                         foreach ($propItems as $propItem) {

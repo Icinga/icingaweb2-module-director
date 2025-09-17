@@ -28,11 +28,20 @@ class PropertyController extends CompatController
     /** @var UuidInterface */
     private UuidInterface $uuid;
 
+    /** @var ?UuidInterface */
+    private ?UuidInterface $parentUuid = null;
+
     public function init()
     {
         parent::init();
 
         $this->uuid = Uuid::fromString($this->params->shiftRequired('uuid'));
+        $parentUuid = $this->params->shift('parent_uuid');
+
+        if ($parentUuid) {
+            $this->parentUuid = Uuid::fromString($parentUuid);
+        }
+
         $this->db = Db::fromResourceName(
             Config::module('director')->get('db', 'resource')
         );
@@ -41,7 +50,7 @@ class PropertyController extends CompatController
     public function indexAction()
     {
         $uuid = $this->uuid;
-        $parentUuid = $this->params->shift('parent_uuid');
+        $parentUuid = $this->parentUuid ?? null;
         $parent = [];
         $db = $this->db->getDbAdapter();
         $property = $this->fetchProperty($uuid);
@@ -160,7 +169,7 @@ class PropertyController extends CompatController
             $title = $this->translate('Property') . ': ' . $property['key_name'];
         }
 
-        $this->setTitle($title);;
+        $this->setTitle($title);
         $this->setTitleTab('property');
     }
 
@@ -170,6 +179,7 @@ class PropertyController extends CompatController
         $property = $this->fetchProperty($uuid);
         if (isset($property['parent_uuid'])) {
             $parentUuid = Uuid::fromBytes($property['parent_uuid']);
+            $this->parentUuid = $parentUuid;
             $parentProperty = $this->fetchProperty($parentUuid);
             if (isset($parentProperty['parent_uuid'])) {
                 $rootUuid = Uuid::fromBytes($parentProperty['parent_uuid']);
@@ -322,10 +332,18 @@ class PropertyController extends CompatController
 
     protected function createTabs(): Tabs
     {
+        $url = Url::fromPath('director/property', ['uuid' => $this->uuid->toString()]);
+        if ($this->parentUuid) {
+            $url->addParams(['parent_uuid' => $this->uuid->toString()]);
+            $label = $this->translate('Edit Field');
+        } else {
+            $label = $this->translate('Property');
+        }
+
         $tabs = $this->getTabs()
              ->add('property', [
-                 'label'  => $this->translate('Property'),
-                 'url'    => Url::fromPath('director/property', ['uuid' => $this->uuid->toString()])
+                 'label'  => $label,
+                 'url'    => $url
              ])
              ->add('usage', [
                  'label'  => $this->translate('Custom Variable Usage'),

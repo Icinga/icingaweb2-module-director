@@ -193,6 +193,10 @@ class HostController extends ObjectController
             ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
             ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+            ->order(
+                "FIELD(dp.value_type, 'string', 'number', 'bool', 'fixed-array',"
+                . " 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary')"
+            )
             ->order('children')
             ->order('key_name');
 

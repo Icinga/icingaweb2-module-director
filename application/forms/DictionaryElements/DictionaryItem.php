@@ -60,7 +60,9 @@ class DictionaryItem extends FieldsetElement
             $label = $this->getElement('name')->getValue();
         }
 
-        $children = static::fetchChildrenItems(Uuid::fromBytes($this->fields['uuid']), $this->fields['value_type'] ?? '');
+        $children = static::fetchChildrenItems(
+            Uuid::fromBytes($this->fields['uuid']), $this->fields['value_type'] ?? ''
+        );
         $inherited = $this->getElement('inherited')->getValue();
         $inheritedFrom = $this->getElement('inherited_from')->getValue();
 
@@ -97,7 +99,7 @@ class DictionaryItem extends FieldsetElement
             $this->addElement(
                 'text',
                 $valElementName,
-                ['label' => $label . ' ('. ucfirst($type) .')', 'placeholder' => $placeholder]
+                ['label' => $label . ' (' . ucfirst($type) . ')', 'placeholder' => $placeholder]
             );
         }
 
@@ -108,7 +110,7 @@ class DictionaryItem extends FieldsetElement
                     'label' => 'Mark for removal',
                     'description' => $this->translate(
                         'Removing the custom variable from this template,'
-                        .' will also remove it from the objects importing the template'
+                        . ' will also remove it from the objects importing the template'
                     ),
                 ]
             );
@@ -146,7 +148,9 @@ class DictionaryItem extends FieldsetElement
                 $childrenValues['inherited_from'] = $property['inherited_from'] ?? '';
             }
 
-            $dictionaryItems = static::fetchChildrenItems(Uuid::fromBytes($property['uuid']), $property['value_type'], $childrenValues);
+            $dictionaryItems = static::fetchChildrenItems(
+                Uuid::fromBytes($property['uuid']), $property['value_type'], $childrenValues
+            );
             $values['var'] = Dictionary::prepare($dictionaryItems);
         } elseif ($property['value_type'] === 'dynamic-dictionary') {
             $childrenValues = [
@@ -155,7 +159,9 @@ class DictionaryItem extends FieldsetElement
                 'inherited_from' => $property['inherited_from'] ?? ''
             ];
 
-            $dictionaryItems = static::fetchChildrenItems(Uuid::fromBytes($property['uuid']), $property['value_type'], $childrenValues);
+            $dictionaryItems = static::fetchChildrenItems(
+                Uuid::fromBytes($property['uuid']), $property['value_type'], $childrenValues
+            );
             $values['var'] = NestedDictionary::prepare(
                 $dictionaryItems,
                 $property['value'] ?? []
