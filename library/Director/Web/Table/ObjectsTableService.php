@@ -198,12 +198,32 @@ class ObjectsTableService extends ObjectsTable
                 ['h' => 'icinga_host'],
                 'o.host_id = h.id',
                 []
-            )->joinLeft(
-                ['hsb' => 'icinga_host_service_blacklist'],
-                'hsb.service_id = o.id AND hsb.host_id = o.host_id',
-                []
-            )->where('o.service_set_id IS NULL')
-                ->group(['o.id', 'h.id','hsb.service_id', 'hsb.host_id'])
+            );
+
+            if ($this->inheritedBy) {
+                $subQuery->joinLeft(
+                    ['hi' => 'icinga_host_inheritance'],
+                    'h.id = hi.parent_host_id',
+                    []
+                )->joinLeft(
+                    ['hc' => 'icinga_host'],
+                    'hi.host_id = hc.id',
+                    []
+                )->joinLeft(
+                    ['hsb' => 'icinga_host_service_blacklist'],
+                    'hsb.service_id = o.id AND hsb.host_id = hc.id',
+                    []
+                )->where('hc.id = ?', $this->inheritedBy->get('id'));
+            } else {
+                $subQuery->joinLeft(
+                    ['hsb' => 'icinga_host_service_blacklist'],
+                    'hsb.service_id = o.id AND hsb.host_id = o.host_id',
+                    []
+                );
+            }
+
+            $subQuery->where('o.service_set_id IS NULL')
+                ->group(['o.id', 'h.id', 'o.object_name', 'h.object_name', 'hsb.service_id', 'hsb.host_id'])
                 ->order('o.object_name')->order('h.object_name');
 
             if ($this->branchUuid) {
