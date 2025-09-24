@@ -3,13 +3,15 @@
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\HtmlElement;
+use ipl\Web\Widget\EmptyStateBar;
 
 /**
  * @phpstan-import-type DictionaryDataType from Dictionary
  */
 class NestedDictionary extends FieldsetElement
 {
-    protected $defaultAttributes = ['class' => 'nested-dictionary'];
+    protected $defaultAttributes = ['class' => ['nested-dictionary', 'nested-fieldset']];
 
     /** @var array Nested dictionary items */
     protected $nestedItems = [];
@@ -34,7 +36,8 @@ class NestedDictionary extends FieldsetElement
         $expectedCount = (int) $this->getPopulatedValue('count', 0);
         $count = 0;
         $newCount = 0;
-        if ($expectedCount === 0) {
+
+        if (! empty($this->inheritedValue['value'])) {
             $this->addElement(
                 'textarea',
                 'inherited_value',
@@ -90,6 +93,10 @@ class NestedDictionary extends FieldsetElement
             $nestedDictionaryProperty = new NestedDictionaryItem($i, $this->nestedItems);
             $nestedDictionaryProperty->setRemoveButton($this->getElement('remove_' . $i));
             $this->addElement($nestedDictionaryProperty);
+        }
+
+        if ($newCount === 0) {
+            $this->addHtml(new EmptyStateBar($this->translate('No items added')));
         }
 
         $this->addElement($addButton);

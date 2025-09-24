@@ -15,6 +15,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\OverrideHelper;
 use InvalidArgumentException;
 use PDO;
+use Ramsey\Uuid\Uuid;
 use RuntimeException;
 
 class IcingaObjectHandler extends RequestHandler
@@ -172,7 +173,7 @@ class IcingaObjectHandler extends RequestHandler
 
                 $overRiddenCustomVars = [];
                 if ($actionName === 'variables') {
-                    $overRiddenCustomVars = ['vars' => $data];
+                    $overRiddenCustomVars = $data;
                 } else {
                     if ($type === 'host') {
                         $overRiddenCustomVars = $this->getCustomVarsFromData($data);
@@ -205,16 +206,23 @@ class IcingaObjectHandler extends RequestHandler
                 if ($type !== 'service' && $overRiddenCustomVars) {
                     $customProperties = $this->getCustomProperties($object);
                     if (! empty($overRiddenCustomVars)) {
-                        $diff = array_diff(array_keys($overRiddenCustomVars['vars']), array_keys($customProperties));
+                        $diff = array_diff(array_keys($overRiddenCustomVars), array_keys($customProperties));
                         if (! empty($diff)) {
                             throw new NotFoundError(sprintf(
                                 "The custom properties (%s) are not supported by this object",
                                 implode(", ", $diff)
                             ));
                         }
+
+                        $objectVars = $object->vars();
+                        foreach ($customProperties as $key => $property) {
+                            if (isset($overRiddenCustomVars[$key])) {
+                                $objectVars->set($key, $overRiddenCustomVars[$key]);
+                                $objectVars->registerVarUuid($key, Uuid::fromBytes($property['uuid']));
+                            }
+                        }
                     }
 
-                    $object->setProperties($overRiddenCustomVars);
                     $this->persistChanges($object);
                 }
 

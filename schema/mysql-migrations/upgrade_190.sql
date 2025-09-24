@@ -3,7 +3,8 @@ CREATE TABLE director_property (
                                    parent_uuid binary(16) NULL DEFAULT NULL,
                                    key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
                                    label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
-                                   value_type enum('string', 'number', 'bool', 'array', 'dict') COLLATE utf8mb4_unicode_ci NOT NULL,
+                                   value_type enum('string', 'number', 'bool', 'fixed-array', 'fixed-dictionary', 'dynamic-array', 'dynamic-dictionary') COLLATE utf8mb4_unicode_ci NOT NULL,
+                                   description text,
                                    instantiable enum('y', 'n') NOT NULL DEFAULT 'n',
                                    PRIMARY KEY (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
@@ -24,6 +25,9 @@ CREATE TABLE icinga_host_property (
                                               ON DELETE CASCADE
                                               ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+ALTER TABLE icinga_host_var
+  ADD COLUMN property_uuid binary(16);
 
 INSERT INTO director_schema_migration
 (schema_version, migration_time)
