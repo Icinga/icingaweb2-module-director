@@ -10,7 +10,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 class CustomVariableDictionary extends CustomVariable implements Countable
 {
     /** @var  CustomVariable[] */
-    protected $value;
+    protected $value = [];
 
     public function equals(CustomVariable $var)
     {
@@ -31,20 +31,6 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         }
 
         return true;
-    }
-
-    public function isInstantiableForObject(IcingaObject $object): bool
-    {
-        $db = $object->getDb();
-        $type = $object->getShortTableName();
-        $query = $db->select()->from(['dp' => 'director_property'], 'dp.instantiable')
-            ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
-            ->join(['io' => 'icinga_' . $type], 'iop.' . $type . '_uuid = io.uuid', [])
-            ->join(['iov' => 'icinga_' . $type . '_var'], 'iop.' . $type . '_id = io.id', [])
-            ->where('iov.varname = ?', $this->key)
-            ->where('io.uuid', $object->get('uuid'));
-
-        return $db->fetchOne($query) === 'y';
     }
 
     public function getDbFormat()
@@ -81,7 +67,6 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     public function getValue()
     {
         $ret = (object) array();
-        ksort($this->value);
 
         foreach ($this->value as $key => $var) {
             $ret->$key = $var->getValue();

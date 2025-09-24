@@ -1,8 +1,6 @@
+// Style
 .custom-properties-form {
   .control-group:has(> fieldset) {
-    position: relative;
-    padding-right: 2em;
-
     .dictionary,
     .nested-dictionary,
     .nested-dictionary-item {
@@ -11,25 +9,83 @@
       }
 
       border: 1px solid @gray-light;
-      padding: 1em;
-      margin-bottom: 1em;
+      border-radius: 1em;
+      .remove-button {
+        width: fit-content;
+        border: none;
+        background: none;
+        color: @color-critical;
+        &:hover {
+          background-color: @color-critical;
+          color: @text-color-inverted;
+        }
+      }
+    }
 
-      legend {
-        background-color: @icinga-blue-light;
+    .nested-dictionary-item {
+      > legend {
+        font-size: 1em;
+        color: @text-color-light;
+        font-weight: normal;
+        background-color: @gray-lighter;
         width: 100%;
+        &::before {
+          // icon: right-down
+          font-family: 'ifont';
+          content: '\e81d';
+        }
       }
 
+      &.collapsed {
+        legend::before {
+          // icon: right-down
+          content: '\e820';
+        }
+      }
+    }
+  }
+}
+
+// Layout
+.custom-properties-form {
+  .control-group:has(> fieldset) {
+    position: relative;
+    padding-right: 2em;
+
+    .dictionary,
+    .nested-dictionary,
+    .nested-dictionary-item {
+      padding: 0.5em;
+      margin-bottom: 1em;
       .remove-button {
         position: absolute;
         top: 0;
-        right: 2em;
-        width: 2em;
-        border: none;
+        right: 0;
+        margin-top: 0.1em;
+        margin-right: 3.5em;
         justify-content: center;
-        color: @color-critical;
-        &:not(:hover) {
-          background-color: @low-sat-blue;
+      }
+    }
+
+    .nested-dictionary-item.collapsed {
+      .remove-button {
+        margin-right: 3em;
+      }
+    }
+
+    .nested-dictionary-item {
+      > legend {
+        padding: 0.25em 0.5em;
+        &::before {
+          margin-right: 0.5em;
         }
+      }
+
+      &.collapsed {
+        height: 0;
+        padding: 0;
+        overflow: hidden;
+        border: none;
       }
     }
   }

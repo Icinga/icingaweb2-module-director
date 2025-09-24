@@ -6,6 +6,7 @@ use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -17,7 +18,7 @@ use ipl\Web\Widget\Icon;
  */
 class NestedDictionaryItem extends FieldsetElement
 {
-    protected $defaultAttributes = ['class' => 'nested-dictionary'];
+    protected $defaultAttributes = ['class' => ['nested-dictionary-item', 'collapsible-item']];
 
     /** @var array Items in the nested dictionary property */
     protected array $items = [];
@@ -34,8 +35,19 @@ class NestedDictionaryItem extends FieldsetElement
 
     protected function assemble(): void
     {
-        $this->addElement('text', 'key', ['label' => $this->translate('Key'), 'required' => true]);
-        $this->addElement('hidden', 'state', ['value' => $this->getPopulatedValue('key') ? 'old' : 'new']);
+        $id = str_replace(['[', ']'], '_', $this->getValueOfNameAttribute());
+        $this->getAttributes()->set('id', $id);
+
+        $this->addElement('text', 'key', [
+            'label' => $this->translate('Key'),
+            'required' => true
+        ]);
+
+        $this->addElement('hidden', 'state', [
+            'value' => $this->getPopulatedValue('key') ? 'old' : 'new',
+            'ignore' => true
+        ]);
+
         if ($this->getElement('state')->getValue() === 'old') {
             $label = $this->getElement('key')->getValue();
         } else {
@@ -47,10 +59,10 @@ class NestedDictionaryItem extends FieldsetElement
             $this->addHtml(new HtmlElement(
                 'div',
                 null,
-                $this->removeButton->setLabel(new Icon('minus'))
+                $this->removeButton->setLabel(new Icon('trash'))
                     ->setAttribute('formnovalidate', true)
                     ->setAttribute('class', ['remove-button'])
-                    ->setAttribute('title', $this->translate('Remove Item'))
+                    ->add(Text::create(' ' . $this->translate('Remove')))
             ));
         }
 
