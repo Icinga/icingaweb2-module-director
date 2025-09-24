@@ -412,13 +412,11 @@ class IcingaService extends IcingaObject implements ExportInterface
                     'key_name' => 'dp.key_name',
                     'uuid' => 'dp.uuid',
                     'value_type' => 'dp.value_type',
-                    'label' => 'dp.label',
-                    'instantiable' => 'dp.instantiable',
-                    'required' => 'iop.required'
+                    'label' => 'dp.label'
                 ]
             )
             ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
-            ->where("value_type = 'dict'")
+            ->where("value_type LIKE '%dictionary'")
             ->where("key_name = ?", $applyFor);
 
         $result = $this->db->fetchOne($query) ?? false;
@@ -680,22 +678,30 @@ class IcingaService extends IcingaObject implements ExportInterface
                     ]
                 )
                 ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
-                ->where("parent_dp.value_type = 'dict'")
+                ->where("parent_dp.value_type = 'dynamic-dictionary'")
                 ->where("parent_dp.key_name = ?", $applyFor);
 
             $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
 
             $whiteList = ['value'];
             foreach ($result as $row) {
-                $whiteList[] = sprintf('value.%s', $row['key_name']);
+                if (str_contains($row['key_name'], ' ')) {
+                    continue;
+                }
 
-                if ($row['value_type'] === 'dict') {
+                $variable = sprintf('value.%s', $row['key_name']);
+                if ($row['value_type'] === 'dynamic-dictionary') {
                     foreach ($this->fetchItemsForDictionary($row['uuid']) as $value) {
-                        $whiteList[] = sprintf('value.%s.%s', $row['key_name'], $value['key_name']);
+                        if (str_contains($value['key_name'], ' ')) {
+                            continue;
+                        }
+
+                        $whiteList[] = sprintf('%s.%s', $variable, $value['key_name']);
                     }
                 }
-            }
 
+                $whiteList[] = $variable;
+            }
 
             $vars->setWhiteList($whiteList);
         }

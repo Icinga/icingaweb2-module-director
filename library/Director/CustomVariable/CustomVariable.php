@@ -8,10 +8,14 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use InvalidArgumentException;
 use LogicException;
+use Ramsey\Uuid\UuidInterface;
 
 abstract class CustomVariable implements IcingaConfigRenderer
 {
     protected $key;
+
+    /** @var ?UuidInterface */
+    protected $uuid;
 
     protected $value;
 
@@ -86,6 +90,19 @@ abstract class CustomVariable implements IcingaConfigRenderer
     public function getKey()
     {
         return $this->key;
+    }
+
+    public function getUuid(): ?UuidInterface
+    {
+        return $this->uuid;
+    }
+
+    public function setUuid(UuidInterface $uuid): static
+    {
+        $this->uuid = $uuid;
+        $this->modified = true;
+
+        return $this;
     }
 
     /**

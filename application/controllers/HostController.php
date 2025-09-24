@@ -111,20 +111,6 @@ class HostController extends ObjectController
                     ['class' => 'control-button']
                 ))->openInModal()
             );
-
-            if ($objectProperties) {
-                $this->actions()->add(
-                    (new ButtonLink(
-                        $this->translate('Remove Property'),
-                        Url::fromPath(
-                            'director/host/remove-property',
-                            ['uuid' => $this->getUuidFromUrl()]
-                        )->getAbsoluteUrl(),
-                        null,
-                        ['class' => 'control-button']
-                    ))->openInModal()
-                );
-            }
         }
 
         if ($objectProperties) {
@@ -134,34 +120,29 @@ class HostController extends ObjectController
 
             $form = (new CustomPropertiesForm($object, $objectProperties))
                 ->on(CustomPropertiesForm::ON_SUCCESS, function () {
-                    $this->redirectNow('__REFRESH__');
+                    $this->redirectNow(Url::fromRequest());
                 })
                 ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) use (&$vars) {
                     $vars = $form->getElement('properties')->getDictionary();
                 })
                 ->handleRequest($this->getServerRequest());
 
-            try {
-                $result = [];
-                foreach ($objectProperties as $row) {
-                    if (isset($vars[$row['key_name']])) {
-                        $row['value'] = $vars[$row['key_name']];
-                    }
-
-                    if (isset($inheritedVars[$row['key_name']])) {
-                        $row['inherited'] = $inheritedVars[$row['key_name']];
-                        $row['inherited_from'] = $origins->{$row['key_name']};
-                    }
-
-                    $result[] = $row;
+            $result = [];
+            foreach ($objectProperties as $row) {
+                if (isset($vars[$row['key_name']])) {
+                    $row['value'] = $vars[$row['key_name']];
                 }
 
+                if (isset($inheritedVars[$row['key_name']])) {
+                    $row['inherited'] = $inheritedVars[$row['key_name']];
+                    $row['inherited_from'] = $origins->{$row['key_name']};
+                }
 
-                $form->load($result);
-                $this->content()->add($form);
-            } catch (NestingError $e) {
-                $this->content()->add(Hint::error($e->getMessage()));
+                $result[] = $row;
             }
+
+            $form->load($result);
+            $this->content()->add($form);
         }
 
         $this->tabs()->activate('variables');
@@ -188,6 +169,7 @@ class HostController extends ObjectController
             $uuids[] = IcingaHost::load($parent, $db)->get('uuid');
         }
 
+        $objectUuid = $this->object->get('uuid');
         $uuids[] = $this->object->get('uuid');
         $query = $db->getDbAdapter()
             ->select()
@@ -196,22 +178,35 @@ class HostController extends ObjectController
                 [
                     'key_name' => 'dp.key_name',
                     'uuid' => 'dp.uuid',
+                    $type . '_uuid' => 'iop.' . $type . '_uuid',
                     'value_type' => 'dp.value_type',
                     'label' => 'dp.label',
-                    'instantiable' => 'dp.instantiable',
-                    'required' => 'iop.required',
                     'children' => 'COUNT(cdp.uuid)'
                 ]
             )
             ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
             ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dp.instantiable', 'iop.required'])
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+            ->order(
+                "FIELD(dp.value_type, 'string', 'number', 'bool', 'fixed-array',"
+                . " 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary')"
+            )
             ->order('children')
-            ->order('instantiable')
             ->order('key_name');
 
-        return $db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+        $result = [];
+        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            if ($objectUuid === $row[$type . '_uuid']) {
+                $row['allow_removal'] = true;
+            } else {
+                $row['allow_removal'] = false;
+            }
+
+            $result[$row['key_name']] = $row;
+        }
+
+        return $result;
     }
 
     public function serviceAction()
