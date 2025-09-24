@@ -24,15 +24,26 @@ class PropertiesController extends CompatController
         )->getDbAdapter();
 
         $query = $db->select()
-            ->from('director_property')
+            ->from(['dp' => 'director_property'], [])
+            ->joinLeft(['ihp' => 'icinga_host_property'], 'ihp.property_uuid = dp.uuid', [])
+            ->columns([
+                'key_name',
+                'uuid',
+                'parent_uuid',
+                'value_type',
+                'label',
+                'description',
+                'used_count' => 'COUNT(ihp.property_uuid)'
+            ])
             ->where('parent_uuid IS NULL')
+            ->group('dp.uuid')
             ->order('key_name');
 
         $properties = new PropertyTable($db->fetchAll($query));
 
         $this->addControl(Html::tag('div', ['class' => 'property-form'], [
             (new ButtonLink(
-                [Text::create('Add property')],
+                [Text::create('Create property')],
                 Url::fromPath('director/properties/add'),
                 null,
                 [

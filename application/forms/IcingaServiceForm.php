@@ -627,20 +627,18 @@ class IcingaServiceForm extends DirectorObjectForm
                     'key_name' => 'dp.key_name',
                     'uuid' => 'dp.uuid',
                     'value_type' => 'dp.value_type',
-                    'label' => 'dp.label',
-                    'instantiable' => 'dp.instantiable',
-                    'required' => 'iop.required'
+                    'label' => 'dp.label'
                 ]
             )
             ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
-            ->where("value_type IN ('array', 'dict') AND instantiable = 'y'");
+            ->where("value_type IN ('dynamic-array', 'dynamic-dictionary')");
 
         $vars = $this->db->getDbAdapter()->fetchAll($query);
 
         $properties = [];
         foreach ($vars as $var) {
-            $properties['host.vars.' . $var->key_name] = $var->label . ' (' . $var->key_name . ')';
-            if ($var->value_type === 'dict') {
+            $properties['host.vars.' . $var->key_name] = $var->label ?? $var->key_name . ' (' . $var->key_name . ')';
+            if ($var->value_type === 'dynamic-dictionary') {
                 $this->dictionaryUuidMap['host.vars.' . $var->key_name] = $var->uuid;
             }
         }
@@ -695,15 +693,21 @@ class IcingaServiceForm extends DirectorObjectForm
                 $applyFor = $this->object->get('apply_for');
             }
 
+            $content = [];
             if (isset($this->dictionaryUuidMap[$applyFor])) {
                 $dictionaryKeys = $this->fetchNestedDictionaryKeys($this->dictionaryUuidMap[$applyFor]);
 
                 if (! empty($dictionaryKeys)) {
                     $configVariables = new HtmlElement('ul', Attributes::create(['class' => 'nested-key-list']));
                     foreach ($dictionaryKeys as $keyAttributes) {
+                        if (str_contains($keyAttributes['key_name'], ' ')) {
+                            continue;
+                        }
+
+                        $config = '$value.' . $keyAttributes['key_name'];
                         $content = [
                             new HtmlElement('div', null, Text::create(
-                                $keyAttributes['label']
+                                $keyAttributes['label'] ?? $keyAttributes['key_name']
                                 . ' ('
                                 . $keyAttributes['key_name']
                                 . ')'
@@ -711,24 +715,27 @@ class IcingaServiceForm extends DirectorObjectForm
                             new HtmlElement('div', null, Text::create('=>'))
                         ];
 
-                        if ($keyAttributes['value_type'] === 'dict') {
+                        if ($keyAttributes['value_type'] === 'fixed-dictionary') {
                             $nestedContent = [];
 
                             foreach ($this->fetchNestedDictionaryKeys($keyAttributes['uuid']) as $nestedKeyAttributes) {
+                                if (str_contains($nestedKeyAttributes['key_name'], ' ')) {
+                                    continue;
+                                }
+
+                                $nestedConfig = $config . '.' . $nestedKeyAttributes['key_name'] . '$';
+                                $nestedContent[] = new HtmlElement('div', null, Text::create($nestedConfig));
+
                                 $nestedContent = [
                                     new HtmlElement('div', null, Text::create(
-                                        $nestedKeyAttributes['label']
+                                        $nestedKeyAttributes['label'] ?? $nestedKeyAttributes['key_name']
                                         . ' ('
                                         . $nestedKeyAttributes['key_name']
                                         . ')'
                                     )),
                                     new HtmlElement('div', null, Text::create('=>')),
                                     new HtmlElement('div', null, Text::create(
-                                        '$value.'
-                                        . $keyAttributes['key_name']
-                                        . '.'
-                                        . $nestedKeyAttributes['key_name']
-                                        . '$'
+                                        $nestedConfig
                                     ))
                                 ];
                             }
@@ -748,16 +755,21 @@ class IcingaServiceForm extends DirectorObjectForm
                                 )
                             );
                         } else {
-                            $content[] = new HtmlElement('div', null, Text::create(
-                                '$value.'
-                                . $keyAttributes['key_name']
-                                . '$'
-                            ));
+                            if (str_contains($keyAttributes['key_name'], ' ')) {
+                                $config = '$value["' . $keyAttributes['key_name'] . '"]$';
+                            } else {
+                                $config = '$value.' . $keyAttributes['key_name'] . '$';
+                            }
+
+                            $content[] = new HtmlElement('div', null, Text::create($config));
                         }
 
                         $configVariables->addHtml(new HtmlElement('li', null, ...$content));
                     }
 
+                    if (empty($content)) {
+                        return $this;
+                    }
 
                     $this->addHtmlHint(
                         HtmlElement::create(

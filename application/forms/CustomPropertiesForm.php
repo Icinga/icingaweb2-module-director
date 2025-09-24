@@ -3,13 +3,15 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use ipl\Html\FormElement\SubmitElement;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use Ramsey\Uuid\Uuid;
 
 class CustomPropertiesForm extends CompatForm
 {
@@ -26,11 +28,11 @@ class CustomPropertiesForm extends CompatForm
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
-        $this->addElement(new Dictionary(
+        $this->addElement((new Dictionary(
             'properties',
             $this->objectProperties,
             ['class' => 'no-border']
-        ));
+        ))->setAllowItemRemoval($this->object->isTemplate()));
 
         $this->addElement('submit', 'save', [
             'label' => $this->translate('Save')
@@ -55,6 +57,7 @@ class CustomPropertiesForm extends CompatForm
      * Filter empty values from array
      *
      * @param array $array
+     * @param string $propertyType
      *
      * @return array
      */
@@ -80,8 +83,16 @@ class CustomPropertiesForm extends CompatForm
         $vars = $this->object->vars();
 
         $modified = false;
-        foreach ($this->getElement('properties')->getDictionary() as $key => $value) {
-            if (is_array($value)) {
+        $values = $this->getElement('properties')->getDictionary();
+        $itemsToRemove = $this->getElement('properties')->getItemsToRemove();
+        foreach ($this->objectProperties as $key => $property) {
+            if (isset($itemsToRemove[$key])) {
+                continue;
+            }
+
+            $value = $values[$key] ?? null;
+
+            if (is_array($value) && $property['value_type'] !== 'fixed-array') {
                 $value = $this->filterEmpty($value);
             }
 
@@ -91,9 +102,45 @@ class CustomPropertiesForm extends CompatForm
                 $vars->set($key, $value);
             }
 
+            if ($vars->get($key) && $vars->get($key)->getUuid() === null && isset($property['uuid'])) {
+                $vars->registerVarUuid($key, Uuid::fromBytes($property['uuid']));
+            }
+
             if ($modified === false && $vars->hasBeenModified()) {
                 $modified = true;
             }
+        }
+
+        DirectorActivityLog::logModification($this->object, $this->object->getConnection());
+        if (! empty($itemsToRemove)) {
+            $objectId = (int) $this->object->get('id');
+            $db = $this->object->getDb();
+
+            $objectsToCleanUp = [$objectId];
+            $propertyAsHostVar = $db->fetchAll(
+                $db
+                    ->select()
+                    ->from('icinga_host_var')
+                    ->where('property_uuid IN (?)', $itemsToRemove)
+            );
+
+            foreach ($propertyAsHostVar as $propertyAsHostVarRow) {
+                $host = IcingaHost::loadWithAutoIncId($propertyAsHostVarRow->host_id, $this->object->getConnection());
+
+                if (in_array($objectId, $host->listAncestorIds(), true)) {
+                    $objectsToCleanUp[] = (int) $host->get('id');
+                }
+            }
+
+            $propertyWhere = $this->object->getDb()->quoteInto('property_uuid IN (?)', $itemsToRemove);
+            $objectsWhere = $this->object->getDb()->quoteInto('host_id IN (?)', $objectsToCleanUp);
+            $db->delete('icinga_host_var', $propertyWhere . ' AND ' . $objectsWhere);
+
+            $objectWhere = $this->object->getDb()->quoteInto('host_uuid = ?', $this->object->get('uuid'));
+            $db->delete(
+                'icinga_host_property',
+                $propertyWhere . ' AND ' . $objectWhere
+            );
         }
 
         $vars->storeToDb($this->object);
