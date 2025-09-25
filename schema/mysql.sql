@@ -1774,6 +1774,7 @@ CREATE TABLE icinga_dependency (
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
+  redundancy_group VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
   CONSTRAINT icinga_dependency_parent_host
@@ -2431,6 +2432,7 @@ CREATE TABLE branched_icinga_dependency (
   zone VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
+  redundancy_group VARCHAR(255) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
@@ -2446,4 +2448,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (189, NOW());
+  VALUES (190, NOW());

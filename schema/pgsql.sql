@@ -2059,6 +2059,7 @@ CREATE TABLE icinga_dependency (
   zone_id integer DEFAULT NULL,
   assign_filter text DEFAULT NULL,
   parent_service_by_name character varying(255),
+  redundancy_group character varying(255),
   PRIMARY KEY (id),
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY (parent_host_id)
@@ -2764,6 +2765,7 @@ CREATE TABLE branched_icinga_dependency (
   zone_id integer DEFAULT NULL,
   assign_filter text DEFAULT NULL,
   parent_service_by_name character varying(255),
+  redundancy_group character varying(255),
 
   imports TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
@@ -2781,4 +2783,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (189, NOW());
+  VALUES (190, NOW());
