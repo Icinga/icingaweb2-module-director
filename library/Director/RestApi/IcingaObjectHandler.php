@@ -106,8 +106,8 @@ class IcingaObjectHandler extends RequestHandler
 
         $type = $object->getShortTableName();
         $db = $object->getConnection();
-        $uuids = $object->listAncestorUuIds();
-        $uuids[] = $object->get('uuid');
+        $uuids = $object->listAncestorIds();
+        $uuids[] = $object->get('id');
         $query = $db->getDbAdapter()
                     ->select()
                     ->from(
@@ -116,15 +116,13 @@ class IcingaObjectHandler extends RequestHandler
                             'key_name' => 'dp.key_name',
                             'uuid' => 'dp.uuid',
                             'value_type' => 'dp.value_type',
-                            'label' => 'dp.label',
-                            'children' => 'COUNT(cdp.uuid)'
+                            'label' => 'dp.label'
                         ]
                     )
                     ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
-                    ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-                    ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+                    ->join(['io' => "icinga_$type"], 'io.uuid = iop.' . $type . '_uuid', [])
+                    ->where('io.id IN (?)', $uuids)
                     ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                    ->order('children')
                     ->order('key_name');
 
         $result = [];
@@ -206,20 +204,27 @@ class IcingaObjectHandler extends RequestHandler
                 if ($type !== 'service' && $overRiddenCustomVars) {
                     $customProperties = $this->getCustomProperties($object);
                     if (! empty($overRiddenCustomVars)) {
-                        $diff = array_diff(array_keys($overRiddenCustomVars), array_keys($customProperties));
-                        if (! empty($diff)) {
-                            throw new NotFoundError(sprintf(
-                                "The custom properties (%s) are not supported by this object",
-                                implode(", ", $diff)
-                            ));
-                        }
-
                         $objectVars = $object->vars();
-                        foreach ($customProperties as $key => $property) {
-                            if (isset($overRiddenCustomVars[$key])) {
-                                $objectVars->set($key, $overRiddenCustomVars[$key]);
-                                $objectVars->registerVarUuid($key, Uuid::fromBytes($property['uuid']));
+                        foreach ($overRiddenCustomVars as $key => $value) {
+                            if (! isset($customProperties[$key])) {
+                                if ($object->isTemplate()) {
+                                    $errMsg = sprintf(
+                                        "The custom property %s should be first added to the template",
+                                        $key
+                                    );
+                                } else {
+                                    $errMsg = sprintf(
+                                        "The custom property %s should be first added to one of the imported templates"
+                                        . " for this object",
+                                        $key
+                                    );
+                                }
+
+                                throw new NotFoundError($errMsg);
                             }
+
+                            $objectVars->set($key, $value);
+                            $objectVars->registerVarUuid($key, Uuid::fromBytes($customProperties[$key]['uuid']));
                         }
                     }
 

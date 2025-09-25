@@ -3058,11 +3058,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->templateTree()->listAncestorIdsFor($this);
     }
 
-    public function listAncestorUuIds()
-    {
-        return $this->templateTree()->listAncestorUuIdsFor($this);
-    }
-
     protected function templateTree()
     {
         return $this->templates()->tree();
