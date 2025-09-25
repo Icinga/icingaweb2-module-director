@@ -8,6 +8,8 @@ class PropertiesFilter
     public static $HOST_PROPERTY = 'HOST_PROPERTY';
     public static $SERVICE_PROPERTY = 'SERVICE_PROPERTY';
 
+    public static $USER_PROPERTY = 'USER_PROPERTY';
+
     protected $blacklist = array(
         'id',
         'object_name',
