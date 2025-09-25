@@ -3,13 +3,13 @@
 namespace Icinga\Module\Director\Resolver;
 
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use InvalidArgumentException;
 
 class CommandUsage
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var IcingaCommand */
     protected $command;

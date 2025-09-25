@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Field;
 
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use Icinga\Module\Director\Objects\IcingaCommand;
 
 class FormFieldSuggestion
 {
-    use TranslationHelper;
+    use Translation;
 
     /**
      * Macro/Argument names used in command argument values
