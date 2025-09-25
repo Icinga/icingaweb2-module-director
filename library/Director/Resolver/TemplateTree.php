@@ -31,8 +31,6 @@ class TemplateTree
 
     protected $names;
 
-    protected $uuids;
-
     protected $templateNameToId;
 
     public function __construct($type, Db $connection)
@@ -258,27 +256,6 @@ class TemplateTree
             }
 
             return $parents;
-        } else {
-            return [];
-        }
-    }
-
-    public function getParentsUuidsById($id)
-    {
-        $this->requireTree();
-
-        if (array_key_exists($id, $this->parentsUuids)) {
-            return $this->parentsUuids[$id];
-        }
-
-        $this->requireObjectMaps();
-        if (array_key_exists($id, $this->objectMaps)) {
-            $parentsUuids = [];
-            foreach ($this->objectMaps[$id] as $pid) {
-                $parentsUuids[$pid] = $this->uuids[$pid];
-            }
-
-            return $parentsUuids;
         } else {
             return [];
         }
@@ -510,7 +487,6 @@ class TemplateTree
             }
 
             $names[$pid] = $row->parent_name;
-            $uuids[$pid] = $row->parent_uuid;
             $parents[$id][$pid] = $row->parent_name;
             $parentsUuids[$id][$pid] = $row->parent_uuid;
 
@@ -526,7 +502,6 @@ class TemplateTree
         $this->children  = $children;
         $this->rootNodes = $rootNodes;
         $this->names = $names;
-        $this->uuids = $uuids;
         $this->templateNameToId = array_flip($names);
         Benchmark::measure(sprintf('"%s" Template Tree ready', $this->type));
     }
