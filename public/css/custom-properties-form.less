@@ -30,7 +30,7 @@
         background-color: @gray-lighter;
         width: 100%;
         &::before {
-          // icon: right-down
+          // icon: down
           font-family: 'ifont';
           content: '\e81d';
         }
@@ -38,7 +38,7 @@
 
       &.collapsed {
         legend::before {
-          // icon: right-down
+          // icon: right
           content: '\e820';
         }
       }
@@ -55,8 +55,7 @@
     .dictionary,
     .nested-dictionary,
     .nested-dictionary-item {
-      padding: 0.5em;
-      margin-bottom: 1em;
+      padding: 0 0.5em;
       .remove-button {
         position: absolute;
         top: 0;
@@ -67,6 +66,20 @@
       }
     }
 
+    .nested-dictionary {
+      .control-group.form-controls:last-of-type {
+        margin: 1em;
+      }
+
+      .inherited-value {
+        margin-right: 3em;
+      }
+
+      .empty-state-bar {
+        margin-right: 2em;
+      }
+    }
+
     .nested-dictionary-item.collapsed {
       .remove-button {
         margin-right: 3em;
@@ -74,18 +87,23 @@
     }
 
     .nested-dictionary-item {
+      > .control-group:first-of-type {
+        margin-top: 1em;
+      }
+
       > legend {
         padding: 0.25em 0.5em;
+        margin-top: 0;
+        margin-bottom: 0;
+
         &::before {
           margin-right: 0.5em;
         }
       }
 
       &.collapsed {
-        height: 0;
-        padding: 0;
-        overflow: hidden;
         border: none;
+        padding: 0;
       }
     }
   }

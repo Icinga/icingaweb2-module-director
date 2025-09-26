@@ -20,7 +20,6 @@
             this.module.on('rendered', this.rendered);
             this.module.on('beforerender', this.beforeRender);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
-            // this.module.on('click', 'fieldset > legend', this.toggleFieldset);
             // Disabled
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
@@ -35,7 +34,6 @@
             this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
             this.module.icinga.logger.debug('Director module initialized');
-            this.module.on('click', 'fieldset button[type=submit].remove-button', this.refreshOpenFieldsets);
         },
 
         tabWantsFullscreen: function (ev) {
@@ -639,36 +637,13 @@
         toggleFieldset: function (ev) {
             ev.stopPropagation();
             var $fieldset = $(ev.currentTarget).closest('fieldset');
+            if (! $fieldset.closest('form').hasClass('director-form')) {
+                return;
+            }
+
             $fieldset.toggleClass('collapsed');
             this.fixFieldsetInfo($fieldset);
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
-        },
-
-        refreshOpenFieldsets: function (ev) {
-            ev.stopPropagation();
-            var _this = this;
-            var $fieldsetRemoved = $(ev.currentTarget).closest('fieldset');
-            var $sets = $fieldsetRemoved.closest('fieldset.nested-fieldset');
-            var changeCollapsibleState = false;
-            var prevId = $fieldsetRemoved.attr('id');
-
-            $sets.find('fieldset.collapsible-item').each(function (idx, nestedFieldset) {
-                var $nestedFieldset = $(nestedFieldset);
-                var id = $nestedFieldset.attr('id');
-
-                if (id === prevId) {
-                    changeCollapsibleState = true;
-                    delete _this.openedFieldsets[id];
-
-                    return true;
-                }
-
-                if (changeCollapsibleState && id !== prevId) {
-                    delete _this.openedFieldsets[id];
-                    _this.openedFieldsets[prevId] = ! $nestedFieldset.hasClass('collapsed');
-                    prevId = id;
-                }
-            });
         },
 
         beforeRender: function (ev) {
@@ -815,6 +790,10 @@
 
         restoreFieldsets: function (idx, form) {
             var $form = $(form);
+            if (! $form.hasClass('director-form')) {
+                return;
+            }
+
             var self = this;
             var $sets = $('fieldset', $form);
 
