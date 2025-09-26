@@ -18,7 +18,7 @@ use ipl\Web\Widget\Icon;
  */
 class NestedDictionaryItem extends FieldsetElement
 {
-    protected $defaultAttributes = ['class' => ['nested-dictionary-item', 'collapsible-item']];
+    protected $defaultAttributes = ['class' => ['nested-dictionary-item', 'collapsible']];
 
     /** @var array Items in the nested dictionary property */
     protected array $items = [];
@@ -30,14 +30,16 @@ class NestedDictionaryItem extends FieldsetElement
     {
         $this->items = $items;
 
+        $this->getAttributes()->add([
+            'data-toggle-element' => 'legend',
+            'data-visible-height' => 0
+        ]);
+
         parent::__construct($name, $attributes);
     }
 
     protected function assemble(): void
     {
-        $id = str_replace(['[', ']'], '_', $this->getValueOfNameAttribute());
-        $this->getAttributes()->set('id', $id);
-
         $this->addElement('text', 'key', [
             'label' => $this->translate('Key'),
             'required' => true
@@ -50,9 +52,18 @@ class NestedDictionaryItem extends FieldsetElement
 
         if ($this->getElement('state')->getValue() === 'old') {
             $label = $this->getElement('key')->getValue();
+            $id = str_replace(['[', ']'], '_', $this->getElement('key')->getValue());
         } else {
             $label = $this->translate('New Item');
+            if ($this->getPopulatedValue('id') == null) {
+                $id = uniqid('id-');
+            } else {
+                $id = $this->getPopulatedValue('id');
+            }
         }
+
+        $this->addElement('hidden', 'id', ['value' => $id]);
+        $this->getAttributes()->set('id', $id);
 
         $this->setLabel($label);
         if ($this->removeButton !== null) {
@@ -77,7 +88,7 @@ class NestedDictionaryItem extends FieldsetElement
      *
      * @param ?FormElement $removeButton
      *
-     * return $this
+     * @return $this
      */
     public function setRemoveButton(?FormElement $removeButton): static
     {
