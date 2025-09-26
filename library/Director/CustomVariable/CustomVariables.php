@@ -234,13 +234,12 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             if ($var->isNew()) {
                 $row = [
                     $foreignColumn  => $foreignId,
-                    'property_uuid' => $uuid,
                     'varname'       => $var->getKey(),
                     'varvalue'      => $var->getDbValue(),
                     'format'        => $var->getDbFormat()
                 ];
 
-                if ($uuid) {
+                if ($object->getShortTableName() === 'host' && $uuid) {
                     $row['property_uuid'] = $uuid;
                 }
 
@@ -256,13 +255,18 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             if ($var->hasBeenDeleted()) {
                 $db->delete($table, $where);
             } elseif ($var->hasBeenModified()) {
+                $data = [
+                    'varvalue' => $var->getDbValue(),
+                    'format'   => $var->getDbFormat()
+                ];
+
+                if ($object->getShortTableName() === 'host' && $uuid) {
+                    $data['property_uuid'] = $uuid;
+                }
+
                 $db->update(
                     $table,
-                    array(
-                        'varvalue' => $var->getDbValue(),
-                        'property_uuid' => $uuid,
-                        'format'   => $var->getDbFormat()
-                    ),
+                    $data,
                     $where
                 );
             }
@@ -438,7 +442,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                     $this->renderKeyName($key),
                     $var->toConfigStringPrefetchable($renderExpressions)
                 );
-            } else {
+            } elseif ($object->getShortTableName() === 'host') {
                 $type = $object->getShortTableName();
                 $objectId = $object->get('id');
                 $ids =  $object->listAncestorIds() + [$object->get('id')];
