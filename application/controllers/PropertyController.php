@@ -340,16 +340,14 @@ class PropertyController extends CompatController
             $label = $this->translate('Property');
         }
 
-        $tabs = $this->getTabs()
-             ->add('property', [
-                 'label'  => $label,
-                 'url'    => $url
-             ])
-             ->add('usage', [
-                 'label'  => $this->translate('Custom Variable Usage'),
-                 'url'    => Url::fromPath('director/property/usage', ['uuid' => $this->uuid->toString()])
-             ]);
-
-        return $tabs;
+        return $this->getTabs()
+                    ->add('property', [
+                        'label'  => $label,
+                        'url'    => $url
+                    ])
+                    ->add('usage', [
+                        'label'  => $this->translate('Custom Variable Usage'),
+                        'url'    => Url::fromPath('director/property/usage', ['uuid' => $this->uuid->toString()])
+                    ]);
     }
 }
