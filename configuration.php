@@ -175,3 +175,15 @@ $section->add(N_('Deployments'))
     ->setUrl('director/config/deployments')
     ->setPriority(902)
     ->setPermission(Permission::DEPLOYMENTS);
+$section->add(N_('Properties'))
+    ->setUrl('director/properties')
+    ->setPriority(903);
+
+$cssDirectory = $this->getCssDir();
+$cssFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
+    $cssDirectory,
+    RecursiveDirectoryIterator::CURRENT_AS_PATHNAME | RecursiveDirectoryIterator::SKIP_DOTS
+));
+foreach ($cssFiles as $path) {
+    $this->provideCssFile(ltrim(substr($path, strlen($cssDirectory)), DIRECTORY_SEPARATOR));
+}

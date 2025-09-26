@@ -10,7 +10,6 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
-use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -18,6 +17,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
+use Icinga\Module\Director\Forms\ObjectPropertyForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
@@ -34,7 +34,9 @@ use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
+use Icinga\Web\Notification;
 use ipl\Html\Html;
+use ipl\Web\Url;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -101,6 +103,10 @@ abstract class ObjectController extends ActionController
 
     protected function initializeWebRequest()
     {
+        if ($this->getRequest()->getActionName() === 'add-property') {
+            return;
+        }
+
         if ($this->getRequest()->getActionName() === 'add') {
             $this->addSingleTab(
                 sprintf($this->translate('Add %s'), ucfirst($this->getType())),
@@ -266,6 +272,30 @@ abstract class ObjectController extends ActionController
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));
         }
+    }
+
+    public function addPropertyAction()
+    {
+        $this->assertPermission('director/admin');
+        $object = $this->requireObject();
+        $this->view->title = sprintf($this->translate('Add Custom Property: %s'), $this->object->getObjectName());
+        $objectUuid = $this->object->get('uuid');
+
+        $form = (new ObjectPropertyForm($this->db(), $object))
+            ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->on(ObjectPropertyForm::ON_SUCCESS, function (ObjectPropertyForm $form) use ($objectUuid) {
+                Notification::success(sprintf(
+                    sprintf($this->translate('Property %s has successfully been added'), $form->getPropertyName())
+                ));
+
+                $this->redirectNow(Url::fromPath(
+                    'director/' . $this->getType() . '/variables',
+                    ['uuid' => UUid::fromBytes($objectUuid)->toString()]
+                ));
+            })
+            ->handleRequest($this->getServerRequest());
+
+        $this->content()->add($form);
     }
 
     protected function addFieldsFormAndTable($object, $type)

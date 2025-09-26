@@ -13,6 +13,7 @@ class IcingaHostVar extends IcingaObject
         'varname'   => null,
         'varvalue'  => null,
         'format'    => null,
+        'property_uuid' => null,
     );
 
     public function onInsert()

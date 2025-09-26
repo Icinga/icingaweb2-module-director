@@ -20,6 +20,7 @@
             this.module.on('rendered', this.rendered);
             this.module.on('beforerender', this.beforeRender);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
+            // this.module.on('click', 'fieldset > legend', this.toggleFieldset);
             // Disabled
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
@@ -34,6 +35,7 @@
             this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
             this.module.icinga.logger.debug('Director module initialized');
+            this.module.on('click', 'fieldset button[type=submit].remove-button', this.refreshOpenFieldsets);
         },
 
         tabWantsFullscreen: function (ev) {
@@ -642,6 +644,33 @@
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
         },
 
+        refreshOpenFieldsets: function (ev) {
+            ev.stopPropagation();
+            var _this = this;
+            var $fieldsetRemoved = $(ev.currentTarget).closest('fieldset');
+            var $sets = $fieldsetRemoved.closest('fieldset.nested-fieldset');
+            var changeCollapsibleState = false;
+            var prevId = $fieldsetRemoved.attr('id');
+
+            $sets.find('fieldset.collapsible-item').each(function (idx, nestedFieldset) {
+                var $nestedFieldset = $(nestedFieldset);
+                var id = $nestedFieldset.attr('id');
+
+                if (id === prevId) {
+                    changeCollapsibleState = true;
+                    delete _this.openedFieldsets[id];
+
+                    return true;
+                }
+
+                if (changeCollapsibleState && id !== prevId) {
+                    delete _this.openedFieldsets[id];
+                    _this.openedFieldsets[prevId] = ! $nestedFieldset.hasClass('collapsed');
+                    prevId = id;
+                }
+            });
+        },
+
         beforeRender: function (ev) {
             var $container = $(ev.currentTarget);
             var id = $container.attr('id');
@@ -731,7 +760,7 @@
                 url = $container.data('icingaUrl');
                 $actions = $('.main-actions', $('#col1'));
             }
-            if (! $actions.length) {
+            if ($actions) {
                 return;
             }
 
@@ -814,7 +843,7 @@
         },
 
         fixFieldsetInfo: function ($fieldset) {
-            if ($fieldset.hasClass('collapsed')) {
+            if ($fieldset.hasClass('collapsed') && $fieldset.closest('form').hasClass('director-form')) {
                 if ($fieldset.find('legend span.element-count').length === 0) {
                     var cnt = $fieldset.find('dt, li').not('.extensible-set li').length;
                     if (cnt > 0) {
