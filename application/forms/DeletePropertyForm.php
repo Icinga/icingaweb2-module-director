@@ -159,31 +159,6 @@ class DeletePropertyForm extends CompatForm
     }
 
     /**
-     * Fetch property for the given UUID
-     *
-     * @param UuidInterface $uuid UUID of the given property
-     *
-     * @return array<string, mixed>
-     */
-    private function fetchCustomVars(UuidInterface $uuid): array
-    {
-        $db = $this->db->getDbAdapter();
-
-        $query = $db
-            ->select()
-            ->from(['ihv' => 'icinga_host_var'], [])
-            ->columns([
-                'host_id',
-                'varname',
-                'varvalue',
-                'property_uuid'
-            ])
-            ->where('property_uuid = ?', $uuid->getBytes());
-
-        return $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC);
-    }
-
-    /**
      * Remove dictionary item from the give data array
      *
      * @param array $item
@@ -215,8 +190,9 @@ class DeletePropertyForm extends CompatForm
     {
         $uuid = Uuid::fromBytes($this->property['uuid']);
         $prop = $this->fetchProperty($uuid);
+        $db = $this->db->getDbAdapter();
 
-        $this->db->getDbAdapter()->beginTransaction();
+        $db->beginTransaction();
         $this->db->delete('director_property', Filter::where('uuid', $uuid->getBytes()));
         $this->db->delete('director_property', Filter::where('parent_uuid', $uuid->getBytes()));
 
@@ -231,7 +207,18 @@ class DeletePropertyForm extends CompatForm
                 $rootUuid = Uuid::fromBytes($this->parent['uuid']);
             }
 
-            $customVars = $this->fetchCustomVars($rootUuid);
+            $query = $db
+                ->select()
+                ->from(['ihv' => 'icinga_host_var'], [])
+                ->columns([
+                    'host_id',
+                    'varname',
+                    'varvalue',
+                    'property_uuid'
+                ])
+                ->where('property_uuid = ?', $rootUuid->getBytes());
+
+            $customVars = $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC);
 
             foreach ($customVars as $customVar) {
                 $varValue = json_decode($customVar['varvalue'], true);
@@ -292,6 +279,13 @@ class DeletePropertyForm extends CompatForm
         $this->db->getDbAdapter()->commit();
     }
 
+    /**
+     * Update the items for the given fixed array
+     *
+     * @param UuidInterface $uuid
+     *
+     * @return void
+     */
     private function updateFixedArrayItems(UuidInterface $uuid): void
     {
         $db = $this->db->getDbAdapter();
