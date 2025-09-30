@@ -257,23 +257,28 @@ class DictionaryItem extends FieldsetElement
                 $values['value'] = array_values($value);
             }
         } else {
-            $defaultValue = null;
-            if ($this->getElement('parent_type')->getValue() === 'fixed-array') {
-                match($this->getElement('type')->getValue()) {
-                    'string' => $defaultValue = '',
-                    'number' => $defaultValue = 0,
-                    'bool' => $defaultValue = 'n',
-                    'fixed-array', 'dynamic-array' => $defaultValue = [],
-                    default => null
-                };
-            }
+            if (! empty($this->getElement('inherited')->getValue())) {
+                $values['value'] = $itemValue->getValue();
+            } else {
+                $defaultValue = null;
 
-            $values['value'] = $itemValue->getValue() ?? $defaultValue;
+                // Use the default value for fixed-array items only if the fixed array does not have an inherited value
+                if ($this->getElement('parent_type')->getValue() === 'fixed-array') {
+                    match ($this->getElement('type')->getValue()) {
+                        'string' => $defaultValue = '',
+                        'number' => $defaultValue = 0,
+                        'bool' => $defaultValue = 'n',
+                        'fixed-array', 'dynamic-array' => $defaultValue = []
+                    };
+                }
+
+                $values['value'] = $itemValue->getValue() ?? $defaultValue;
+            }
         }
 
-        $deleteCheckBox = 'delete-' . $this->getName();
-        if ($this->hasElement($deleteCheckBox)) {
-            $values['delete'] = $this->getElement($deleteCheckBox)->getValue();
+        $markForRemovalElement = 'delete-' . $this->getName();
+        if ($this->hasElement($markForRemovalElement)) {
+            $values['delete'] = $this->getElement($markForRemovalElement)->getValue();
         }
 
         return $values;

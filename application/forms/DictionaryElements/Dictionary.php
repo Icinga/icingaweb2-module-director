@@ -18,9 +18,6 @@ class Dictionary extends FieldsetElement
     /** @var bool Whether to allow removal of item */
     protected bool $allowItemRemoval = false;
 
-    /** @var array<string> Items marked to remove from the dictionary */
-    protected array $itemsToRemove = [];
-
     /** @var bool Whether the dictionary is an array */
     protected bool $isArray = false;
 
@@ -90,7 +87,19 @@ class Dictionary extends FieldsetElement
 
     public function getItemsToRemove(): array
     {
-        return $this->itemsToRemove;
+        $itemsToRemove = [];
+
+        /** @var DictionaryItem $element */
+        foreach ($this->ensureAssembled()->getElements() as $element) {
+            if ($element instanceof DictionaryItem) {
+                $item = $element->ensureAssembled()->getItem();
+                if (isset($item['delete']) && $item['delete'] === 'y') {
+                    $itemsToRemove[$item['name']] = $this->items[$item['name']]['uuid'];
+                }
+            }
+        }
+
+        return $itemsToRemove;
     }
 
     /**
@@ -108,10 +117,6 @@ class Dictionary extends FieldsetElement
                 $item = $element->ensureAssembled()->getItem();
                 if (isset($item['name']) && array_key_exists('value', $item)) {
                     $items[$item['name']] = $item['value'];
-
-                    if (isset($item['delete']) && $item['delete'] === 'y') {
-                        $this->itemsToRemove[$item['name']] = $this->items[$item['name']]['uuid'];
-                    }
                 }
             }
         }
