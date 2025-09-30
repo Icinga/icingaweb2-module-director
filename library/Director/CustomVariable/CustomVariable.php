@@ -8,6 +8,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use InvalidArgumentException;
 use LogicException;
+use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 abstract class CustomVariable implements IcingaConfigRenderer
@@ -92,6 +93,11 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->key;
     }
 
+    /**
+     * Get the UUID of the custom property linked to the custom variable
+     *
+     * @return ?UuidInterface
+     */
     public function getUuid(): ?UuidInterface
     {
         return $this->uuid;
@@ -257,7 +263,14 @@ abstract class CustomVariable implements IcingaConfigRenderer
         }
     }
 
-    public static function fromDbRow($row)
+    /**
+     * Create a CustomVariable instance from a database row object.
+     *
+     * @param object $row The database row object containing the custom variable data.
+     *
+     * @return CustomVariable The constructed CustomVariable instance.
+     */
+    public static function fromDbRow(object $row): CustomVariable
     {
         switch ($row->format) {
             case 'string':
@@ -276,12 +289,18 @@ abstract class CustomVariable implements IcingaConfigRenderer
                     $row->format
                 ));
         }
+
         if (property_exists($row, 'checksum')) {
             $var->setChecksum($row->checksum);
         }
 
+        if (property_exists($row, 'property_uuid')) {
+            $var->setUuid(Uuid::fromBytes($row->property_uuid));
+        }
+
         $var->loadedFromDb = true;
         $var->setUnmodified();
+
         return $var;
     }
 

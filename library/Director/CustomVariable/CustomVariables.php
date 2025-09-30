@@ -190,14 +190,20 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $db    = $object->getDb();
 
         $type = $object->getShortTableName();
+        $columns = [
+            'v.' . $type . '_id',
+            'v.varname',
+            'v.varvalue',
+            'v.format'
+        ];
+
+        if ($type === 'host') {
+            $columns[] = 'property_uuid';
+        }
+
         $query = $db->select()->from(
-            array('v' => $object->getVarsTableName()),
-            array(
-                'v.' . $type . '_id',
-                'v.varname',
-                'v.varvalue',
-                'v.format',
-            )
+            ['v' => $object->getVarsTableName()],
+            $columns
         )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->get('id'));
 
         $vars = new CustomVariables();
