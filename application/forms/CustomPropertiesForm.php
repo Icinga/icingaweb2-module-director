@@ -81,10 +81,14 @@ class CustomPropertiesForm extends CompatForm
     protected function onSuccess(): void
     {
         $vars = $this->object->vars();
+        $inheritedVars = $this->object->getInheritedVars();
 
         $modified = false;
-        $values = $this->getElement('properties')->getDictionary();
-        $itemsToRemove = $this->getElement('properties')->getItemsToRemove();
+
+        /** @var Dictionary $propertiesElement */
+        $propertiesElement = $this->getElement('properties');
+        $values = $propertiesElement->getDictionary();
+        $itemsToRemove = $propertiesElement->getItemsToRemove();
         foreach ($this->objectProperties as $key => $property) {
             if (isset($itemsToRemove[$key])) {
                 continue;
@@ -92,7 +96,10 @@ class CustomPropertiesForm extends CompatForm
 
             $value = $values[$key] ?? null;
 
-            if (is_array($value) && $property['value_type'] !== 'fixed-array') {
+            if (
+                is_array($value)
+                && ($property['value_type'] !== 'fixed-array' || isset($inheritedVars->$key))
+            ) {
                 $value = $this->filterEmpty($value);
             }
 
