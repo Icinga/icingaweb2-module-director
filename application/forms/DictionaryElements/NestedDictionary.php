@@ -38,13 +38,21 @@ class NestedDictionary extends FieldsetElement
         $newCount = 0;
 
         if (! empty($this->inheritedValue['value'])) {
+            $inheritedFrom = implode(
+                ', ',
+                array_map(
+                    fn($item) => '"' . trim($item) . '"',
+                    explode(',', $this->inheritedValue['inherited_from'])
+                )
+            );
+
             $this->addElement(
                 'textarea',
                 'inherited_value',
                 [
                     'label' => sprintf(
-                        $this->translate('Inherited from "%s"'),
-                        $this->inheritedValue['inherited_from']
+                        $this->translate('Inherited from %s'),
+                        $inheritedFrom
                     ),
                     'value' => $this->inheritedValue['value'],
                     'class' => 'inherited-value',
