@@ -113,11 +113,6 @@ class TemplateTree
         return array_keys($this->getAncestorsFor($object));
     }
 
-    public function listAncestorUuIdsFor(IcingaObject $object)
-    {
-        return $this->getAncestorsUuidsFor($object);
-    }
-
     public function listChildIdsFor(IcingaObject $object)
     {
         return array_keys($this->getChildrenFor($object));

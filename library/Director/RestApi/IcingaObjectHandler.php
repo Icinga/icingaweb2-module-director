@@ -8,6 +8,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -113,8 +114,8 @@ class IcingaObjectHandler extends RequestHandler
 
         $type = $object->getShortTableName();
         $db = $object->getConnection();
-        $uuids = $object->listAncestorIds();
-        $uuids[] = $object->get('id');
+        $ids = $object->listAncestorIds();
+        $ids[] = $object->get('id');
         $query = $db->getDbAdapter()
                     ->select()
                     ->from(
@@ -128,7 +129,7 @@ class IcingaObjectHandler extends RequestHandler
                     )
                     ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
                     ->join(['io' => "icinga_$type"], 'io.uuid = iop.' . $type . '_uuid', [])
-                    ->where('io.id IN (?)', $uuids)
+                    ->where('io.id IN (?)', $ids)
                     ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
                     ->order('key_name');
 
