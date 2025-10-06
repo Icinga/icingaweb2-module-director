@@ -294,7 +294,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
             $var->setChecksum($row->checksum);
         }
 
-        if (property_exists($row, 'property_uuid')) {
+        if (property_exists($row, 'property_uuid') && $row->property_uuid) {
             $var->setUuid(Uuid::fromBytes($row->property_uuid));
         }
 
