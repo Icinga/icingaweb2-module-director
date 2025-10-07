@@ -94,7 +94,6 @@ class CommandUsage
     {
         $id = $this->command->getAutoincId();
 
-        //return (object) array('object'=>1);
         $columns = [];
         foreach ($objectTypes as $type) {
             $columns[$type] = "COALESCE(SUM(CASE WHEN object_type = '$type' THEN 1 ELSE 0 END), 0)";
