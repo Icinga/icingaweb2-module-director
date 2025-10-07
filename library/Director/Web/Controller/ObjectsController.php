@@ -477,13 +477,14 @@ abstract class ObjectsController extends ActionController
                 case 'command':
                     $table->getQuery()
                         ->join(
-                            array('ici' => 'icinga_command_inheritance'),
+                            ['ici' => 'icinga_command_inheritance'],
                             'ici.command_id = o.id',
-                            array()
+                            []
                         )->where(
                             'ici.parent_command_id = ?',
                             $command->getAutoincId()
                         );
+                        
                     break;
             }
         }

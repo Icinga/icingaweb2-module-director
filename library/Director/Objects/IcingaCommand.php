@@ -184,8 +184,8 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
             array('cnt' => 'COUNT(*)')
         )->where('n.command_id = ?', $id);
         $qc = $db->select()->from(
-            array('c' => 'icinga_command_inheritance'),
-            array('cnt' => 'COUNT(*)')
+            [c' => 'icinga_command_inheritance'],
+            ['cnt' => 'COUNT(*)']
         )->where('c.parent_command_id = ?', $id);
 
         $query = $db->select()->union(
