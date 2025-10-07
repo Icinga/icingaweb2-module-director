@@ -108,7 +108,7 @@ class CommandUsage
             foreach ($rels as $rel) {
                 $query->orWhere("parent_{$rel}_id = ?", $id);
             }
-        }else{
+        } else {
             $query = $this->db->select()->from("icinga_$table", $columns);
 
             foreach ($rels as $rel) {
