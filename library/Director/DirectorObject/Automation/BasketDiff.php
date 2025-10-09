@@ -25,6 +25,9 @@ class BasketDiff
     /** @var BasketSnapshotFieldResolver */
     protected $fieldResolver;
 
+    /** @var BasketSnapshotCustomPropertyResolver */
+    protected $customPropertyResolver;
+
     public function __construct(BasketSnapshot $snapshot, Db $db)
     {
         $this->db = $db;
@@ -58,14 +61,28 @@ class BasketDiff
         return $this->fieldResolver;
     }
 
+    protected function getCustomPropertyResolver(): BasketSnapshotCustomPropertyResolver
+    {
+        if ($this->customPropertyResolver === null) {
+            $this->customPropertyResolver = new BasketSnapshotCustomPropertyResolver(
+                $this->getBasketObjects(),
+                $this->db
+            );
+        }
+
+        return $this->customPropertyResolver;
+    }
+
     protected function getCurrent(string $type, string $key, ?UuidInterface $uuid = null): ?stdClass
     {
         if ($uuid && $current = BasketSnapshot::instanceByUuid($type, $uuid, $this->db)) {
             $exported = $this->exporter->export($current);
             $this->getFieldResolver()->tweakTargetIds($exported);
+            $this->getCustomPropertyResolver()->tweakTargetUuids($exported);
         } elseif ($current = BasketSnapshot::instanceByIdentifier($type, $key, $this->db)) {
             $exported = $this->exporter->export($current);
             $this->getFieldResolver()->tweakTargetIds($exported);
+            $this->getCustomPropertyResolver()->tweakTargetUuids($exported);
         } else {
             $exported = null;
         }
@@ -78,6 +95,7 @@ class BasketDiff
     {
         $object = $this->getBasketObject($type, $key);
         $fields = $object->fields ?? null;
+        $properties = $object->properties ?? null;
         $reExport = $this->exporter->export(
             $this->importer->import(BasketSnapshot::getClassForType($type), $object)
         );
@@ -86,6 +104,13 @@ class BasketDiff
         } else {
             $reExport->fields = $fields;
         }
+
+        if ($properties === null) {
+            unset($reExport->properties);
+        } else {
+            $reExport->properties = $properties;
+        }
+
         CompareBasketObject::normalize($reExport);
 
         return $reExport;
