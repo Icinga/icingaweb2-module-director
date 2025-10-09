@@ -8,6 +8,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorJob;
+use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaServiceGroup;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
@@ -76,6 +77,16 @@ class ImportExport
     {
         $res = [];
         foreach (DirectorDatafield::loadAll($this->connection) as $object) {
+            $res[] = $this->exporter->export($object);
+        }
+
+        return $res;
+    }
+
+    public function serializeAllCustomProperties()
+    {
+        $res = [];
+        foreach (DirectorProperty::loadAll($this->connection) as $object) {
             $res[] = $this->exporter->export($object);
         }
 
