@@ -60,7 +60,8 @@ class Basket extends DbObject implements ExportInterface
     protected function onLoadFromDb()
     {
         $this->chosenObjects = (array) Json::decode($this->get('objects'));
-        unset($this->chosenObjects['Datafield']); // Might be in old baskets
+        unset($this->chosenObjects['Datafield']);
+        unset($this->chosenObjects['Property']);// Might be in old baskets
     }
 
     public function getUniqueIdentifier()

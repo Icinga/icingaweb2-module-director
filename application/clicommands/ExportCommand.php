@@ -95,6 +95,27 @@ class ExportCommand extends Command
     }
 
     /**
+     * Export all CustomProperty definitions
+     *
+     * USAGE
+     *
+     * icingacli director export customproperties [options]
+     *
+     * OPTIONS
+     *
+     *   --no-pretty   JSON is pretty-printed per default
+     *                 Use this flag to enforce unformatted JSON
+     */
+    public function custompropertiesAction()
+    {
+        $export = new ImportExport($this->db());
+        echo $this->renderJson(
+            $export->serializeAllCustomProperties(),
+            ! $this->params->shift('no-pretty')
+        );
+    }
+
+    /**
      * Export all DataList definitions
      *
      * USAGE

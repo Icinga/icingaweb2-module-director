@@ -272,7 +272,7 @@ class BasketController extends ActionController
         $this->addSingleTab($this->translate('Snapshot'));
         $diff = new BasketDiff($snapshot, $connection);
         foreach ($diff->getBasketObjects() as $type => $objects) {
-            if ($type === 'Datafield') {
+            if ($type === 'Datafield' || $type === 'Property') {
                 // TODO: we should now be able to show all fields and link
                 //       to a "diff" for the ones that should be created
                 // $this->content()->add(Html::tag('h2', sprintf('+%d Datafield(s)', count($objects))));
