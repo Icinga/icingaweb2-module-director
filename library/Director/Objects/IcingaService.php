@@ -683,7 +683,7 @@ class IcingaService extends IcingaObject implements ExportInterface
 
             $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
 
-            $whiteList = ['value'];
+            $whiteList = ['value', 'host.*'];
             foreach ($result as $row) {
                 if (str_contains($row['key_name'], ' ')) {
                     continue;
