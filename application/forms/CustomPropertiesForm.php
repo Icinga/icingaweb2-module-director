@@ -57,7 +57,6 @@ class CustomPropertiesForm extends CompatForm
      * Filter empty values from array
      *
      * @param array $array
-     * @param string $propertyType
      *
      * @return array
      */
