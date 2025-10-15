@@ -4,8 +4,8 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\CustomPropertiesForm;
+use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
@@ -123,7 +123,9 @@ class HostController extends ObjectController
                     $this->redirectNow(Url::fromRequest());
                 })
                 ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) use (&$vars) {
-                    $vars = $form->getElement('properties')->getDictionary();
+                    /** @var Dictionary $propertiesElement */
+                    $propertiesElement = $form->getElement('properties');
+                    $vars = $propertiesElement->getDictionary();
                 })
                 ->handleRequest($this->getServerRequest());
 
