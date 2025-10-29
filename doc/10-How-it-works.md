@@ -17,8 +17,8 @@ the Director.
 The Director uses the Icinga 2 API to ship the configuration. It does
 so by shipping full config packages, it does not deal with single
 objects. This makes deployments much faster. It also makes it easier to
-eventually use Director in parallel with manual configuration or
-configuration shipped by other tools.
+use Director in parallel with manual configuration or configuration
+shipped by other tools.
 
 Internally, Icinga 2 manages part of its configuration in its `var/lib`
 directory. This is usually to be found in `/var/lib/icinga2`. Config
