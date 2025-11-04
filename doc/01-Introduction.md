@@ -23,6 +23,16 @@ Doing automation? Want to feed your monitoring from your configuration
 management tool, or from your CMDB? You'll love the endless possibilities
 Director provides.
 
+!!! tip "Upcoming Webinar: Explaining Icinga Director for Practitioners"
+
+    Join us for a hands-on webinar where we explore the Icinga Director,
+    the configuration tool that brings structure and automation to your
+    monitoring setup.
+    
+    **Date:** December 2, 2025 <br />
+    **Time:** 3PM - 4PM (CET)
+     
+    <a href="https://icinga.com/webinars/explaining-icinga-director-for-practitioners/?utm_source=docs" target="_blank"><strong>Register Now</strong></a>
 
 Basic architecture
 ------------------
