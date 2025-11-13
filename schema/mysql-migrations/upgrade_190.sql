@@ -5,7 +5,6 @@ CREATE TABLE director_property (
                                    label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
                                    value_type enum('string', 'number', 'bool', 'fixed-array', 'fixed-dictionary', 'dynamic-array', 'dynamic-dictionary') COLLATE utf8mb4_unicode_ci NOT NULL,
                                    description text,
-                                   instantiable enum('y', 'n') NOT NULL DEFAULT 'n',
                                    PRIMARY KEY (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
