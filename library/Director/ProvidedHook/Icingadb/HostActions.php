@@ -47,10 +47,12 @@ class HostActions extends HostActionsHook
         if (Util::hasPermission(Permission::HOSTS) && IcingaHost::exists($hostname, $db)) {
             $allowEdit = true;
         }
-        if (Util::hasPermission(Permission::ICINGADB_HOSTS)) {
-            if ((new IcingadbBackend())->canModifyHost($hostname)) {
-                $allowEdit = IcingaHost::exists($hostname, $db);
-            }
+        if (
+            Util::hasPermission(Permission::HOSTS)
+            && Util::hasPermission(Permission::ICINGADB_HOSTS)
+            && (new IcingadbBackend())->canModifyHost($hostname)
+        ) {
+            $allowEdit = IcingaHost::exists($hostname, $db);
         }
 
         if ($allowEdit) {
