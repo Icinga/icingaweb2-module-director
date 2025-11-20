@@ -146,12 +146,12 @@ class HostController extends ObjectController
         $info = ServiceFinder::find($host, $serviceName);
         $backend = $this->backend();
 
-        if ($info && $auth->hasPermission(Permission::HOSTS)) {
+        if ($info && $auth->hasPermission(Permission::SERVICES)) {
             $redirectUrl = $info->getUrl();
         } elseif (
             $info
-            && (($backend instanceof Monitoring && $auth->hasPermission(Permission::MONITORING_HOSTS))
-                || ($backend instanceof IcingadbBackend && $auth->hasPermission(Permission::ICINGADB_HOSTS))
+            && (($backend instanceof Monitoring && $auth->hasPermission(Permission::MONITORING_SERVICES))
+                || ($backend instanceof IcingadbBackend && $auth->hasPermission(Permission::ICINGADB_SERVICES))
             )
             && $backend->canModifyService($hostName, $serviceName)
         ) {
@@ -215,6 +215,14 @@ class HostController extends ObjectController
      */
     public function servicesAction()
     {
+        if (! $this->hasPermission(Permission::SERVICES)) {
+            if ($this->isServicesReadOnlyAction() && $this->hasPermission($this->getServicesReadOnlyPermission())) {
+                $this->servicesroAction();
+            }
+
+            return;
+        }
+
         $this->addServicesHeader();
         $host = $this->getHostObject();
         $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
