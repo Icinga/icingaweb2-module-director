@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
@@ -134,6 +135,10 @@ class ServicesetController extends ObjectController
             } else {
                 parent::loadObject();
             }
+        }
+
+        if (! $this->allowsObject($this->object)) {
+            throw new NotFoundError('No such object available');
         }
 
         return $this->object;

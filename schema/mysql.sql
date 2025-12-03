@@ -46,7 +46,7 @@ CREATE TABLE director_activity_log (
   INDEX search_idx (object_name),
   INDEX search_idx2 (object_type(32), object_name(64), change_time),
   INDEX search_author (author),
-  INDEX checksum (checksum)
+  UNIQUE INDEX checksum (checksum)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_activity_log_remark (
@@ -114,7 +114,7 @@ CREATE TABLE director_generated_config (
   last_activity_checksum VARBINARY(20) NOT NULL,
   PRIMARY KEY (checksum),
   CONSTRAINT director_generated_config_activity
-    FOREIGN KEY activity_checksum (last_activity_checksum)
+    FOREIGN KEY (last_activity_checksum)
     REFERENCES director_activity_log (checksum)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT
@@ -347,8 +347,8 @@ CREATE TABLE director_job (
   run_interval INT(10) UNSIGNED NOT NULL, -- seconds
   timeperiod_id INT(10) UNSIGNED DEFAULT NULL,
   last_attempt_succeeded ENUM('y', 'n') DEFAULT NULL,
-  ts_last_attempt TIMESTAMP NULL DEFAULT NULL,
-  ts_last_error TIMESTAMP NULL DEFAULT NULL,
+  ts_last_attempt BIGINT(20) NULL DEFAULT NULL,
+  ts_last_error BIGINT(20) NULL DEFAULT NULL,
   last_error_message TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY (job_name),
@@ -2446,4 +2446,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (187, NOW());
+  VALUES (189, NOW());
