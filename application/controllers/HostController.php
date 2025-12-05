@@ -9,6 +9,7 @@ use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
+use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -30,6 +31,7 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
+use Ramsey\Uuid\Uuid;
 
 class HostController extends ObjectController
 {
@@ -95,6 +97,7 @@ class HostController extends ObjectController
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
+        $hasAddedItems = $this->params->shift('items-added', false);
 
         $this->addTitle(
             $this->translate('Custom Variables: %s'),
@@ -114,18 +117,37 @@ class HostController extends ObjectController
         }
 
         if ($objectProperties) {
-            $vars = json_decode(json_encode($this->object->getVars()), true);
+            if ($this->session->get('vars')) {
+                $vars = $this->session->get('vars');
+            } else {
+                $vars = json_decode(json_encode($this->object->getVars()), true);
+                $this->session->set('vars', $vars);
+            }
+
             $inheritedVars = json_decode(json_encode($this->object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
             $origins = $this->object->getOriginsVars();
 
-            $form = (new CustomPropertiesForm($object, $objectProperties))
+            $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems))
                 ->on(CustomPropertiesForm::ON_SUCCESS, function () {
-                    $this->redirectNow(Url::fromRequest());
+                    $this->session->delete('vars');
+                    $this->session->delete('added-properties');
+                    $this->session->delete('removed-properties');
+                    $this->redirectNow(Url::fromRequest()->without('items-added'));
                 })
                 ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) use (&$vars) {
+                    /** @var SubmitButtonElement $discard */
+                    $discard = $form->getElement('discard');
+                    if ($discard->hasBeenPressed()) {
+                        $this->session->delete('vars');;
+                        $this->session->delete('added-properties');
+                        $this->session->delete('removed-properties');
+                        $this->redirectNow(Url::fromRequest()->without('items-added'));
+                    }
+
                     /** @var Dictionary $propertiesElement */
                     $propertiesElement = $form->getElement('properties');
                     $vars = $propertiesElement->getDictionary();
+                    $this->session->set('vars', $vars);
                 })
                 ->handleRequest($this->getServerRequest());
 
@@ -162,7 +184,6 @@ class HostController extends ObjectController
         }
 
         $type = $this->object->getShortTableName();
-
         $parents = $this->object->listAncestorIds();
 
         $uuids = [];
@@ -198,6 +219,8 @@ class HostController extends ObjectController
             ->order('key_name');
 
         $result = [];
+        $removedProperties = $this->session->get('removed-properties', []);
+        $vars = json_decode(json_encode($this->object->getVars()), true);
         foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
             if ($objectUuid === $row[$type . '_uuid']) {
                 $row['allow_removal'] = true;
@@ -205,7 +228,52 @@ class HostController extends ObjectController
                 $row['allow_removal'] = false;
             }
 
-            $result[$row['key_name']] = $row;
+            if (isset($vars[$row['key_name']])) {
+                $row['value'] = $vars[$row['key_name']];
+            }
+
+            if (! array_key_exists($row['key_name'], $removedProperties)) {
+                $result[$row['key_name']] = $row;
+            }
+        }
+
+        $addedProperties = $this->session->get('added-properties');
+        if ($addedProperties) {
+            $query = $db->getDbAdapter()
+                ->select()
+                ->from(
+                    ['dp' => 'director_property'],
+                    [
+                        'key_name' => 'dp.key_name',
+                        'uuid' => 'dp.uuid',
+                        'value_type' => 'dp.value_type',
+                        'label' => 'dp.label',
+                        'children' => 'COUNT(cdp.uuid)'
+                    ]
+                )
+                ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+                ->where('dp.' . 'uuid IN (?)', $addedProperties)
+                ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+                ->order(
+                    "FIELD(dp.value_type, 'string', 'number', 'bool', 'fixed-array',"
+                    . " 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary')"
+                )
+                ->order('children')
+                ->order('key_name');
+
+            foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+                $row['allow_removal'] = true;
+                $row['host_uuid'] = $this->object->get('uuid');
+                if (! isset($result[$row['key_name']])) {
+                    $row['new'] = true;
+                }
+
+                if (isset($vars[$row['key_name']])) {
+                    $row['value'] = $vars[$row['key_name']];
+                }
+
+                $result[$row['key_name']] = $row;
+            }
         }
 
         return $result;

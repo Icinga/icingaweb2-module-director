@@ -45,21 +45,17 @@ class NestedDictionaryItem extends FieldsetElement
             'required' => true
         ]);
 
-        $this->addElement('hidden', 'state', [
-            'value' => $this->getPopulatedValue('key') ? 'old' : 'new',
-            'ignore' => true
-        ]);
-
-        if ($this->getElement('state')->getValue() === 'old') {
-            $label = $this->getElement('key')->getValue();
-            $id = str_replace(['[', ']'], '_', $this->getElement('key')->getValue());
-        } else {
+        if (empty($this->getPopulatedValue('key'))) {
+            $this->clearPopulatedValue('key');
             $label = $this->translate('New Item');
             if ($this->getPopulatedValue('id') == null) {
                 $id = uniqid('id-');
             } else {
                 $id = $this->getPopulatedValue('id');
             }
+        } else {
+            $label = $this->getElement('key')->getValue();
+            $id = str_replace(['[', ']'], '_', $this->getElement('key')->getValue());
         }
 
         $this->addElement('hidden', 'id', ['value' => $id]);
@@ -114,6 +110,10 @@ class NestedDictionaryItem extends FieldsetElement
             }
 
             $nestedValues[] = $nestedItem;
+        }
+
+        if (isset($property['key']) && str_starts_with($property['key'], NestedDictionary::UNDEFINED_KEY)) {
+            $property['key'] = null;
         }
 
         return [

@@ -35,6 +35,7 @@ use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
 use Icinga\Web\Notification;
+use Icinga\Web\Session;
 use ipl\Html\Html;
 use ipl\Web\Url;
 use Ramsey\Uuid\Uuid;
@@ -62,6 +63,9 @@ abstract class ObjectController extends ActionController
     /** @var string|null */
     protected $objectBaseUrl;
 
+    /** @var Session\SessionNamespace */
+    protected Session\SessionNamespace $session;
+
     public function init()
     {
         $this->enableStaticObjectLoader($this->getTableName());
@@ -72,6 +76,7 @@ abstract class ObjectController extends ActionController
         if ($this->getRequest()->isApiRequest()) {
             $this->initializeRestApi();
         } else {
+            $this->session = Session::getSession()->getNamespace('director');
             $this->initializeWebRequest();
         }
     }
@@ -103,6 +108,13 @@ abstract class ObjectController extends ActionController
 
     protected function initializeWebRequest()
     {
+        $action = $this->getRequest()->getActionName();
+        if (! ($action === 'variables' || $action === 'add-property')) {
+            $this->session->delete('vars');
+            $this->session->delete('added-properties');
+            $this->session->delete('removed-properties');
+        }
+
         if ($this->getRequest()->getActionName() === 'add-property') {
             return;
         }
@@ -284,13 +296,25 @@ abstract class ObjectController extends ActionController
         $form = (new ObjectPropertyForm($this->db(), $object))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(ObjectPropertyForm::ON_SUCCESS, function (ObjectPropertyForm $form) use ($objectUuid) {
-                Notification::success(sprintf(
-                    sprintf($this->translate('Property %s has successfully been added'), $form->getPropertyName())
-                ));
+                $properties = $this->session->get('added-properties', []);
+                $removedObjectProperties = $this->session->get('removed-properties', []);
+                $propertyName = $form->getPropertyName();
+                if (array_key_exists($propertyName, $removedObjectProperties)) {
+                    unset($removedObjectProperties[$propertyName]);
+                }
 
+                if (! isset($properties[$propertyName])) {
+                    $properties[$propertyName] = Uuid::fromString($form->getValue('property'))->getBytes();
+                }
+
+                $this->session->set('added-properties', $properties);
+                $this->session->set('removed-properties', $removedObjectProperties);
                 $this->redirectNow(Url::fromPath(
                     'director/' . $this->getType() . '/variables',
-                    ['uuid' => UUid::fromBytes($objectUuid)->toString()]
+                    [
+                        'uuid' => UUid::fromBytes($objectUuid)->toString(),
+                        'items-added' => true
+                    ]
                 ));
             })
             ->handleRequest($this->getServerRequest());

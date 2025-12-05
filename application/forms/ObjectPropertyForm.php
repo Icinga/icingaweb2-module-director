@@ -72,33 +72,29 @@ class ObjectPropertyForm extends CompatForm
             $uuids[] = IcingaHost::load($parent, $this->object->getConnection())->get('uuid');
         }
 
+        $uuids[] = $this->object->get('uuid');
+        $removedProperties = Session::getSession()->getNamespace('director')->get('removed-properties', []);
+
         $query = $db
             ->select()
             ->from(['dp' => 'director_property'], ['uuid' => 'dp.uuid', 'key_name' => 'dp.key_name'])
             ->joinLeft(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid')
-            ->where('parent_uuid IS NULL');
+            ->where('dp.parent_uuid IS NULL')
+            ->where('iop.host_uuid NOT IN (?) OR iop.host_uuid IS NULL', $uuids);
 
-        if (! empty($uuids)) {
-            $query->where('iop.host_uuid NOT IN (?) OR iop.host_uuid IS NULL', $uuids);
+        if (! empty($removedProperties)) {
+            $query->orWhere('dp.uuid IN (?) AND dp.parent_uuid IS NULL', $removedProperties);
         }
 
         $properties = $db->fetchAll($query);
         $propUuidKeyPairs = [];
+        $alreadyAddedProperties = Session::getSession()->getNamespace('director')->get('added-properties', []);
         foreach ($properties as $property) {
-            $propUuidKeyPairs[Uuid::fromBytes($property->uuid)->toString()] = $property->key_name;
+            if (! isset($alreadyAddedProperties[$property->key_name])) {
+                $propUuidKeyPairs[Uuid::fromBytes($property->uuid)->toString()] = $property->key_name;
+            }
         }
 
         return $propUuidKeyPairs;
-    }
-
-    protected function onSuccess()
-    {
-        $this->db->insert(
-            'icinga_host_property',
-            [
-                'host_uuid' => $this->object->uuid,
-                'property_uuid' => Uuid::fromString($this->getValue('property'))->getBytes()
-            ]
-        );
     }
 }

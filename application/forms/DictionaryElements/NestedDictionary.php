@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use ipl\Html\FormElement\FieldsetElement;
-use ipl\Html\HtmlElement;
 use ipl\Web\Widget\EmptyStateBar;
 
 /**
@@ -12,6 +11,8 @@ use ipl\Web\Widget\EmptyStateBar;
 class NestedDictionary extends FieldsetElement
 {
     protected $defaultAttributes = ['class' => ['nested-dictionary', 'nested-fieldset']];
+
+    public const UNDEFINED_KEY = '__undefined__';
 
     /** @var array Nested dictionary items */
     protected $nestedItems = [];
@@ -94,9 +95,9 @@ class NestedDictionary extends FieldsetElement
             $count++;
         }
 
-        $addButton = $this->createElement('submitButton', 'add_property', [
-            'label' => $this->translate('Add Property'),
-            'class' => ['add-property'],
+        $addButton = $this->createElement('submitButton', 'add_item', [
+            'label' => $this->translate('Add Item'),
+            'class' => ['add-item'],
             'formnovalidate' => true
         ]);
 
@@ -135,13 +136,18 @@ class NestedDictionary extends FieldsetElement
     public static function prepare(array $nestedItems, array $values): array
     {
         $result = [];
+        $count = 0;
         foreach ($values as $key => $nestedValue) {
             $nestedValue['key'] = $key;
             $result[] = NestedDictionaryItem::prepare(
                 $nestedItems,
                 $nestedValue
             );
+
+            $count++;
         }
+
+        $result['count'] = $count;
 
         return $result;
     }
@@ -170,7 +176,7 @@ class NestedDictionary extends FieldsetElement
                 if (! empty($property['key']) && array_key_exists('value', $property)) {
                     $values[$property['key']] = $property['value'];
                 } else {
-                    $values[$count] = $property['value'];
+                    $values[self::UNDEFINED_KEY . $count] = $property['value'];
                 }
 
                 $count++;

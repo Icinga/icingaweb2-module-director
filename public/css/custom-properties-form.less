@@ -1,5 +1,15 @@
 // Style
 .custom-properties-form {
+  .btn-primary:disabled {
+    background-color: @gray-light;
+  }
+
+  .btn-discard:disabled {
+    background: @gray-light;
+    color: @disabled-gray;
+    border-color: transparent;
+  }
+
   .control-group:has(> fieldset) {
     .dictionary,
     .nested-dictionary,
@@ -14,6 +24,20 @@
         width: fit-content;
         border: none;
         background: none;
+        color: @color-critical;
+        &:hover {
+          background-color: @color-critical;
+          color: @text-color-inverted;
+        }
+      }
+    }
+
+    .dictionary-item.removable {
+      border: 1px solid @gray-light;
+      border-radius: 1em;
+      .remove-property {
+        width: fit-content;
+        border: none;
         color: @color-critical;
         &:hover {
           background-color: @color-critical;
@@ -48,6 +72,20 @@
 
 // Layout
 .custom-properties-form {
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  // TODO: Use this in JS to position the footer at the bottom of the page
+  .sticky-footer {
+    position: fixed;
+    bottom: 0;
+    // Width properties taken from icingaweb2/public/css/icinga/forms.less
+    width: 80%;
+    max-width: 70em;
+  }
+
   .control-group:has(> fieldset) {
     position: relative;
     padding-right: 2em;
@@ -61,6 +99,24 @@
         top: 0;
         right: 0;
         margin-top: 0.1em;
+        margin-right: 3.5em;
+        justify-content: center;
+      }
+    }
+
+    .nested-dictionary {
+      .btn-primary.add-item {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .dictionary-item.removable {
+      .remove-property {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin-top: -1em;
         margin-right: 3.5em;
         justify-content: center;
       }

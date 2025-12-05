@@ -6,8 +6,9 @@ use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
-use ipl\Html\FormElement\CheckboxElement;
+use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\HtmlElement;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -25,21 +26,14 @@ class DictionaryItem extends FieldsetElement
     /** @var array Dictionary Item Fields */
     private $fields;
 
-    /** @var bool Whether to allow removal of item */
-    private bool $isRemovable = false;
+    /** @var ?FormElement Remove button */
+    private ?FormElement $removeButton = null;
 
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->fields = $items;
 
         parent::__construct($name, $attributes);
-    }
-
-    public function setRemovable(bool $isRemovable = false): static
-    {
-        $this->isRemovable = $isRemovable;
-
-        return $this;
     }
 
     protected function assemble(): void
@@ -55,6 +49,15 @@ class DictionaryItem extends FieldsetElement
         $valElementName = 'var';
         $type = $this->getElement('type')->getValue();
         $label = $this->getElement('label')->getValue();
+
+        if ($this->removeButton !== null) {
+            $this->addAttributes(['class' => ['removable']]);
+            $this->addHtml(new HtmlElement(
+                'div',
+                null,
+                $this->removeButton
+            ));
+        }
 
         if ($label === null) {
             $label = $this->getElement('name')->getValue();
@@ -76,15 +79,16 @@ class DictionaryItem extends FieldsetElement
             $this->addElement(
                 'number',
                 $valElementName,
-                ['label' => $label . ' (Number)', 'placeholder' => $placeholder, 'step' => 'any']
+                ['label' => $label . ' (Number)', 'placeholder' => $placeholder, 'step' => 'any', 'class' => 'autosubmit']
             );
         } elseif ($type == 'bool') {
-            $this->addElement(new IplBoolean($valElementName, ['label' => $label, 'placeholder' => $placeholder]));
+            $this->addElement(new IplBoolean($valElementName, ['label' => $label, 'placeholder' => $placeholder, 'class' => 'autosubmit']));
         } elseif ($type === 'dynamic-array') {
             $this->addElement((new ArrayElement($valElementName))
                 ->setVerticalTermDirection()
                 ->setPlaceHolder($placeholder)
-                ->setLabel($label . ' (Array)'));
+                ->setLabel($label . ' (Array)'))
+                ->addAttributes(['class' => ['autosubmit']]);
         } elseif ($type === 'fixed-dictionary' || $type === 'fixed-array') {
             $this->addElement(
                 (new Dictionary($valElementName, $children))
@@ -100,24 +104,8 @@ class DictionaryItem extends FieldsetElement
             $this->addElement(
                 'text',
                 $valElementName,
-                ['label' => $label . ' (' . ucfirst($type) . ')', 'placeholder' => $placeholder]
+                ['label' => $label . ' (' . ucfirst($type) . ')', 'placeholder' => $placeholder, 'class' => 'autosubmit']
             );
-        }
-
-        if ($this->isRemovable && ! isset($this->fields['parent_uuid'])) {
-            $markForRemoval = new CheckboxElement(
-                'delete-' . $this->getName(),
-                [
-                    'label' => 'Mark for removal',
-                    'description' => $this->translate(
-                        'Removing the custom variable from this template,'
-                        . ' will also remove it from the objects importing the template'
-                    ),
-                ]
-            );
-
-            $this->registerElement($markForRemoval);
-            $this->addElement($markForRemoval);
         }
     }
 
@@ -194,7 +182,7 @@ class DictionaryItem extends FieldsetElement
      *
      * @return array
      */
-    public static function fetchChildrenItems(UuidInterface $parentUuid, string $parentType, array $values = []): array
+    private static function fetchChildrenItems(UuidInterface $parentUuid, string $parentType, array $values = []): array
     {
         $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
 
@@ -237,6 +225,20 @@ class DictionaryItem extends FieldsetElement
         }
 
         return $result;
+    }
+
+    /**
+     * Set the remove button.
+     *
+     * @param ?FormElement $removeButton
+     *
+     * @return $this
+     */
+    public function setRemoveButton(?FormElement $removeButton): static
+    {
+        $this->removeButton = $removeButton;
+
+        return $this;
     }
 
     /**

@@ -4,11 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbConnection;
-use Icinga\Module\Director\Web\Widget\CustomVarObjectList;
 use Icinga\Web\Session;
-use ipl\Html\Contract\FormSubmitElement;
-use ipl\Html\HtmlElement;
-use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
