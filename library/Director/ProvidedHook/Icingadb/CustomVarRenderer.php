@@ -7,9 +7,11 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariableArray;
 use Icinga\Module\Director\Daemon\Logger;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaTemplateResolver;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
@@ -24,6 +26,7 @@ use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\Orm\Model;
+use PDO;
 use Throwable;
 
 class CustomVarRenderer extends CustomVarRendererHook
@@ -31,11 +34,17 @@ class CustomVarRenderer extends CustomVarRendererHook
     /** @var array Related datafield configuration */
     protected $fieldConfig = [];
 
+    /** @var array Related custom property configuration */
+    protected $customPropertyConfig = [];
+
     /** @var array Related datalists and their keys and values */
     protected $datalistMaps = [];
 
     /** @var array Related dictionary field names */
     protected $dictionaryNames = [];
+
+    /** @var array Related dictionary field names */
+    protected $customPropertyDictionaries = [];
 
     protected $dictionaryLevel = 0;
 
@@ -194,10 +203,6 @@ class CustomVarRenderer extends CustomVarRendererHook
                 $fields = (new IcingaObjectFieldLoader($directorServiceObj))->getFields();
             }
 
-            if (empty($fields)) {
-                return false;
-            }
-
             $fieldsWithDataLists = [];
             foreach ($fields as $field) {
                 $this->fieldConfig[$field->get('varname')] = [
@@ -241,6 +246,83 @@ class CustomVarRenderer extends CustomVarRendererHook
                 }
             }
 
+            if ($service === null) {
+                $customProperties = $this->getObjectCustomProperties($directorHostObj);
+            } else {
+                $customProperties = $this->getObjectCustomProperties($directorServiceObj);
+            }
+
+            if (empty($customProperties)) {
+                return true;
+            }
+
+            $customPropertiesWithDatalists = [];
+            foreach ($customProperties as $customProperty) {
+                $propertyName = $customProperty['key_name'];
+                $this->customPropertyConfig[$propertyName] = ['label' => $customProperty['label']];
+                if (isset($customProperty['category'])) {
+                    $this->customPropertyConfig[$propertyName]['group'] = $customProperty['category'];
+                }
+
+                if (str_starts_with($customProperty['value_type'], 'datalist-')) {
+                    $customPropertiesWithDatalists[$customProperty['uuid']] = $customProperty;
+                } elseif (str_ends_with($customProperty['value_type'], '-dictionary')) {
+                    $this->dictionaryNames[] = $customProperty['key_name'];
+                }
+            }
+
+            $dictionaryItems = $db->select()->from(
+                ['dpp' => 'director_property'],
+                []
+            )
+                ->join(['dpc' => 'director_property'], 'dpp.uuid = dpc.parent_uuid', [])
+                ->columns([
+                    'parent_name' => 'dpp.key_name',
+                    'key_name' => 'dpc.key_name',
+                    'label' => 'dpc.label',
+                    'value_type' => 'dpc.value_type',
+                    'uuid' => 'dpc.uuid'
+                ])->where('dpp.value_type', '*-dictionary');
+
+            foreach ($dictionaryItems as $dictionaryItem) {
+                $this->customPropertyDictionaries[$dictionaryItem->parent_name][$dictionaryItem->key_name] = $dictionaryItem->label;
+                $propertyName = $dictionaryItem->key_name;
+                if (is_string($propertyName)) {
+                    $this->customPropertyConfig[$propertyName] = ['label' => $dictionaryItem->label];
+                }
+
+                if (str_starts_with($dictionaryItem->value_type, 'datalist-')) {
+                    $customPropertiesWithDatalists[$dictionaryItem->uuid] = $dictionaryItem;
+                }
+            }
+
+            $dataListEntries = $db->select()->from(
+                ['dpd' => 'director_property_datalist'],
+                [
+                    'property_uuid' => 'dpd.property_uuid',
+                    'entry_name' => 'dde.entry_name',
+                    'entry_value' => 'dde.entry_value',
+                    'property_name' => 'dpc.key_name',
+                ]
+            )->join(
+                ['dd' => 'director_datalist'],
+                'dd.uuid = dpd.list_uuid',
+                []
+            )->join(
+                ['dde' => 'director_datalist_entry'],
+                'dd.id = dde.list_id',
+                []
+            )->join(
+                ['dpc' => 'director_property'],
+                'dpd.property_uuid = dpc.uuid',
+                []
+            );
+
+            foreach ($dataListEntries as $dataListEntry) {
+                $this->datalistMaps[$dataListEntry->property_name][$dataListEntry->entry_name]
+                    = $dataListEntry->entry_value;
+            }
+
             return true;
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
@@ -249,16 +331,79 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
     }
 
+    /**
+     * Get custom properties for the host.
+     *
+     * @return array
+     */
+    protected function getObjectCustomProperties(IcingaObject $object, bool $isOverrideVars = false): array
+    {
+        if ($object->uuid === null) {
+            return [];
+        }
+
+        $type = $object->getShortTableName();
+        $parents = $object->listAncestorIds();
+
+        $uuids = [];
+        $db = $this->db();
+
+        $objectClass = DbObjectTypeRegistry::classByType($type);
+        foreach ($parents as $parent) {
+            $uuids[] = $objectClass::loadWithAutoIncId($parent, $db)->get('uuid');
+        }
+
+        $uuids[] = $object->get('uuid');
+        $query = $db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'category' => 'cpc.category_name',
+                    $type . '_uuid' => 'iop.' . $type . '_uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'children' => 'COUNT(cdp.uuid)'
+                ]
+            )
+            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
+            ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+            ->joinLeft(['cpc' => 'director_datafield_category'], 'dp.category_id = cpc.id', [])
+            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+            ->order(
+                "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
+                . " 'dynamic-array',  'fixed-dictionary', 'dynamic-dictionary')"
+            )
+            ->order('children')
+            ->order('key_name');
+
+        $result = [];
+
+        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            $result[$row['key_name']] = $row;
+        }
+
+        return $result;
+    }
+
     public function renderCustomVarKey(string $key)
     {
         try {
-            if (isset($this->fieldConfig[$key]['label'])) {
-                return new HtmlElement(
-                    'span',
-                    Attributes::create(['title' => $this->fieldConfig[$key]['label'] . " [$key]"]),
-                    Text::create($this->fieldConfig[$key]['label'])
-                );
+            $label = $this->fieldConfig[$key]['label']
+                ?? $this->customPropertyConfig[$key]['label']
+                ?? null;
+            if ($label === null) {
+                return null;
             }
+
+            return new HtmlElement(
+                'span',
+                Attributes::create(['title' => $label . " [$key]"]),
+                Text::create($label)
+            );
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
         }
@@ -268,38 +413,40 @@ class CustomVarRenderer extends CustomVarRendererHook
 
     public function renderCustomVarValue(string $key, $value)
     {
+        if (! (isset($this->fieldConfig[$key]) || isset($this->customPropertyConfig[$key]))) {
+            return null;
+        }
+
         try {
-            if (isset($this->fieldConfig[$key])) {
-                if ($this->fieldConfig[$key]['visibility'] === 'hidden') {
-                    return '***';
-                }
+            if (isset($this->fieldConfig[$key]) && $this->fieldConfig[$key]['visibility'] === 'hidden') {
+                return '***';
+            }
 
-                if (is_array($value)) {
-                    $renderedValue = [];
-                    foreach ($value as $v) {
-                        if (is_string($v) && isset($this->datalistMaps[$key][$v])) {
-                            $renderedValue[] = new HtmlElement(
-                                'span',
-                                Attributes::create(['title' => $this->datalistMaps[$key][$v] . " [$v]"]),
-                                Text::create($this->datalistMaps[$key][$v])
-                            );
-                        } else {
-                            $renderedValue[] = $v;
-                        }
+            if (is_array($value) && ! isset($this->customPropertyDictionaries[$key])) {
+                $renderedValue = [];
+                foreach ($value as $k => $v) {
+                    if (is_string($v) && isset($this->datalistMaps[$key][$v])) {
+                        $renderedValue[$k] = new HtmlElement(
+                            'span',
+                            Attributes::create(['title' => $this->datalistMaps[$key][$v] . " [$v]"]),
+                            Text::create($this->datalistMaps[$key][$v])
+                        );
+                    } else {
+                        $renderedValue[$k] = $v;
                     }
-
-                    return $renderedValue;
                 }
 
-                if (is_string($value) && isset($this->datalistMaps[$key][$value])) {
-                    return new HtmlElement(
-                        'span',
-                        Attributes::create(['title' => $this->datalistMaps[$key][$value] . " [$value]"]),
-                        Text::create($this->datalistMaps[$key][$value])
-                    );
-                } elseif ($value !== null && in_array($key, $this->dictionaryNames)) {
-                    return $this->renderDictionaryVal($key, (array) $value);
-                }
+                return $renderedValue;
+            }
+
+            if (is_string($value) && isset($this->datalistMaps[$key][$value])) {
+                return new HtmlElement(
+                    'span',
+                    Attributes::create(['title' => $this->datalistMaps[$key][$value] . " [$value]"]),
+                    Text::create($this->datalistMaps[$key][$value])
+                );
+            } elseif ($value !== null && in_array($key, $this->dictionaryNames)) {
+                return $this->renderDictionaryVal($key, (array) $value);
             }
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
@@ -312,6 +459,8 @@ class CustomVarRenderer extends CustomVarRendererHook
     {
         if (isset($this->fieldConfig[$key]['group'])) {
             return $this->fieldConfig[$key]['group'];
+        } elseif (isset($this->customPropertyConfig[$key]['group'])) {
+            return $this->customPropertyConfig[$key]['group'];
         }
 
         return null;
@@ -354,8 +503,8 @@ class CustomVarRenderer extends CustomVarRendererHook
 
         $this->dictionaryLevel++;
 
-        foreach ($value as $key => $val) {
-            if ($key !== null && is_array($val) || is_object($val)) {
+        foreach ($value as $k => $val) {
+            if ($k !== null && is_array($val) || is_object($val)) {
                 $val = (array) $val;
                 $numChildItems = count($val);
 
@@ -363,7 +512,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                     new HtmlElement(
                         'tr',
                         Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
-                        new HtmlElement('th', null, Html::wantHtml($key)),
+                        new HtmlElement('th', null, Html::wantHtml($k)),
                         new HtmlElement(
                             'td',
                             null,
@@ -379,7 +528,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                         $label = $this->renderCustomVarKey($childKey) ?? $childKey;
 
                         if (is_array($childVal)) {
-                            $this->renderArrayVal($label, $childVal);
+                            $this->renderArrayVal($label, $childVal, $childKey);
                         } else {
                             $this->dictionaryBody->addHtml(
                                 new HtmlElement(
@@ -397,14 +546,14 @@ class CustomVarRenderer extends CustomVarRendererHook
 
                 $this->dictionaryLevel--;
             } elseif (is_array($val)) {
-                $this->renderArrayVal($key, $val);
+                $this->renderArrayVal($key, $val, $key);
             } else {
                 $this->dictionaryBody->addHtml(
                     new HtmlElement(
                         'tr',
                         Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
-                        new HtmlElement('th', null, Html::wantHtml($key)),
-                        new HtmlElement('td', null, Html::wantHtml($val))
+                        new HtmlElement('th', null, $this->renderCustomVarKey($key) ?? Html::wantHtml($key)),
+                        new HtmlElement('td', null, $this->renderCustomVarValue($key, $val) ?? Html::wantHtml($val))
                     )
                 );
             }
@@ -420,23 +569,23 @@ class CustomVarRenderer extends CustomVarRendererHook
     }
 
     /**
-     * Render an array
+     * Render an array, if the passed key is a part of dictionary, then render as a dictionary
      *
      * @param HtmlElement|string $name
      * @param array $array
      *
      * @return void
      */
-    protected function renderArrayVal($name, array $array)
+    protected function renderArrayVal($name, array $array, ?string $key = null): void
     {
         $numItems = count($array);
 
         if ($name instanceof HtmlElement) {
-            $name->addHtml(Text::create(' (Array)'));
+            $name->addHtml(Text::create(" ('Array')"));
         } else {
             $name = (new HtmlDocument())->addHtml(
                 Html::wantHtml($name),
-                Text::create(' (Array)')
+                Text::create(" ('Array')")
             );
         }
 
@@ -453,12 +602,24 @@ class CustomVarRenderer extends CustomVarRendererHook
 
         ksort($array);
         foreach ($array as $key => $value) {
+            if (! $key instanceof HtmlElement) {
+                $renderedKey = $this->renderCustomVarKey($key) ?? Html::wantHtml("[$key]");
+            } else {
+                $renderedKey = Html::wantHtml("[$key]");
+            }
+
+            if (! $value instanceof HtmlElement) {
+                $renderedValue = $this->renderCustomVarValue($key, $value) ?? Html::wantHtml($value);
+            } else {
+                $renderedValue = Html::wantHtml($value);
+            }
+
             $this->dictionaryBody->addHtml(
                 new HtmlElement(
                     'tr',
                     Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
-                    new HtmlElement('th', null, Html::wantHtml("[$key]")),
-                    new HtmlElement('td', null, Html::wantHtml($value))
+                    new HtmlElement('th', null, $renderedKey),
+                    new HtmlElement('td', null,$renderedValue)
                 )
             );
         }

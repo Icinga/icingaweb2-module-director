@@ -53,7 +53,7 @@ class HostsCommand extends ObjectsCommand
             $uuids[] = IcingaHost::loadWithAutoIncId($parent, $db)->get('uuid');
         }
 
-        $uuids[] = (int) $object->get('uuid');
+        $uuids[] = $object->get('uuid');
         $query = $db->getDbAdapter()
                     ->select()
                     ->from(

@@ -7,8 +7,8 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Exporter;
-use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -106,7 +106,7 @@ class IcingaObjectHandler extends RequestHandler
      *
      * @return array
      */
-    public function getCustomProperties(IcingaObject $object): array
+    public function getObjectCustomProperties(IcingaObject $object): array
     {
         if ($object->get('uuid') === null) {
             return [];
@@ -181,20 +181,18 @@ class IcingaObjectHandler extends RequestHandler
                 if ($actionName === 'variables') {
                     $overRiddenCustomVars = $data;
                 } else {
-                    if ($type === 'host') {
-                        // Extract custom vars from the data
-                        foreach ($data as $key => $value) {
-                            if ($key === 'vars') {
-                                $overRiddenCustomVars = ['vars' => (array) $value];
+                    // Extract custom vars from the data
+                    if (isset($data['vars'])) {
+                        $overRiddenCustomVars = (array) $data['vars'];
 
-                                unset($data['vars']);
-                            }
+                        unset($data['vars']);
+                    }
 
-                            if (substr($key, 0, 5) === 'vars.') {
-                                $overRiddenCustomVars['vars'][substr($key, 5)] = $value;
+                    foreach ($data as $key => $value) {
+                        if (substr($key, 0, 5) === 'vars.') {
+                            $overRiddenCustomVars[substr($key, 5)] = $value;
 
-                                unset($data[$key]);
-                            }
+                            unset($data[$key]);
                         }
                     }
 
@@ -236,47 +234,97 @@ class IcingaObjectHandler extends RequestHandler
                     }
                 }
 
-                if ($type !== 'service' && $overRiddenCustomVars) {
-                    $customProperties = $this->getCustomProperties($object);
-                    if (! empty($overRiddenCustomVars)) {
-                        $objectVars = $object->vars();
-                        foreach ($overRiddenCustomVars as $key => $value) {
-                            if (! isset($customProperties[$key])) {
-                                if ($object->isTemplate()) {
-                                    $errMsg = sprintf(
-                                        "The custom property %s should be first added to the template",
-                                        $key
-                                    );
-                                } else {
-                                    $errMsg = sprintf(
-                                        "The custom property %s should be first added to one of the imported templates"
-                                        . " for this object",
-                                        $key
-                                    );
-                                }
+                if (empty($overRiddenCustomVars)) {
+                    $this->sendJson($object->toPlainObject(false, true));
 
-                                throw new NotFoundError($errMsg);
-                            }
-
-                            $objectVars->set($key, $value);
-                            $objectVars->registerVarUuid($key, Uuid::fromBytes($customProperties[$key]['uuid']));
-                        }
-                    }
-
-                    $this->persistChanges($object);
+                    break;
                 }
 
+                $objectVars = $object->vars();
+                if ($request->getMethod() === 'PUT') {
+                    $objectWhere = $db->getDbAdapter()->quoteInto("{$type}_id = ?", $this->object->get('id'));
+                    $db->getDbAdapter()->delete(
+                        'icinga_' . $type . '_var',
+                        $objectWhere
+                    );
+
+                    $objectPropertyWhere = $db->getDbAdapter()->quoteInto("{$type}_uuid = ?", Uuid::fromBytes($this->object->get('uuid'))->getBytes());
+                    $db->getDbAdapter()->delete(
+                        'icinga_' . $type . '_property',
+                        $objectPropertyWhere
+                    );
+
+                    $objectVars = new CustomVariables();
+                }
+
+                $customProperties = $this->getObjectCustomProperties($object);
+
+                foreach ($overRiddenCustomVars as $key => $value) {
+                    $objectVars->set($key, $value);
+                    $objectVars->get($key)->setModified();
+                    if (isset($customProperties[$key])) {
+                        $objectVars->registerVarUuid($key, Uuid::fromBytes($customProperties[$key]['uuid']));
+
+                        continue;
+                    }
+
+                    if ($actionName !== 'variables') {
+                        continue;
+                    }
+
+                    if (! $object->isTemplate()) {
+                        throw new NotFoundError(sprintf(
+                            'The custom property %s should be first added to one of the imported templates'
+                            . ' for this object',
+                            $key
+                        ));
+                    }
+
+                    if ($request->getMethod() === 'POST') {
+                        $errMsg = sprintf(
+                            'The custom property %s should be first added to the template',
+                            $key
+                        );
+
+                        throw new NotFoundError($errMsg);
+                    }
+
+                    $query = $db->getDbAdapter()
+                                ->select()
+                                ->from('director_property', ['uuid'])
+                                ->where('dp.key_name = ? AND dp.parent_uuid IS NULL', $key);
+                    $customPropertyUuid = $db->getDbAdapter()->fetchOne($query);
+
+                    if (! $customPropertyUuid) {
+                        throw new NotFoundError(sprintf(
+                            "'%s' is not configured in Icinga Director as a custom property",
+                            $key
+                        ));
+                    }
+
+                    $db->getDbAdapter()->insert(
+                        'icinga_' . $type . '_property',
+                        [
+                            'property_uuid' => $customPropertyUuid,
+                            $type . '_uuid' => $object->get('uuid')
+                        ]
+                    );
+
+                    $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
+                }
+
+                $objectVars->storeToDb($object);
+                $object = IcingaObject::loadByType($type, $object->getObjectName(), $db);
                 $this->sendJson($object->toPlainObject(false, true));
 
                 break;
-
             case 'GET':
                 $object = $this->requireObject();
                 $exporter = new Exporter($this->db);
                 RestApiParams::applyParamsToExporter($exporter, $this->request, $object->getShortTableName());
                 $this->sendJson($exporter->export($object));
-                break;
 
+                break;
             default:
                 $request->getResponse()->setHttpResponseCode(400);
                 throw new IcingaException('Unsupported method ' . $request->getMethod());

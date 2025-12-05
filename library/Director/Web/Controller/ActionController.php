@@ -18,6 +18,7 @@ use Icinga\Module\Director\Web\Controller\Extension\RestApi;
 use Icinga\Module\Director\Web\Window;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
+use Icinga\Web\Session;
 use Icinga\Web\UrlParams;
 use InvalidArgumentException;
 use gipfl\IcingaWeb2\Translator;

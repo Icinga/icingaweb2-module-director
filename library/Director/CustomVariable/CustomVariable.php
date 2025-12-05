@@ -32,6 +32,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     protected $checksum;
 
+    protected $whiteList = [];
+
     protected function __construct($key, $value = null)
     {
         $this->key = $key;
@@ -132,6 +134,13 @@ abstract class CustomVariable implements IcingaConfigRenderer
         ));
     }
 
+    public function setWhiteList(array $whiteList): self
+    {
+        $this->whiteList = $whiteList;
+
+        return $this;
+    }
+
     public function flatten(array &$flat, $prefix)
     {
         $flat[$prefix] = $this->getDbValue();
@@ -177,6 +186,11 @@ abstract class CustomVariable implements IcingaConfigRenderer
         } else {
             return $this->toConfigString($renderExpressions);
         }
+    }
+
+    public function getWhiteList(): array
+    {
+        return $this->whiteList;
     }
 
     public function setModified($modified = true)

@@ -39,9 +39,16 @@ class CustomVarRenderer implements ItemRenderer
 
     protected function createSubject($item, string $layout): Link
     {
+        $objectClass = $item->object_class;
+        if ($objectClass === 'service' && $item->host_name !== null) {
+            $params = ['name' => $item->name, 'host_name' => $item->host_name];
+        } else {
+            $params = ['name' => $item->name];
+        }
+
         return new Link(
             $item->name,
-            Url::fromPath('director/host/variables', ['name' => $item->name])->getAbsoluteUrl(),
+            Url::fromPath("director/$objectClass/variables", $params)->getAbsoluteUrl(),
             ['class' => ['subject', 'object-link']]
         );
     }

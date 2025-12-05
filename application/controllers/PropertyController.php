@@ -15,10 +15,12 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\EmptyStateBar;
+use ipl\Web\Widget\ListItem;
 use ipl\Web\Widget\Tabs;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Zend_Db;
+use Zend_Db_Expr;
 
 class PropertyController extends CompatController
 {
@@ -54,6 +56,9 @@ class PropertyController extends CompatController
         $parent = [];
         $db = $this->db->getDbAdapter();
         $property = $this->fetchProperty($uuid);
+        if (empty($property)) {
+            $this->redirectNow(Url::fromPath('director/properties'));
+        }
 
         if ($parentUuid) {
             $parentUuid = Uuid::fromString($parentUuid);
@@ -70,7 +75,7 @@ class PropertyController extends CompatController
 
         $property['used_count'] = $usedCount;
 
-        if ($property['value_type'] === 'dynamic-array') {
+        if ($property['value_type'] === 'dynamic-array' || str_starts_with($property['value_type'], 'datalist-')) {
             $itemTypeQuery = $db
                 ->select()->from('director_property', 'value_type')
                 ->where(
@@ -81,6 +86,18 @@ class PropertyController extends CompatController
             $property['item_type'] = $db->fetchOne($itemTypeQuery);
         }
 
+        if (str_starts_with($property['value_type'], 'datalist-')) {
+            $datalistId = $db
+                ->select()->from(['dl' => 'director_datalist'], 'id')
+                ->join(['dpl' => 'director_property_datalist'], 'dpl.list_uuid = dl.uuid', [])
+                ->where(
+                    'dpl.property_uuid = ?',
+                    $uuid->getBytes()
+                );
+
+            $property['list'] = $db->fetchOne($datalistId);
+        }
+
         $showFields = $this->showFields($property['value_type']);
         $propertyForm = (new PropertyForm($this->db, $uuid, $parentUuid !== null, $parentUuid))
             ->populate($property)
@@ -88,7 +105,7 @@ class PropertyController extends CompatController
             ->on(PropertyForm::ON_SENT, function (PropertyForm $form) use ($property, &$showFields) {
                 $showFields = $showFields && $form->getValue('value_type') === $property['value_type'];
             })
-            ->on(PropertyForm::ON_SUCCESS, function (PropertyForm $form) {
+            ->on(PropertyForm::ON_SUBMIT, function (PropertyForm $form) {
                 Notification::success(sprintf(
                     $this->translate('Property "%s" has successfully been saved'),
                     $form->getValue('key_name')
@@ -135,6 +152,7 @@ class PropertyController extends CompatController
                     'uuid',
                     'parent_uuid',
                     'key_name',
+                    'category_id',
                     'value_type',
                     'label',
                     'description',
@@ -171,9 +189,43 @@ class PropertyController extends CompatController
 
         $this->setTitle($title);
         $this->setTitleTab('property');
+        $this->setAutorefreshInterval(10);
     }
 
     public function usageAction(): void
+    {
+        $objectClass = null;
+        $usageList = (new CustomVarObjectList($this->fetchCustomVarUsage()))
+            ->setDetailActionsDisabled(false)
+            ->on(
+                CustomVarObjectList::BEFORE_ITEM_ADD,
+                function (ListItem $item, $data) use(&$objectClass, &$usageList) {
+                    if ($objectClass !== $data->object_class) {
+                        $usageList->addHtml(HtmlElement::create(
+                            'li',
+                            ['class' => 'list-item'],
+                            HtmlElement::create(
+                                'h2',
+                                content: ucfirst($data->object_class) . 's'
+                            )
+                        ));
+                        $objectClass = $data->object_class;
+                    }
+                });
+
+        $this->addContent($usageList);
+
+        $this->setTitle($this->translate('Custom Variable Usage'));
+        $this->setTitleTab('usage');
+        $this->setAutorefreshInterval(10);
+    }
+
+    /**
+     * Fetch the give custom variable usage in templates
+     *
+     * @return array
+     */
+    private function fetchCustomVarUsage(): array
     {
         $uuid = $this->uuid;
         $property = $this->fetchProperty($uuid);
@@ -191,35 +243,44 @@ class PropertyController extends CompatController
         }
 
         $db = $this->db->getDbAdapter();
+        $objectClasses = ['host', 'service', 'notification', 'command', 'user'];
+        $usage = [];
 
-        $customPropQuery = $db
-            ->select()
-            ->from(['ih' => 'icinga_host'], [])
-            ->join(['ihv' => 'icinga_host_var'], 'ih.id = ihv.host_id', [])
-            ->join(['dp' => 'director_property'], 'ihv.property_uuid = dp.uuid', [])
-            ->columns([
-                'name' => 'ih.object_name',
-                'type' => 'ih.object_type'
-            ])
-            ->where('dp.uuid = ?', $uuid->getBytes());
+        foreach ($objectClasses as $objectClass) {
+            $customPropertyQuery = $db
+                ->select()
+                ->from(['io' => "icinga_$objectClass"], [])
+                ->join(['iov' => "icinga_$objectClass" . '_var'], "io.id = iov.$objectClass" . '_id', [])
+                ->join(['dp' => 'director_property'], 'iov.property_uuid = dp.uuid', []);
 
-        $unionQuery = $db
-            ->select()
-            ->from(['ih' => 'icinga_host'], [])
-            ->join(['ihp' => 'icinga_host_property'], 'ihp.host_uuid = ih.uuid', [])
-            ->join(['dp' => 'director_property'], 'ihp.property_uuid = dp.uuid', [])
-            ->columns([
-                'name' => 'ih.object_name',
-                'type' => 'ih.object_type'
-            ])
-            ->where('ihp.property_uuid = ?', $uuid->getBytes());
-        $this->addContent(
-            (new CustomVarObjectList($db->fetchAll($db->select()->union([$customPropQuery, $unionQuery]))))
-                ->setDetailActionsDisabled(false)
-        );
+            $unionQuery = $db
+                ->select()
+                ->from(['io' => "icinga_$objectClass"], [])
+                ->join(['iop' => "icinga_$objectClass" . '_property'], "iop.$objectClass" . '_uuid = io.uuid', [])
+                ->join(['dp' => 'director_property'], 'iop.property_uuid = dp.uuid', []);
 
-        $this->setTitle($this->translate('Custom Variable Usage'));
-        $this->setTitleTab('usage');
+            $columns = [
+                'name' => 'io.object_name',
+                'type' => 'io.object_type',
+                'object_class' => new Zend_Db_Expr("'$objectClass'")
+            ];
+
+            if ($objectClass === 'service') {
+                $customPropertyQuery = $customPropertyQuery->joinLeft(['ioh' => 'icinga_host'], 'io.host_id = ioh.id', []);
+                $unionQuery = $unionQuery->joinLeft(['ioh' => 'icinga_host'], 'io.host_id = ioh.id', []);
+                $columns['host_name'] = 'ioh.object_name';
+            }
+
+            $customPropertyQuery = $customPropertyQuery->columns($columns)
+                                                       ->where('dp.uuid = ?', $uuid->getBytes());
+
+            $unionQuery = $unionQuery->columns($columns)
+                                     ->where('dp.uuid = ?', $uuid->getBytes());
+
+            $usage[] = $db->fetchAll($db->select()->union([$customPropertyQuery, $unionQuery]));
+        }
+
+        return array_merge(...$usage);
     }
 
     private function showFields(string $type): bool
@@ -238,7 +299,7 @@ class PropertyController extends CompatController
             ->setHideKeyNameElement($parent['value_type'] === 'fixed-array')
             ->setIsNestedField($parent['parent_uuid'] !== null)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(PropertyForm::ON_SUCCESS, function (PropertyForm $form) {
+            ->on(PropertyForm::ON_SUBMIT, function (PropertyForm $form) {
                 Notification::success(sprintf(
                     $this->translate('Property "%s" has successfully been saved'),
                     $form->getValue('key_name')
@@ -265,7 +326,7 @@ class PropertyController extends CompatController
 
         $form = (new DeletePropertyForm($this->db, $property, $parent))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(DeletePropertyForm::ON_SUCCESS, function () {
+            ->on(DeletePropertyForm::ON_SUBMIT, function () {
                 Notification::success($this->translate('Property has successfully been deleted'));
                 $this->sendExtraUpdates(['#col1']);
                 $this->redirectNow('__CLOSE__');
@@ -296,13 +357,14 @@ class PropertyController extends CompatController
                 'key_name',
                 'uuid',
                 'parent_uuid',
+                'category_id',
                 'value_type',
                 'label',
                 'description'
             ])
             ->where('uuid = ?', $uuid->getBytes());
 
-        return $db->fetchRow($query, [], Zend_Db::FETCH_ASSOC);
+        return $db->fetchRow($query, [], Zend_Db::FETCH_ASSOC) ?: [];
     }
 
     private function fetchPropertyUsedCount(UuidInterface $uuid): int
@@ -341,13 +403,16 @@ class PropertyController extends CompatController
         }
 
         return $this->getTabs()
-                    ->add('property', [
-                        'label'  => $label,
-                        'url'    => $url
-                    ])
-                    ->add('usage', [
-                        'label'  => $this->translate('Custom Variable Usage'),
-                        'url'    => Url::fromPath('director/property/usage', ['uuid' => $this->uuid->toString()])
-                    ]);
+            ->add('property', [
+                'label' => $label,
+                'url' => $url
+            ])
+            ->add('usage', [
+                'label' => $this->translate('Custom Variable Usage'),
+                'url' => Url::fromPath(
+                    'director/property/usage',
+                    ['uuid' => $this->uuid->toString()]
+                )
+            ]);
     }
 }

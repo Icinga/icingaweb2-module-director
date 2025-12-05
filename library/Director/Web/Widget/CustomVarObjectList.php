@@ -34,15 +34,22 @@ class CustomVarObjectList extends ItemList
 
     protected function createListItem(object $data): ListItem
     {
-        parent::createListItem($data);
-
         $item = parent::createListItem($data);
         if ($this->getDetailActionsDisabled()) {
             return $item;
         }
 
-        $url = Url::fromPath('director/host/variables');
-        $filter = Filter::equal('name', $data->name);
+        $objectInstance = $data->object_class;
+        if ($data->object_class === 'service' && $data->host_name !== null) {
+            $filter = Filter::all(
+                Filter::equal('name', $data->name),
+                Filter::equal('host_name', $data->host_name)
+            );
+        } else {
+            $filter = Filter::equal('name', $data->name);
+        }
+
+        $url = Url::fromPath("director/$objectInstance/variables");
         $this->getAttributes()->add('class', 'action-list');
         $this->getAttributes()
              ->registerAttributeCallback('data-icinga-detail-url', function () use ($url) {

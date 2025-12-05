@@ -1,0 +1,113 @@
+diff --git a/library/Director/Objects/DirectorDatafield.php b/library/Director/Objects/DirectorDatafield.php
+index 5cdb2cb5..c3b64b2e 100644
+--- a/library/Director/Objects/DirectorDatafield.php
++++ b/library/Director/Objects/DirectorDatafield.php
+@@ -234,7 +234,7 @@ class DirectorDatafield extends DbObjectWithSettings
+             $uuids[] = IcingaObject::loadByType($objectType, $parent, $db)->get('uuid');
+         }
+ 
+-        if ($object->isTemplate()) {
++        if ($object->isTemplate() && $object->get('uuid')) {
+             $uuids[] = $object->get('uuid');
+         }
+ 
+diff --git a/library/Director/Resolver/TemplateTree.php b/library/Director/Resolver/TemplateTree.php
+index d1218d7f..21a0936a 100644
+--- a/library/Director/Resolver/TemplateTree.php
++++ b/library/Director/Resolver/TemplateTree.php
+@@ -150,19 +150,6 @@ class TemplateTree
+         }
+     }
+ 
+-    public function getAncestorsUuidsFor(IcingaObject $object)
+-    {
+-        if (
+-            $object->hasBeenModified()
+-            && $object->gotImports()
+-            && $object->imports()->hasBeenModified()
+-        ) {
+-            return $this->getAncestorsUuidsForUnstoredObject($object);
+-        } else {
+-            return $this->getParentsUuidsById($object->getProperty('id'));
+-        }
+-    }
+-
+     protected function getAncestorsForUnstoredObject(IcingaObject $object)
+     {
+         $this->requireTree();
+@@ -198,36 +185,6 @@ class TemplateTree
+         return $ancestors;
+     }
+ 
+-    protected function getAncestorsUuidsForUnstoredObject(IcingaObject $object)
+-    {
+-        $this->requireTree();
+-        $ancestors = [];
+-        foreach ($object->imports() as $import) {
+-            $name = $import->get('uuid');
+-            if ($import->hasBeenLoadedFromDb()) {
+-                $pid = (int) $import->get('id');
+-            } else {
+-                if (! array_key_exists($name, $this->templateNameToId)) {
+-                    continue;
+-                }
+-
+-                $pid = $this->templateNameToId[$name];
+-            }
+-
+-            $this->getAncestorsUuidsById($pid, $ancestors);
+-
+-            $uuid = $import->get('uuid');
+-            // Hint: inheritance order matters
+-            if (false !== ($key = array_search($uuid, $ancestors))) {
+-                unset($ancestors[$key]);
+-            }
+-
+-            $ancestors[$pid] = $uuid;
+-        }
+-
+-        return $ancestors;
+-    }
+-
+     protected function requireObjectMaps()
+     {
+         if ($this->objectMaps === null) {
+@@ -332,38 +289,6 @@ class TemplateTree
+         return $ancestors;
+     }
+ 
+-    /**
+-     * Get the ancestorUuids for the given object ID
+-     *
+-     * @param $id
+-     * @param array $ancestors
+-     * @param array $path
+-     *
+-     * @return array
+-     */
+-    public function getAncestorsUuidsById($id, &$ancestors = [], $path = [])
+-    {
+-        $path[$id] = true;
+-        foreach ($this->getParentsUuidsById($id) as $pid => $uuid) {
+-            $this->assertNotInList($pid, $path);
+-            $path[$pid] = true;
+-
+-            $this->getAncestorsUuidsById($pid, $ancestors, $path);
+-            unset($path[$pid]);
+-
+-            // Hint: inheritance order matters
+-            if (false !== ($key = array_search($uuid, $ancestors))) {
+-                unset($ancestors[$key]);
+-            }
+-
+-            $ancestors[$pid] = $uuid;
+-        }
+-
+-        unset($path[$id]);
+-
+-        return $ancestors;
+-    }
+-
+     public function getChildrenFor(IcingaObject $object)
+     {
+         // can not use hasBeenLoadedFromDb() when in onStore()

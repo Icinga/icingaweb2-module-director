@@ -49,6 +49,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Allows controlled custom var access through Fields */
     protected $supportsFields = false;
 
+    /** @var bool Allows controlled custom var access through Custom Properties */
+    protected $supportsCustomProperties = false;
+
     /** @var bool Whether this object can be rendered as 'apply Object' */
     protected $supportsApplyRules = false;
 
@@ -376,6 +379,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
+    }
+
+    /**
+     * Whether this Object supports custom properties
+     *
+     * @return bool
+     */
+    public function supportsCustomProperties(): bool
+    {
+        return $this->supportsCustomProperties;
     }
 
     /**
@@ -1335,7 +1348,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
-                $vals['_INHERITED_']->$key = $value;
+                if (is_object($value)) {
+                    $vals['_INHERITED_']->$key = clone $value;
+                } else {
+                    $vals['_INHERITED_']->$key = $value;
+                }
+
                 $vals['_ORIGINS_']->$key = $origins->$key;
             }
 
@@ -1367,7 +1385,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                         if (! isset($vals['_ORIGINS_']->$key)) {
                             $vals['_ORIGINS_']->$key = $name;
                         } elseif ($vals['_ORIGINS_']->$key !== $name) {
-                            $vals['_ORIGINS_']->$key .= ', ' . $name;;
+                            $vals['_ORIGINS_']->$key .= ', ' . $name;
                         }
                     }
                 } else {

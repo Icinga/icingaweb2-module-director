@@ -17,16 +17,44 @@ table.common-table td {
   }
 }
 
-.nested-key-list, .nested-key-list ul {
-  list-style-type: none;
+.key-value-table {
+  vertical-align: baseline;
   padding: 0;
-  margin: 0;
+  margin: 0.5em 0;
+  width: 100%;
 
-  li {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    justify-items: center;
-    width: 100%;
+  .key-value-item {
+    .key {
+      width: 25%;
+      border-right: 2px solid @gray-light;
+    }
+
+    .value {
+      width: 75%;
+    }
+
+    div {
+      margin-right: 1em;
+    }
+  }
+}
+
+.key-value-table,
+.key-value-item {
+  border: 2px solid @gray-light;
+}
+
+.custom-var-usage-header {
+  margin-left: 0.5em;
+}
+
+.apply-for-header {
+  width: 80%;
+  border-radius: 0.5em;
+  border: 1px solid @gray-light;
+  background: @gray-lightest;
+  .apply-for-header-content {
+    padding: 0.5em;
   }
 }
 
@@ -962,20 +990,19 @@ form.director-form {
     width: auto;
   }
 
-  p.description {
+  p.description:not(.deprecated-data-field) {
     color: @gray;
     font-style: italic;
     padding: 0.25em 0.5em;
     display: none;
   }
 
-  dd.active {
-    p.description {
-      font-style: normal;
-      display: block;
-      height: auto;
-      color: @text-color;
-    }
+  dd.active p.description,
+  dd p.description.deprecated-data-field {
+    font-style: normal;
+    display: block;
+    height: auto;
+    color: @text-color;
   }
 }
 

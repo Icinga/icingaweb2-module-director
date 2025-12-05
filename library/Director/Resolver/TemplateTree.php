@@ -150,19 +150,6 @@ class TemplateTree
         }
     }
 
-    public function getAncestorsUuidsFor(IcingaObject $object)
-    {
-        if (
-            $object->hasBeenModified()
-            && $object->gotImports()
-            && $object->imports()->hasBeenModified()
-        ) {
-            return $this->getAncestorsUuidsForUnstoredObject($object);
-        } else {
-            return $this->getParentsUuidsById($object->getProperty('id'));
-        }
-    }
-
     protected function getAncestorsForUnstoredObject(IcingaObject $object)
     {
         $this->requireTree();
@@ -193,36 +180,6 @@ class TemplateTree
                 }
             }
             $ancestors[$pid] = $name;
-        }
-
-        return $ancestors;
-    }
-
-    protected function getAncestorsUuidsForUnstoredObject(IcingaObject $object)
-    {
-        $this->requireTree();
-        $ancestors = [];
-        foreach ($object->imports() as $import) {
-            $name = $import->get('uuid');
-            if ($import->hasBeenLoadedFromDb()) {
-                $pid = (int) $import->get('id');
-            } else {
-                if (! array_key_exists($name, $this->templateNameToId)) {
-                    continue;
-                }
-
-                $pid = $this->templateNameToId[$name];
-            }
-
-            $this->getAncestorsUuidsById($pid, $ancestors);
-
-            $uuid = $import->get('uuid');
-            // Hint: inheritance order matters
-            if (false !== ($key = array_search($uuid, $ancestors))) {
-                unset($ancestors[$key]);
-            }
-
-            $ancestors[$pid] = $uuid;
         }
 
         return $ancestors;
@@ -327,38 +284,6 @@ class TemplateTree
             }
             $ancestors[$pid] = $name;
         }
-        unset($path[$id]);
-
-        return $ancestors;
-    }
-
-    /**
-     * Get the ancestorUuids for the given object ID
-     *
-     * @param $id
-     * @param array $ancestors
-     * @param array $path
-     *
-     * @return array
-     */
-    public function getAncestorsUuidsById($id, &$ancestors = [], $path = [])
-    {
-        $path[$id] = true;
-        foreach ($this->getParentsUuidsById($id) as $pid => $uuid) {
-            $this->assertNotInList($pid, $path);
-            $path[$pid] = true;
-
-            $this->getAncestorsUuidsById($pid, $ancestors, $path);
-            unset($path[$pid]);
-
-            // Hint: inheritance order matters
-            if (false !== ($key = array_search($uuid, $ancestors))) {
-                unset($ancestors[$key]);
-            }
-
-            $ancestors[$pid] = $uuid;
-        }
-
         unset($path[$id]);
 
         return $ancestors;

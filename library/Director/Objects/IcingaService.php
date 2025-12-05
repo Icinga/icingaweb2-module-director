@@ -101,6 +101,8 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     protected $supportsFields = true;
 
+    protected $supportsCustomProperties = true;
+
     protected $supportsImports = true;
 
     protected $supportsApplyRules = true;
@@ -351,40 +353,49 @@ class IcingaService extends IcingaObject implements ExportInterface
      */
     protected function renderObjectHeader()
     {
+        $applyFor = $this->get('apply_for');
         if (
             $this->isApplyRule()
             && !$this->hasBeenAssignedToHostTemplate()
-            && $this->get('apply_for') !== null
+            && $applyFor !== null
         ) {
             $name = $this->getObjectName();
             $extraName = '';
+            $applyForVar = substr($applyFor, strlen('host.vars.'));
+            if (preg_match('/[^a-zA-Z0-9_]/', $applyForVar)) {
+                $applyFor = 'host.vars["' . $applyForVar . '"]';
+            }
+
+            $isApplyFor = $this->isApplyRuleforDictionary($applyForVar);
+            $varName = '"' . $name . '"';
 
             if (c::stringHasMacro($name)) {
-                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
+                $macroWhiteList = $isApplyFor ? 'key' : 'value';
+                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name, [$macroWhiteList]));
                 $name = '';
             } elseif ($name !== '') {
                 $name = ' ' . c::renderString($name);
             }
 
-            if ($this->isApplyRuleforDictionary(substr($this->get('apply_for') ?? '', strlen('host.vars.')))) {
-                $applyForConfig = sprintf(
-                    "%s %s%s for (key => value in %s) {\n",
-                    $this->getObjectTypeName(),
-                    $this->getType(),
-                    $name,
-                    $this->get('apply_for')
-                );
+            if ($isApplyFor) {
+                $header = "%s %s%s for (key => value in %s) {\n";
             } else {
-                $applyForConfig = sprintf(
-                    "%s %s%s for (value in %s) {\n",
-                    $this->getObjectTypeName(),
-                    $this->getType(),
-                    $name,
-                    $this->get('apply_for')
-                ) . $extraName;
+                $header = "%s %s%s for (value in %s) {\n";
             }
 
-            return $applyForConfig;
+            $extraInfo = sprintf("\n    vars.overridenVar = %s\n", $varName);
+
+
+
+            return sprintf(
+                    $header,
+                    $this->getObjectTypeName(),
+                    $this->getType(),
+                    $name,
+                    $applyFor
+                )
+                . $extraName
+                . $extraInfo;
         }
 
         return parent::renderObjectHeader();
@@ -683,7 +694,7 @@ class IcingaService extends IcingaObject implements ExportInterface
 
             $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
 
-            $whiteList = ['value', 'host.*'];
+            $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
             foreach ($result as $row) {
                 if (str_contains($row['key_name'], ' ')) {
                     continue;

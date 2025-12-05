@@ -39,6 +39,8 @@ class IcingaNotification extends IcingaObject implements ExportInterface
 
     protected $supportsFields = true;
 
+    protected $supportsCustomProperties = true;
+
     protected $supportsImports = true;
 
     protected $supportsApplyRules = true;

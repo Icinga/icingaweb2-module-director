@@ -115,7 +115,20 @@ class DirectorDatalist extends DbObject implements ExportInterface
             ->where('datatype = ?', DataTypeDatalist::class)
             ->where('setting_value = ?', $id);
 
+        $customPropertiesCheck = $db->select()
+            ->from(['dp' => 'director_property'], ['key_name'])
+            ->join(
+                ['dpl' => 'director_property_datalist'],
+                'dp.uuid = dpl.property_uuid',
+                []
+            )
+            ->where($db->quoteInto('dp.uuid = ?', $this->get('uuid')));
+
         if ($db->fetchOne($dataFieldsCheck)) {
+            return true;
+        }
+
+        if ($db->fetchOne($customPropertiesCheck)) {
             return true;
         }
 

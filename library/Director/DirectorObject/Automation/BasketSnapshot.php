@@ -308,7 +308,7 @@ class BasketSnapshot extends DbObject
         string $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
         Db $connection,
-        BasketSnapshotCustomPropertyResolver $customPropertyResolver = null
+        ?BasketSnapshotCustomPropertyResolver $customPropertyResolver = null
     ) {
         if (isset($all->$typeName)) {
             $objects = (array) $all->$typeName;
@@ -336,9 +336,10 @@ class BasketSnapshot extends DbObject
                         $fieldResolver->relinkObjectFields($new, $object);
                     }
 
-                    if ($new instanceof IcingaHost && $customPropertyResolver) {
-                        $customPropertyResolver->relinkObjectCustomProperties($new, $object);
-                    }
+                    $customPropertyResolver?->relinkObjectCustomProperties(
+                        $new,
+                        $object
+                    );
                 }
             } else {
                 // No modification on the object, still, fields might have
@@ -347,9 +348,10 @@ class BasketSnapshot extends DbObject
                     $fieldResolver->relinkObjectFields($new, $object);
                 }
 
-                if ($new instanceof IcingaHost && $customPropertyResolver) {
-                    $customPropertyResolver->relinkObjectCustomProperties($new, $object);
-                }
+                $customPropertyResolver?->relinkObjectCustomProperties(
+                    $new,
+                    $object
+                );
             }
         }
 
@@ -364,9 +366,10 @@ class BasketSnapshot extends DbObject
                 $fieldResolver->relinkObjectFields($new, $objects[$key]);
             }
 
-            if ($new instanceof IcingaHost && $customPropertyResolver) {
-                $customPropertyResolver->relinkObjectCustomProperties($new, $objects[$key]);
-            }
+            $customPropertyResolver?->relinkObjectCustomProperties(
+                $new,
+                $objects[$key]
+            );
         }
     }
 

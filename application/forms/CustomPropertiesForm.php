@@ -2,12 +2,17 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Web\Notification;
+use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -18,25 +23,146 @@ class CustomPropertiesForm extends CompatForm
     use CsrfCounterMeasure;
     use Translation;
 
+    private ?IcingaService $applyGenerated = null;
+
+    private ?string $inheritedServiceFrom = null;
+
+    private ?IcingaServiceSet $set = null;
+
+    private ?IcingaHost $host = null;
+
+    private bool $varsHasBeenModified = false;
+
     public function __construct(
         public readonly IcingaObject $object,
         protected array $objectProperties = []
     ) {
-        $this->addAttributes(['class' => ['custom-properties-form']]);
+        $this->addAttributes(Attributes::create(['class' => 'custom-properties-form']));
+    }
+
+    /**
+     * Check if the custom properties have been modified
+     *
+     * @return bool
+     */
+    public function varsHasBeenModified(): bool
+    {
+        return $this->varsHasBeenModified;
     }
 
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
-        $this->addElement((new Dictionary(
+        $dictionary = (new Dictionary(
             'properties',
             $this->objectProperties,
             ['class' => 'no-border']
-        ))->setAllowItemRemoval($this->object->isTemplate()));
+        ))->setAllowItemRemoval($this->object->isTemplate());
 
-        $this->addElement('submit', 'save', [
-            'label' => $this->translate('Save')
+        $saveButton = $this->createElement('submit', 'save', [
+            'label' => $this->isOverrideServiceVars()
+                ? $this->translate('Override Custom Variables')
+                : $this->translate('Save Custom Variables')
         ]);
+
+        $this->addElement($this->duplicateSubmitButton($saveButton));
+        $this->addElement($dictionary);
+        if ($this->hasBeenSent()) {
+            $dictionary->ensureAssembled();
+        }
+
+        $this->registerElement($saveButton);
+
+        $removedItems = Session::getSession()
+                               ->getNamespace('director.variables')->get('removed-properties', []);
+        if (! empty($removedItems)) {
+            $this->addHtml(
+                new HtmlElement('div', Attributes::create(['class' => 'message']), Text::create(
+                    sprintf(
+                        $this->translatePlural(
+                            '(%d) property has been removed',
+                            '(%d) properties have been removed',
+                            count($removedItems)
+                        ),
+                        count($removedItems)
+                    )
+                ))
+            );
+        }
+
+        $this->addElement($saveButton);
+    }
+
+    /**
+     * Set the applied rule from where the custom variables are inherited from
+     *
+     * @param IcingaService $applyGenerated
+     *
+     * @return $this
+     */
+    public function setApplyGenerated(IcingaService $applyGenerated): static
+    {
+        $this->applyGenerated = $applyGenerated;
+
+        return $this;
+    }
+
+    public function setInheritedServiceFrom(string $hostname): static
+    {
+        $this->inheritedServiceFrom = $hostname;
+
+        return $this;
+    }
+
+    /**
+     * Set the service set from where the custom variables are inherited from
+     *
+     * @param IcingaServiceSet $set
+     *
+     * @return $this
+     */
+    public function setServiceSet(IcingaServiceSet $set): static
+    {
+        $this->set = $set;
+
+        return $this;
+    }
+
+    /**
+     * Set host if the object is a service
+     *
+     * @param IcingaHost $host
+     *
+     * @return $this
+     */
+    public function setHostForService(IcingaHost $host): static
+    {
+        $this->host = $host;
+
+        return $this;
+    }
+
+    /**
+     * Are the populated values for custom properties a part of _override_servicevars
+     *
+     * @return bool
+     */
+    public function isOverrideServiceVars(): bool
+    {
+        return $this->applyGenerated
+            || $this->inheritedServiceFrom
+            || ($this->host && $this->set);
+    }
+
+    public function hasBeenSubmitted(): bool
+    {
+        $pressedButton = $this->getPressedSubmitElement();
+
+        if ($pressedButton && $pressedButton->getName() === 'save') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -60,7 +186,7 @@ class CustomPropertiesForm extends CompatForm
      *
      * @return array
      */
-    private function filterEmpty(array $array): array
+    public static function filterEmpty(array $array): array
     {
         return array_filter(
             array_map(function ($item) {
@@ -69,7 +195,7 @@ class CustomPropertiesForm extends CompatForm
                     return $item;
                 }
 
-                return $this->filterEmpty($item);
+                return self::filterEmpty($item);
             }, $array),
             function ($item) {
                 return is_bool($item) || ! empty($item);
@@ -79,27 +205,48 @@ class CustomPropertiesForm extends CompatForm
 
     protected function onSuccess(): void
     {
+        $session = Session::getSession();
+        $session->delete('properties');
+        $session->delete('vars');
         $vars = $this->object->vars();
-        $inheritedVars = $this->object->getInheritedVars();
-
-        $modified = false;
 
         /** @var Dictionary $propertiesElement */
         $propertiesElement = $this->getElement('properties');
         $values = $propertiesElement->getDictionary();
         $itemsToRemove = $propertiesElement->getItemsToRemove();
+        $type = $this->object->getShortTableName();
         foreach ($this->objectProperties as $key => $property) {
-            if (isset($itemsToRemove[$key])) {
+            $propertyUuid = Uuid::fromBytes($property['uuid']);
+            if (isset($property['removed'])) {
+                $itemsToRemoveUuids[] = $property['uuid'];
+                continue;
+            }
+
+            if (in_array($key, $itemsToRemove)) {
+                $itemsToRemoveUuids[] = $property['uuid'];
+                $this->varsHasBeenModified = true;
+
                 continue;
             }
 
             $value = $values[$key] ?? null;
 
-            if (
-                is_array($value)
-                && ($property['value_type'] !== 'fixed-array' || isset($inheritedVars->$key))
-            ) {
-                $value = $this->filterEmpty($value);
+            if (is_array($value)) {
+                $filteredValue = self::filterEmpty($value);
+                // Store the fixed array as empty only if the filtered array is empty
+                if ($property['value_type'] !== 'fixed-array' || empty($filteredValue)) {
+                    $value = $filteredValue;
+                }
+            }
+
+            if (isset($property['new'])) {
+                $this->object->getConnection()->insert(
+                    "icinga_$type" . '_property',
+                    [
+                        $type . '_uuid' => $this->object->uuid,
+                        'property_uuid' => $propertyUuid->getBytes()
+                    ]
+                );
             }
 
             if (! is_bool($value) && empty($value)) {
@@ -109,57 +256,66 @@ class CustomPropertiesForm extends CompatForm
             }
 
             if ($vars->get($key) && $vars->get($key)->getUuid() === null && isset($property['uuid'])) {
-                $vars->registerVarUuid($key, Uuid::fromBytes($property['uuid']));
+                $vars->registerVarUuid($key, $propertyUuid);
             }
 
-            if ($modified === false && $vars->hasBeenModified()) {
-                $modified = true;
+            if ($this->varsHasBeenModified === false && $vars->hasBeenModified()) {
+                $this->varsHasBeenModified = true;
             }
         }
 
-        DirectorActivityLog::logModification($this->object, $this->object->getConnection());
         if (! empty($itemsToRemove)) {
             $objectId = (int) $this->object->get('id');
             $db = $this->object->getDb();
 
             $objectsToCleanUp = [$objectId];
-            $propertyAsHostVar = $db->fetchAll(
+            $propertyAsObjectVar = $db->fetchAll(
                 $db
                     ->select()
-                    ->from('icinga_host_var')
-                    ->where('property_uuid IN (?)', $itemsToRemove)
+                    ->from('icinga_' . $type . '_var')
+                    ->where('property_uuid IN (?)', $itemsToRemoveUuids)
             );
 
-            foreach ($propertyAsHostVar as $propertyAsHostVarRow) {
-                $host = IcingaHost::loadWithAutoIncId($propertyAsHostVarRow->host_id, $this->object->getConnection());
+            foreach ($propertyAsObjectVar as $propertyAsObjectVarRow) {
+                $class = DbObjectTypeRegistry::classByType($type);
+                $object = $class::loadWithAutoIncId(
+                    $propertyAsObjectVarRow->{$type . '_id'},
+                    $this->object->getConnection()
+                );
 
-                if (in_array($objectId, $host->listAncestorIds(), true)) {
-                    $objectsToCleanUp[] = (int) $host->get('id');
+                if (in_array($objectId, $object->listAncestorIds(), true)) {
+                    $objectsToCleanUp[] = (int) $object->get('id');
                 }
             }
 
-            $propertyWhere = $this->object->getDb()->quoteInto('property_uuid IN (?)', $itemsToRemove);
-            $objectsWhere = $this->object->getDb()->quoteInto('host_id IN (?)', $objectsToCleanUp);
-            $db->delete('icinga_host_var', $propertyWhere . ' AND ' . $objectsWhere);
+            $propertyWhere = $this->object->getDb()->quoteInto('property_uuid IN (?)', $itemsToRemoveUuids);
+            $objectsWhere = $this->object->getDb()->quoteInto($type . '_id IN (?)', $objectsToCleanUp);
+            $db->delete('icinga_' . $type . '_var', $propertyWhere . ' AND ' . $objectsWhere);
 
-            $objectWhere = $this->object->getDb()->quoteInto('host_uuid = ?', $this->object->get('uuid'));
+            $objectWhere = $this->object->getDb()->quoteInto($type . '_uuid = ?', $this->object->get('uuid'));
             $db->delete(
-                'icinga_host_property',
+                'icinga_' . $type . '_property',
                 $propertyWhere . ' AND ' . $objectWhere
             );
         }
 
-        $vars->storeToDb($this->object);
+        if ($this->isOverrideServiceVars()) {
+            $object = $this->host;
+            $overrideVars = (array) $this->host->getOverriddenServiceVars($this->object->getObjectName());
+            foreach ($vars as $varName => $var) {
+                if ($var->hasBeenModified()) {
+                    $overrideVars[$varName] = $var->getValue();
+                }
+            }
 
-        if ($modified) {
-            Notification::success(
-                sprintf(
-                    $this->translate('Custom variables have been successfully modified for %s'),
-                    $this->object->getObjectName(),
-                )
-            );
+            $object->overrideServiceVars($this->object->getObjectName(), (object) $overrideVars);
+            DirectorActivityLog::logModification($object, $this->object->getConnection());
+
+            $object->store($this->object->getConnection());
         } else {
-            Notification::success($this->translate('There is nothing to change.'));
+            $object = $this->object;
+            DirectorActivityLog::logModification($object, $this->object->getConnection());
+            $vars->storeToDb($object);
         }
     }
 }

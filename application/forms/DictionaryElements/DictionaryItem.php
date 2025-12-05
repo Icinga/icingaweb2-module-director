@@ -4,10 +4,15 @@ namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Forms\Validator\DatalistEntryValidator;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
-use ipl\Html\FormElement\CheckboxElement;
+use ipl\Html\Attributes;
+use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\HtmlElement;
+use ipl\Web\FormElement\TermInput;
+use ipl\Web\Url;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -25,8 +30,8 @@ class DictionaryItem extends FieldsetElement
     /** @var array Dictionary Item Fields */
     private $fields;
 
-    /** @var bool Whether to allow removal of item */
-    private bool $isRemovable = false;
+    /** @var ?FormElement Remove button */
+    private ?FormElement $removeButton = null;
 
     public function __construct(string $name, array $items, $attributes = null)
     {
@@ -35,11 +40,38 @@ class DictionaryItem extends FieldsetElement
         parent::__construct($name, $attributes);
     }
 
-    public function setRemovable(bool $isRemovable = false): static
+    private static function fetchItemType(UuidInterface $uuid): string
     {
-        $this->isRemovable = $isRemovable;
+        $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
+        $query = $db->select()
+            ->from(
+                ['dp' => 'director_property'],
+                ['value_type' => 'dp.value_type']
+            )
+            ->where('dp.parent_uuid = ?', $uuid->getBytes());
+        return  $db->fetchOne($query);
+    }
 
-        return $this;
+    /**
+     * Fetch datalist entries for a given property uuid.
+     *
+     * @param UuidInterface $uuid
+     *
+     * @return array
+     */
+    private static function fetchDataListEntries(UuidInterface $uuid): array
+    {
+        $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
+        $query = $db->select()
+            ->from(
+                ['dle' => 'director_datalist_entry'],
+                ['entry_name' => 'dle.entry_name', 'entry_value' => 'dle.entry_value']
+            )
+            ->join(['dl' => 'director_datalist'], 'dl.id = dle.list_id', [])
+            ->join(['dpl' => 'director_property_datalist'], 'dl.uuid = dpl.list_uuid', [])
+            ->where('dpl.property_uuid = ?', $uuid->getBytes());
+
+        return  $db->fetchPairs($query);
     }
 
     protected function assemble(): void
@@ -56,12 +88,22 @@ class DictionaryItem extends FieldsetElement
         $type = $this->getElement('type')->getValue();
         $label = $this->getElement('label')->getValue();
 
+        if ($this->removeButton !== null) {
+            $this->addAttributes(['class' => ['removable']]);
+            $this->addHtml(new HtmlElement(
+                'div',
+                null,
+                $this->removeButton
+            ));
+        }
+
         if ($label === null) {
             $label = $this->getElement('name')->getValue();
         }
 
+        $uuid = Uuid::fromBytes($this->fields['uuid']);
         $children = static::fetchChildrenItems(
-            Uuid::fromBytes($this->fields['uuid']),
+            $uuid,
             $this->fields['value_type'] ?? ''
         );
         $inherited = $this->getElement('inherited')->getValue();
@@ -76,15 +118,110 @@ class DictionaryItem extends FieldsetElement
             $this->addElement(
                 'number',
                 $valElementName,
-                ['label' => $label . ' (Number)', 'placeholder' => $placeholder, 'step' => 'any']
+                [
+                    'label' => $label . ' (Number)',
+                    'placeholder' => $placeholder,
+                    'step' => 'any',
+                    'class' => 'autosubmit'
+                ]
             );
         } elseif ($type == 'bool') {
-            $this->addElement(new IplBoolean($valElementName, ['label' => $label, 'placeholder' => $placeholder]));
+            $this->addElement(
+                new IplBoolean(
+                    $valElementName,
+                    ['label' => $label, 'placeholder' => $placeholder, 'class' => 'autosubmit']
+                )
+            );
         } elseif ($type === 'dynamic-array') {
             $this->addElement((new ArrayElement($valElementName))
+                ->shouldAutoSubmit()
                 ->setVerticalTermDirection()
                 ->setPlaceHolder($placeholder)
                 ->setLabel($label . ' (Array)'));
+        } elseif (str_starts_with($type, 'datalist-')) {
+            $isStrict = substr($type, strlen('datalist-')) === 'strict';
+            $itemType = self::fetchItemType($uuid);
+            $datalistEntries = self::fetchDataListEntries($uuid);
+            if ($itemType === 'string') {
+                if ($isStrict) {
+                    $this->addElement(
+                        'select',
+                        $valElementName,
+                        [
+                            'label' => $label . ' (Datalist String [strict])',
+                            'placeholder' => $placeholder,
+                            'value' => '',
+                            'options' => ['' => $this->translate('- Please choose -')]
+                                + $datalistEntries
+                        ]
+                    );
+                } else {
+                    $fieldsetName = $this->getName();
+                    $listEntriesInput = $this->createElement('text', $valElementName, [
+                        'autocomplete' => 'off',
+                        'ignore' => true,
+                        'label' => $label . ' (Datalist String [non-strict])',
+                        'data-enrichment-type' => 'completion',
+                        'data-auto-submit' => true,
+                        'data-term-suggestions' => "#{$valElementName}-suggestions-{$fieldsetName}",
+                        'data-suggest-url' => Url::fromPath('director/suggestions/datalist-entry', [
+                            'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
+                            'showCompact' => true,
+                            '_disableLayout' => true
+                        ])
+                    ]);
+
+                    $fieldset = new HtmlElement('fieldset');
+                    $this->registerElement($listEntriesInput);
+                    $searchInput = $this->createElement('hidden', "{$valElementName}-search", ['ignore' => true]);
+                    $this->registerElement($searchInput);
+                    $fieldset->addHtml($searchInput);
+                    $labelInput = $this->createElement('hidden', "{$valElementName}-label", ['ignore' => true]);
+                    $this->registerElement($labelInput);
+                    $fieldset->addHtml($labelInput);
+
+                    $this->decorate($listEntriesInput);
+
+                    $fieldset->addHtml(
+                        $listEntriesInput,
+                        new HtmlElement('div', Attributes::create([
+                            'id' => "{$valElementName}-suggestions-{$fieldsetName}",
+                            'class' => 'search-suggestions'
+                        ]))
+                    );
+
+                    $this->addHtml($fieldset);
+                }
+            } elseif ($itemType === 'dynamic-array') {
+                $listEntriesInput = (new ArrayElement($valElementName))
+                    ->shouldAutoSubmit()
+                    ->setSuggestedValues($datalistEntries)
+                    ->setVerticalTermDirection()
+                    ->setSuggestionUrl(Url::fromPath('director/suggestions/datalist-entry', [
+                        'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
+                        'showCompact' => true,
+                        '_disableLayout' => true
+                    ]));
+
+                if ($isStrict) {
+                    $termValidator = function (array $terms) use ($datalistEntries) {
+                        (new DatalistEntryValidator())
+                            ->setDatalistEntries($datalistEntries)
+                            ->isValid($terms);
+                    };
+
+                    $listEntriesInput
+                        ->setLabel($label . ' (Datalist Array [strict])')
+                        ->on(TermInput::ON_ENRICH, $termValidator)
+                        ->on(TermInput::ON_ADD, $termValidator)
+                        ->on(TermInput::ON_PASTE, $termValidator)
+                        ->on(TermInput::ON_SAVE, $termValidator);
+                } else {
+                    $listEntriesInput->setLabel($label . ' (Datalist Array [non-strict])');
+                }
+
+                $this->addElement($listEntriesInput);
+            }
         } elseif ($type === 'fixed-dictionary' || $type === 'fixed-array') {
             $this->addElement(
                 (new Dictionary($valElementName, $children))
@@ -100,25 +237,31 @@ class DictionaryItem extends FieldsetElement
             $this->addElement(
                 'text',
                 $valElementName,
-                ['label' => $label . ' (' . ucfirst($type) . ')', 'placeholder' => $placeholder]
-            );
-        }
-
-        if ($this->isRemovable && ! isset($this->fields['parent_uuid'])) {
-            $markForRemoval = new CheckboxElement(
-                'delete-' . $this->getName(),
                 [
-                    'label' => 'Mark for removal',
-                    'description' => $this->translate(
-                        'Removing the custom variable from this template,'
-                        . ' will also remove it from the objects importing the template'
-                    ),
+                    'label' => $label . ' (' . ucfirst($type) . ')',
+                    'placeholder' => $placeholder, 'class' => 'autosubmit'
                 ]
             );
-
-            $this->registerElement($markForRemoval);
-            $this->addElement($markForRemoval);
         }
+    }
+
+    public function populate($values): void
+    {
+        if (
+            $values['type'] === 'datalist-non-strict'
+            && self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string'
+        ) {
+            $datalistEntries = array_flip(self::fetchDataListEntries(Uuid::fromBytes($this->fields['uuid'])));
+
+            if (isset($datalistEntries[$values['var']])) {
+                $values['var-search'] = $datalistEntries[$values['var']];
+                $values['var-label'] = $values['var'];
+            } else {
+                $values['var-search'] = $values['var'];
+            }
+        }
+
+        parent::populate($values);
     }
 
     /**
@@ -137,7 +280,13 @@ class DictionaryItem extends FieldsetElement
             'parent_type' => $property['parent_type'] ?? ''
         ];
 
-        if ($property['value_type'] === 'dynamic-array') {
+        if (
+            $property['value_type'] === 'dynamic-array'
+            || (
+                in_array($property['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
+                && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'dynamic-array'
+            )
+        ) {
             $values['var'] = $property['value'] ?? [];
             $values['inherited'] = implode(', ', $property['inherited'] ?? []);
             $values['inherited_from'] = $property['inherited_from'] ?? '';
@@ -176,6 +325,20 @@ class DictionaryItem extends FieldsetElement
                 ? json_encode($property['inherited'], JSON_PRETTY_PRINT)
                 : '';
             $values['inherited_from'] = $property['inherited_from'] ?? '';
+        } elseif (
+            $property['value_type'] === 'datalist-non-strict'
+            && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'string'
+        ) {
+            $dataListEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
+            $value = $property['value'] ?? '';
+            if (isset($dataListEntries[$value])) {
+                $values['var'] = $dataListEntries[$value];
+                $values['var-search'] = $value;
+                $values['var-label'] = $dataListEntries[$value];
+            } else {
+                $values['var'] = $value;
+                $values['var-search'] = $value;
+            }
         } else {
             $values['var'] = $property['value'] ?? '';
             $values['inherited'] = $property['inherited'] ?? '';
@@ -194,27 +357,29 @@ class DictionaryItem extends FieldsetElement
      *
      * @return array
      */
-    public static function fetchChildrenItems(UuidInterface $parentUuid, string $parentType, array $values = []): array
+    private static function fetchChildrenItems(UuidInterface $parentUuid, string $parentType, array $values = []): array
     {
         $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
 
         $query = $db->select()
-                    ->from(
-                        ['dp' => 'director_property'],
-                        [
-                            'key_name' => 'dp.key_name',
-                            'uuid' => 'dp.uuid',
-                            'value_type' => 'dp.value_type',
-                            'label' => 'dp.label',
-                            'parent_uuid' => 'dp.parent_uuid',
-                            'children' => 'COUNT(cdp.uuid)'
-                        ]
-                    )
-                    ->where('dp.parent_uuid = ?', $parentUuid->getBytes())
-                    ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                    ->order('children')
-                    ->order('key_name');
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'parent_uuid' => 'dp.parent_uuid',
+                    'children' => 'COUNT(cdp.uuid)'
+                ]
+            )
+            ->where('dp.parent_uuid = ?', $parentUuid->getBytes())
+            ->joinLeft(['cdp' => 'director_property'],
+                'cdp.parent_uuid = dp.uuid',
+                [])
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+            ->order('children')
+            ->order('key_name');
 
         $propertyItems = $db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
         if (empty($values)) {
@@ -240,6 +405,20 @@ class DictionaryItem extends FieldsetElement
     }
 
     /**
+     * Set the remove button.
+     *
+     * @param ?FormElement $removeButton
+     *
+     * @return $this
+     */
+    public function setRemoveButton(?FormElement $removeButton): static
+    {
+        $this->removeButton = $removeButton;
+
+        return $this;
+    }
+
+    /**
      * Get the dictionary item value
      *
      * @return DictionaryItemDataType
@@ -256,6 +435,11 @@ class DictionaryItem extends FieldsetElement
                 ksort($value);
                 $values['value'] = array_values($value);
             }
+        } elseif (
+            $this->getElement('type')->getValue() === 'datalist-non-strict'
+            && self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string'
+        ) {
+            $values['value'] = $this->getElement('var-search')->getValue();
         } else {
             if (! empty($this->getElement('inherited')->getValue())) {
                 $values['value'] = $itemValue->getValue();

@@ -3,12 +3,9 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\Data\Db\DbConnection;
-use Icinga\Module\Director\Web\Widget\CustomVarObjectList;
 use Icinga\Web\Session;
-use ipl\Html\Contract\FormSubmitElement;
-use ipl\Html\HtmlElement;
-use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -17,8 +14,8 @@ use ipl\Web\Widget\ButtonLink;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use stdClass;
 use Zend_Db;
+use Zend_Db_Select_Exception;
 
 class PropertyForm extends CompatForm
 {
@@ -37,7 +34,7 @@ class PropertyForm extends CompatForm
         protected bool $field = false,
         protected ?UuidInterface $parentUuid = null
     ) {
-        $this->addAttributes(['class' => ['property-form']]);
+        $this->getAttributes()->add(['class' => ['property-form']]);
     }
 
     /**
@@ -135,10 +132,24 @@ class PropertyForm extends CompatForm
             ['label' => $this->translate('Property Description')]
         );
 
+        if ($this->parentUuid === null) {
+            $this->addElement(
+                'select',
+                'category_id',
+                [
+                    'label'             => $this->translate('Category'),
+                    'value'             => '',
+                    'options'           => ['' => $this->translate('- please choose -')] + $this->fetchCategories()
+                ]
+            );
+        }
+
         $types = [
             'string' => 'String',
             'number' => 'Number',
             'bool' => 'Boolean',
+            'datalist-strict' => 'Data List Strict',
+            'datalist-non-strict' => 'Data List Non Strict',
         ];
 
         if (! $this->isNestedField) {
@@ -164,20 +175,14 @@ class PropertyForm extends CompatForm
                 'required'          => true,
                 'disabledOptions'   => [''],
                 'value'             => 'string',
-                'options'           => $types
+                'options'           => $types,
+                'disabled'          => $used,
+                'title'             => $used ? $this->translate(
+                                         'This property is used in one or more templates and hence the value type'
+                                         . ' cannot be changed.'
+                                     ) : '',
             ]
         );
-
-        if ($used) {
-            $this->getElement('value_type')
-                 ->setAttribute(
-                     'title',
-                     $this->translate(
-                         'This property is used in one or more templates and hence the value type cannot be changed.'
-                     )
-                 )
-                 ->setAttribute('disabled', true);
-        }
 
         $type = $this->getValue('value_type');
         if ($type === 'dynamic-array') {
@@ -189,19 +194,56 @@ class PropertyForm extends CompatForm
                     'class'             => 'autosubmit',
                     'disabledOptions'   => [''],
                     'value'             => 'string',
-                    'options'           => array_slice($types, 0, 2)
+                    'options'           => array_slice($types, 0, 2),
+                    'disabled'          => $used,
+                    'title'             => $used ? $this->translate(
+                                             'This property is used in one or more templates and hence the item type'
+                                             . ' cannot be changed.'
+                                         ) : ''
+                ]
+            );
+        } elseif (str_starts_with($type, 'datalist')) {
+            $isStrict = substr_compare($type, 'strict', strlen('datalist-')) === 0;
+            $this->getElement('value_type')->setAttribute('strict', $isStrict);
+            $this->addElement(
+                'select',
+                'list',
+                [
+                    'label'             => $this->translate('List name'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => '',
+                    'required'          => true,
+                    'options'           => ['' => $this->translate('- please choose -')] + $this->enumDatalist(),
+                    'disabled'          => $used,
+                    'title'             => $used ? $this->translate(
+                        'This property is used in one or more templates and hence the datalist'
+                        . ' cannot be changed.'
+                    ) : ''
+                ]
+            );
+
+            $this->addElement(
+                'select',
+                'item_type',
+                [
+                    'label'             => $this->translate('Item Type'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => 'string',
+                    'options'           => ['string' => 'String', 'dynamic-array' => 'Array']
                 ]
             );
 
             if ($used) {
                 $this->getElement('item_type')
-                    ->setAttribute(
-                        'title',
-                        $this->translate(
-                            'This property is used in one or more templates and hence the item type cannot be changed.'
-                        )
-                    )
-                    ->setAttribute('disabled', true);
+                     ->setAttribute(
+                         'title',
+                         $this->translate(
+                             'This property is used in one or more templates and hence the item type cannot be changed.'
+                         )
+                     )
+                     ->setAttribute('disabled', true);
             }
         }
 
@@ -225,6 +267,28 @@ class PropertyForm extends CompatForm
                     ))->openInModal()
                 );
         }
+    }
+
+    private function enumDatalist(): array
+    {
+        return $this->db->fetchPairs(
+            $this->db->select()->from('director_datalist', ['id', 'list_name'])->order('list_name')
+        );
+    }
+
+    private function fetchDatalist(int $id): array
+    {
+        return (array) $this->db->fetchRow(
+            $this->db->select()->from('director_datalist', ['*'])
+                ->where('id', $id)
+        );
+    }
+
+    private function fetchCategories(): array
+    {
+        return $this->db->fetchPairs(
+            $this->db->select()->from('director_datafield_category', ['id', 'category_name'])
+        );
     }
 
     /**
@@ -280,162 +344,252 @@ class PropertyForm extends CompatForm
     protected function onSuccess(): void
     {
         $values = $this->getValues();
+        $datalist = [];
+        $itemType = '';
+        $valueType = $values['value_type'];
+        if (str_starts_with($valueType, 'datalist-')) {
+            $datalist = $this->fetchDatalist($values['list']);
+            $itemType = $values['item_type'];
+            unset($values['list']);
+        } elseif ($valueType == 'dynamic-array') {
+            $itemType = $values['item_type'];
+        }
 
+        if (isset($values['list'])) {
+            unset($values['list']);
+        }
+
+        if (isset($values['item_type'])) {
+            unset($values['item_type']);
+        }
+
+        $this->db->getDbAdapter()->beginTransaction();
         if ($this->uuid === null) {
-            $this->uuid = Uuid::uuid4();
-            if ($this->field) {
-                $values = array_merge(
-                    [
-                        'uuid' => $this->uuid->getBytes(),
-                        'parent_uuid' => $this->parentUuid->getBytes()
-                    ],
-                    $values
+            $this->addNewProperty($values, $datalist, $itemType);
+        } else {
+            $this->updateExistingProperty($values, $datalist, $itemType);
+        }
+
+        $this->db->getDbAdapter()->commit();
+    }
+
+    /**
+     * Add a new custom property
+     *
+     * @param array  $values Form values
+     * @param array  $datalist Datalist values if any
+     * @param string $itemType Item type if any
+     *
+     * @return void
+     */
+    private function addNewProperty(
+        array $values,
+        array $datalist = [],
+        string $itemType = ''
+    ): void {
+        $this->uuid = Uuid::uuid4();
+        $dynamicArrayItemType = [];
+        if ($itemType !== '') {
+            $dynamicArrayItemType = [
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => '0',
+                'value_type' => $itemType,
+                'parent_uuid' => $this->uuid->getBytes()
+            ];
+        }
+
+        if ($this->field) {
+            $values = array_merge(
+                [
+                    'uuid' => $this->uuid->getBytes(),
+                    'parent_uuid' => $this->parentUuid->getBytes()
+                ],
+                $values
+            );
+        } else {
+            $values = array_merge(
+                ['uuid' => $this->uuid->getBytes()],
+                $values
+            );
+        }
+
+        $this->db->insert('director_property', $values);
+
+        if (! empty($dynamicArrayItemType)) {
+            $this->db->insert('director_property', $dynamicArrayItemType);
+        }
+
+        if (! empty($datalist)) {
+            $this->db->insert('director_property_datalist', [
+                'property_uuid' => $this->uuid->getBytes(),
+                'list_uuid' => $datalist['uuid'],
+            ]);
+        }
+    }
+
+    /**
+     * Update an existing property
+     *
+     * @param array  $values Form values
+     * @param array  $datalist Datalist values if any
+     * @param string $itemType Item type if any
+     *
+     * @return void
+     *
+     * @throws FilterException
+     */
+    private function updateExistingProperty(
+        array $values,
+        array $datalist = [],
+        string $itemType = ''
+    ): void {
+        $used = (int) $this->getValue('used_count') > 0;
+        $valueType = $values['value_type'];
+        if (isset($values['used_count'])) {
+            unset($values['used_count']);
+        }
+
+        if (! $used) {
+            $dbProperty = $this->fetchProperty($this->uuid);
+            if (
+                $dbProperty['value_type'] !== $valueType
+                || (
+                    $dbProperty['value_type'] === 'dynamic-array'
+                    || str_starts_with($dbProperty['value_type'], 'datalist-')
+                )
+            ) {
+                $this->db->delete(
+                    'director_property',
+                    Filter::matchAll(Filter::where('parent_uuid', $this->uuid->getBytes()))
                 );
-            } else {
-                $values = array_merge(
-                    ['uuid' => $this->uuid->getBytes()],
-                    $values
+
+                $this->db->delete(
+                    'director_property_datalist',
+                    Filter::matchAll(Filter::where('property_uuid', $this->uuid->getBytes()))
                 );
             }
 
-            $dynamicArrayItemType = [];
-            if (isset($values['item_type'])) {
-                $dynamicArrayItemType = [
+            if ($itemType && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
+                $this->db->insert('director_property', [
                     'uuid' => Uuid::uuid4()->getBytes(),
                     'key_name' => '0',
-                    'value_type' => $values['item_type'],
+                    'value_type' => $itemType,
                     'parent_uuid' => $this->uuid->getBytes()
-                ];
+                ]);
 
-                unset($values['item_type']);
-            }
-
-            $this->db->insert('director_property', $values);
-
-            if (! empty($dynamicArrayItemType)) {
-                $this->db->insert('director_property', $dynamicArrayItemType);
+                if (str_starts_with($valueType, 'datalist-')) {
+                    $this->db->insert('director_property_datalist', [
+                        'property_uuid' => $this->uuid->getBytes(),
+                        'list_uuid' => $datalist['uuid'],
+                    ]);
+                }
             }
         } else {
-            unset($values['used_count']);
+            $storedKeyName = $this->db->fetchOne(
+                $this->db->select()
+                    ->from('director_property', ['key_name'])
+                    ->where('uuid', $this->uuid->getBytes())
+            );
 
-            $used = $this->getValue('used_count') > 0;
-            if (! $used) {
-                $dbProperty = $this->fetchProperty($this->uuid);
-                if (
-                    $dbProperty['value_type'] !== $values['value_type']
-                    || $dbProperty['value_type'] === 'dynamic-array'
-                ) {
-                    $this->db->delete(
-                        'director_property',
+            if ($storedKeyName !== $values['key_name']) {
+                $this->updateUsedCustomVarNames($storedKeyName, $values['key_name']);
+            }
+        }
+
+        $this->db->update(
+            'director_property',
+            $values,
+            Filter::where('uuid', $this->uuid->getBytes())
+        );
+    }
+
+    /**
+     * Update the used custom variable names in the database
+     *
+     * @param string $storedKeyName
+     * @param mixed  $keyName
+     *
+     * @return void
+     *
+     * @throws FilterException
+     * @throws Zend_Db_Select_Exception
+     */
+    private function updateUsedCustomVarNames(string $storedKeyName, mixed $keyName): void
+    {
+        $db = $this->db->getDbAdapter();
+        $parent = [];
+        if (! $this->parentUuid) {
+            $rootUuid = $this->uuid;
+        } elseif ($this->isNestedField) {
+            $parent = $this->fetchProperty($this->parentUuid);
+            $rootUuid = Uuid::fromBytes($parent['parent_uuid']);
+        } else {
+            $rootUuid = $this->parentUuid;
+        }
+
+        $root = $this->fetchProperty($rootUuid);
+        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
+
+        foreach ($objectTypes as $objectType) {
+            $objectCustomVars = $db->fetchAll(
+                $db->select()
+                   ->from(['ihv' => "icinga_{$objectType}_var"], [])
+                   ->columns([
+                       "{$objectType}_id",
+                       'varname',
+                       'varvalue',
+                       'property_uuid'
+                   ])
+                   ->where('property_uuid = ?', $rootUuid->getBytes()),
+                [],
+                PDO::FETCH_ASSOC
+            );
+
+            if (! $this->parentUuid) {
+                foreach ($objectCustomVars as $objectCustomVar) {
+                    $this->db->update(
+                        "icinga_{$objectType}_var",
+                        ['varname' => $keyName],
                         Filter::matchAll(
-                            Filter::where('parent_uuid', $this->uuid->getBytes()),
+                            Filter::where('property_uuid', $rootUuid->getBytes()),
+                            Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
                         )
                     );
                 }
 
-                if (isset($values['item_type']) && $values['value_type'] === 'dynamic-array') {
-                    $this->db->insert('director_property', [
-                        'uuid' => Uuid::uuid4()->getBytes(),
-                        'key_name' => '0',
-                        'value_type' => $values['item_type'],
-                        'parent_uuid' => $this->uuid->getBytes()
-                    ]);
-
-                    unset($values['item_type']);
-                }
-            } else {
-                $this->db->getDbAdapter()->beginTransaction();
-                $storedKeyName = $this->db->fetchOne(
-                    $this->db->select()
-                             ->from('director_property', ['key_name'])
-                             ->where('uuid', $this->uuid->getBytes())
-                );
-
-                if ($storedKeyName !== $values['key_name']) {
-                    $db = $this->db->getDbAdapter();
-                    $parent = [];
-                    if (! $this->parentUuid) {
-                        $rootUuid = $this->uuid;
-                    } elseif ($this->isNestedField) {
-                        $parent = $this->fetchProperty($this->parentUuid);
-                        $rootUuid = Uuid::fromBytes($parent['parent_uuid']);
-                    } else {
-                        $rootUuid = $this->parentUuid;
-                    }
-
-                    $root = $this->fetchProperty($rootUuid);
-
-                    $objectCustomVars = $db->fetchAll(
-                        $db->select()
-                                 ->from(['ihv' => 'icinga_host_var'], [])
-                                 ->columns([
-                                     'host_id',
-                                     'varname',
-                                     'varvalue',
-                                     'property_uuid'
-                                 ])
-                                 ->where('property_uuid = ?', $rootUuid->getBytes()),
-                        [],
-                        PDO::FETCH_ASSOC
-                    );
-
-                    if (! $this->parentUuid) {
-                        foreach ($objectCustomVars as $objectCustomVar) {
-                            $this->db->update(
-                                'icinga_host_var',
-                                ['varname' => $values['key_name']],
-                                Filter::matchAll(
-                                    Filter::where('property_uuid', $rootUuid->getBytes()),
-                                    Filter::where('host_id', $objectCustomVar['host_id'])
-                                )
-                            );
-                        }
-                    } else {
-                        foreach ($objectCustomVars as $objectCustomVar) {
-                            $varValue = json_decode($objectCustomVar['varvalue'], true);
-                            if ($root['value_type'] === 'dynamic-dictionary') {
-                                foreach ($varValue as $key => $value) {
-                                    if ($this->isNestedField) {
-                                        $parenKey = $parent['key_name'];
-                                        $this->updateObjectCustomVars(
-                                            [$parenKey, $storedKeyName],
-                                            [$parenKey, $values['key_name']],
-                                            $value
-                                        );
-                                    } else {
-                                        $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $value);
-                                    }
-
-                                    $varValue[$key] = $value;
-                                }
-                            } else {
-                                if ($this->isNestedField) {
-                                    $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
-                                } else {
-                                    $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
-                                }
-                            }
-
-                            $this->db->update(
-                                'icinga_host_var',
-                                ['varvalue' => json_encode($varValue)],
-                                Filter::matchAll(
-                                    Filter::where('property_uuid', $rootUuid->getBytes()),
-                                    Filter::where('host_id', $objectCustomVar['host_id'])
-                                )
-                            );
-                        }
-                    }
-                }
+                return;
             }
 
-            $this->db->update(
-                'director_property',
-                $values,
-                Filter::where('uuid', $this->uuid->getBytes())
-            );
+            foreach ($objectCustomVars as $objectCustomVar) {
+                $varValue = json_decode($objectCustomVar['varvalue'], true);
+                if ($root['value_type'] !== 'dynamic-dictionary') {
+                    $this->updateObjectCustomVars([$storedKeyName], [$keyName], $varValue);
+                } else {
+                    foreach ($varValue as $key => $value) {
+                        if (! $this->isNestedField) {
+                            $this->updateObjectCustomVars([$storedKeyName], [$keyName], $value);
+                        } else {
+                            $parenKey = $parent['key_name'];
+                            $this->updateObjectCustomVars(
+                                [$parenKey, $storedKeyName],
+                                [$parenKey, $keyName],
+                                $value
+                            );
+                        }
 
-            $this->db->getDbAdapter()->commit();
+                        $varValue[$key] = $value;
+                    }
+                }
+
+                $this->db->update(
+                    "icinga_{$objectType}_var",
+                    ['varvalue' => json_encode($varValue)],
+                    Filter::matchAll(
+                        Filter::where('property_uuid', $rootUuid->getBytes()),
+                        Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
+                    )
+                );
+            }
         }
     }
 }

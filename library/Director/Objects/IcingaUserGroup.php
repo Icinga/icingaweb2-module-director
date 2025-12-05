@@ -16,6 +16,7 @@ class IcingaUserGroup extends IcingaObjectGroup
         'disabled'      => 'n',
         'display_name'  => null,
         'zone_id'       => null,
+        'assign_filter' => null,
     ];
 
     protected $relations = [

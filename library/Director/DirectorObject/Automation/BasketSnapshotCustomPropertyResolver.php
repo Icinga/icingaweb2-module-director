@@ -21,6 +21,7 @@ class BasketSnapshotCustomPropertyResolver
     /** @var array|null */
     protected $requiredUuids;
 
+    /** @var array all BasketSnapshot objects */
     protected $objects;
 
     /** @var array|null */
@@ -36,10 +37,11 @@ class BasketSnapshotCustomPropertyResolver
     }
 
     /**
+     * Load all custom properties from the DB.
+     *
      * @param Db $db
      *
      * @return DirectorProperty[]
-     * @throws \Icinga\Exception\NotFoundError
      */
     public function loadCurrentProperties(Db $db): array
     {
@@ -52,10 +54,11 @@ class BasketSnapshotCustomPropertyResolver
     }
 
     /**
-     * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * Store new custom properties.
+     *
+     * @return void
      */
-    public function storeNewProperties()
+    public function storeNewProperties(): void
     {
         $this->targetProperties = null; // Clear Cache
         foreach ($this->getTargetProperties() as $uuid => $property) {
@@ -72,14 +75,14 @@ class BasketSnapshotCustomPropertyResolver
     }
 
     /**
+     * Relink custom properties to the new object.
+     *
      * @param IcingaObject $new
      * @param $object
-     * @throws \Icinga\Exception\NotFoundError
-     * @throws \Zend_Db_Adapter_Exception
      */
-    public function relinkObjectCustomProperties(IcingaObject $new, $object)
+    public function relinkObjectCustomProperties(IcingaObject $new, $object): void
     {
-        if (! $new->supportsFields() || ! isset($object->properties)) {
+        if (! $new->supportsCustomProperties() || ! isset($object->properties)) {
             return;
         }
 
@@ -140,9 +143,8 @@ class BasketSnapshotCustomPropertyResolver
      * in our DB
      *
      * @param object $object
-     * @throws \Icinga\Exception\NotFoundError
      */
-    public function tweakTargetUuids($object)
+    public function tweakTargetUuids(object $object): void
     {
         $forward = $this->getUuidMap();
         $map = array_flip($forward);
@@ -152,52 +154,66 @@ class BasketSnapshotCustomPropertyResolver
                 if (isset($map[$uuid])) {
                     $property->property_uuid = $map[$uuid];
                 } else {
-                    $property->property_uuid = "(UNKNOWN)";
+                    $property->property_uuid = '(UNKNOWN)';
                 }
             }
         }
     }
 
+    /**
+     * Get all required UUIDs for custom properties.
+     *
+     * @return array
+     */
     protected function getRequiredUuids(): array
     {
-        if ($this->requiredUuids === null) {
-            if (isset($this->objects['Property'])) {
-                $this->requiredUuids = array_keys($this->objects['Property']);
-            } else {
-                $uuids = [];
-                foreach ($this->objects as $typeName => $objects) {
-                    foreach ($objects as $key => $object) {
-                        if (isset($object->properties)) {
-                            foreach ($object->properties as $property) {
-                                $uuids[$property->property_uuid] = true;
-                            }
-                        }
+        if ($this->requiredUuids !== null) {
+            return $this->requiredUuids;
+        }
+
+        if (isset($this->objects['Property'])) {
+            $this->requiredUuids = array_keys($this->objects['Property']);
+
+            return $this->requiredUuids;
+        }
+
+        $uuids = [];
+        // Get the uuids of all custom properties associated with all the objects hosts, services, etc.
+        foreach ($this->objects as $objects) {
+            foreach ($objects as $object) {
+                if (isset($object->properties)) {
+                    foreach ($object->properties as $property) {
+                        $uuids[$property->property_uuid] = true;
                     }
                 }
-
-                $this->requiredUuids = array_keys($uuids);
             }
         }
+
+        $this->requiredUuids = array_keys($uuids);
 
         return $this->requiredUuids;
     }
 
     /**
+     * Get all objects of a certain type.
+     *
      * @param $type
+     *
      * @return object[]
      */
     protected function getObjectsByType($type): array
     {
-        if (isset($this->objects->$type)) {
-            return (array) $this->objects->$type;
-        } else {
+        if (! isset($this->objects->{$type})) {
             return [];
         }
+
+        return (array) $this->objects->{$type};
     }
 
     /**
+     * Get all target properties.
+     *
      * @return DirectorProperty[]
-     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getTargetProperties(): array
     {
@@ -209,7 +225,9 @@ class BasketSnapshotCustomPropertyResolver
     }
 
     /**
-     * @throws \Icinga\Exception\NotFoundError
+     * Get the UUID map for object property UUIDs.
+     *
+     * @return array
      */
     protected function getUuidMap(): array
     {
@@ -221,9 +239,11 @@ class BasketSnapshotCustomPropertyResolver
     }
 
     /**
-     * @throws \Icinga\Exception\NotFoundError
+     * Calculate the UUID map for object property UUIDs.
+     *
+     * @return void
      */
-    protected function calculateUuidMap()
+    protected function calculateUuidMap(): void
     {
         $this->uuidMap = [];
         $this->targetProperties = [];
@@ -244,7 +264,7 @@ class BasketSnapshotCustomPropertyResolver
     private function restoreCustomPropertyItems(DirectorProperty $property): bool
     {
         $modified = false;
-        foreach ($property->getItems() as $item) {
+        foreach ($property->fetchItemsFromDb() as $item) {
             if ($item->hasBeenModified()) {
                 $item->store();
                 $modified = true;

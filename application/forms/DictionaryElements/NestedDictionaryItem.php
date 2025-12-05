@@ -42,28 +42,22 @@ class NestedDictionaryItem extends FieldsetElement
     {
         $this->addElement('text', 'key', [
             'label' => $this->translate('Key'),
-            'required' => true
+            'required' => true,
+            'class' => 'autosubmit'
         ]);
 
-        $this->addElement('hidden', 'state', [
-            'value' => $this->getPopulatedValue('key') ? 'old' : 'new',
-            'ignore' => true
-        ]);
-
-        if ($this->getElement('state')->getValue() === 'old') {
-            $label = $this->getElement('key')->getValue();
-            $id = str_replace(['[', ']'], '_', $this->getElement('key')->getValue());
-        } else {
-            $label = $this->translate('New Item');
-            if ($this->getPopulatedValue('id') == null) {
-                $id = uniqid('id-');
-            } else {
-                $id = $this->getPopulatedValue('id');
-            }
+        $id = $this->getPopulatedValue('id');
+        if ($id === null) {
+            $id = uniqid('id-');
         }
 
         $this->addElement('hidden', 'id', ['value' => $id]);
         $this->getAttributes()->set('id', $id);
+
+        $label = $this->getElement('key')->getValue();
+        if ($label === null) {
+            $label = $this->translate('New Item');
+        }
 
         $this->setLabel($label);
         if ($this->removeButton !== null) {
@@ -77,10 +71,7 @@ class NestedDictionaryItem extends FieldsetElement
             ));
         }
 
-        $this->addElement(
-            (new Dictionary('var', $this->items, ['class' => 'no-border']))
-                ->setItems($this->items)
-        );
+        $this->addElement(new Dictionary('var', $this->items, ['class' => 'no-border']));
     }
 
     /**
@@ -114,6 +105,10 @@ class NestedDictionaryItem extends FieldsetElement
             }
 
             $nestedValues[] = $nestedItem;
+        }
+
+        if (isset($property['key']) && str_starts_with($property['key'], NestedDictionary::UNDEFINED_KEY)) {
+            $property['key'] = null;
         }
 
         return [

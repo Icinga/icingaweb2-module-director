@@ -96,6 +96,8 @@ class IcingaHost extends IcingaObject implements ExportInterface
 
     protected $supportsFields = true;
 
+    protected $supportsCustomProperties = true;
+
     protected $supportsChoices = true;
 
     protected $supportedInLegacy = true;
