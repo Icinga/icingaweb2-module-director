@@ -35,8 +35,8 @@ CREATE TABLE director_activity_log (
   object_type VARCHAR(64) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   action_name ENUM('create', 'delete', 'modify') NOT NULL,
-  old_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
-  new_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
+  old_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON',
+  new_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   author VARCHAR(64) NOT NULL,
   change_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   checksum VARBINARY(20) NOT NULL,
@@ -2448,4 +2448,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (190, NOW());
+  VALUES (191, NOW());
