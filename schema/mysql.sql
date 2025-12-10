@@ -654,7 +654,7 @@ CREATE TABLE icinga_host_field (
 CREATE TABLE icinga_host_var (
   host_id INT(10) UNSIGNED NOT NULL,
   varname VARCHAR(255) NOT NULL COLLATE utf8_bin,
-  varvalue TEXT DEFAULT NULL,
+  varvalue MEDIUMTEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'), -- immer string vorerst
   checksum VARBINARY(20) DEFAULT NULL,
   PRIMARY KEY (host_id, varname),
