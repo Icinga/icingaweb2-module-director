@@ -31,7 +31,6 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
-use Ramsey\Uuid\Uuid;
 
 class HostController extends ObjectController
 {
@@ -127,7 +126,8 @@ class HostController extends ObjectController
             $inheritedVars = json_decode(json_encode($this->object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
             $origins = $this->object->getOriginsVars();
 
-            $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems))
+            $hasChanges = json_encode((object) CustomPropertiesForm::filterEmpty($vars)) !== json_encode($this->object->getVars());
+           $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges))
                 ->on(CustomPropertiesForm::ON_SUCCESS, function () {
                     $this->session->delete('vars');
                     $this->session->delete('added-properties');

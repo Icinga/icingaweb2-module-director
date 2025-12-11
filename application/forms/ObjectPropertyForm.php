@@ -73,7 +73,7 @@ class ObjectPropertyForm extends CompatForm
         }
 
         $uuids[] = $this->object->get('uuid');
-        $removedProperties = Session::getSession()->getNamespace('director')->get('removed-properties', []);
+        $removedProperties = Session::getSession()->getNamespace('director.variables')->get('removed-properties', []);
 
         $query = $db
             ->select()
@@ -88,7 +88,7 @@ class ObjectPropertyForm extends CompatForm
 
         $properties = $db->fetchAll($query);
         $propUuidKeyPairs = [];
-        $alreadyAddedProperties = Session::getSession()->getNamespace('director')->get('added-properties', []);
+        $alreadyAddedProperties = Session::getSession()->getNamespace('director.variables')->get('added-properties', []);
         foreach ($properties as $property) {
             if (! isset($alreadyAddedProperties[$property->key_name])) {
                 $propUuidKeyPairs[Uuid::fromBytes($property->uuid)->toString()] = $property->key_name;

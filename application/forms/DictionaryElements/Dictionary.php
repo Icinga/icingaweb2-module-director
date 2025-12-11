@@ -57,7 +57,7 @@ class Dictionary extends FieldsetElement
 
         $removedItems = [];
         if ($this->allowItemRemoval) {
-            $removedItems = Session::getSession()->getNamespace('director')->get('removed-properties', []);
+            $removedItems = Session::getSession()->getNamespace('director.variables')->get('removed-properties', []);
             while ($count < $expectedCount) {
                 $remove = $this->createElement(
                     'submitButton',
@@ -75,12 +75,12 @@ class Dictionary extends FieldsetElement
                     $clearedItemName = null;
                     if (isset($removedValue['name'])) {
                         $clearedItemName = $removedValue['name'];
-                        $addedProperties = Session::getSession()->getNamespace('director')
+                        $addedProperties = Session::getSession()->getNamespace('director.variables')
                                              ->get('added-properties');
 
                         if ($addedProperties !== null) {
                             unset($addedProperties[$clearedItemName]);
-                            Session::getSession()->getNamespace('director')->set('added-properties', $addedProperties);
+                            Session::getSession()->getNamespace('director.variables')->set('added-properties', $addedProperties);
                         }
 
                         $removedItems[$clearedItemName] = $this->items[$clearedItemName]['uuid'];
@@ -89,7 +89,7 @@ class Dictionary extends FieldsetElement
                     $this->clearPopulatedValue('items_removed');
                     $this->clearPopulatedValue($remove->getName());
                     $this->clearPopulatedValue($count);
-                    Session::getSession()->getNamespace('director')->set('removed-properties', $removedItems);
+                    Session::getSession()->getNamespace('director.variables')->set('removed-properties', $removedItems);
                     $this->populate(['items_removed' => implode(', ', array_keys($removedItems))]);
 
                     // Re-index populated values to ensure proper association with form data
@@ -117,8 +117,11 @@ class Dictionary extends FieldsetElement
         foreach ($this->items as $item) {
             $element = new DictionaryItem($count, $item);
 
-            // only allow removal of items if the dictionary allows it and the item allows it
-            if ($this->allowItemRemoval && (isset($item['allow_removal']) && $item['allow_removal'] === true)) {
+            // Only allow removal of items if the dictionary allows it and the item allows it
+            if (
+                $this->allowItemRemoval
+                && $this->hasElement('remove_' . $count)
+            ) {
                 $element->setRemoveButton($this->getElement('remove_' . $count));
             }
 

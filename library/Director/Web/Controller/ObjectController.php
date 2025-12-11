@@ -76,7 +76,7 @@ abstract class ObjectController extends ActionController
         if ($this->getRequest()->isApiRequest()) {
             $this->initializeRestApi();
         } else {
-            $this->session = Session::getSession()->getNamespace('director');
+            $this->session = Session::getSession()->getNamespace('director.variables');
             $this->initializeWebRequest();
         }
     }

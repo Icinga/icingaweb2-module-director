@@ -21,12 +21,11 @@ class CustomPropertiesForm extends CompatForm
     use CsrfCounterMeasure;
     use Translation;
 
-    protected bool $hasChanges = false;
-
     public function __construct(
         public readonly IcingaObject $object,
         protected array $objectProperties = [],
-        private bool $hasAddedItems = false
+        private bool $hasAddedItems = false,
+        private bool $hasChanges = false
     ) {
         $this->addAttributes(Attributes::create(['class' => 'custom-properties-form']));
     }
@@ -46,15 +45,15 @@ class CustomPropertiesForm extends CompatForm
             'label' => $this->translate('Save Custom Variables')
         ]);
 
-        $hasChanges = false;
-
         $message = '';
         if ($this->hasBeenSent()) {
             $properties = $this->getElement('properties');
-            $hasChanges = json_encode((object) $properties->getDictionary()) !== json_encode($this->object->getVars());
+            $this->hasChanges = json_encode((object) $properties->getDictionary())
+                !== json_encode($this->object->getVars());
         }
 
-        $removedItems = Session::getSession()->getNamespace('director')->get('removed-properties', []);
+        $removedItems = Session::getSession()
+                               ->getNamespace('director.variables')->get('removed-properties', []);
         if (! empty($removedItems)) {
             $message .= sprintf($this->translatePlural(
                 '(%d) property has been removed',
@@ -63,7 +62,7 @@ class CustomPropertiesForm extends CompatForm
             ), count($removedItems));
         }
 
-        $hasChanges = $hasChanges || $this->hasAddedItems;
+        $hasChanges = $this->hasChanges || $this->hasAddedItems;
         $discardButton = $this->createElement(
             'submit',
             'discard',
@@ -125,7 +124,7 @@ class CustomPropertiesForm extends CompatForm
      *
      * @return array
      */
-    private function filterEmpty(array $array): array
+    public static function filterEmpty(array $array): array
     {
         return array_filter(
             array_map(function ($item) {
@@ -134,7 +133,7 @@ class CustomPropertiesForm extends CompatForm
                     return $item;
                 }
 
-                return $this->filterEmpty($item);
+                return self::filterEmpty($item);
             }, $array),
             function ($item) {
                 return is_bool($item) || ! empty($item);
@@ -171,7 +170,7 @@ class CustomPropertiesForm extends CompatForm
                 is_array($value)
                 && ($property['value_type'] !== 'fixed-array' || isset($inheritedVars->$key))
             ) {
-                $value = $this->filterEmpty($value);
+                $value = self::filterEmpty($value);
             }
 
             if (isset($property['new'])) {
@@ -244,11 +243,4 @@ class CustomPropertiesForm extends CompatForm
             Notification::success($this->translate('There is nothing to change.'));
         }
     }
-//
-//    protected function registerAttributeCallbacks(Attributes $attributes): void
-//    {
-//        $attributes->registerAttributeCallback('hasChanges', null, $this->setHasChanges(...));
-//
-//        parent::registerAttributeCallbacks($attributes);
-//    }
 }
