@@ -661,6 +661,14 @@ CREATE TABLE director_property (
   PRIMARY KEY (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE director_property
+  ADD COLUMN parent_uuid_v BINARY(16) AS (
+    COALESCE(parent_uuid, 0x00000000000000000000000000000000)
+) STORED;
+
+ALTER TABLE director_property
+  ADD UNIQUE KEY unique_name_parent_uuid (key_name, parent_uuid_v);
+
 CREATE TABLE icinga_host_property (
   host_uuid binary(16) NOT NULL,
   property_uuid binary(16) NOT NULL,
