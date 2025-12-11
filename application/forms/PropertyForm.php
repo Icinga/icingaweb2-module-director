@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbConnection;
+use Icinga\Web\Form;
 use Icinga\Web\Session;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -14,6 +15,7 @@ use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use stdClass;
+use Throwable;
 use Zend_Db;
 
 class PropertyForm extends CompatForm
@@ -276,7 +278,6 @@ class PropertyForm extends CompatForm
     protected function onSuccess(): void
     {
         $values = $this->getValues();
-
         if ($this->uuid === null) {
             $this->uuid = Uuid::uuid4();
             if ($this->field) {
@@ -363,14 +364,14 @@ class PropertyForm extends CompatForm
 
                     $objectCustomVars = $db->fetchAll(
                         $db->select()
-                                 ->from(['ihv' => 'icinga_host_var'], [])
-                                 ->columns([
-                                     'host_id',
-                                     'varname',
-                                     'varvalue',
-                                     'property_uuid'
-                                 ])
-                                 ->where('property_uuid = ?', $rootUuid->getBytes()),
+                           ->from(['ihv' => 'icinga_host_var'], [])
+                           ->columns([
+                               'host_id',
+                               'varname',
+                               'varvalue',
+                               'property_uuid'
+                           ])
+                           ->where('property_uuid = ?', $rootUuid->getBytes()),
                         [],
                         PDO::FETCH_ASSOC
                     );
@@ -389,26 +390,22 @@ class PropertyForm extends CompatForm
                     } else {
                         foreach ($objectCustomVars as $objectCustomVar) {
                             $varValue = json_decode($objectCustomVar['varvalue'], true);
-                            if ($root['value_type'] === 'dynamic-dictionary') {
+                            if ($root['value_type'] !== 'dynamic-dictionary') {
+                                $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
+                            } else {
                                 foreach ($varValue as $key => $value) {
-                                    if ($this->isNestedField) {
+                                    if (! $this->isNestedField) {
+                                        $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $value);
+                                    } else {
                                         $parenKey = $parent['key_name'];
                                         $this->updateObjectCustomVars(
                                             [$parenKey, $storedKeyName],
                                             [$parenKey, $values['key_name']],
                                             $value
                                         );
-                                    } else {
-                                        $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $value);
                                     }
 
                                     $varValue[$key] = $value;
-                                }
-                            } else {
-                                if ($this->isNestedField) {
-                                    $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
-                                } else {
-                                    $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
                                 }
                             }
 
