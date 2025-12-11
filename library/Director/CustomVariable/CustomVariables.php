@@ -561,7 +561,9 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
      */
     public function registerVarUuid(string $key, UuidInterface $uuid): static
     {
-        $this->vars[$key]->setUuid($uuid);
+        if (isset($this->vars[$key])) {
+            $this->vars[$key]->setUuid($uuid);
+        }
 
         return $this;
     }
