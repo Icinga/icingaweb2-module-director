@@ -42,7 +42,8 @@ class NestedDictionaryItem extends FieldsetElement
     {
         $this->addElement('text', 'key', [
             'label' => $this->translate('Key'),
-            'required' => true
+            'required' => true,
+            'class' => 'autosubmit'
         ]);
 
         if (empty($this->getPopulatedValue('key'))) {

@@ -126,8 +126,8 @@ class HostController extends ObjectController
             $inheritedVars = json_decode(json_encode($this->object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
             $origins = $this->object->getOriginsVars();
 
-            $hasChanges = json_encode((object) CustomPropertiesForm::filterEmpty($vars)) !== json_encode($this->object->getVars());
-           $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges))
+            $hasChanges = json_encode((object) $vars) !== json_encode($this->object->getVars());
+            $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges))
                 ->on(CustomPropertiesForm::ON_SUCCESS, function () {
                     $this->session->delete('vars');
                     $this->session->delete('added-properties');
@@ -232,9 +232,11 @@ class HostController extends ObjectController
                 $row['value'] = $vars[$row['key_name']];
             }
 
-            if (! array_key_exists($row['key_name'], $removedProperties)) {
-                $result[$row['key_name']] = $row;
+            if (array_key_exists($row['key_name'], $removedProperties)) {
+                $row['removed'] = true;
             }
+
+            $result[$row['key_name']] = $row;
         }
 
         $addedProperties = $this->session->get('added-properties');

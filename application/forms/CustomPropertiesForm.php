@@ -157,6 +157,10 @@ class CustomPropertiesForm extends CompatForm
         $itemsToRemove = $propertiesElement->getItemsToRemove();
         foreach ($this->objectProperties as $key => $property) {
             $propertyUuid = Uuid::fromBytes($property['uuid']);
+            if (isset($property['removed'])) {
+                continue;
+            }
+
             if (in_array($key, $itemsToRemove)) {
                 $itemsToRemoveUuids[] = $property['uuid'];
                 $modified = true;

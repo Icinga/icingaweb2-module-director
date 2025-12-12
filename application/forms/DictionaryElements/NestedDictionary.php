@@ -136,18 +136,13 @@ class NestedDictionary extends FieldsetElement
     public static function prepare(array $nestedItems, array $values): array
     {
         $result = [];
-        $count = 0;
         foreach ($values as $key => $nestedValue) {
             $nestedValue['key'] = $key;
             $result[] = NestedDictionaryItem::prepare(
                 $nestedItems,
                 $nestedValue
             );
-
-            $count++;
         }
-
-        $result['count'] = $count;
 
         return $result;
     }

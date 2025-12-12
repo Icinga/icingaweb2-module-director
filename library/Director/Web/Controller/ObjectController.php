@@ -301,9 +301,7 @@ abstract class ObjectController extends ActionController
                 $propertyName = $form->getPropertyName();
                 if (array_key_exists($propertyName, $removedObjectProperties)) {
                     unset($removedObjectProperties[$propertyName]);
-                }
-
-                if (! isset($properties[$propertyName])) {
+                } elseif (! isset($properties[$propertyName])) {
                     $properties[$propertyName] = Uuid::fromString($form->getValue('property'))->getBytes();
                 }
 
