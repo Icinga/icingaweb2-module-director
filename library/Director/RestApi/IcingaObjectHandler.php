@@ -237,6 +237,12 @@ class IcingaObjectHandler extends RequestHandler
                         $objectWhere
                     );
 
+                    $objectPropertyWhere = $db->getDbAdapter()->quoteInto('host_uuid = ?', Uuid::fromBytes($this->object->get('uuid'))->getBytes());
+                    $db->getDbAdapter()->delete(
+                        'icinga_' . $type . '_property',
+                        $objectPropertyWhere
+                    );
+
                     $objectVars = new CustomVariables();
                 }
 
