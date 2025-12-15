@@ -393,6 +393,7 @@ class PropertyForm extends CompatForm
                             if ($root['value_type'] !== 'dynamic-dictionary') {
                                 $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
                             } else {
+                                unset($values['item_type']);
                                 foreach ($varValue as $key => $value) {
                                     if (! $this->isNestedField) {
                                         $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $value);
