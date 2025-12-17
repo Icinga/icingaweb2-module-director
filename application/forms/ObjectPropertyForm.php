@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbConnection;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Session;
@@ -65,11 +66,13 @@ class ObjectPropertyForm extends CompatForm
     protected function getProperties(): array
     {
         $parents = $this->object->listAncestorIds();
+        $type = $this->object->getShortTableName();
 
         $uuids = [];
         $db = $this->db->getDbAdapter();
+        $class = DbObjectTypeRegistry::classByType($type);
         foreach ($parents as $parent) {
-            $uuids[] = IcingaHost::load($parent, $this->object->getConnection())->get('uuid');
+            $uuids[] = $class::load($parent, $this->object->getConnection())->get('uuid');
         }
 
         $uuids[] = $this->object->get('uuid');
@@ -78,9 +81,9 @@ class ObjectPropertyForm extends CompatForm
         $query = $db
             ->select()
             ->from(['dp' => 'director_property'], ['uuid' => 'dp.uuid', 'key_name' => 'dp.key_name'])
-            ->joinLeft(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid')
+            ->joinLeft(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid')
             ->where('dp.parent_uuid IS NULL')
-            ->where('iop.host_uuid NOT IN (?) OR iop.host_uuid IS NULL', $uuids);
+            ->where('iop.' . $type . '_uuid NOT IN (?) OR iop.' . $type . '_uuid IS NULL', $uuids);
 
         if (! empty($removedProperties)) {
             $query->orWhere('dp.uuid IN (?) AND dp.parent_uuid IS NULL', $removedProperties);

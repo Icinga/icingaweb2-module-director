@@ -93,19 +93,11 @@ class ObjectTabs extends Tabs
             ));
         }
 
-        if ($this->object->getShortTableName() === 'host') {
-            if ($auth->hasPermission(Permission::ADMIN)) {
-                $this->add('variables', array(
-                    'url'       => sprintf('director/%s/variables', $type),
-                    'urlParams' => $params,
-                    'label'     => $this->translate('Custom Variables')
-                ));
-            }
-        } elseif ($auth->hasPermission(Permission::ADMIN) && $this->hasFields()) {
-            $this->add('fields', array(
-                'url'       => sprintf('director/%s/fields', $type),
+        if ($auth->hasPermission(Permission::ADMIN)) {
+            $this->add('variables', array(
+                'url'       => sprintf('director/%s/variables', $type),
                 'urlParams' => $params,
-                'label'     => $this->translate('Fields')
+                'label'     => $this->translate('Custom Variables')
             ));
         }
 

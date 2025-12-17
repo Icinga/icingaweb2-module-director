@@ -245,7 +245,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                     'format'        => $var->getDbFormat()
                 ];
 
-                if ($object->getShortTableName() === 'host' && $uuid) {
+                if ($uuid) {
                     $row['property_uuid'] = $uuid;
                 }
 
@@ -432,10 +432,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
      */
     protected function renderSingleVar($key, $var, ?IcingaObject $object = null, $renderExpressions = false)
     {
-        if ($var instanceof CustomVariableString) {
-            $var->setWhiteList($this->whiteList);
-        }
-
+        $var->setWhiteList($this->whiteList);
         if ($key === $this->overrideKeyName) {
             return c::renderKeyOperatorValue(
                 $this->renderKeyName($key),

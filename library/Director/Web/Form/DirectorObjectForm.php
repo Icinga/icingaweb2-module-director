@@ -824,10 +824,6 @@ abstract class DirectorObjectForm extends DirectorForm
 
         $isHost = $this->object instanceof IcingaHost;
 
-        if (! $isHost) {
-            $this->prepareFields($this->object());
-        }
-
         IcingaObjectFormHook::callOnSetup($this);
         if ($this->hasBeenSent()) {
             $this->handlePost();

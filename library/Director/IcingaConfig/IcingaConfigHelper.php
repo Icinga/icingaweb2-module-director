@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
+use Icinga\Module\Director\CustomVariable\CustomVariableString;
 use InvalidArgumentException;
 
 use function ctype_digit;
@@ -70,6 +71,10 @@ class IcingaConfigHelper
 
     public static function renderKeyOperatorValue($key, $operator, $value, $prefix = '    ')
     {
+        if ($value instanceof CustomVariableString && ! empty($value->getWhiteList())) {
+            $value = $value->toConfigString(true);
+        }
+
         $string = sprintf(
             "%s %s %s",
             $key,
@@ -387,11 +392,11 @@ class IcingaConfigHelper
         $hasMacroPattern = preg_match('/^[A-z_][A-z_.\d]+$/', $name)
             && ! preg_match('/\.$/', $name);
 
-        if (! $hasMacroPattern) {
+        if (! $hasMacroPattern && $whiteList === null) {
             return false;
         }
 
-        if ($whiteList === null || in_array($name, $whiteList)) {
+        if (in_array($name, $whiteList, true)) {
             return true;
         }
 

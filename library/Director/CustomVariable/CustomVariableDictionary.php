@@ -119,6 +119,12 @@ class CustomVariableDictionary extends CustomVariable implements Countable
 
     public function toConfigString($renderExpressions = false)
     {
+        if ($this->whiteList !== null) {
+            foreach ($this->value as $key => $value) {
+                $this->value[$key] = $value->setWhiteList($this->whiteList);
+            }
+        }
+
         // TODO
         return c::renderDictionary($this->value);
     }

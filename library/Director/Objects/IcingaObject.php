@@ -1367,7 +1367,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                         if (! isset($vals['_ORIGINS_']->$key)) {
                             $vals['_ORIGINS_']->$key = $name;
                         } elseif ($vals['_ORIGINS_']->$key !== $name) {
-                            $vals['_ORIGINS_']->$key .= ', ' . $name;;
+                            $vals['_ORIGINS_']->$key .= ', ' . $name;
                         }
                     }
                 } else {

@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
@@ -147,17 +147,17 @@ class CustomPropertiesForm extends CompatForm
         $session->delete('properties');
         $session->delete('vars');
         $vars = $this->object->vars();
-        $inheritedVars = $this->object->getInheritedVars();
-
         $modified = false;
 
         /** @var Dictionary $propertiesElement */
         $propertiesElement = $this->getElement('properties');
         $values = $propertiesElement->getDictionary();
         $itemsToRemove = $propertiesElement->getItemsToRemove();
+        $type = $this->object->getShortTableName();
         foreach ($this->objectProperties as $key => $property) {
             $propertyUuid = Uuid::fromBytes($property['uuid']);
             if (isset($property['removed'])) {
+                $itemsToRemoveUuids[] = $property['uuid'];
                 continue;
             }
 
@@ -170,18 +170,18 @@ class CustomPropertiesForm extends CompatForm
 
             $value = $values[$key] ?? null;
 
-            if (
-                is_array($value)
-                && ($property['value_type'] !== 'fixed-array' || isset($inheritedVars->$key))
-            ) {
-                $value = self::filterEmpty($value);
+            if (is_array($value)) {
+                $filteredValue = self::filterEmpty($value);
+                if ($property['value_type'] !== 'fixed-array' || empty($filteredValue)) {
+                    $value = $filteredValue;
+                }
             }
 
             if (isset($property['new'])) {
                 $this->object->getConnection()->insert(
-                    'icinga_host_property',
+                    "icinga_$type" . '_property',
                     [
-                        'host_uuid' => $this->object->uuid,
+                        $type . '_uuid' => $this->object->uuid,
                         'property_uuid' => $propertyUuid->getBytes()
                     ]
                 );
@@ -208,28 +208,32 @@ class CustomPropertiesForm extends CompatForm
             $db = $this->object->getDb();
 
             $objectsToCleanUp = [$objectId];
-            $propertyAsHostVar = $db->fetchAll(
+            $propertyAsObjectVar = $db->fetchAll(
                 $db
                     ->select()
-                    ->from('icinga_host_var')
+                    ->from('icinga_' . $type . '_var')
                     ->where('property_uuid IN (?)', $itemsToRemoveUuids)
             );
 
-            foreach ($propertyAsHostVar as $propertyAsHostVarRow) {
-                $host = IcingaHost::loadWithAutoIncId($propertyAsHostVarRow->host_id, $this->object->getConnection());
+            foreach ($propertyAsObjectVar as $propertyAsObjectVarRow) {
+                $class = DbObjectTypeRegistry::classByType($type);
+                $object = $class::loadWithAutoIncId(
+                    $propertyAsObjectVarRow->{$type . '_id'},
+                    $this->object->getConnection()
+                );
 
-                if (in_array($objectId, $host->listAncestorIds(), true)) {
-                    $objectsToCleanUp[] = (int) $host->get('id');
+                if (in_array($objectId, $object->listAncestorIds(), true)) {
+                    $objectsToCleanUp[] = (int) $object->get('id');
                 }
             }
 
             $propertyWhere = $this->object->getDb()->quoteInto('property_uuid IN (?)', $itemsToRemoveUuids);
-            $objectsWhere = $this->object->getDb()->quoteInto('host_id IN (?)', $objectsToCleanUp);
-            $db->delete('icinga_host_var', $propertyWhere . ' AND ' . $objectsWhere);
+            $objectsWhere = $this->object->getDb()->quoteInto($type . '_id IN (?)', $objectsToCleanUp);
+            $db->delete('icinga_' . $type . '_var', $propertyWhere . ' AND ' . $objectsWhere);
 
-            $objectWhere = $this->object->getDb()->quoteInto('host_uuid = ?', $this->object->get('uuid'));
+            $objectWhere = $this->object->getDb()->quoteInto($type . '_uuid = ?', $this->object->get('uuid'));
             $db->delete(
-                'icinga_host_property',
+                'icinga_' . $type . '_property',
                 $propertyWhere . ' AND ' . $objectWhere
             );
         }

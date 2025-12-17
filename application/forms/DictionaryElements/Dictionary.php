@@ -73,17 +73,15 @@ class Dictionary extends FieldsetElement
                 if ($remove->hasBeenPressed()) {
                     $removedValue = $this->getPopulatedValue($count);
                     $clearedItemName = null;
+                    $session = Session::getSession()->getNamespace('director.variables');
                     if (isset($removedValue['name'])) {
                         $clearedItemName = $removedValue['name'];
-                        $addedProperties = Session::getSession()->getNamespace('director.variables')
-                                             ->get('added-properties');
+                        $addedProperties = $session->get('added-properties');
 
                         if (! empty($addedProperties) && isset($addedProperties[$clearedItemName])) {
                             unset($addedProperties[$clearedItemName]);
                             unset($this->items[$clearedItemName]);
-                            Session::getSession()
-                                   ->getNamespace('director.variables')
-                                   ->set('added-properties', $addedProperties);
+                            $session->set('added-properties', $addedProperties);
                         }
 
                         if (isset($this->items[$clearedItemName])) {
@@ -94,9 +92,7 @@ class Dictionary extends FieldsetElement
                     $this->clearPopulatedValue('items_removed');
                     $this->clearPopulatedValue($remove->getName());
                     $this->clearPopulatedValue($count);
-                    Session::getSession()
-                           ->getNamespace('director.variables')
-                           ->set('removed-properties', $removedItems);
+                    $session->set('removed-properties', $removedItems);
                     $this->populate(['items_removed' => implode(', ', array_keys($removedItems))]);
 
                     // Re-index populated values to ensure proper association with form data

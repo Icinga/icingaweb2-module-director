@@ -14,7 +14,9 @@ use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Forms\CustomPropertiesForm;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
+use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Forms\ObjectPropertyForm;
@@ -34,10 +36,15 @@ use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
-use Icinga\Web\Notification;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
+use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Web\Url;
+use ipl\Web\Widget\ButtonLink;
+use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -77,6 +84,12 @@ abstract class ObjectController extends ActionController
             $this->initializeRestApi();
         } else {
             $this->session = Session::getSession()->getNamespace('director.variables');
+            if (! $this->params->shift('_preserve_session')) {
+                $this->session->delete('vars');
+                $this->session->delete('added-properties');
+                $this->session->delete('removed-properties');
+            }
+
             $this->initializeWebRequest();
         }
     }
@@ -311,7 +324,8 @@ abstract class ObjectController extends ActionController
                     'director/' . $this->getType() . '/variables',
                     [
                         'uuid' => UUid::fromBytes($objectUuid)->toString(),
-                        'items-added' => true
+                        'items-added' => true,
+                        '_preserve_session' => true
                     ]
                 ));
             })
@@ -344,6 +358,362 @@ abstract class ObjectController extends ActionController
         $table = new IcingaObjectDatafieldTable($object);
         $table->getAttributes()->set('data-base-target', '_self');
         $table->renderTo($this);
+    }
+
+    public function variablesAction(): void
+    {
+        $this->assertPermission('director/admin');
+        $object = $this->requireObject();
+        $hasAddedItems = $this->params->shift('items-added', false);
+
+        $this->addTitle(
+            $this->translate('Custom Variables: %s'),
+            $object->getObjectName()
+        );
+
+        $this->prepareApplyForHeader();
+
+        $type = $object->getShortTableName();
+        $objectProperties = $this->getObjectCustomProperties($object);
+        if ($this->object->isTemplate()) {
+            $this->actions()->add(
+                (new ButtonLink(
+                    $this->translate('Add Property'),
+                    Url::fromPath(
+                        'director/'. $type .'/add-property',
+                        ['uuid' => $this->getUuidFromUrl(), '_preserve_session' => true]
+                    )->getAbsoluteUrl(),
+                    null,
+                    ['class' => 'control-button']
+                ))->openInModal()
+            );
+        }
+
+        $this->prepareCustomPropertiesForm($object, $objectProperties, $hasAddedItems);
+        $this->tabs()->activate('variables');
+    }
+
+    public function prepareCustomPropertiesForm(
+        IcingaObject $object,
+        array $objectProperties,
+        bool $hasAddedItems = false
+    ): void {
+        $addedProperties = $this->session->get('added-properties');
+        $removedProperties = $this->session->get('removed-properties');
+        if (empty($objectProperties) && empty($addedProperties) && empty($removedProperties)) {
+            $this->content()->add(Hint::info($this->translate('No custom properties defined.')));
+
+            return;
+        }
+
+        if ($this->session->get('vars')) {
+            $vars = $this->session->get('vars');
+        } else {
+            $vars = json_decode(json_encode($object->getVars()), true);
+            $this->session->set('vars', $vars);
+        }
+
+        $inheritedVars = json_decode(json_encode($object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
+        $origins = $object->getOriginsVars();
+        $addedProperties = $this->session->get('added-properties');
+        $removedProperties = $this->session->get('removed-properties');
+
+        $hasChanges = json_encode((object) $vars) !== json_encode($object->getVars())
+            || ! empty($addedProperties)
+            || ! empty($removedProperties);
+
+        $result = [];
+        foreach ($objectProperties as $row) {
+            if (isset($vars[$row['key_name']])) {
+                $row['value'] = $vars[$row['key_name']];
+            }
+
+            if (isset($inheritedVars[$row['key_name']])) {
+                $row['inherited'] = $inheritedVars[$row['key_name']];
+                $row['inherited_from'] = $origins->{$row['key_name']};
+            }
+
+            $result[] = $row;
+        }
+
+        $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges))
+            ->on(CustomPropertiesForm::ON_SUCCESS, function () {
+                $this->session->delete('vars');
+                $this->session->delete('added-properties');
+                $this->session->delete('removed-properties');
+                $this->redirectNow(Url::fromRequest()->without('items-added'));
+            })
+            ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) use ($vars) {
+                /** @var SubmitButtonElement $discard */
+                $discard = $form->getElement('discard');
+                if ($discard->hasBeenPressed()) {
+                    $this->session->delete('vars');
+                    $this->session->delete('added-properties');
+                    $this->session->delete('removed-properties');
+                    $this->redirectNow(Url::fromRequest()->without('items-added'));
+                }
+
+                /** @var Dictionary $propertiesElement */
+                $propertiesElement = $form->getElement('properties');
+                $vars = $propertiesElement->getDictionary();
+                $this->session->set('vars', $vars);
+            })
+            ->handleRequest($this->getServerRequest());
+
+        $form->load($result);
+        $this->content()->add($form);
+    }
+
+
+    private function prepareApplyForHeader(): void
+    {
+        if (! ($this->object instanceof IcingaService) || $this->object->get('apply_for') === null) {
+            return;
+        }
+
+        $applyFor = $this->object->get('apply_for');
+        $fetchVar = $this->fetchVar(substr($applyFor, strlen('host.vars.')));
+        if (empty($fetchVar)) {
+            return;
+        }
+
+        $content = [];
+        if ($fetchVar->value_type === 'dynamic-dictionary') {
+            $dictionaryKeys = $this->fetchNestedDictionaryKeys($fetchVar->uuid);
+
+            if (! empty($dictionaryKeys)) {
+                $configVariables = new HtmlElement('ul', Attributes::create(['class' => 'nested-key-list']));
+                foreach ($dictionaryKeys as $keyAttributes) {
+                    if (str_contains($keyAttributes['key_name'], ' ')) {
+                        continue;
+                    }
+
+                    $config = '$value.' . $keyAttributes['key_name'];
+                    $content = [
+                        new HtmlElement('div', null, Text::create(
+                            $keyAttributes['label'] ?? $keyAttributes['key_name']
+                        . ' ('
+                        . $keyAttributes['key_name']
+                        . ')'
+                        )),
+                        new HtmlElement('div', null, Text::create('=>'))
+                    ];
+
+                    if ($keyAttributes['value_type'] === 'fixed-dictionary') {
+                        $nestedContent = [];
+
+                        foreach ($this->fetchNestedDictionaryKeys($keyAttributes['uuid']) as $nestedKeyAttributes) {
+                            if (str_contains($nestedKeyAttributes['key_name'], ' ')) {
+                                continue;
+                            }
+
+                            $nestedConfig = $config . '.' . $nestedKeyAttributes['key_name'] . '$';
+                            $nestedContent[] = new HtmlElement('div', null, Text::create($nestedConfig));
+
+                            $nestedContent = [
+                                new HtmlElement('div', null, Text::create(
+                                    $nestedKeyAttributes['label'] ?? $nestedKeyAttributes['key_name']
+                                . ' ('
+                                . $nestedKeyAttributes['key_name']
+                                . ')'
+                                )),
+                                new HtmlElement('div', null, Text::create('=>')),
+                                new HtmlElement('div', null, Text::create(
+                                    $nestedConfig
+                                ))
+                            ];
+                        }
+
+                        $content[] = new HtmlElement(
+                            'div',
+                            null,
+                            new HtmlElement('div', null, Text::create(
+                                '$value.'
+                                . $keyAttributes['key_name']
+                                . '$'
+                            )),
+                            new HtmlElement(
+                                'ul',
+                                null,
+                                new HtmlElement('li', null, ...$nestedContent)
+                            )
+                        );
+                    } else {
+                        if (str_contains($keyAttributes['key_name'], ' ')) {
+                            $config = '$value["' . $keyAttributes['key_name'] . '"]$';
+                        } else {
+                            $config = '$value.' . $keyAttributes['key_name'] . '$';
+                        }
+
+                        $content[] = new HtmlElement('div', null, Text::create($config));
+                    }
+
+                    $configVariables->addHtml(new HtmlElement('li', null, ...$content));
+                }
+
+                if (empty($content)) {
+                    return;
+                }
+
+                $header = HtmlElement::create(
+                    'div',
+                    Attributes::create(['class' => ['apply-for-header-content']]),
+                    [
+                        Text::create($this->translate(
+                            'Nested keys of selected host dictionary variable for apply-for-rule'
+                            . ' are accessible through value as shown below:'
+                        )),
+                        $configVariables
+                    ]
+                );
+
+                $this->content()->addHtml(new HtmlElement(
+                    'div',
+                    Attributes::create(['class' => ['apply-for-header']]),
+                    $header
+                ));
+            }
+        }
+    }
+
+    private function fetchNestedDictionaryKeys(string $dictionaryUuid)
+    {
+        $db = $this->db();
+        $query = $db->getDbAdapter()
+                          ->select()
+                          ->from(
+                              ['dp' => 'director_property'],
+                              [
+                                  'uuid' => 'dp.uuid',
+                                  'key_name' => 'dp.key_name',
+                                  'label' => 'dp.label',
+                                  'value_type' => 'dp.value_type'
+                              ]
+                          )->where("parent_uuid = ?", $dictionaryUuid);
+
+        return $db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+    }
+
+    protected function fetchVar(string $varName)
+    {
+        $db = $this->object->getConnection();
+        $query = $db->select()
+                    ->from(
+                        ['dp' => 'director_property'],
+                        ['*']
+                    )
+                    ->where('parent_uuid IS NULL AND key_name ', $varName);
+
+        return $db->getDbAdapter()->fetchRow($query);
+    }
+
+    /**
+     * Get custom properties for the host.
+     *
+     * @return array
+     */
+    protected function getObjectCustomProperties(IcingaObject $object): array
+    {
+        if ($object->uuid === null) {
+            return [];
+        }
+
+        $type = $object->getShortTableName();
+        $parents = $object->listAncestorIds();
+
+        $uuids = [];
+        $db = $this->db();
+        foreach ($parents as $parent) {
+            $uuids[] = IcingaObject::loadByType($type, $parent, $db)->get('uuid');
+        }
+
+        $objectUuid = $object->get('uuid');
+        $uuids[] = $object->get('uuid');
+        $query = $db->getDbAdapter()
+                    ->select()
+                    ->from(
+                        ['dp' => 'director_property'],
+                        [
+                            'key_name' => 'dp.key_name',
+                            'uuid' => 'dp.uuid',
+                            $type . '_uuid' => 'iop.' . $type . '_uuid',
+                            'value_type' => 'dp.value_type',
+                            'label' => 'dp.label',
+                            'children' => 'COUNT(cdp.uuid)'
+                        ]
+                    )
+                    ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
+                    ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+                    ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+                    ->order(
+                        "FIELD(dp.value_type, 'string', 'number', 'bool', 'fixed-array',"
+                        . " 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary')"
+                    )
+                    ->order('children')
+                    ->order('key_name');
+
+        $result = [];
+        $removedProperties = $this->session->get('removed-properties', []);
+        $vars = json_decode(json_encode($object->getVars()), true);
+        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            if ($objectUuid === $row[$type . '_uuid']) {
+                $row['allow_removal'] = true;
+            } else {
+                $row['allow_removal'] = false;
+            }
+
+            if (isset($vars[$row['key_name']])) {
+                $row['value'] = $vars[$row['key_name']];
+            }
+
+            if (array_key_exists($row['key_name'], $removedProperties)) {
+                $row['removed'] = true;
+            }
+
+            $result[$row['key_name']] = $row;
+        }
+
+        $addedProperties = $this->session->get('added-properties');
+        if ($addedProperties) {
+            $query = $db->getDbAdapter()
+                        ->select()
+                        ->from(
+                            ['dp' => 'director_property'],
+                            [
+                                'key_name' => 'dp.key_name',
+                                'uuid' => 'dp.uuid',
+                                'value_type' => 'dp.value_type',
+                                'label' => 'dp.label',
+                                'children' => 'COUNT(cdp.uuid)'
+                            ]
+                        )
+                        ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+                        ->where('dp.' . 'uuid IN (?)', $addedProperties)
+                        ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+                        ->order(
+                            "FIELD(dp.value_type, 'string', 'number', 'bool', 'fixed-array',"
+                            . " 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary')"
+                        )
+                        ->order('children')
+                        ->order('key_name');
+
+            foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+                $row['allow_removal'] = true;
+                $row['host_uuid'] = $this->object->get('uuid');
+                if (! isset($result[$row['key_name']])) {
+                    $row['new'] = true;
+                }
+
+                if (isset($vars[$row['key_name']])) {
+                    $row['value'] = $vars[$row['key_name']];
+                }
+
+                $result[$row['key_name']] = $row;
+            }
+        }
+
+        return $result;
     }
 
     /**
