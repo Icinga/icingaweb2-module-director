@@ -413,10 +413,22 @@ abstract class ObjectController extends ActionController
             return null;
         }
 
+        $isOverrideVars = $appliedService
+            || $inheritedFrom
+            || ($host && $serviceSet);
         if ($this->session->get('vars')) {
             $vars = $this->session->get('vars');
+            $storedVars = $vars;
         } else {
-            $vars = json_decode(json_encode($object->getVars()), true);
+            if (! $isOverrideVars) {
+                $vars = $object->getVars();
+            } else {
+                $vars = $host->getOverriddenServiceVars($object);
+            }
+
+            $storedVars = $vars;
+            $vars = json_decode(json_encode($vars), true);
+
             $this->session->set('vars', $vars);
         }
 
@@ -425,7 +437,7 @@ abstract class ObjectController extends ActionController
         $addedProperties = $this->session->get('added-properties');
         $removedProperties = $this->session->get('removed-properties');
 
-        $hasChanges = json_encode((object) $vars) !== json_encode($object->getVars())
+        $hasChanges = json_encode((object) $vars) !== json_encode($storedVars)
             || ! empty($addedProperties)
             || ! empty($removedProperties);
 
