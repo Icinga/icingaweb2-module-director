@@ -7,6 +7,7 @@ use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaObject;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\Tabs;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 
 class ObjectTabs extends Tabs
 {
@@ -93,7 +94,7 @@ class ObjectTabs extends Tabs
             ));
         }
 
-        if ($auth->hasPermission(Permission::ADMIN)) {
+        if ($auth->hasPermission(Permission::ADMIN) && ! $this->object instanceof IcingaServiceSet) {
             $this->add('variables', array(
                 'url'       => sprintf('director/%s/variables', $type),
                 'urlParams' => $params,

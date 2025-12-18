@@ -417,29 +417,14 @@ class HostController extends ObjectController
         $parent = IcingaService::loadWithAutoIncId($serviceId, $db);
         $serviceName = $parent->getObjectName();
 
-        $service = IcingaService::create([
-            'imports'     => $parent,
-            'object_type' => 'apply',
-            'object_name' => $serviceName,
-            'host_id'     => $host->get('id'),
-            'vars'        => $host->getOverriddenServiceVars($serviceName),
-        ], $db);
-
         $this->addTitle(
             $this->translate('Applied service: %s'),
             $serviceName,
         );
 
-        $this->content()->add(
-            IcingaServiceForm::load()
-                ->setDb($db)
-                ->setBranch($this->getBranch())
-                ->setHost($host)
-                ->setApplyGenerated($parent)
-                ->setObject($service)
-                ->handleRequest(),
-        );
-
+        $objectProperties = $this->getObjectCustomProperties($parent, true);
+        $form = $this->prepareCustomPropertiesForm($parent, $objectProperties, host: $host, appliedService: $parent);
+        $this->content()->add($form);
         $this->commonForServices();
     }
 
@@ -448,7 +433,6 @@ class HostController extends ObjectController
      */
     public function inheritedserviceAction()
     {
-        $db = $this->db();
         $host = $this->getHostObject();
         $serviceName = $this->params->get('service');
         $from = IcingaHost::load($this->params->get('inheritedFrom'), $this->db());
@@ -458,29 +442,9 @@ class HostController extends ObjectController
             'host_id'     => $from->get('id'),
         ], $this->db());
 
-        // TODO: we want to eventually show the host template name, doesn't work
-        //       as template resolution would break.
-        // $parent->object_name = $from->object_name;
-
-        $service = IcingaService::create([
-            'object_type' => 'apply',
-            'object_name' => $serviceName,
-            'host_id'     => $host->get('id'),
-            'imports'     => [$parent],
-            'vars'        => $host->getOverriddenServiceVars($serviceName),
-        ], $db);
-
+        $objectProperties = $this->getObjectCustomProperties($parent, true);
         $this->addTitle($this->translate('Inherited service: %s'), $serviceName);
-        $form = new CustomPropertiesForm($service, $this->getObjectCustomProperties($parent));
-        $form->handleRequest();
-
-//        $form = IcingaServiceForm::load()
-//            ->setDb($db)
-//            ->setBranch($this->getBranch())
-//            ->setHost($host)
-//            ->setInheritedFrom($from->getObjectName())
-//            ->setObject($service)
-//            ->handleRequest();
+        $form = $this->prepareCustomPropertiesForm($parent, $objectProperties, host: $host, inheritedFrom: $from);
         $this->content()->add($form);
         $this->commonForServices();
     }
@@ -531,18 +495,10 @@ class HostController extends ObjectController
             $set = $setTemplate;
         }
 
-        $service = IcingaService::load([
+        $originalService = IcingaService::load([
             'object_name'    => $serviceName,
             'service_set_id' => $setTemplate->get('id'),
         ], $this->db());
-        $service = IcingaService::create([
-            'id'          => $service->get('id'),
-            'object_type' => 'apply',
-            'object_name' => $serviceName,
-            'host_id'     => $host->get('id'),
-            'imports'     => $service->listImportNames(),
-            'vars'        => $host->getOverriddenServiceVars($serviceName),
-        ], $db);
 
         // $set->copyVarsToService($service);
         $this->addTitle(
@@ -552,13 +508,9 @@ class HostController extends ObjectController
             $set->getObjectName(),
         );
 
-        $form = IcingaServiceForm::load()
-            ->setDb($db)
-            ->setBranch($this->getBranch())
-            ->setHost($host)
-            ->setServiceSet($set)
-            ->setObject($service)
-            ->handleRequest();
+        $objectProperties = $this->getObjectCustomProperties($originalService, true);
+        $form = $this->prepareCustomPropertiesForm($originalService, $objectProperties, host: $host, serviceSet: $setTemplate);
+
         $this->tabs()->activate('services');
         $this->content()->add($form);
         $this->commonForServices();

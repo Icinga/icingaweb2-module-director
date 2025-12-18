@@ -2,10 +2,14 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
@@ -20,6 +24,14 @@ class CustomPropertiesForm extends CompatForm
 {
     use CsrfCounterMeasure;
     use Translation;
+
+    private ?IcingaService $applyGenerated = null;
+
+    private ?string $inheritedFrom = null;
+
+    private ?IcingaServiceSet $set = null;
+
+    private ?IcingaHost $host = null;
 
     public function __construct(
         public readonly IcingaObject $object,
@@ -92,6 +104,46 @@ class CustomPropertiesForm extends CompatForm
         );
     }
 
+    public function setApplyGenerated(IcingaService $applyGenerated)
+    {
+        $this->applyGenerated = $applyGenerated;
+
+        return $this;
+    }
+
+    public function setInheritedFrom(string $hostname)
+    {
+        $this->inheritedFrom = $hostname;
+
+        return $this;
+    }
+
+    public function setServiceSet(IcingaServiceSet $set)
+    {
+        $this->set = $set;
+
+        return $this;
+    }
+
+    /**
+     * @param IcingaHost $host
+     * @return $this
+     */
+    public function setHost(IcingaHost $host)
+    {
+        $this->host = $host;
+
+        return $this;
+    }
+
+
+    public function providesOverrides()
+    {
+        return $this->applyGenerated
+            || $this->inheritedFrom
+            || ($this->host && $this->set);
+    }
+
     public function hasBeenSubmitted(): bool
     {
         $pressedButton = $this->getPressedSubmitElement();
@@ -139,6 +191,42 @@ class CustomPropertiesForm extends CompatForm
                 return is_bool($item) || ! empty($item);
             }
         );
+    }
+
+    public function fetchForHost(IcingaHost $host)
+    {
+        $overrides = [];
+        $db = $this->object->getDb();
+        $parents = $host->listFlatResolvedImportNames();
+        if (empty($parents)) {
+            return $overrides;
+        }
+
+        $overrideVarName = $db->getConnection()->settings()->get('override_services_varname');
+
+        $query = $db->select()
+                          ->from(['hv' => 'icinga_host_var'], [
+                              'host_name' => 'h.object_name',
+                              'varvalue'  => 'hv.varvalue',
+                          ])
+                          ->join(
+                              ['h' => 'icinga_host'],
+                              'h.id = hv.host_id',
+                              []
+                          )
+                          ->where('hv.varname = ?', $overrideVarName)
+                          ->where('h.object_name IN (?)', $parents);
+
+        foreach ($db->fetchAll($query) as $row) {
+            if ($row->varvalue === null) {
+                continue;
+            }
+            foreach (Json::decode($row->varvalue) as $serviceName => $vars) {
+                $overrides[$serviceName][$row->host_name] = $vars;
+            }
+        }
+
+        return $overrides;
     }
 
     protected function onSuccess(): void
@@ -238,13 +326,28 @@ class CustomPropertiesForm extends CompatForm
             );
         }
 
-        $vars->storeToDb($this->object);
+        if ($this->providesOverrides()) {
+            $object = $this->host;
+            $overrideVars = [];
+            foreach ($vars as $varName => $var) {
+                $overrideVars[$varName] = $var->getValue();
+            }
+
+            $object->overrideServiceVars($this->object->getObjectName(), (object) $overrideVars);
+            DirectorActivityLog::logModification($object, $this->object->getConnection());
+
+            $object->store($this->object->getConnection());
+        } else {
+            $object = $this->object;
+            DirectorActivityLog::logModification($object, $this->object->getConnection());
+            $vars->storeToDb($object);
+        }
 
         if ($modified) {
             Notification::success(
                 sprintf(
                     $this->translate('Custom variables have been successfully modified for %s'),
-                    $this->object->getObjectName(),
+                    $object->getObjectName(),
                 )
             );
         } else {

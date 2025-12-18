@@ -21,6 +21,7 @@ use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Forms\ObjectPropertyForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -364,7 +365,6 @@ abstract class ObjectController extends ActionController
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
-        $hasAddedItems = $this->params->shift('items-added', false);
 
         $this->addTitle(
             $this->translate('Custom Variables: %s'),
@@ -373,14 +373,13 @@ abstract class ObjectController extends ActionController
 
         $this->prepareApplyForHeader();
 
-        $type = $object->getShortTableName();
         $objectProperties = $this->getObjectCustomProperties($object);
         if ($this->object->isTemplate()) {
             $this->actions()->add(
                 (new ButtonLink(
                     $this->translate('Add Property'),
                     Url::fromPath(
-                        'director/'. $type .'/add-property',
+                        'director/'. $this->getType() .'/add-property',
                         ['uuid' => $this->getUuidFromUrl(), '_preserve_session' => true]
                     )->getAbsoluteUrl(),
                     null,
@@ -389,21 +388,29 @@ abstract class ObjectController extends ActionController
             );
         }
 
-        $this->prepareCustomPropertiesForm($object, $objectProperties, $hasAddedItems);
+        $form = $this->prepareCustomPropertiesForm($object, $objectProperties);
+        if ($form) {
+            $this->content()->add($form);
+        }
+
         $this->tabs()->activate('variables');
     }
 
     public function prepareCustomPropertiesForm(
         IcingaObject $object,
-        array $objectProperties,
-        bool $hasAddedItems = false
-    ): void {
+        array $objectProperties = [],
+        IcingaHost $host = null,
+        IcingaService $appliedService = null,
+        IcingaServiceSet $serviceSet = null,
+        IcingaHost $inheritedFrom = null
+    ): ?CustomPropertiesForm {
+        $hasAddedItems = $this->params->shift('items-added', false);
         $addedProperties = $this->session->get('added-properties');
         $removedProperties = $this->session->get('removed-properties');
         if (empty($objectProperties) && empty($addedProperties) && empty($removedProperties)) {
             $this->content()->add(Hint::info($this->translate('No custom properties defined.')));
 
-            return;
+            return null;
         }
 
         if ($this->session->get('vars')) {
@@ -436,8 +443,24 @@ abstract class ObjectController extends ActionController
             $result[] = $row;
         }
 
-        $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges))
-            ->on(CustomPropertiesForm::ON_SUCCESS, function () {
+        $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges));
+        if ($host) {
+            $form->setHost($host);
+        }
+
+        if ($appliedService) {
+            $form->setApplyGenerated($appliedService);
+        }
+
+        if ($inheritedFrom) {
+            $form->setInheritedFrom($inheritedFrom);
+        }
+
+        if ($serviceSet) {
+            $form->setServiceSet($serviceSet);
+        }
+
+        $form->on(CustomPropertiesForm::ON_SUCCESS, function () {
                 $this->session->delete('vars');
                 $this->session->delete('added-properties');
                 $this->session->delete('removed-properties');
@@ -461,7 +484,8 @@ abstract class ObjectController extends ActionController
             ->handleRequest($this->getServerRequest());
 
         $form->load($result);
-        $this->content()->add($form);
+
+        return $form;
     }
 
 
@@ -612,7 +636,7 @@ abstract class ObjectController extends ActionController
      *
      * @return array
      */
-    protected function getObjectCustomProperties(IcingaObject $object): array
+    protected function getObjectCustomProperties(IcingaObject $object, bool $isOverrideVars = false): array
     {
         if ($object->uuid === null) {
             return [];
@@ -655,7 +679,18 @@ abstract class ObjectController extends ActionController
 
         $result = [];
         $removedProperties = $this->session->get('removed-properties', []);
-        $vars = json_decode(json_encode($object->getVars()), true);
+        if ($isOverrideVars) {
+            if ($object->isApplyRule()) {
+                $serviceName = $object->getObjectName();
+            } else {
+                $serviceName = $this->params->getRequired('service');
+            }
+
+            $vars = json_decode(json_encode($this->object->getOverriddenServiceVars($serviceName)), true);
+        } else {
+            $vars = json_decode(json_encode($object->getVars()), true);
+        }
+
         foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
             if ($objectUuid === $row[$type . '_uuid']) {
                 $row['allow_removal'] = true;
