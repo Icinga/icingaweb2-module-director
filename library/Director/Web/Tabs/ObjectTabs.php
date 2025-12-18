@@ -94,7 +94,7 @@ class ObjectTabs extends Tabs
             ));
         }
 
-        if ($auth->hasPermission(Permission::ADMIN) && ! $this->object instanceof IcingaServiceSet) {
+        if ($auth->hasPermission(Permission::ADMIN) && $this->hasCustomProperties()) {
             $this->add('variables', array(
                 'url'       => sprintf('director/%s/variables', $type),
                 'urlParams' => $params,
@@ -156,5 +156,15 @@ class ObjectTabs extends Tabs
         return $object->hasBeenLoadedFromDb()
             && $object->supportsFields()
             && ($object->isTemplate() || $this->type === 'command');
+    }
+
+    protected function hasCustomProperties()
+    {
+        if (! ($object = $this->object)) {
+            return false;
+        }
+
+        return $object->hasBeenLoadedFromDb()
+            && $object->supportsCustomProperties();
     }
 }
