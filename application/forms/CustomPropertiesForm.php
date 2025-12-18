@@ -290,7 +290,6 @@ class CustomPropertiesForm extends CompatForm
             }
         }
 
-        DirectorActivityLog::logModification($this->object, $this->object->getConnection());
         if (! empty($itemsToRemove)) {
             $objectId = (int) $this->object->get('id');
             $db = $this->object->getDb();
@@ -330,7 +329,9 @@ class CustomPropertiesForm extends CompatForm
             $object = $this->host;
             $overrideVars = [];
             foreach ($vars as $varName => $var) {
-                $overrideVars[$varName] = $var->getValue();
+                if ($var->hasBeenModified()) {
+                    $overrideVars[$varName] = $var->getValue();
+                }
             }
 
             $object->overrideServiceVars($this->object->getObjectName(), (object) $overrideVars);
