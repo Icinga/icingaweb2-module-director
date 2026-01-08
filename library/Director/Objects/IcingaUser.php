@@ -50,9 +50,32 @@ class IcingaUser extends IcingaObject implements ExportInterface
         'zone'   => 'IcingaZone',
     );
 
+    /** @var ?UserGroupMembershipResolver Resolver for user group memberships */
+    protected $usergroupMembershipResolver;
+
     public function getUniqueIdentifier()
     {
         return $this->getObjectName();
+    }
+
+    protected function getUserGroupMembershipResolver()
+    {
+        if (! $this->usergroupMembershipResolver) {
+            $this->usergroupMembershipResolver = new UserGroupMembershipResolver(
+                $this->getConnection()
+            );
+        }
+
+        return $this->usergroupMembershipResolver;
+    }
+
+    protected function notifyResolvers()
+    {
+        $resolver = $this->getUserGroupMembershipResolver();
+        $resolver->addObject($this);
+        $resolver->refreshDb();
+
+        return $this;
     }
 
     /**
