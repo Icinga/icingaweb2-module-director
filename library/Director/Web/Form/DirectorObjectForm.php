@@ -831,10 +831,6 @@ abstract class DirectorObjectForm extends DirectorForm
 
         try {
             $this->loadInheritedProperties();
-            if (! $isHost) {
-                $this->addFields();
-            }
-
             $this->callOnRequestCallables();
         } catch (Exception $e) {
             $this->addUniqueException($e);

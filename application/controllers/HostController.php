@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\Forms\CustomPropertiesForm;
+use Icinga\Module\Director\Forms\HostServiceBlacklistForm;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
@@ -16,7 +16,6 @@ use Exception;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
-use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -422,9 +421,24 @@ class HostController extends ObjectController
             $serviceName,
         );
 
-        $objectProperties = $this->getObjectCustomProperties($parent, true);
-        $form = $this->prepareCustomPropertiesForm($parent, $objectProperties, host: $host, appliedService: $parent);
-        $this->content()->add($form);
+        $deactivateForm = (new HostServiceBlacklistForm($db, $host, $parent))
+            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+                $this->redirectNow(Url::fromRequest());
+            })
+            ->handleRequest($this->getServerRequest());
+
+        if ($deactivateForm->hasBeenBlacklisted()) {
+            $this->content()->add(
+                Hint::warning($this->translate('This Service has been deactivated on this host'))
+            );
+            $this->content()->add($deactivateForm);
+        } else {
+            $this->controls()->prepend($deactivateForm);
+            $objectProperties = $this->getObjectCustomProperties($parent, true);
+            $form = $this->prepareCustomPropertiesForm($parent, $objectProperties, host: $host, appliedService: $parent);
+            $this->content()->add($form);
+        }
+
         $this->commonForServices();
     }
 
@@ -435,17 +449,38 @@ class HostController extends ObjectController
     {
         $host = $this->getHostObject();
         $serviceName = $this->params->get('service');
-        $from = IcingaHost::load($this->params->get('inheritedFrom'), $this->db());
-
+        $db = $this->db();
+        $from = IcingaHost::load($this->params->get('inheritedFrom'), $db);
         $parent = IcingaService::load([
             'object_name' => $serviceName,
             'host_id'     => $from->get('id'),
-        ], $this->db());
+        ], $db);
+        $deactivateForm = (new HostServiceBlacklistForm($db, $host, $parent))
+            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+                $this->redirectNow(Url::fromRequest());
+            })
+            ->handleRequest($this->getServerRequest());
 
-        $objectProperties = $this->getObjectCustomProperties($parent, true);
         $this->addTitle($this->translate('Inherited service: %s'), $serviceName);
-        $form = $this->prepareCustomPropertiesForm($parent, $objectProperties, host: $host, inheritedFrom: $from);
-        $this->content()->add($form);
+        if ($deactivateForm->hasBeenBlacklisted()) {
+            $this->content()->add(
+                Hint::warning($this->translate('This Service has been deactivated on this host'))
+            );
+
+            $this->content()->add($deactivateForm);
+        } else {
+            $this->controls()->prepend($deactivateForm);
+            $objectProperties = $this->getObjectCustomProperties($parent, true);
+            $form = $this->prepareCustomPropertiesForm(
+                $parent,
+                $objectProperties,
+                host: $host,
+                inheritedServiceFrom: $from
+            );
+
+            $this->content()->add($form);
+        }
+
         $this->commonForServices();
     }
 
@@ -508,11 +543,26 @@ class HostController extends ObjectController
             $set->getObjectName(),
         );
 
-        $objectProperties = $this->getObjectCustomProperties($originalService, true);
-        $form = $this->prepareCustomPropertiesForm($originalService, $objectProperties, host: $host, serviceSet: $setTemplate);
+        $deactivateForm = (new HostServiceBlacklistForm($db, $host, $originalService))
+            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+                $this->redirectNow(Url::fromRequest());
+            })
+            ->handleRequest($this->getServerRequest());
 
-        $this->tabs()->activate('services');
-        $this->content()->add($form);
+        if ($deactivateForm->hasBeenBlacklisted()) {
+            $this->content()->add(
+                Hint::warning($this->translate('This Service has been deactivated on this host'))
+            );
+            $this->content()->add($deactivateForm);
+        } else {
+            $this->controls()->prepend($deactivateForm);
+            $objectProperties = $this->getObjectCustomProperties($originalService, true);
+            $form = $this->prepareCustomPropertiesForm($originalService, $objectProperties, host: $host, serviceSet: $setTemplate);
+
+            $this->tabs()->activate('services');
+            $this->content()->add($form);
+        }
+
         $this->commonForServices();
     }
 
