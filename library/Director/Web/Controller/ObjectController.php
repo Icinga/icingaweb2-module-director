@@ -402,7 +402,7 @@ abstract class ObjectController extends ActionController
         IcingaHost $host = null,
         IcingaService $appliedService = null,
         IcingaServiceSet $serviceSet = null,
-        IcingaHost $inheritedFrom = null
+        IcingaHost $inheritedServiceFrom = null
     ): ?CustomPropertiesForm {
         $hasAddedItems = $this->params->shift('items-added', false);
         $addedProperties = $this->session->get('added-properties');
@@ -414,7 +414,7 @@ abstract class ObjectController extends ActionController
         }
 
         $isOverrideVars = $appliedService
-            || $inheritedFrom
+            || $inheritedServiceFrom
             || ($host && $serviceSet);
         if ($this->session->get('vars')) {
             $vars = $this->session->get('vars');
@@ -457,15 +457,15 @@ abstract class ObjectController extends ActionController
 
         $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges));
         if ($host) {
-            $form->setHost($host);
+            $form->setHostForService($host);
         }
 
         if ($appliedService) {
             $form->setApplyGenerated($appliedService);
         }
 
-        if ($inheritedFrom) {
-            $form->setInheritedFrom($inheritedFrom);
+        if ($inheritedServiceFrom) {
+            $form->setInheritedServiceFrom($inheritedServiceFrom);
         }
 
         if ($serviceSet) {

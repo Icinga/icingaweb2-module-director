@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
@@ -27,7 +26,7 @@ class CustomPropertiesForm extends CompatForm
 
     private ?IcingaService $applyGenerated = null;
 
-    private ?string $inheritedFrom = null;
+    private ?string $inheritedServiceFrom = null;
 
     private ?IcingaServiceSet $set = null;
 
@@ -104,21 +103,35 @@ class CustomPropertiesForm extends CompatForm
         );
     }
 
-    public function setApplyGenerated(IcingaService $applyGenerated)
+    /**
+     * Set the applied rule from where the custom variables are inherited from
+     *
+     * @param IcingaService $applyGenerated
+     *
+     * @return $this
+     */
+    public function setApplyGenerated(IcingaService $applyGenerated): static
     {
         $this->applyGenerated = $applyGenerated;
 
         return $this;
     }
 
-    public function setInheritedFrom(string $hostname)
+    public function setInheritedServiceFrom(string $hostname): static
     {
-        $this->inheritedFrom = $hostname;
+        $this->inheritedServiceFrom = $hostname;
 
         return $this;
     }
 
-    public function setServiceSet(IcingaServiceSet $set)
+    /**
+     * Set the service set from where the custom variables are inherited from
+     *
+     * @param IcingaServiceSet $set
+     *
+     * @return $this
+     */
+    public function setServiceSet(IcingaServiceSet $set): static
     {
         $this->set = $set;
 
@@ -126,21 +139,28 @@ class CustomPropertiesForm extends CompatForm
     }
 
     /**
+     * Set host if the object is a service
+     *
      * @param IcingaHost $host
+     *
      * @return $this
      */
-    public function setHost(IcingaHost $host)
+    public function setHostForService(IcingaHost $host): static
     {
         $this->host = $host;
 
         return $this;
     }
 
-
-    public function providesOverrides()
+    /**
+     * Are the populated values for custom properties a part of _override_servicevars
+     *
+     * @return bool
+     */
+    public function isOverrideServiceVars(): bool
     {
         return $this->applyGenerated
-            || $this->inheritedFrom
+            || $this->inheritedServiceFrom
             || ($this->host && $this->set);
     }
 
@@ -191,42 +211,6 @@ class CustomPropertiesForm extends CompatForm
                 return is_bool($item) || ! empty($item);
             }
         );
-    }
-
-    public function fetchForHost(IcingaHost $host)
-    {
-        $overrides = [];
-        $db = $this->object->getDb();
-        $parents = $host->listFlatResolvedImportNames();
-        if (empty($parents)) {
-            return $overrides;
-        }
-
-        $overrideVarName = $db->getConnection()->settings()->get('override_services_varname');
-
-        $query = $db->select()
-                          ->from(['hv' => 'icinga_host_var'], [
-                              'host_name' => 'h.object_name',
-                              'varvalue'  => 'hv.varvalue',
-                          ])
-                          ->join(
-                              ['h' => 'icinga_host'],
-                              'h.id = hv.host_id',
-                              []
-                          )
-                          ->where('hv.varname = ?', $overrideVarName)
-                          ->where('h.object_name IN (?)', $parents);
-
-        foreach ($db->fetchAll($query) as $row) {
-            if ($row->varvalue === null) {
-                continue;
-            }
-            foreach (Json::decode($row->varvalue) as $serviceName => $vars) {
-                $overrides[$serviceName][$row->host_name] = $vars;
-            }
-        }
-
-        return $overrides;
     }
 
     protected function onSuccess(): void
@@ -325,7 +309,7 @@ class CustomPropertiesForm extends CompatForm
             );
         }
 
-        if ($this->providesOverrides()) {
+        if ($this->isOverrideServiceVars()) {
             $object = $this->host;
             $overrideVars = [];
             foreach ($vars as $varName => $var) {
