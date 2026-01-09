@@ -53,7 +53,9 @@ class CustomPropertiesForm extends CompatForm
         $this->addElement($dictionary);
 
         $saveButton = $this->createElement('submit', 'save', [
-            'label' => $this->translate('Save Custom Variables')
+            'label' => $this->isOverrideServiceVars()
+                ? $this->translate('Override Custom Variables')
+                : $this->translate('Save Custom Variables')
         ]);
 
         $message = '';
