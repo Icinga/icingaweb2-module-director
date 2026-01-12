@@ -396,6 +396,18 @@ abstract class ObjectController extends ActionController
         $this->tabs()->activate('variables');
     }
 
+    /**
+     * Prepare Custom Properties Form for hosts, services, apply rules and service sets
+     *
+     * @param IcingaObject $object
+     * @param array $objectProperties
+     * @param IcingaHost|null $host
+     * @param IcingaService|null $appliedService
+     * @param IcingaServiceSet|null $serviceSet
+     * @param IcingaHost|null $inheritedServiceFrom
+     *
+     * @return ?CustomPropertiesForm
+     */
     public function prepareCustomPropertiesForm(
         IcingaObject $object,
         array $objectProperties = [],
@@ -416,18 +428,17 @@ abstract class ObjectController extends ActionController
         $isOverrideVars = $appliedService
             || $inheritedServiceFrom
             || ($host && $serviceSet);
+        if (! $isOverrideVars) {
+            $storedVars = $object->getVars();
+            unset($storedVars->{'_override_servicevars'});
+        } else {
+            $storedVars = $host->getOverriddenServiceVars($object);
+        }
+
         if ($this->session->get('vars')) {
             $vars = $this->session->get('vars');
-            $storedVars = $vars;
         } else {
-            if (! $isOverrideVars) {
-                $vars = $object->getVars();
-            } else {
-                $vars = $host->getOverriddenServiceVars($object);
-            }
-
-            $storedVars = $vars;
-            $vars = json_decode(json_encode($vars), true);
+            $vars = json_decode(json_encode($storedVars), true);
 
             $this->session->set('vars', $vars);
         }
@@ -455,7 +466,8 @@ abstract class ObjectController extends ActionController
             $result[] = $row;
         }
 
-        $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges));
+        $form = (new CustomPropertiesForm($object, $objectProperties, $hasAddedItems, $hasChanges))
+            ->setAction(Url::fromRequest()->setParam('_preserve_session')->getAbsoluteUrl());
         if ($host) {
             $form->setHostForService($host);
         }

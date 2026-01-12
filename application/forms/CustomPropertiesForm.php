@@ -61,8 +61,11 @@ class CustomPropertiesForm extends CompatForm
         $message = '';
         if ($this->hasBeenSent()) {
             $properties = $this->getElement('properties');
+            $storedVars = $this->object->getVars();
+            unset($storedVars->{'_override_servicevars'});
+
             $this->hasChanges = json_encode((object) $properties->getDictionary())
-                !== json_encode($this->object->getVars());
+                !== json_encode($storedVars);
         }
 
         $removedItems = Session::getSession()
@@ -75,7 +78,7 @@ class CustomPropertiesForm extends CompatForm
             ), count($removedItems));
         }
 
-        $hasChanges = $this->hasChanges || $this->hasAddedItems;
+        $hasChanges = $this->hasChanges || $this->hasAddedItems || $removedItems;
         $discardButton = $this->createElement(
             'submit',
             'discard',
