@@ -314,6 +314,11 @@ class PropertyForm extends CompatForm
             }
         } else {
             unset($values['used_count']);
+            $itemType = '';
+            if (isset($values['item_type'])) {
+                $itemType = $values['item_type'];
+                unset($values['item_type']);
+            }
 
             $used = $this->getValue('used_count') > 0;
             if (! $used) {
@@ -330,15 +335,13 @@ class PropertyForm extends CompatForm
                     );
                 }
 
-                if (isset($values['item_type']) && $values['value_type'] === 'dynamic-array') {
+                if ($itemType && $values['value_type'] === 'dynamic-array') {
                     $this->db->insert('director_property', [
                         'uuid' => Uuid::uuid4()->getBytes(),
                         'key_name' => '0',
-                        'value_type' => $values['item_type'],
+                        'value_type' => $itemType,
                         'parent_uuid' => $this->uuid->getBytes()
                     ]);
-
-                    unset($values['item_type']);
                 }
             } else {
                 $this->db->getDbAdapter()->beginTransaction();
