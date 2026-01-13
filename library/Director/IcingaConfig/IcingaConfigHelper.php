@@ -416,7 +416,7 @@ class IcingaConfigHelper
         return false;
     }
 
-    public static function renderStringWithVariables($string, array $whiteList = null)
+    public static function renderStringWithVariables($string, array $whiteList = [])
     {
         $len = strlen($string);
         $start = false;
