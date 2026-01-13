@@ -71,7 +71,7 @@ class CustomPropertiesForm extends CompatForm
         $removedItems = Session::getSession()
                                ->getNamespace('director.variables')->get('removed-properties', []);
         if (! empty($removedItems)) {
-            $message .= sprintf($this->translatePlural(
+            $message = sprintf($this->translatePlural(
                 '(%d) property has been removed',
                 '(%d) properties have been removed',
                 count($removedItems)
