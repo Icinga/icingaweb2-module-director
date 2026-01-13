@@ -360,33 +360,34 @@ class IcingaService extends IcingaObject implements ExportInterface
         ) {
             $name = $this->getObjectName();
             $extraName = '';
+            $isApplyFor = $this->isApplyRuleforDictionary(substr($this->get('apply_for') ?? '', strlen('host.vars.')));
+            $varName = '"' . $name . '"';
 
             if (c::stringHasMacro($name)) {
-                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
+                $macroWhiteList = $isApplyFor ? 'key' : 'value';
+                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name, [$macroWhiteList]));
                 $name = '';
             } elseif ($name !== '') {
                 $name = ' ' . c::renderString($name);
             }
 
-            if ($this->isApplyRuleforDictionary(substr($this->get('apply_for') ?? '', strlen('host.vars.')))) {
-                $applyForConfig = sprintf(
-                    "%s %s%s for (key => value in %s) {\n",
-                    $this->getObjectTypeName(),
-                    $this->getType(),
-                    $name,
-                    $this->get('apply_for')
-                );
+            if ($isApplyFor) {
+                $header = "%s %s%s for (key => value in %s) {\n";
             } else {
-                $applyForConfig = sprintf(
-                    "%s %s%s for (value in %s) {\n",
-                    $this->getObjectTypeName(),
-                    $this->getType(),
-                    $name,
-                    $this->get('apply_for')
-                ) . $extraName;
+                $header = "%s %s%s for (value in %s) {\n";
             }
 
-            return $applyForConfig;
+            $extraInfo = sprintf("\n    vars.overridenVar = %s\n", $varName);
+
+            return sprintf(
+                    $header,
+                    $this->getObjectTypeName(),
+                    $this->getType(),
+                    $name,
+                    $this->get('apply_for')
+                )
+                . $extraName
+                . $extraInfo;
         }
 
         return parent::renderObjectHeader();
