@@ -24,7 +24,7 @@ class Dictionary extends FieldsetElement
 
     public function __construct(string $name, array $items, $attributes = null)
     {
-        $this->setItems($items);
+        $this->items = $items;
 
         parent::__construct($name, $attributes);
     }
@@ -32,20 +32,6 @@ class Dictionary extends FieldsetElement
     public function setAllowItemRemoval(bool $allow = false): static
     {
         $this->allowItemRemoval = $allow;
-
-        return $this;
-    }
-
-    /**
-     * Set the dictionary items
-     *
-     * @param array $items
-     *
-     * @return $this
-     */
-    public function setItems(array $items): static
-    {
-        $this->items = $items;
 
         return $this;
     }

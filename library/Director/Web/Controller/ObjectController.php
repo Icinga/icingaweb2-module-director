@@ -488,7 +488,7 @@ abstract class ObjectController extends ActionController
                 $this->session->delete('vars');
                 $this->session->delete('added-properties');
                 $this->session->delete('removed-properties');
-                $this->redirectNow(Url::fromRequest()->without('items-added'));
+                $this->redirectNow(Url::fromRequest()->without(['_preserve_session', 'items-added']));
             })
             ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) use ($vars) {
                 /** @var SubmitButtonElement $discard */
@@ -497,7 +497,7 @@ abstract class ObjectController extends ActionController
                     $this->session->delete('vars');
                     $this->session->delete('added-properties');
                     $this->session->delete('removed-properties');
-                    $this->redirectNow(Url::fromRequest()->without('items-added'));
+                    $this->redirectNow(Url::fromRequest()->without(['_preserve_session', 'items-added']));
                 }
 
                 /** @var Dictionary $propertiesElement */

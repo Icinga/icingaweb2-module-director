@@ -74,10 +74,7 @@ class NestedDictionaryItem extends FieldsetElement
             ));
         }
 
-        $this->addElement(
-            (new Dictionary('var', $this->items, ['class' => 'no-border']))
-                ->setItems($this->items)
-        );
+        $this->addElement(new Dictionary('var', $this->items, ['class' => 'no-border']));
     }
 
     /**

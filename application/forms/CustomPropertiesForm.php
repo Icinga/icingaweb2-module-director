@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
@@ -64,8 +65,7 @@ class CustomPropertiesForm extends CompatForm
             $storedVars = $this->object->getVars();
             unset($storedVars->{'_override_servicevars'});
 
-            $this->hasChanges = json_encode((object) $properties->getDictionary())
-                !== json_encode($storedVars);
+            $this->hasChanges = json_encode((object) $properties->getDictionary()) !== json_encode($storedVars);
         }
 
         $removedItems = Session::getSession()
@@ -249,6 +249,7 @@ class CustomPropertiesForm extends CompatForm
 
             if (is_array($value)) {
                 $filteredValue = self::filterEmpty($value);
+                // Store the fixed array as empty only if the filtered array is empty
                 if ($property['value_type'] !== 'fixed-array' || empty($filteredValue)) {
                     $value = $filteredValue;
                 }
