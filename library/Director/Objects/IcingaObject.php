@@ -1348,7 +1348,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
-                $vals['_INHERITED_']->$key = $value;
+                if (is_object($value)) {
+                    $vals['_INHERITED_']->$key = clone $value;
+                } else {
+                    $vals['_INHERITED_']->$key = $value;
+                }
+
                 $vals['_ORIGINS_']->$key = $origins->$key;
             }
 
