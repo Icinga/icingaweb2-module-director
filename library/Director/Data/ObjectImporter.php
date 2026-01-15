@@ -56,9 +56,7 @@ class ObjectImporter
         $properties = (array) $plain;
         unset($properties['fields']);
         unset($properties['originalId']);
-        if ($object instanceof IcingaHost) {
-            unset($properties['properties']);
-        }
+        unset($properties['properties']);
 
         if ($implementation === Basket::class) {
             if (isset($properties['objects']) && is_string($properties['objects'])) {

@@ -306,11 +306,8 @@ class Exporter
     {
         $props = (array) $object->toPlainObject($this->resolveObjects, !$this->showDefaults);
         if ($object->supportsFields()) {
-            if ($object instanceof IcingaHost) {
-                $props['properties'] = $this->propertyReferenceLoader->loadFor($object);
-            } else {
-                $props['fields'] = $this->fieldReferenceLoader->loadFor($object);
-            }
+            $props['properties'] = $this->propertyReferenceLoader->loadFor($object);
+            $props['fields'] = $this->fieldReferenceLoader->loadFor($object);
         }
 
         return $props;

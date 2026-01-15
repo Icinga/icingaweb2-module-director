@@ -32,6 +32,13 @@ class DirectorProperty extends DbObject
 
     private $object;
 
+    protected function setDbProperties($properties)
+    {
+        unset($properties->parent_uuid_v); // hack to ignore virtual column, need a better solution
+
+        return parent::setDbProperties($properties);
+    }
+
     /**
      * @throws NotFoundError
      */
@@ -42,6 +49,7 @@ class DirectorProperty extends DbObject
         $parentUuid = $this->get('parent_uuid');
         if ($uuid) {
             $uuid = Uuid::fromBytes($uuid);
+            unset($plain->parent_uuid_v); // A virtual added for composite unique constraint
             $plain->uuid = $uuid->toString();
             $plain->items = $this->fetchChildren();
         }
