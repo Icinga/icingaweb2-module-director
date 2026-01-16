@@ -15,10 +15,12 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\EmptyStateBar;
+use ipl\Web\Widget\ListItem;
 use ipl\Web\Widget\Tabs;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Zend_Db;
+use Zend_Db_Expr;
 
 class PropertyController extends CompatController
 {
@@ -171,9 +173,43 @@ class PropertyController extends CompatController
 
         $this->setTitle($title);
         $this->setTitleTab('property');
+        $this->setAutorefreshInterval(10);
     }
 
     public function usageAction(): void
+    {
+        $objectClass = null;
+        $usageList = (new CustomVarObjectList($this->fetchCustomVarUsage()))
+            ->setDetailActionsDisabled(false)
+            ->on(
+                CustomVarObjectList::BEFORE_ITEM_ADD,
+                function (ListItem $item, $data) use(&$objectClass, &$usageList) {
+                    if ($objectClass !== $data->object_class) {
+                        $usageList->addHtml(HtmlElement::create(
+                            'li',
+                            ['class' => 'list-item'],
+                            HtmlElement::create(
+                                'h2',
+                                content: ucfirst($data->object_class) . 's'
+                            )
+                        ));
+                        $objectClass = $data->object_class;
+                    }
+                });
+
+        $this->addContent($usageList);
+
+        $this->setTitle($this->translate('Custom Variable Usage'));
+        $this->setTitleTab('usage');
+        $this->setAutorefreshInterval(10);
+    }
+
+    /**
+     * Fetch the give custom variable usage in templates
+     *
+     * @return array
+     */
+    private function fetchCustomVarUsage(): array
     {
         $uuid = $this->uuid;
         $property = $this->fetchProperty($uuid);
@@ -191,35 +227,44 @@ class PropertyController extends CompatController
         }
 
         $db = $this->db->getDbAdapter();
+        $objectClasses = ['host', 'service', 'notification', 'command', 'user'];
+        $usage = [];
 
-        $customPropQuery = $db
-            ->select()
-            ->from(['ih' => 'icinga_host'], [])
-            ->join(['ihv' => 'icinga_host_var'], 'ih.id = ihv.host_id', [])
-            ->join(['dp' => 'director_property'], 'ihv.property_uuid = dp.uuid', [])
-            ->columns([
-                'name' => 'ih.object_name',
-                'type' => 'ih.object_type'
-            ])
-            ->where('dp.uuid = ?', $uuid->getBytes());
+        foreach ($objectClasses as $objectClass) {
+            $customPropertyQuery = $db
+                ->select()
+                ->from(['io' => "icinga_$objectClass"], [])
+                ->join(['iov' => "icinga_$objectClass" . '_var'], "io.id = iov.$objectClass" . '_id', [])
+                ->join(['dp' => 'director_property'], 'iov.property_uuid = dp.uuid', []);
 
-        $unionQuery = $db
-            ->select()
-            ->from(['ih' => 'icinga_host'], [])
-            ->join(['ihp' => 'icinga_host_property'], 'ihp.host_uuid = ih.uuid', [])
-            ->join(['dp' => 'director_property'], 'ihp.property_uuid = dp.uuid', [])
-            ->columns([
-                'name' => 'ih.object_name',
-                'type' => 'ih.object_type'
-            ])
-            ->where('ihp.property_uuid = ?', $uuid->getBytes());
-        $this->addContent(
-            (new CustomVarObjectList($db->fetchAll($db->select()->union([$customPropQuery, $unionQuery]))))
-                ->setDetailActionsDisabled(false)
-        );
+            $unionQuery = $db
+                ->select()
+                ->from(['io' => "icinga_$objectClass"], [])
+                ->join(['iop' => "icinga_$objectClass" . '_property'], "iop.$objectClass" . '_uuid = io.uuid', [])
+                ->join(['dp' => 'director_property'], 'iop.property_uuid = dp.uuid', []);
 
-        $this->setTitle($this->translate('Custom Variable Usage'));
-        $this->setTitleTab('usage');
+            $columns = [
+                'name' => 'io.object_name',
+                'type' => 'io.object_type',
+                'object_class' => new Zend_Db_Expr("'$objectClass'")
+            ];
+
+            if ($objectClass === 'service') {
+                $customPropertyQuery = $customPropertyQuery->joinLeft(['ioh' => 'icinga_host'], 'io.host_id = ioh.id', []);
+                $unionQuery = $unionQuery->joinLeft(['ioh' => 'icinga_host'], 'io.host_id = ioh.id', []);
+                $columns['host_name'] = 'ioh.object_name';
+            }
+
+            $customPropertyQuery = $customPropertyQuery->columns($columns)
+                                                       ->where('dp.uuid = ?', $uuid->getBytes());
+
+            $unionQuery = $unionQuery->columns($columns)
+                                     ->where('dp.uuid = ?', $uuid->getBytes());
+
+            $usage[] = $db->fetchAll($db->select()->union([$customPropertyQuery, $unionQuery]));
+        }
+
+        return array_merge(...$usage);
     }
 
     private function showFields(string $type): bool
