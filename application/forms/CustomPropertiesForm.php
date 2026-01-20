@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\DirectorActivityLog;

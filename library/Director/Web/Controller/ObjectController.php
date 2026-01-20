@@ -411,10 +411,10 @@ abstract class ObjectController extends ActionController
     public function prepareCustomPropertiesForm(
         IcingaObject $object,
         array $objectProperties = [],
-        IcingaHost $host = null,
-        IcingaService $appliedService = null,
-        IcingaServiceSet $serviceSet = null,
-        IcingaHost $inheritedServiceFrom = null
+        ?IcingaHost $host = null,
+        ?IcingaService $appliedService = null,
+        ?IcingaServiceSet $serviceSet = null,
+        ?IcingaHost $inheritedServiceFrom = null
     ): ?CustomPropertiesForm {
         $hasAddedItems = $this->params->shift('items-added', false);
         $addedProperties = $this->session->get('added-properties');
@@ -695,8 +695,8 @@ abstract class ObjectController extends ActionController
                     ->where('iop.' . $type . '_uuid IN (?)', $uuids)
                     ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
                     ->order(
-                        "FIELD(dp.value_type, 'string', 'number', 'bool', 'fixed-array',"
-                        . " 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary')"
+                        "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
+                        . " 'dynamic-array',  'fixed-dictionary', 'dynamic-dictionary')"
                     )
                     ->order('children')
                     ->order('key_name');
@@ -751,8 +751,8 @@ abstract class ObjectController extends ActionController
                         ->where('dp.' . 'uuid IN (?)', $addedProperties)
                         ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
                         ->order(
-                            "FIELD(dp.value_type, 'string', 'number', 'bool', 'fixed-array',"
-                            . " 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary')"
+                            "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
+                            . " 'dynamic-array', 'fixed-array', 'fixed-dictionary', 'dynamic-dictionary')"
                         )
                         ->order('children')
                         ->order('key_name');
