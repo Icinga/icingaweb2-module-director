@@ -108,6 +108,10 @@ class IcingaConfigHelperTest extends BaseTestCase
             '"Before " + name1 + " " + name2 + " After"',
             c::renderStringWithVariables('Before $name1$ $name2$ After')
         );
+        $this->assertEquals(c::renderStringWithVariables('$config.bar$', ['config']), 'config.bar');
+        $this->assertEquals(c::renderStringWithVariables('foo $config.bar$', ['config']), '"foo " + config.bar');
+        $this->assertEquals(c::renderStringWithVariables('foo $quux.bar$', ['config']), '"foo $quux.bar$');
+        $this->assertEquals(c::renderStringWithVariables('foo $config.bar$', ['quux']), '"foo $config.bar$');
     }
 
     public function testRenderStringWithVariablesX()
