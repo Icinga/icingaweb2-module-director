@@ -7,6 +7,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
@@ -617,7 +618,11 @@ abstract class ObjectController extends ActionController
                             $info,
                             $this->Auth(),
                             $this->api()
-                        )->handleRequest()
+                        )
+                            ->callOnSuccess(function (DeploymentLinkForm $form) {
+                                $this->getResponse()->setHeader('X-Icinga-Extra-Updates', join(',', ['#col1']));
+                            })
+                            ->handleRequest()
                     );
                 }
             }
