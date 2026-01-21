@@ -121,6 +121,11 @@ class HostgroupRestriction extends ObjectRestriction
         );
     }
 
+    public function filterRestrictedHostgroups(array $groups)
+    {
+        return array_intersect($groups, $this->listRestrictedHostgroups());
+    }
+
     /**
      * Apply the restriction to the given Hosts Query
      *
