@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Web\Widget;
 
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use ipl\Html\Html;
@@ -11,7 +11,7 @@ use ipl\Html\Table;
 
 class InspectPackages
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var Db */
     protected $db;
