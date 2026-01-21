@@ -474,6 +474,18 @@ abstract class ObjectsController extends ActionController
                         $command->getAutoincId()
                     );
                     break;
+                case 'command':
+                    $table->getQuery()
+                        ->join(
+                            ['ici' => 'icinga_command_inheritance'],
+                            'ici.command_id = o.id',
+                            []
+                        )->where(
+                            'ici.parent_command_id = ?',
+                            $command->getAutoincId()
+                        );
+                        
+                    break;
             }
         }
 
