@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Objects\IcingaUser;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use ipl\Html\Html;
 use Icinga\Exception\NotFoundError;
@@ -26,7 +27,7 @@ class SuggestController extends ActionController
         $key = null;
 
         if (strpos($context, '!') !== false) {
-            list($context, $key) = preg_split('~!~', $context, 2);
+            [$context, $key] = preg_split('~!~', $context, 2);
         }
 
         $func = 'suggest' . ucfirst($context);
@@ -264,6 +265,14 @@ class SuggestController extends ActionController
         ]);
     }
 
+    protected function suggestUserFilterColumns()
+    {
+        return $this->getFilterColumns('user.', [
+            $this->translate('User properties'),
+            $this->translate('Custom variables')
+        ]);
+    }
+
     protected function suggestDataListValuesForListId($id)
     {
         $db = $this->db()->getDbAdapter();
@@ -336,6 +345,8 @@ class SuggestController extends ActionController
     {
         if ($prefix === 'host.') {
             $all = IcingaHost::enumProperties($this->db(), $prefix);
+        } elseif ($prefix === 'user.') {
+            $all = IcingaUser::enumProperties($this->db(), $prefix);
         } else {
             $all = IcingaService::enumProperties($this->db(), $prefix);
         }
