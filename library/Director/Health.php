@@ -36,11 +36,16 @@ class Health
         return $this;
     }
 
-    public function getCheck($name)
+    public function getCheck($name, $critical, $warning)
     {
         if (array_key_exists($name, $this->checks)) {
-            $func = $this->checks[$name];
-            $check = $this->$func();
+            if ($name === "deployment") {
+                $func = $this->checks[$name];
+                $check = $this->$func($critical, $warning);
+            } else {
+                $func = $this->checks[$name];
+                $check = $this->$func();
+            }
         } else {
             $check = new CheckResults('Invalid Parameter');
             $check->fail("There is no check named '$name'");
@@ -49,7 +54,7 @@ class Health
         return $check;
     }
 
-    public function getAllChecks()
+    public function getAllChecks($critical = 3, $warning = 2)
     {
         /** @var CheckResults[] $checks */
         $checks = [$this->checkConfig()];
@@ -58,7 +63,7 @@ class Health
             return $checks;
         }
 
-        $checks[] = $this->checkDeployments();
+        $checks[] = $this->checkDeployments($critical, $warning);
         $checks[] = $this->checkImportSources();
         $checks[] = $this->checkSyncRules();
         $checks[] = $this->checkDirectorJobs();
@@ -227,7 +232,7 @@ class Health
         return $check;
     }
 
-    public function checkDeployments()
+    public function checkDeployments($critical, $warning)
     {
         $check = new Check('Director Deployments');
 
@@ -238,16 +243,14 @@ class Health
                 "Deployment endpoint is '%s'",
                 $db->getDeploymentEndpointName()
             ));
-        })->call(function () use ($check, $db) {
+        })->call(function () use ($check, $db, $warning, $critical) {
             $count = $db->countActivitiesSinceLastDeployedConfig();
-
-            if ($count === 1) {
-                $check->succeed('There is a single un-deployed change');
+            if ($count < $warning) {
+                $check->succeed("There is a $count un-deployed change");
+            } elseif ($count < $critical) {
+                $check->warn("There are $count un-deployed changes");
             } else {
-                $check->succeed(sprintf(
-                    'There are %d un-deployed changes',
-                    $count
-                ));
+                $check->fail("There are a $count un-deployed change");
             }
         });
 
