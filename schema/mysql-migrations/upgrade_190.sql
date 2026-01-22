@@ -120,6 +120,23 @@ CREATE TABLE icinga_user_property (
      ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+ALTER TABLE director_datalist
+    ADD UNIQUE KEY (uuid);
+
+CREATE TABLE director_property_datalist (
+ list_uuid binary(16) NOT NULL,
+ property_uuid binary(16) NOT NULL,
+ PRIMARY KEY (list_uuid, property_uuid),
+ CONSTRAINT director_list_property_list
+     FOREIGN KEY list (list_uuid)
+         REFERENCES director_datalist (uuid)
+         ON DELETE CASCADE
+         ON UPDATE CASCADE,
+ CONSTRAINT director_property_list_property
+     FOREIGN KEY property (property_uuid)
+         REFERENCES director_property (uuid)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
 ALTER TABLE icinga_host_var
   ADD COLUMN property_uuid binary(16);
 

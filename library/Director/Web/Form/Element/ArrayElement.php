@@ -30,7 +30,7 @@ class ArrayElement extends TermInput
         }
 
         $this->getElement('value')
-             ->getAttributes()
+            ->getAttributes()
             ->registerAttributeCallback('placeholder', function () use ($valuePlaceHolder) {
                 return $valuePlaceHolder;
             });
