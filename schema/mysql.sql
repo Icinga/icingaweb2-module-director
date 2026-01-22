@@ -652,17 +652,28 @@ CREATE TABLE icinga_host_field (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_property (
-  uuid binary(16) NOT NULL,
-  parent_uuid binary(16) NULL DEFAULT NULL,
+  uuid varbinary(16) NOT NULL,
+  parent_uuid varbinary(16) NULL DEFAULT NULL,
   key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
   description text DEFAULT NULL,
-  value_type enum('string', 'number', 'bool', 'fixed-array', 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary') COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (uuid)
+  value_type enum(
+          'string',
+          'number',
+          'bool',
+          'fixed-array',
+          'dynamic-array',
+          'fixed-dictionary',
+          'dynamic-dictionary',
+          'datalist-strict',
+          'datalist-non-strict'
+      ) COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (uuid),
+  UNIQUE INDEX unique_name_parent_uuid (key_name, parent_uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE director_property
-  ADD COLUMN parent_uuid_v BINARY(16) AS (
+  ADD COLUMN parent_uuid_v VARBINARY(16) AS (
     COALESCE(parent_uuid, 0x00000000000000000000000000000000)
 ) STORED;
 
@@ -670,8 +681,8 @@ ALTER TABLE director_property
   ADD UNIQUE KEY unique_name_parent_uuid (key_name, parent_uuid_v);
 
 CREATE TABLE icinga_host_property (
-  host_uuid binary(16) NOT NULL,
-  property_uuid binary(16) NOT NULL,
+  host_uuid varbinary(16) NOT NULL,
+  property_uuid varbinary(16) NOT NULL,
   required enum('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (host_uuid, property_uuid),
   CONSTRAINT icinga_host_property_host
@@ -692,7 +703,7 @@ CREATE TABLE icinga_host_var (
   varvalue TEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'), -- immer string vorerst
   checksum VARBINARY(20) DEFAULT NULL,
-  property_uuid BINARY(16) DEFAULT NULL,
+  property_uuid VARBINARY(16) DEFAULT NULL,
   PRIMARY KEY (host_id, varname),
   INDEX search_idx (varname),
   INDEX checksum (checksum),

@@ -6,9 +6,13 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Web\Form;
 use Icinga\Web\Session;
+use ipl\Html\FormDecoration\FormElementDecorationResult;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Compat\FormDecorator\DescriptionDecorator;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
@@ -35,7 +39,7 @@ class PropertyForm extends CompatForm
         protected bool $field = false,
         protected ?UuidInterface $parentUuid = null
     ) {
-        $this->addAttributes(['class' => ['property-form']]);
+        $this->getAttributes()->add(['class' => ['property-form']]);
     }
 
     /**
@@ -137,6 +141,8 @@ class PropertyForm extends CompatForm
             'string' => 'String',
             'number' => 'Number',
             'bool' => 'Boolean',
+            'datalist-strict' => 'Data List Strict',
+            'datalist-non-strict' => 'Data List Non Strict',
         ];
 
         if (! $this->isNestedField) {
@@ -201,6 +207,44 @@ class PropertyForm extends CompatForm
                     )
                     ->setAttribute('disabled', true);
             }
+        } elseif (str_starts_with($type, 'datalist')) {
+            $isStrict = substr_compare($type, 'strict', strlen('datalist-')) === 0;
+            $this->getElement('value_type')->setAttribute('strict', $isStrict);
+            $this->addElement(
+                'select',
+                'list',
+                [
+                    'label'             => $this->translate('List name'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => '',
+                    'required'          => true,
+                    'options'           => ['' => $this->translate('- please choose -')] + $this->enumDatalist()
+                ]
+            );
+
+            $this->addElement(
+                'select',
+                'item_type',
+                [
+                    'label'             => $this->translate('Item Type'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => 'string',
+                    'options'           => ['string' => 'String', 'dynamic-array' => 'Array']
+                ]
+            );
+
+            if ($used) {
+                $this->getElement('item_type')
+                     ->setAttribute(
+                         'title',
+                         $this->translate(
+                             'This property is used in one or more templates and hence the item type cannot be changed.'
+                         )
+                     )
+                     ->setAttribute('disabled', true);
+            }
         }
 
         $this->addElement('submit', 'submit', [
@@ -223,6 +267,21 @@ class PropertyForm extends CompatForm
                     ))->openInModal()
                 );
         }
+    }
+
+    private function enumDatalist(): array
+    {
+        return $this->db->fetchPairs(
+            $this->db->select()->from('director_datalist', ['id', 'list_name'])->order('list_name')
+        );
+    }
+
+    private function fetchDatalist(int $id): array
+    {
+        return (array) $this->db->fetchRow(
+            $this->db->select()->from('director_datalist', ['*'])
+                ->where('id', $id)
+        );
     }
 
     /**
@@ -278,8 +337,37 @@ class PropertyForm extends CompatForm
     protected function onSuccess(): void
     {
         $values = $this->getValues();
+        $datalist = '';
+        $itemType = '';
+        $valueType = $values['value_type'];
+        if (str_starts_with($valueType, 'datalist-')) {
+            $datalist = $this->fetchDatalist($values['list']);
+            $itemType = $values['item_type'];
+            unset($values['list']);
+        } elseif ($valueType == 'dynamic-array') {
+            $itemType = $values['item_type'];
+        }
+
+        if (isset($values['list'])) {
+            unset($values['list']);
+        }
+
+        if (isset($values['item_type'])) {
+            unset($values['item_type']);
+        }
+
         if ($this->uuid === null) {
             $this->uuid = Uuid::uuid4();
+            $dynamicArrayItemType = [];
+            if ($itemType !== '') {
+                $dynamicArrayItemType = [
+                    'uuid' => Uuid::uuid4()->getBytes(),
+                    'key_name' => '0',
+                    'value_type' => $itemType,
+                    'parent_uuid' => $this->uuid->getBytes()
+                ];
+            }
+
             if ($this->field) {
                 $values = array_merge(
                     [
@@ -295,37 +383,26 @@ class PropertyForm extends CompatForm
                 );
             }
 
-            $dynamicArrayItemType = [];
-            if (isset($values['item_type'])) {
-                $dynamicArrayItemType = [
-                    'uuid' => Uuid::uuid4()->getBytes(),
-                    'key_name' => '0',
-                    'value_type' => $values['item_type'],
-                    'parent_uuid' => $this->uuid->getBytes()
-                ];
-
-                unset($values['item_type']);
-            }
-
             $this->db->insert('director_property', $values);
 
             if (! empty($dynamicArrayItemType)) {
                 $this->db->insert('director_property', $dynamicArrayItemType);
             }
+
+            if (! empty($datalist)) {
+                $this->db->insert('director_property_datalist', [
+                    'property_uuid' => $this->uuid->getBytes(),
+                    'list_uuid' => $datalist['uuid'],
+                ]);
+            }
         } else {
             unset($values['used_count']);
-            $itemType = '';
-            if (isset($values['item_type'])) {
-                $itemType = $values['item_type'];
-                unset($values['item_type']);
-            }
-
             $used = $this->getValue('used_count') > 0;
             if (! $used) {
                 $dbProperty = $this->fetchProperty($this->uuid);
                 if (
-                    $dbProperty['value_type'] !== $values['value_type']
-                    || $dbProperty['value_type'] === 'dynamic-array'
+                    $dbProperty['value_type'] !== $valueType
+                    || ($dbProperty['value_type'] === 'dynamic-array' || str_starts_with($dbProperty['value_type'], 'datalist-'))
                 ) {
                     $this->db->delete(
                         'director_property',
@@ -333,15 +410,31 @@ class PropertyForm extends CompatForm
                             Filter::where('parent_uuid', $this->uuid->getBytes()),
                         )
                     );
+
+                    $this->db->delete(
+                        'director_property_datalist',
+                        Filter::matchAll(
+                            Filter::where(
+                                'property_uuid', $this->uuid->getBytes()
+                            ),
+                        )
+                    );
                 }
 
-                if ($itemType && $values['value_type'] === 'dynamic-array') {
+                if ($itemType && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
                     $this->db->insert('director_property', [
                         'uuid' => Uuid::uuid4()->getBytes(),
                         'key_name' => '0',
                         'value_type' => $itemType,
                         'parent_uuid' => $this->uuid->getBytes()
                     ]);
+
+                    if (str_starts_with($valueType, 'datalist-')) {
+                        $this->db->insert('director_property_datalist', [
+                            'property_uuid' => $this->uuid->getBytes(),
+                            'list_uuid' => $datalist['uuid'],
+                        ]);
+                    }
                 }
             } else {
                 $this->db->getDbAdapter()->beginTransaction();
@@ -396,7 +489,6 @@ class PropertyForm extends CompatForm
                             if ($root['value_type'] !== 'dynamic-dictionary') {
                                 $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $varValue);
                             } else {
-                                unset($values['item_type']);
                                 foreach ($varValue as $key => $value) {
                                     if (! $this->isNestedField) {
                                         $this->updateObjectCustomVars([$storedKeyName], [$values['key_name']], $value);

@@ -1,12 +1,22 @@
 CREATE TABLE director_property (
   uuid binary(16) NOT NULL,
-  parent_uuid binary(16) NULL DEFAULT NULL,
+  parent_uuid binary(16) DEFAULT NULL,
   key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
-  value_type enum('string', 'number', 'bool', 'fixed-array', 'fixed-dictionary', 'dynamic-array', 'dynamic-dictionary') COLLATE utf8mb4_unicode_ci NOT NULL,
+  label varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  value_type enum(
+          'string',
+          'number',
+          'bool',
+          'fixed-array',
+          'dynamic-array',
+          'fixed-dictionary',
+          'dynamic-dictionary',
+          'datalist-strict',
+          'datalist-non-strict'
+      ) COLLATE utf8mb4_unicode_ci NOT NULL,
   description text,
   parent_uuid_v BINARY(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) STORED,
-  PRIMARY KEY (uuid)
+  PRIMARY KEY (uuid),
   UNIQUE KEY unique_name_parent_uuid (key_name, parent_uuid_v)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -120,6 +130,23 @@ CREATE TABLE icinga_user_property (
      ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+ALTER TABLE director_datalist
+    ADD UNIQUE KEY (uuid);
+
+CREATE TABLE director_property_datalist (
+ list_uuid binary(16) NOT NULL,
+ property_uuid binary(16) NOT NULL,
+ PRIMARY KEY (list_uuid, property_uuid),
+ CONSTRAINT director_list_property_list
+     FOREIGN KEY list (list_uuid)
+         REFERENCES director_datalist (uuid)
+         ON DELETE CASCADE
+         ON UPDATE CASCADE,
+ CONSTRAINT director_property_list_property
+     FOREIGN KEY property (property_uuid)
+         REFERENCES director_property (uuid)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
 ALTER TABLE icinga_host_var
   ADD COLUMN property_uuid binary(16);
 
@@ -140,4 +167,4 @@ ALTER TABLE icinga_user_var
 
 INSERT INTO director_schema_migration
 (schema_version, migration_time)
-VALUES (190, NOW());
+VALUES (191, NOW());

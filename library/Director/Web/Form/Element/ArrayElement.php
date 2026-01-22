@@ -2,20 +2,22 @@
 
 namespace Icinga\Module\Director\Web\Form\Element;
 
-use ipl\Html\Attribute;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\FormElement\TermInput\RegisteredTerm;
 
 class ArrayElement extends TermInput
 {
-    /** @var string  */
-    private $placeHolder = '';
+    /** @var string Placeholder text */
+    private $placeholder = '';
 
     protected $defaultAttributes = ['class' => 'array-input'];
 
-    public function setPlaceHolder(string $placeHolder): static
+    /** @var array<string, string> Predefined values used for validation and term labels ['value' => 'label'] */
+    private array $suggestedValues = [];
+
+    public function setPlaceHolder(string $placeholder): static
     {
-        $this->placeHolder = $placeHolder;
+        $this->placeholder = $placeholder;
 
         return $this;
     }
@@ -25,12 +27,12 @@ class ArrayElement extends TermInput
         parent::assemble();
 
         $valuePlaceHolder = $this->translate('Separate multiple values by comma.');
-        if ($this->placeHolder) {
-            $valuePlaceHolder = $this->placeHolder . '. ' . $valuePlaceHolder;
+        if ($this->placeholder) {
+            $valuePlaceHolder = $this->placeholder . '. ' . $valuePlaceHolder;
         }
 
         $this->getElement('value')
-             ->getAttributes()
+            ->getAttributes()
             ->registerAttributeCallback('placeholder', function () use ($valuePlaceHolder) {
                 return $valuePlaceHolder;
             });
@@ -53,7 +55,7 @@ class ArrayElement extends TermInput
     public function setValue($value)
     {
         if (is_array($value) && isset($value['value'])) {
-            $separatedTerms = $value['value'] ?? '';
+            $separatedTerms = $value['value'];
             parent::setValue($value);
         } elseif (is_array($value)) {
             $separatedTerms = implode(',', $value);
@@ -63,9 +65,22 @@ class ArrayElement extends TermInput
 
         $terms = [];
         foreach ($this->parseValue((string) $separatedTerms) as $term) {
-            $terms[] = new RegisteredTerm($term);
+            $term = new RegisteredTerm($term);
+            if (isset($this->suggestedValues[$term->getSearchValue()])) {
+                $term->setLabel($this->suggestedValues[$term->getSearchValue()]);
+
+            }
+
+            $terms[] = $term;
         }
 
         return $this->setTerms(...$terms);
+    }
+
+    public function setSuggestedValues(array $suggestedValues): self
+    {
+        $this->suggestedValues = $suggestedValues;
+
+        return $this;
     }
 }

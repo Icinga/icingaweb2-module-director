@@ -72,7 +72,7 @@ class PropertyController extends CompatController
 
         $property['used_count'] = $usedCount;
 
-        if ($property['value_type'] === 'dynamic-array') {
+        if ($property['value_type'] === 'dynamic-array' || str_starts_with($property['value_type'], 'datalist-')) {
             $itemTypeQuery = $db
                 ->select()->from('director_property', 'value_type')
                 ->where(
@@ -81,6 +81,18 @@ class PropertyController extends CompatController
                 );
 
             $property['item_type'] = $db->fetchOne($itemTypeQuery);
+        }
+
+        if (str_starts_with($property['value_type'], 'datalist-')) {
+            $datalistId = $db
+                ->select()->from(['dl' => 'director_datalist'], 'id')
+                ->join(['dpl' => 'director_property_datalist'], 'dpl.list_uuid = dl.uuid', [])
+                ->where(
+                    'dpl.property_uuid = ?',
+                    $uuid->getBytes()
+                );
+
+            $property['list'] = $db->fetchOne($datalistId);
         }
 
         $showFields = $this->showFields($property['value_type']);

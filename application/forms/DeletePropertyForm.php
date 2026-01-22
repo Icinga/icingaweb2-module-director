@@ -230,6 +230,10 @@ class DeletePropertyForm extends CompatForm
         $db->getDbAdapter()->beginTransaction();
         $prop = $this->property;
 
+        if (str_starts_with($prop['value_type'], 'datalist-')) {
+            $db->delete('director_property_datalist', Filter::where('property_uuid', $uuid->getBytes()));
+        }
+
         $db->delete('director_property', Filter::where('uuid', $uuid->getBytes()));
         $db->delete('director_property', Filter::where('parent_uuid', $uuid->getBytes()));
         $this->removeObjectCustomVars($prop, $this->parent);
