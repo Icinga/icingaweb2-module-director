@@ -36,23 +36,23 @@ class Health
         return $this;
     }
 
-    public function getCheck($name, $checkName = null)
+    public function getCheck(string $name, ?string $checkName = null): CheckResults
     {
-        if (array_key_exists($name, $this->checks)) {
-            $func = $this->checks[$name];
-            if ($checkName !== null) {
-                if ($name === 'deployment' || $name === 'config') {
-                    $check = new CheckResults('Invalid Parameter');
-                    $check->fail('--name is not supported with --check deployment or --check config');
-                } else {
-                    $check = $this->$func($checkName);
-                }
-            } else {
-                $check = $this->$func();
-            }
+        if (! array_key_exists($name, $this->checks)) {
+            return (new CheckResults('Invalid Parameter'))
+                ->fail("There is no check named '$name'");
+        }
+
+        if ($checkName !== null && ($name === 'deployment' || $name === 'config')) {
+            return (new CheckResults('Invalid Parameter'))
+                ->fail('--name is not supported with --check deployment or --check config');
+        }
+
+        $func = $this->checks[$name];
+        if ($checkName !== null) {
+            $check = $this->$func($checkName);
         } else {
-            $check = new CheckResults('Invalid Parameter');
-            $check->fail("There is no check named '$name'");
+            $check = $this->$func();
         }
 
         return $check;
