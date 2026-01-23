@@ -217,15 +217,20 @@ class Health
         return $check;
     }
 
-    public function checkDirectorJobs()
+    public function checkDirectorJobs(?string $checkName = null): CheckResults
     {
         $check = new CheckResults('Director Jobs');
-        $jobs = DirectorJob::loadAll($this->getConnection(), null, 'job_name');
-        if (empty($jobs)) {
-            $check->succeed('No Jobs have been defined');
-            return $check;
+        if ($checkName !== null) {
+            $jobs = [DirectorJob::load($checkName, $this->getConnection())];
+        } else {
+            $jobs = DirectorJob::loadAll($this->getConnection(), null, 'job_name');
+            if (empty($jobs)) {
+                $check->succeed('No Jobs have been defined');
+                return $check;
+            }
+
+            ksort($jobs);
         }
-        ksort($jobs);
 
         foreach ($jobs as $job) {
             $name = $job->get('job_name');
