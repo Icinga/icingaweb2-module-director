@@ -4,12 +4,14 @@ namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Forms\Validator\DatalistEntryValidator;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
-use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\HtmlElement;
+use ipl\Web\FormElement\TermInput;
+use ipl\Web\FormElement\TermInput\RegisteredTerm;
 use ipl\Web\Url;
 use PDO;
 use Ramsey\Uuid\Uuid;
@@ -109,19 +111,30 @@ class DictionaryItem extends FieldsetElement
             $this->addElement(
                 'number',
                 $valElementName,
-                ['label' => $label . ' (Number)', 'placeholder' => $placeholder, 'step' => 'any', 'class' => 'autosubmit']
+                [
+                    'label' => $label . ' (Number)',
+                    'placeholder' => $placeholder,
+                    'step' => 'any',
+                    'class' => 'autosubmit'
+                ]
             );
         } elseif ($type == 'bool') {
-            $this->addElement(new IplBoolean($valElementName, ['label' => $label, 'placeholder' => $placeholder, 'class' => 'autosubmit']));
+            $this->addElement(
+                new IplBoolean(
+                    $valElementName,
+                    ['label' => $label, 'placeholder' => $placeholder, 'class' => 'autosubmit']
+                )
+            );
         } elseif ($type === 'dynamic-array') {
             $this->addElement((new ArrayElement($valElementName))
                 ->setVerticalTermDirection()
                 ->setPlaceHolder($placeholder)
                 ->setLabel($label . ' (Array)'))
-                ->addAttributes(['class' => ['autosubmit']]);
+                ->addAttributes(['class' => 'autosubmit']);
         } elseif (str_starts_with($type, 'datalist-')) {
             $isStrict = substr($type, strlen('datalist-')) === 'strict';
             $itemType = self::fetchItemType($uuid);
+            $datalistEntries = self::fetchDataListEntries($uuid);
             if ($itemType === 'string') {
                 if ($isStrict) {
                     $this->addElement(
@@ -133,63 +146,69 @@ class DictionaryItem extends FieldsetElement
                             'class' => 'autosubmit',
                             'value' => '',
                             'options' => ['' => $this->translate('- Please choose -')]
-                                + $this->fetchDataListEntries($uuid)
+                                + $datalistEntries
                         ]
                     );
                 } else {
-                    $listEntriesInput = $this->createElement('text', 'var', [
-                        'autocomplete' => 'off',
-                        'label' => $label,
-                        'autosubmit' => true,
-                        'data-enrichment-type' => 'completion',
-                        'data-term-suggestions' => '#list-suggestions',
-                        'data-suggest-url' => Url::fromPath('director/suggestions/datalist-entry', [
-                            'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
-                            'showCompact' => true,
-                            '_disableLayout' => true
-                        ])
-                    ]);
-
-                    $this->addElement('hidden', 'var-search', ['ignore' => true]);
-                    $this->addElement('hidden', 'var-label', ['ignore' => true]);
-                    $this->registerElement($listEntriesInput);
-                    $this->decorate($listEntriesInput);
-
-                    $this->addHtml(
-                        $listEntriesInput,
-                        new HtmlElement('div', Attributes::create([
-                            'id' => 'list-suggestions',
-                            'class' => 'search-suggestions'
-                        ]))
-                    );
-                }
-            } elseif ($itemType === 'array') {
-                if ($isStrict) {
-                    $this->addElement(
-                        'select',
-                        $valElementName,
-                        [
-                            'label' => $label,
-                            'placeholder' => $placeholder,
-                            'class' => 'autosubmit',
-                            'value' => '',
-                            'multiple' => true,
-                            'options' => $this->fetchDataListEntries($uuid)
-                        ]
-                    );
-                } else {
-                    $listEntriesInput = (new ArrayElement('var'))
-                        ->setRequired()
+                    $listEntriesInput = (new TermInput($valElementName))
                         ->setLabel($label)
+                        ->setLimit(1)
                         ->setVerticalTermDirection()
                         ->setSuggestionUrl(Url::fromPath('director/suggestions/datalist-entry', [
                             'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
                             'showCompact' => true,
                             '_disableLayout' => true
                         ]));
+                    $this->registerElement($listEntriesInput);
+                    $termCallback = function (array $terms) use ($datalistEntries, &$listEntriesInput) {
+                        foreach ($terms as $term) {
+                            /** @var RegisteredTerm $term */
+                            $term->setLabel($datalistEntries[$term->getSearchValue()] ?? $term->getSearchValue());
+                            $term->setSearchValue($term->getSearchValue());
+                        }
+                    };
+
+//                    if (empty($listEntriesInput->getTerms())) {
+//                        $listEntriesInput->hideSearchInput(false);
+//                    } else {
+//                        $listEntriesInput->hideSearchInput();
+//                    }
+
+                    $listEntriesInput->setPlaceholder('');
+                    $listEntriesInput
+                        ->on(TermInput::ON_ENRICH, $termCallback)
+                        ->on(TermInput::ON_ADD, $termCallback)
+                        ->on(TermInput::ON_PASTE, $termCallback)
+                        ->on(TermInput::ON_SAVE, $termCallback);
 
                     $this->addElement($listEntriesInput);
                 }
+            } elseif ($itemType === 'array') {
+                $listEntriesInput = (new ArrayElement($valElementName))
+                    ->setSuggestedValues($datalistEntries)
+                    ->setLabel($label)
+                    ->setVerticalTermDirection()
+                    ->setSuggestionUrl(Url::fromPath('director/suggestions/datalist-entry', [
+                        'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
+                        'showCompact' => true,
+                        '_disableLayout' => true
+                    ]));
+
+                if ($isStrict) {
+                    $termValidator = function (array $terms) use ($datalistEntries) {
+                        (new DatalistEntryValidator())
+                            ->setDatalistEntries($datalistEntries)
+                            ->isValid($terms);
+                    };
+
+                    $listEntriesInput
+                        ->on(ArrayElement::ON_ENRICH, $termValidator)
+                        ->on(ArrayElement::ON_ADD, $termValidator)
+                        ->on(ArrayElement::ON_PASTE, $termValidator)
+                        ->on(ArrayElement::ON_SAVE, $termValidator);
+                }
+
+                $this->addElement($listEntriesInput);
             }
         } elseif ($type === 'fixed-dictionary' || $type === 'fixed-array') {
             $this->addElement(
@@ -230,7 +249,7 @@ class DictionaryItem extends FieldsetElement
         if (
             $property['value_type'] === 'dynamic-array'
             || (
-                $property['value_type'] === 'datalist-non-strict'
+                in_array($property['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
                 && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'array'
             )
         ) {
@@ -276,17 +295,7 @@ class DictionaryItem extends FieldsetElement
             $property['value_type'] === 'datalist-non-strict'
             && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'string'
         ) {
-            $dataListEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
-            if (isset($dataListEntries[$property['value']])) {
-                $values['var'] = $dataListEntries[$property['value']];
-                $values['var-search'] = $property['value'];
-                $values['var-label'] = $dataListEntries[$property['value']];
-            } else {
-                $varValue = $property['value'] ?? '';
-                $values['var'] = $varValue;
-                $values['var-search'] = $varValue;
-                $values['var-label'] = $varValue;
-            }
+            $values['var'] = $property['value'] ?? '';
         } else {
             $values['var'] = $property['value'] ?? '';
             $values['inherited'] = $property['inherited'] ?? '';
@@ -381,11 +390,6 @@ class DictionaryItem extends FieldsetElement
                 ksort($value);
                 $values['value'] = array_values($value);
             }
-        } elseif (
-            $this->getElement('type')->getValue() === 'datalist-non-strict'
-            && self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string'
-        ) {
-            $values['value'] = $this->getValue('var-search');
         } else {
             if (! empty($this->getElement('inherited')->getValue())) {
                 $values['value'] = $itemValue->getValue();
