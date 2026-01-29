@@ -447,7 +447,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         }
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    public function getRenderingZone(?IcingaConfig $config = null)
     {
         if ($this->get('host_id') === null) {
             if ($hostname = $this->get('host')) {

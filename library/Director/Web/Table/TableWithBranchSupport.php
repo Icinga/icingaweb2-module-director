@@ -13,10 +13,10 @@ trait TableWithBranchSupport
     /**
      * Convenience method, only UUID is required
      *
-     * @param Branch|null $branch
+     * @param ?Branch $branch
      * @return $this
      */
-    public function setBranch(Branch $branch = null)
+    public function setBranch(?Branch $branch = null)
     {
         if ($branch && $branch->isBranch()) {
             $this->setBranchUuid($branch->getUuid());
@@ -25,7 +25,7 @@ trait TableWithBranchSupport
         return $this;
     }
 
-    public function setBranchUuid(UuidInterface $uuid = null)
+    public function setBranchUuid(?UuidInterface $uuid = null)
     {
         $this->branchUuid = $uuid;
 
