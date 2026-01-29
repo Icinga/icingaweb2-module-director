@@ -73,8 +73,8 @@ if ($this->getConfig()->get('frontend', 'disabled', 'no') !== 'yes') {
     $this->provideHook('cube/IcingaDbActions', IcingaDbCubeLinks::class);
 }
 
-$this->provideHook('Icingadb/CustomVarRenderer', alwaysRun: true);
-$this->provideHook('Monitoring/CustomVarRenderer', alwaysRun: true);
+$this->provideHook('Icingadb/CustomVarRenderer', null, true);
+$this->provideHook('Monitoring/CustomVarRenderer', null, true);
 
 $directorHooks = [
     'director/DataType' => [
