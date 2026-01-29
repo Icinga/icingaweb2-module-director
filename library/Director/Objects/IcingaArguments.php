@@ -308,7 +308,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,
-        array $chosenProperties = null,
+        ?array $chosenProperties = null,
         $resolveIds = true
     ) {
         if ($chosenProperties !== null) {

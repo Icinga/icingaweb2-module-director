@@ -27,7 +27,7 @@ class ServiceFinder
     /** @var \Icinga\Module\Director\Db */
     protected $db;
 
-    public function __construct(IcingaHost $host, Auth $auth = null)
+    public function __construct(IcingaHost $host, ?Auth $auth = null)
     {
         $this->host = $host;
         $this->auth = $auth;

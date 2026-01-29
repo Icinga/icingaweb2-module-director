@@ -144,7 +144,7 @@ abstract class QuickBaseForm extends Zend_Form implements ValidHtml
         return $this;
     }
 
-    protected function loadForm($name, Module $module = null)
+    protected function loadForm($name, ?Module $module = null)
     {
         if ($module === null) {
             $module = $this->icingaModule;
