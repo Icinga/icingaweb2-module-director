@@ -12,7 +12,7 @@ class SyncRuleTabs extends Tabs
 
     protected $rule;
 
-    public function __construct(SyncRule $rule = null)
+    public function __construct(?SyncRule $rule = null)
     {
         $this->rule = $rule;
         // We are not a BaseElement, not yet

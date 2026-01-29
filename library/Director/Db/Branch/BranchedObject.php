@@ -328,7 +328,7 @@ class BranchedObject
         Db $connection,
         $table,
         UuidInterface $uuid,
-        UuidInterface $branchUuid = null
+        ?UuidInterface $branchUuid = null
     ) {
         $class = DbObjectTypeRegistry::classByType($table);
         if ($row = static::optionalTableRowByUuid($connection, $table, $uuid)) {
@@ -360,7 +360,7 @@ class BranchedObject
         Db $connection,
         $table,
         UuidInterface $uuid,
-        UuidInterface $branchUuid = null
+        ?UuidInterface $branchUuid = null
     ) {
         if (static::optionalTableRowByUuid($connection, $table, $uuid)) {
             return true;

@@ -1839,11 +1839,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     /**
      * @param $zoneId
-     * @param IcingaConfig|null $config
+     * @param ?IcingaConfig $config
      * @return string
      * @throws NotFoundError
      */
-    protected function getNameForZoneId($zoneId, IcingaConfig $config = null)
+    protected function getNameForZoneId($zoneId, ?IcingaConfig $config = null)
     {
         // TODO: this is still ugly.
         if ($config === null) {
@@ -1857,7 +1857,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $config->getZoneName($zoneId);
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    public function getRenderingZone(?IcingaConfig $config = null)
     {
         if ($this->hasUnresolvedRelatedProperty('zone_id')) {
             return $this->get('zone');
@@ -1884,7 +1884,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->getDefaultZone($config);
     }
 
-    protected function getDefaultZone(IcingaConfig $config = null)
+    protected function getDefaultZone(?IcingaConfig $config = null)
     {
         if ($this->prefersGlobalZone()) {
             return $this->connection->getDefaultGlobalZoneName();
@@ -2649,11 +2649,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @param $type
      * @param array $properties
-     * @param Db|null $db
+     * @param ?Db $db
      *
      * @return IcingaObject
      */
-    public static function createByType($type, $properties = [], Db $db = null)
+    public static function createByType($type, $properties = [], ?Db $db = null)
     {
         /** @var IcingaObject $class */
         $class = DbObjectTypeRegistry::classByType($type);
@@ -2751,12 +2751,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $class::loadAll($db, $query, 'object_name');
     }
 
-    public static function fromJson($json, Db $connection = null)
+    public static function fromJson($json, ?Db $connection = null)
     {
         return static::fromPlainObject(json_decode($json), $connection);
     }
 
-    public static function fromPlainObject($plain, Db $connection = null)
+    public static function fromPlainObject($plain, ?Db $connection = null)
     {
         return static::create((array) $plain, $connection);
     }
@@ -2860,7 +2860,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @param bool $resolved
      * @param bool $skipDefaults
-     * @param array|null $chosenProperties
+     * @param ?array $chosenProperties
      * @param bool $resolveIds
      * @param bool $keepId
      * @return object
@@ -2869,7 +2869,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,
-        array $chosenProperties = null,
+        ?array $chosenProperties = null,
         $resolveIds = true,
         $keepId = false
     ) {
@@ -3135,14 +3135,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @param bool $resolved
      * @param bool $skipDefaults
-     * @param array|null $chosenProperties
+     * @param ?array $chosenProperties
      * @return string
      * @throws NotFoundError
      */
     public function toJson(
         $resolved = false,
         $skipDefaults = false,
-        array $chosenProperties = null
+        ?array $chosenProperties = null
     ) {
 
         return json_encode($this->toPlainObject($resolved, $skipDefaults, $chosenProperties));

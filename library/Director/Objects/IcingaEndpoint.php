@@ -91,7 +91,7 @@ class IcingaEndpoint extends IcingaObject
         return $client;
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    public function getRenderingZone(?IcingaConfig $config = null)
     {
         try {
             if ($zone = $this->getResolvedRelated('zone')) {

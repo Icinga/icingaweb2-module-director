@@ -364,9 +364,9 @@ class HostController extends ObjectController
 
     /**
      * @param IcingaHost $host
-     * @param IcingaHost|null $affectedHost
+     * @param ?IcingaHost $affectedHost
      */
-    protected function addHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null, $roService = null)
+    protected function addHostServiceSetTables(IcingaHost $host, ?IcingaHost $affectedHost = null, $roService = null)
     {
         $db = $this->db();
         if ($affectedHost === null) {

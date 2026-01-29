@@ -26,7 +26,7 @@ class ObjectTabs extends Tabs
         'endpoint'
     ];
 
-    public function __construct($type, Auth $auth, IcingaObject $object = null)
+    public function __construct($type, Auth $auth, ?IcingaObject $object = null)
     {
         $this->type = $type;
         $this->auth = $auth;
