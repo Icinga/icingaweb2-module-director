@@ -7,9 +7,11 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariableArray;
 use Icinga\Module\Director\Daemon\Logger;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaTemplateResolver;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
@@ -24,12 +26,16 @@ use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\Orm\Model;
+use PDO;
 use Throwable;
 
 class CustomVarRenderer extends CustomVarRendererHook
 {
     /** @var array Related datafield configuration */
     protected $fieldConfig = [];
+
+    /** @var array Related custom property configuration */
+    protected $customPropertyConfig = [];
 
     /** @var array Related datalists and their keys and values */
     protected $datalistMaps = [];
@@ -194,8 +200,17 @@ class CustomVarRenderer extends CustomVarRendererHook
                 $fields = (new IcingaObjectFieldLoader($directorServiceObj))->getFields();
             }
 
+            $customProperties = [];
             if (empty($fields)) {
-                return false;
+                if ($service === null) {
+                    $customProperties = $this->getObjectCustomProperties($directorHostObj);
+                } else {
+                    $customProperties = $this->getObjectCustomProperties($directorServiceObj);
+                }
+
+                if (empty($customProperties)) {
+                    return false;
+                }
             }
 
             $fieldsWithDataLists = [];
@@ -241,6 +256,42 @@ class CustomVarRenderer extends CustomVarRendererHook
                 }
             }
 
+            $customPropertiesWithDatalists = [];
+            foreach ($customProperties as $customProperty) {
+                $this->customPropertyConfig[$customProperty['key_name']] = ['label' => $customProperty['label']];
+
+                if (str_starts_with($customProperty['value_type'], 'datalist-')) {
+                    $customPropertiesWithDatalists[$customProperty['uuid']] = $customProperty;
+                } elseif (str_starts_with($customProperty['value_type'], 'dictionary-')) {
+                    $this->dictionaryNames[] = $customProperty['key_name'];
+                }
+            }
+
+            if (! empty($customPropertiesWithDatalists)) {
+                $dataListEntries = $db->select()->from(
+                    ['dpd' => 'director_property_datalist'],
+                    [
+                        'property_uuid' => 'dpd.property_uuid',
+                        'entry_name' => 'dde.entry_name',
+                        'entry_value' => 'dde.entry_value'
+                    ]
+                )->join(
+                    ['dd' => 'director_datalist'],
+                    'dd.uuid = dpd.list_uuid',
+                    []
+                )->join(
+                    ['dde' => 'director_datalist_entry'],
+                    'dd.id = dde.list_id',
+                    []
+                )->where('dpd.property_uuid', array_keys($customPropertiesWithDatalists));
+
+                foreach ($dataListEntries as $dataListEntry) {
+                    $customProperty = $customPropertiesWithDatalists[$dataListEntry->property_uuid];
+                    $this->datalistMaps[$customProperty['key_name']][$dataListEntry->entry_name]
+                        = $dataListEntry->entry_value;
+                }
+            }
+
             return true;
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
@@ -249,16 +300,77 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
     }
 
+    /**
+     * Get custom properties for the host.
+     *
+     * @return array
+     */
+    protected function getObjectCustomProperties(IcingaObject $object, bool $isOverrideVars = false): array
+    {
+        if ($object->uuid === null) {
+            return [];
+        }
+
+        $type = $object->getShortTableName();
+        $parents = $object->listAncestorIds();
+
+        $uuids = [];
+        $db = $this->db();
+
+        $objectClass = DbObjectTypeRegistry::classByType($type);
+        foreach ($parents as $parent) {
+            $uuids[] = $objectClass::loadWithAutoIncId($parent, $db)->get('uuid');
+        }
+
+        $uuids[] = $object->get('uuid');
+        $query = $db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    $type . '_uuid' => 'iop.' . $type . '_uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'children' => 'COUNT(cdp.uuid)'
+                ]
+            )
+            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
+            ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
+            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+            ->order(
+                "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
+                . " 'dynamic-array',  'fixed-dictionary', 'dynamic-dictionary')"
+            )
+            ->order('children')
+            ->order('key_name');
+
+        $result = [];
+
+        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            $result[$row['key_name']] = $row;
+        }
+
+        return $result;
+    }
+
     public function renderCustomVarKey(string $key)
     {
         try {
-            if (isset($this->fieldConfig[$key]['label'])) {
-                return new HtmlElement(
-                    'span',
-                    Attributes::create(['title' => $this->fieldConfig[$key]['label'] . " [$key]"]),
-                    Text::create($this->fieldConfig[$key]['label'])
-                );
+            $label = $this->fieldConfig[$key]['label']
+                ?? $this->customPropertyConfig[$key]['label']
+                ?? null;
+            if ($label === null) {
+                return null;
             }
+
+            return new HtmlElement(
+                'span',
+                Attributes::create(['title' => $label . " [$key]"]),
+                Text::create($label)
+            );
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
         }
@@ -269,8 +381,8 @@ class CustomVarRenderer extends CustomVarRendererHook
     public function renderCustomVarValue(string $key, $value)
     {
         try {
-            if (isset($this->fieldConfig[$key])) {
-                if ($this->fieldConfig[$key]['visibility'] === 'hidden') {
+            if (isset($this->fieldConfig[$key]) || isset($this->customPropertyConfig[$key])) {
+                if (isset($this->fieldConfig[$key]) && $this->fieldConfig[$key]['visibility'] === 'hidden') {
                     return '***';
                 }
 
