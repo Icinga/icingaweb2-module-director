@@ -92,7 +92,7 @@ class Db extends DbConnection
         $db->query($db->quoteInto('SET TIME ZONE INTERVAL ? HOUR TO MINUTE', $this->getTimezoneOffset()));
     }
 
-    public function countActivitiesSinceLastDeployedConfig(IcingaObject $object = null)
+    public function countActivitiesSinceLastDeployedConfig(?IcingaObject $object = null)
     {
         $db = $this->db();
 

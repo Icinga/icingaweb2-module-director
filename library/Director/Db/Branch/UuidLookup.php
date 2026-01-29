@@ -24,8 +24,8 @@ class UuidLookup
         Branch $branch,
         ?string $objectType = null,
         $key = null,
-        IcingaHost $host = null,
-        IcingaServiceSet $set = null
+        ?IcingaHost $host = null,
+        ?IcingaServiceSet $set = null
     ) {
         $db = $connection->getDbAdapter();
         $query = $db->select()->from('icinga_service', 'uuid');

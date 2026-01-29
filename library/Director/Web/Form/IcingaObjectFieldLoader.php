@@ -183,11 +183,11 @@ class IcingaObjectFieldLoader
     /**
      * Get the form elements for our fields
      *
-     * @param DirectorObjectForm $form Optional
+     * @param ?DirectorObjectForm $form Optional
      *
      * @return ZfElement[]
      */
-    public function getElements(DirectorObjectForm $form = null)
+    public function getElements(?DirectorObjectForm $form = null)
     {
         if ($this->elements === null) {
             $this->elements = $this->createElements($form);
@@ -200,11 +200,11 @@ class IcingaObjectFieldLoader
     /**
      * Prepare the form elements for our fields
      *
-     * @param DirectorObjectForm $form Optional
+     * @param ?DirectorObjectForm $form Optional
      *
      * @return self
      */
-    public function prepareElements(DirectorObjectForm $form = null)
+    public function prepareElements(?DirectorObjectForm $form = null)
     {
         if ($this->object->supportsFields()) {
             $this->getElements($form);

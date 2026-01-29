@@ -11,7 +11,7 @@ class ObjectsTableHostTemplateChoice extends ObjectsTable
         'templates'   => 'GROUP_CONCAT(t.object_name)'
     ];
 
-    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
+    protected function applyObjectTypeFilter(ZfSelect $query, ?ZfSelect $right = null)
     {
         return $query;
     }

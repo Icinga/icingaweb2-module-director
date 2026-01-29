@@ -69,7 +69,7 @@ class IcingaZone extends IcingaObject
         self::$globalZoneNames = $names;
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    public function getRenderingZone(?IcingaConfig $config = null)
     {
         // If the zone has a parent zone...
         if ($this->get('parent_id')) {

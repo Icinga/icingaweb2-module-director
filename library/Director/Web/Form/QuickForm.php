@@ -376,7 +376,7 @@ abstract class QuickForm extends QuickBaseForm
         return $this;
     }
 
-    public function handleRequest(Request $request = null)
+    public function handleRequest(?Request $request = null)
     {
         if ($request === null) {
             $request = $this->getRequest();

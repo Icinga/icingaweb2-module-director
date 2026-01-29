@@ -190,7 +190,7 @@ class ObjectsTable extends ZfQueryBasedTable
         return [];
     }
 
-    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
+    protected function applyObjectTypeFilter(ZfSelect $query, ?ZfSelect $right = null)
     {
         if ($right) {
             $right->where(
