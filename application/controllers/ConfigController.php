@@ -382,7 +382,7 @@ class ConfigController extends ActionController
                     'left',
                     $leftSum,
                     ['class' => ['autosubmit', 'config-diff']],
-                    [null => $this->translate('- please choose -')] + $configs
+                    ['' => $this->translate('- please choose -')] + $configs
                 )),
                 Link::create(
                     Icon::create('flapping'),
@@ -393,7 +393,7 @@ class ConfigController extends ActionController
                     'right',
                     $rightSum,
                     ['class' => ['autosubmit', 'config-diff']],
-                    [null => $this->translate('- please choose -')] + $configs
+                    ['' => $this->translate('- please choose -')] + $configs
                 )),
             ])
         );
