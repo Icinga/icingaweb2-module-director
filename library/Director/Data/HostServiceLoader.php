@@ -118,10 +118,10 @@ class HostServiceLoader
      * Duplicates Logic in HostController
      *
      * @param IcingaHost $host
-     * @param IcingaHost|null $affectedHost
+     * @param ?IcingaHost $affectedHost
      * @return IcingaServiceSetServiceTable[]
      */
-    protected function getHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null)
+    protected function getHostServiceSetTables(IcingaHost $host, ?IcingaHost $affectedHost = null)
     {
         $tables = [];
         $db = $this->connection;
