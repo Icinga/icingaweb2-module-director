@@ -119,7 +119,7 @@ abstract class QuickBaseForm extends Zend_Form implements ValidHtml
             $nullLabel = $this->translate('- please choose -');
         }
 
-        return array(null => $nullLabel) + $enum;
+        return ['' => $nullLabel] + $enum;
     }
 
     protected function handleOptions($options = null)

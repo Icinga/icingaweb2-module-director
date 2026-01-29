@@ -16,7 +16,7 @@ class IcingaCommandForm extends DirectorObjectForm
         $this->addElement('select', 'methods_execute', array(
             'label' => $this->translate('Command type'),
             'multiOptions' => array(
-                null                 => '- please choose -',
+                '' => '- please choose -',
                 $this->translate('Plugin commands') => array(
                     'PluginCheck'        => 'Plugin Check Command',
                     'PluginNotification' => 'Notification Plugin Command',

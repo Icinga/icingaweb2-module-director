@@ -42,7 +42,7 @@ class DataTypeDirectorObject extends DataTypeHook
             $params = ['multiOptions' => $enum];
         } else {
             $params = ['multiOptions' => [
-                    null => $form->translate('- please choose -'),
+                    '' => $form->translate('- please choose -')
                 ] + $enum];
             $elementType = 'select';
         }

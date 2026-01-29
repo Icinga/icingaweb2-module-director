@@ -622,9 +622,9 @@ abstract class DirectorObjectForm extends DirectorForm
                 $inherited = $inherited ? 'y' : 'n';
             }
             if (is_scalar($inherited) && array_key_exists($inherited, $multi)) {
-                $multi[null] = $multi[$inherited] . $txtInherited;
+                $multi[''] = $multi[$inherited] . $txtInherited;
             } else {
-                $multi[null] = $this->stringifyInheritedValue($inherited) . $txtInherited;
+                $multi[''] = $this->stringifyInheritedValue($inherited) . $txtInherited;
             }
             $el->setMultiOptions($multi);
         } elseif ($el instanceof ExtensibleSet) {
@@ -1092,7 +1092,7 @@ abstract class DirectorObjectForm extends DirectorForm
     public function optionallyAddFromEnum($enum)
     {
         return array(
-            null => $this->translate('- click to add more -')
+            '' => $this->translate('- click to add more -')
         ) + $enum;
     }
 
