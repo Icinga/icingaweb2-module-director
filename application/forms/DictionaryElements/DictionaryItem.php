@@ -7,11 +7,10 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Forms\Validator\DatalistEntryValidator;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\HtmlElement;
-use ipl\Web\FormElement\TermInput;
-use ipl\Web\FormElement\TermInput\RegisteredTerm;
 use ipl\Web\Url;
 use PDO;
 use Ramsey\Uuid\Uuid;
@@ -150,38 +149,42 @@ class DictionaryItem extends FieldsetElement
                         ]
                     );
                 } else {
-                    $listEntriesInput = (new TermInput($valElementName))
-                        ->setLabel($label)
-                        ->setLimit(1)
-                        ->setVerticalTermDirection()
-                        ->setSuggestionUrl(Url::fromPath('director/suggestions/datalist-entry', [
+                    $fieldsetName = $this->getName();
+                    $listEntriesInput = $this->createElement('text', $valElementName, [
+                        'autocomplete' => 'off',
+                        'ignore' => true,
+                        'label' => $label,
+                        'data-auto-submit' => true,
+                        'data-enrichment-type' => 'completion',
+                        'data-term-suggestions' => "#{$valElementName}-suggestions-{$fieldsetName}",
+                        'data-suggest-url' =>Url::fromPath('director/suggestions/datalist-entry', [
                             'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
                             'showCompact' => true,
                             '_disableLayout' => true
-                        ]));
+                        ])
+                    ]);
+
+                    $fieldset = new HtmlElement('fieldset');
+
+                    $searchInput = $this->createElement('hidden', "{$valElementName}-search", ['ignore' => true]);
+                    $this->registerElement($searchInput);
+                    $fieldset->addHtml($searchInput);
+                    $labelInput = $this->createElement('hidden', "{$valElementName}-label", ['ignore' => true]);
+                    $this->registerElement($labelInput);
+                    $fieldset->addHtml($labelInput);
+
                     $this->registerElement($listEntriesInput);
-                    $termCallback = function (array $terms) use ($datalistEntries, &$listEntriesInput) {
-                        foreach ($terms as $term) {
-                            /** @var RegisteredTerm $term */
-                            $term->setLabel($datalistEntries[$term->getSearchValue()] ?? $term->getSearchValue());
-                            $term->setSearchValue($term->getSearchValue());
-                        }
-                    };
+                    $this->decorate($listEntriesInput);
 
-//                    if (empty($listEntriesInput->getTerms())) {
-//                        $listEntriesInput->hideSearchInput(false);
-//                    } else {
-//                        $listEntriesInput->hideSearchInput();
-//                    }
+                    $fieldset->addHtml(
+                        $listEntriesInput,
+                        new HtmlElement('div', Attributes::create([
+                            'id' => "{$valElementName}-suggestions-{$fieldsetName}",
+                            'class' => 'search-suggestions'
+                        ]))
+                    );
 
-                    $listEntriesInput->setPlaceholder('');
-                    $listEntriesInput
-                        ->on(TermInput::ON_ENRICH, $termCallback)
-                        ->on(TermInput::ON_ADD, $termCallback)
-                        ->on(TermInput::ON_PASTE, $termCallback)
-                        ->on(TermInput::ON_SAVE, $termCallback);
-
-                    $this->addElement($listEntriesInput);
+                    $this->addHtml($fieldset);
                 }
             } elseif ($itemType === 'array') {
                 $listEntriesInput = (new ArrayElement($valElementName))
@@ -295,7 +298,13 @@ class DictionaryItem extends FieldsetElement
             $property['value_type'] === 'datalist-non-strict'
             && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'string'
         ) {
-            $values['var'] = $property['value'] ?? '';
+            $dataListEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
+            $value = $property['value'] ?? '';
+            if (isset($dataListEntries[$value])) {
+                $values['var'] = $dataListEntries[$value];
+            } else {
+                $values['var'] = $value;
+            }
         } else {
             $values['var'] = $property['value'] ?? '';
             $values['inherited'] = $property['inherited'] ?? '';
@@ -390,6 +399,11 @@ class DictionaryItem extends FieldsetElement
                 ksort($value);
                 $values['value'] = array_values($value);
             }
+        } elseif (
+            $this->getElement('type')->getValue() === 'datalist-non-strict'
+            && self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string'
+        ) {
+            $values['value'] = $this->getElement('var-search')->getValue();
         } else {
             if (! empty($this->getElement('inherited')->getValue())) {
                 $values['value'] = $itemValue->getValue();
