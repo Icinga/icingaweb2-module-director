@@ -79,7 +79,7 @@ class BasketSnapshotCustomPropertyResolver
      */
     public function relinkObjectCustomProperties(IcingaObject $new, $object)
     {
-        if (! $new->supportsFields() || ! isset($object->properties)) {
+        if (! $new->supportsCustomProperties() || ! isset($object->properties)) {
             return;
         }
 
