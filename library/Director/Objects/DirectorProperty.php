@@ -27,10 +27,15 @@ class DirectorProperty extends DbObject
         'description'   => null
     ];
 
+    protected $binaryProperties = [
+        'parent_uuid'
+    ];
+
     /** @var DirectorProperty[] */
     private $items = [];
 
-    private $object;
+    /** @var ?DirectorDatalist */
+    private $datalist = null;
 
     protected function setDbProperties($properties)
     {
@@ -46,16 +51,21 @@ class DirectorProperty extends DbObject
     {
         $plain = (object) $this->getProperties();
         $uuid = $this->get('uuid');
-        $parentUuid = $this->get('parent_uuid');
         if ($uuid) {
             $uuid = Uuid::fromBytes($uuid);
-            unset($plain->parent_uuid_v); // A virtual added for composite unique constraint
             $plain->uuid = $uuid->toString();
             $plain->items = $this->fetchChildren();
-        }
 
-        if ($parentUuid) {
-            $plain->parent_uuid = Uuid::fromBytes($parentUuid)->toString();
+            if (str_starts_with($plain->value_type, 'datalist-')) {
+                $query = $this->db->select()->from(['dd' => 'director_datalist'], ['list_name'])
+                    ->join(['dpdl' => 'director_property_datalist'], 'dpdl.list_uuid = dd.uuid', [])
+                    ->where($this->db->quoteInto('dpdl.property_uuid = ?', $uuid->getBytes()));
+                $plain->datalist = $this->db->fetchOne($query);
+            }
+
+            if ($plain->parent_uuid !== null) {
+                $plain->parent_uuid = Uuid::fromBytes($plain->parent_uuid)->toString();
+            }
         }
 
         return $plain;
@@ -91,11 +101,38 @@ class DirectorProperty extends DbObject
                           );
 
         foreach (DirectorProperty::loadAll($this->connection, $query) as $item) {
-            $item->items = $item->getItems();
+            if (isset($item->parent_uuid_v)) {
+                unset($item->parent_uuid_v);
+            }
+
+            foreach ($item->getItems() as $nestedItem) {
+                if (isset($nestedItem->parent_uuid_v)) {
+                    unset($nestedItem->parent_uuid_v);
+                }
+
+                $item->items[] = $nestedItem;
+            }
+
             $this->items[] = $item;
         }
 
         return $this->items;
+    }
+
+    public function getDatalist(): ?DirectorDatalist
+    {
+        if ($this->datalist) {
+            return $this->datalist;
+        }
+
+        if (str_starts_with($this->get('value_type'), 'datalist-')) {
+            $query = $this->db->select()->from(['dd' => 'director_datalist'], ['list_name'])
+                ->join(['dpdl' => 'director_property_datalist'], 'dpdl.list_uuid = dd.uuid', [])
+                ->where($this->db->quoteInto('dpdl.property_uuid = ?', $this->get('uuid')));
+            $this->datalist = DirectorDatalist::load($this->db->fetchOne($query), $this->connection);
+        }
+
+        return $this->datalist;
     }
 
     public static function fromDbRow($row, Db $connection)
@@ -117,10 +154,21 @@ class DirectorProperty extends DbObject
     {
         $dba = $db->getDbAdapter();
         $uuid = $plain->uuid ?? null;
+        $items = [];
         if ($uuid) {
             $uuid = Uuid::fromString($uuid);
             $items = $plain->items ?? [];
             unset($plain->items);
+            $datalist = null;
+            if (isset($plain->datalist)) {
+                $datalist = DirectorDatalist::loadOptional($plain->datalist, $db);
+                if (! $datalist && is_string($plain->datalist)) {
+                    $datalist = DirectorDatalist::create(['list_name' => $plain->datalist], $db);
+                }
+
+                unset($plain->datalist);
+            }
+
             $candidate = DirectorProperty::loadWithUniqueId($uuid, $db);
             if ($candidate) {
                 assert($candidate instanceof DirectorProperty);
@@ -136,17 +184,70 @@ class DirectorProperty extends DbObject
         foreach ($candidates as $candidate) {
             $export = $candidate->export();
             CompareBasketObject::normalize($export);
+
+            if (isset($export->parent_uuid)) {
+                $export->parent = DirectorProperty::loadWithUniqueId(Uuid::fromString($export->parent_uuid), $db)
+                    ->get('key_name');
+                unset($export->parent_uuid);
+            }
+
+            $plainParentUuid = $plain->parent_uuid ?? null;
+            if (isset($plain->parent_uuid)) {
+                $parent = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($plain->parent_uuid), $db);
+                if ($parent === null) {
+                    unset($plain->parent);
+                    $plain->parent_uuid = $plainParentUuid;
+
+                    continue;
+                }
+
+                $plain->parent = $parent->get('key_name');
+                unset($plain->parent_uuid);
+            }
+
             unset($export->uuid);
+
             if (CompareBasketObject::equals($export, $plain)) {
                 return $candidate;
             }
+
+            if ($plainParentUuid !== null) {
+                unset($plain->parent);
+                $plain->parent_uuid = $plainParentUuid;
+            }
         }
 
-        return static::create((array) $plain, $db);
+        $property = static::create((array) $plain, $db);
+
+        if ($datalist) {
+            $property->datalist = $datalist;
+        }
+
+        if ($items) {
+            $property->items = $property->importItems($items, $db);
+        }
+
+        return $property;
+    }
+
+    protected function onStore()
+    {
+        if ($this->getDatalist()) {
+            $this->db->insert(
+                'director_property_datalist',
+                ['property_uuid' => $this->get('uuid'), 'list_uuid' => $this->datalist->get('uuid')]
+            );
+        }
+
+        parent::onStore();
     }
 
     private function importItems(array $items, Db $db): array
     {
+        if (empty($items)) {
+            return [];
+        }
+
         $itemCandidates = [];
         foreach ($items as $key => $value) {
             $itemUUid = $value->uuid ?? null;
@@ -162,7 +263,7 @@ class DirectorProperty extends DbObject
                     }
 
                     $itemCandidate->setProperties((array) $value);
-                    $itemCandidate->items = $this->importItems($nestedItems, $db);
+                    $itemCandidate->items = $this->importItems((array) $nestedItems, $db);
                     $itemCandidates[$key] = $itemCandidate;
                 } else {
                     if (isset($value->parent_uuid)) {
@@ -175,15 +276,5 @@ class DirectorProperty extends DbObject
         }
 
         return $itemCandidates;
-    }
-
-    protected function setObject(IcingaObject $object)
-    {
-        $this->object = $object;
-    }
-
-    protected function getObject()
-    {
-        return $this->object;
     }
 }
