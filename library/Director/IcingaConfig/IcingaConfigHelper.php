@@ -375,13 +375,40 @@ class IcingaConfigHelper
     /**
      * Hint: this isn't complete, but let's restrict ourselves right now
      *
-     * @param $name
+     * TODO: Not sure if this covers all cases.
+     *
+     * @param string $name
+     * @param ?array $whiteList
+     *
      * @return bool
      */
-    public static function isValidMacroName($name)
+    public static function isValidMacroName(string $name, ?array $whiteList = null): bool
     {
-        return preg_match('/^[A-z_][A-z_.\d]+$/', $name)
+        $hasMacroPattern = preg_match('/^[A-z_][A-z_.\d]+$/', $name)
             && ! preg_match('/\.$/', $name);
+
+        if (! $hasMacroPattern) {
+            return false;
+        }
+
+        if ($whiteList === null || in_array($name, $whiteList)) {
+            return true;
+        }
+
+        foreach ($whiteList as $pattern) {
+            if (str_contains($pattern, '*')) {
+                if (
+                    preg_match(
+                        '/^' . str_replace('\*', '.*', preg_quote($pattern, '/')) . '$/',
+                    $name
+                    )
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public static function renderStringWithVariables($string, array $whiteList = null)
@@ -402,16 +429,15 @@ class IcingaConfigHelper
                     } else {
                         // We got a macro
                         $macroName = substr($string, $start + 1, $i - $start - 1);
-                        if (static::isValidMacroName($macroName)) {
-                            if ($whiteList === null || in_array($macroName, $whiteList)) {
-                                if ($start > $offset) {
-                                    $parts[] = static::renderString(
-                                        substr($string, $offset, $start - $offset)
-                                    );
-                                }
-                                $parts[] = $macroName;
-                                $offset = $i + 1;
+                        if (static::isValidMacroName($macroName, $whiteList)) {
+                            if ($start > $offset) {
+                                $parts[] = static::renderString(
+                                    substr($string, $offset, $start - $offset)
+                                );
                             }
+
+                            $parts[] = $macroName;
+                            $offset = $i + 1;
                         }
 
                         $start = false;

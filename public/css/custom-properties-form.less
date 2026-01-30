@@ -1,0 +1,110 @@
+// Style
+.custom-properties-form {
+  .control-group:has(> fieldset) {
+    .dictionary,
+    .nested-dictionary,
+    .nested-dictionary-item {
+      &.no-border {
+        border: none;
+      }
+
+      border: 1px solid @gray-light;
+      border-radius: 1em;
+      .remove-button {
+        width: fit-content;
+        border: none;
+        background: none;
+        color: @color-critical;
+        &:hover {
+          background-color: @color-critical;
+          color: @text-color-inverted;
+        }
+      }
+    }
+
+    .nested-dictionary-item {
+      > legend {
+        font-size: 1em;
+        color: @text-color-light;
+        font-weight: normal;
+        background-color: @gray-lighter;
+        width: 100%;
+        &::before {
+          // icon: down
+          font-family: 'ifont';
+          content: '\e81d';
+        }
+      }
+
+      &.collapsed {
+        legend::before {
+          // icon: right
+          content: '\e820';
+        }
+      }
+    }
+  }
+}
+
+// Layout
+.custom-properties-form {
+  .control-group:has(> fieldset) {
+    position: relative;
+    padding-right: 2em;
+
+    .dictionary,
+    .nested-dictionary,
+    .nested-dictionary-item {
+      padding: 0 0.5em;
+      .remove-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin-top: 0.1em;
+        margin-right: 3.5em;
+        justify-content: center;
+      }
+    }
+
+    .nested-dictionary {
+      .control-group.form-controls:last-of-type {
+        margin: 1em;
+      }
+
+      .inherited-value {
+        margin-right: 3em;
+      }
+
+      .empty-state-bar {
+        margin-right: 2em;
+      }
+    }
+
+    .nested-dictionary-item.collapsed {
+      .remove-button {
+        margin-right: 3em;
+      }
+    }
+
+    .nested-dictionary-item {
+      > .control-group:first-of-type {
+        margin-top: 1em;
+      }
+
+      > legend {
+        padding: 0.25em 0.5em;
+        margin-top: 0;
+        margin-bottom: 0;
+
+        &::before {
+          margin-right: 0.5em;
+        }
+      }
+
+      &.collapsed {
+        border: none;
+        padding: 0;
+      }
+    }
+  }
+}

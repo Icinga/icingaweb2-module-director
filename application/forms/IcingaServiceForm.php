@@ -7,7 +7,6 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -15,8 +14,12 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
+use ipl\Html\Attributes;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
+use PDO;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
@@ -39,6 +42,8 @@ class IcingaServiceForm extends DirectorObjectForm
 
     /** @var bool|null */
     private $blacklisted;
+
+    private $dictionaryUuidMap = [];
 
     public function setApplyGenerated(IcingaService $applyGenerated)
     {
@@ -612,6 +617,54 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    protected function applyForVars(): ?array
+    {
+        $query = $this->db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label'
+                ]
+            )
+            ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
+            ->where("value_type IN ('dynamic-array', 'dynamic-dictionary')");
+
+        $vars = $this->db->getDbAdapter()->fetchAll($query);
+
+        $properties = [];
+        foreach ($vars as $var) {
+            $properties['host.vars.' . $var->key_name] = $var->label ?? $var->key_name . ' (' . $var->key_name . ')';
+            if ($var->value_type === 'dynamic-dictionary') {
+                $this->dictionaryUuidMap['host.vars.' . $var->key_name] = $var->uuid;
+            }
+        }
+
+        return [t('director', 'Custom variables') => $properties];
+    }
+
+
+
+    private function fetchNestedDictionaryKeys(string $dictionaryUuid)
+    {
+        $query = $this->db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'uuid' => 'dp.uuid',
+                    'key_name' => 'dp.key_name',
+                    'label' => 'dp.label',
+                    'value_type' => 'dp.value_type'
+                ]
+            )->where("parent_uuid = ?", $dictionaryUuid);
+
+        return $this->db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+    }
+
     /**
      * @return $this
      * @throws \Zend_Form_Exception
@@ -619,24 +672,128 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function addApplyForElement()
     {
         if ($this->object->isApplyRule()) {
-            $hostProperties = IcingaHost::enumProperties(
-                $this->object->getConnection(),
-                'host.',
-                new ArrayCustomVariablesFilter()
-            );
+            $hostProperties = $this->applyForVars();
 
-            $this->addElement('select', 'apply_for', array(
+            $this->addElement('select', 'apply_for', [
                 'label' => $this->translate('Apply For'),
                 'class' => 'assign-property autosubmit',
                 'multiOptions' => $this->optionalEnum($hostProperties, $this->translate('None')),
                 'description' => $this->translate(
                     'Evaluates the apply for rule for ' .
                     'all objects with the custom attribute specified. ' .
-                    'E.g selecting "host.vars.custom_attr" will generate "for (config in ' .
-                    'host.vars.array_var)" where "config" will be accessible through "$config$". ' .
-                    'NOTE: only custom variables of type "Array" are eligible.'
+                    'E.g selecting "host.vars.custom_attr" will generate "for (value in ' .
+                    'host.vars.array_var)" where "value" will be accessible through "$value$". ' .
+                    'NOTE: only custom variables of type "Array" and "Dictionary" are eligible.'
                 )
-            ));
+            ]);
+
+            if ($this->hasBeenSent()) {
+                $applyFor = $this->getRequest()->getPost('apply_for');
+            } else {
+                $applyFor = $this->object->get('apply_for');
+            }
+
+            $content = [];
+            if (isset($this->dictionaryUuidMap[$applyFor])) {
+                $dictionaryKeys = $this->fetchNestedDictionaryKeys($this->dictionaryUuidMap[$applyFor]);
+
+                if (! empty($dictionaryKeys)) {
+                    $configVariables = new HtmlElement('ul', Attributes::create(['class' => 'nested-key-list']));
+                    foreach ($dictionaryKeys as $keyAttributes) {
+                        if (str_contains($keyAttributes['key_name'], ' ')) {
+                            continue;
+                        }
+
+                        $config = '$value.' . $keyAttributes['key_name'];
+                        $content = [
+                            new HtmlElement('div', null, Text::create(
+                                $keyAttributes['label'] ?? $keyAttributes['key_name']
+                                . ' ('
+                                . $keyAttributes['key_name']
+                                . ')'
+                            )),
+                            new HtmlElement('div', null, Text::create('=>'))
+                        ];
+
+                        if ($keyAttributes['value_type'] === 'fixed-dictionary') {
+                            $nestedContent = [];
+
+                            foreach ($this->fetchNestedDictionaryKeys($keyAttributes['uuid']) as $nestedKeyAttributes) {
+                                if (str_contains($nestedKeyAttributes['key_name'], ' ')) {
+                                    continue;
+                                }
+
+                                $nestedConfig = $config . '.' . $nestedKeyAttributes['key_name'] . '$';
+                                $nestedContent[] = new HtmlElement('div', null, Text::create($nestedConfig));
+
+                                $nestedContent = [
+                                    new HtmlElement('div', null, Text::create(
+                                        $nestedKeyAttributes['label'] ?? $nestedKeyAttributes['key_name']
+                                        . ' ('
+                                        . $nestedKeyAttributes['key_name']
+                                        . ')'
+                                    )),
+                                    new HtmlElement('div', null, Text::create('=>')),
+                                    new HtmlElement('div', null, Text::create(
+                                        $nestedConfig
+                                    ))
+                                ];
+                            }
+
+                            $content[] = new HtmlElement(
+                                'div',
+                                null,
+                                new HtmlElement('div', null, Text::create(
+                                    '$value.'
+                                    . $keyAttributes['key_name']
+                                    . '$'
+                                )),
+                                new HtmlElement(
+                                    'ul',
+                                    null,
+                                    new HtmlElement('li', null, ...$nestedContent)
+                                )
+                            );
+                        } else {
+                            if (str_contains($keyAttributes['key_name'], ' ')) {
+                                $config = '$value["' . $keyAttributes['key_name'] . '"]$';
+                            } else {
+                                $config = '$value.' . $keyAttributes['key_name'] . '$';
+                            }
+
+                            $content[] = new HtmlElement('div', null, Text::create($config));
+                        }
+
+                        $configVariables->addHtml(new HtmlElement('li', null, ...$content));
+                    }
+
+                    if (empty($content)) {
+                        return $this;
+                    }
+
+                    $this->addHtmlHint(
+                        HtmlElement::create(
+                            'div',
+                            null,
+                            [
+                                Text::create($this->translate(
+                                    'Nested keys of selected host dictionary variable for apply-for-rule'
+                                    . ' are accessible through value as shown below:'
+                                )),
+                                $configVariables
+                            ]
+                        ),
+                        ['name' => 'apply_for_hint']
+                    );
+
+                    $this->addElementsToGroup(
+                        ['apply_for_hint'],
+                        'custom_fields',
+                        DirectorObjectForm::GROUP_ORDER_CUSTOM_FIELDS,
+                        $this->translate('Custom properties')
+                    );
+                }
+            }
         }
 
         return $this;

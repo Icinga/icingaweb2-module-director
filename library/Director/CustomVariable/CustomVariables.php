@@ -10,6 +10,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Countable;
 use Exception;
 use Iterator;
+use Ramsey\Uuid\UuidInterface;
 
 class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -26,6 +27,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     private $overrideKeyName;
 
     protected $idx = array();
+
+    private $whiteList = [];
 
     protected static $allTables = array(
         'icinga_command_var',
@@ -159,6 +162,18 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    public function setWhiteList(array $whitelist): self
+    {
+        $this->whiteList = $whitelist;
+
+        return $this;
+    }
+
+    public function getWhiteList(array $whitelist): array
+    {
+        return $this->whiteList;
+    }
+
     protected function refreshIndex()
     {
         $this->idx = array();
@@ -174,13 +189,21 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         $db    = $object->getDb();
 
+        $type = $object->getShortTableName();
+        $columns = [
+            'v.' . $type . '_id',
+            'v.varname',
+            'v.varvalue',
+            'v.format'
+        ];
+
+        if ($type === 'host') {
+            $columns[] = 'property_uuid';
+        }
+
         $query = $db->select()->from(
-            array('v' => $object->getVarsTableName()),
-            array(
-                'v.varname',
-                'v.varvalue',
-                'v.format',
-            )
+            ['v' => $object->getVarsTableName()],
+            $columns
         )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->get('id'));
 
         $vars = new CustomVariables();
@@ -213,17 +236,22 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
 
         foreach ($this->vars as $var) {
+            $uuid = $var->getUuid()?->getBytes();
             if ($var->isNew()) {
-                $db->insert(
-                    $table,
-                    array(
-                        $foreignColumn => $foreignId,
-                        'varname'      => $var->getKey(),
-                        'varvalue'     => $var->getDbValue(),
-                        'format'       => $var->getDbFormat()
-                    )
-                );
+                $row = [
+                    $foreignColumn  => $foreignId,
+                    'varname'       => $var->getKey(),
+                    'varvalue'      => $var->getDbValue(),
+                    'format'        => $var->getDbFormat()
+                ];
+
+                if ($object->getShortTableName() === 'host' && $uuid) {
+                    $row['property_uuid'] = $uuid;
+                }
+
+                $db->insert($table, $row);
                 $var->setLoadedFromDb();
+
                 continue;
             }
 
@@ -233,12 +261,18 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             if ($var->hasBeenDeleted()) {
                 $db->delete($table, $where);
             } elseif ($var->hasBeenModified()) {
+                $data = [
+                    'varvalue' => $var->getDbValue(),
+                    'format'   => $var->getDbFormat()
+                ];
+
+                if ($object->getShortTableName() === 'host' && $uuid) {
+                    $data['property_uuid'] = $uuid;
+                }
+
                 $db->update(
                     $table,
-                    array(
-                        'varvalue' => $var->getDbValue(),
-                        'format'   => $var->getDbFormat()
-                    ),
+                    $data,
                     $where
                 );
             }
@@ -341,13 +375,13 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
-    public function toConfigString($renderExpressions = false)
+    public function toConfigString(?IcingaObject $object = null, $renderExpressions = false)
     {
         $out = '';
 
         foreach ($this as $key => $var) {
             // TODO: ctype_alnum + underscore?
-            $out .= $this->renderSingleVar($key, $var, $renderExpressions);
+            $out .= $this->renderSingleVar($key, $var, $object, $renderExpressions);
         }
 
         return $out;
@@ -396,14 +430,56 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
      *
      * @return string
      */
-    protected function renderSingleVar($key, $var, $renderExpressions = false)
+    protected function renderSingleVar($key, $var, ?IcingaObject $object = null, $renderExpressions = false)
     {
+        if ($var instanceof CustomVariableString) {
+            $var->setWhiteList($this->whiteList);
+        }
+
         if ($key === $this->overrideKeyName) {
             return c::renderKeyOperatorValue(
                 $this->renderKeyName($key),
                 '+=',
                 $var->toConfigStringPrefetchable($renderExpressions)
             );
+        } elseif ($var instanceof CustomVariableDictionary) {
+            if ($object === null || ($object->getShortTableName() !== 'host')) {
+                return c::renderKeyValue(
+                    $this->renderKeyName($key),
+                    $var->toConfigStringPrefetchable($renderExpressions)
+                );
+            } elseif ($object->getShortTableName() === 'host') {
+                $type = $object->getShortTableName();
+                $objectId = $object->get('id');
+                $ids =  $object->listAncestorIds() + [$object->get('id')];
+                $query = $object->getDb()->select()->from(
+                    ['dp' => 'director_property'],
+                    ['value_type']
+                )
+                    ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
+                    ->join(['io' => 'icinga_' . $type], 'iop.' . $type . '_uuid = io.uuid', ['object_id' => 'io.id'])
+                    ->join(['iov' => 'icinga_' . $type . '_var'], 'iov.' . $type . '_id = io.id', [])
+                    ->where('dp.key_name = ?', $var->getKey())
+                    ->where('io.id IN (?)', $ids);
+
+                $row = (array) $object->getDb()->fetchRow($query);
+                if (
+                    isset($row['value_type'])
+                    && $row['value_type'] === 'dynamic-dictionary'
+                    && $objectId !== $row['object_id']
+                ) {
+                    return c::renderKeyOperatorValue(
+                        $this->renderKeyName($key),
+                        '+=',
+                        $var->toConfigStringPrefetchable($renderExpressions)
+                    );
+                } else {
+                    return c::renderKeyValue(
+                        $this->renderKeyName($key),
+                        $var->toConfigStringPrefetchable($renderExpressions)
+                    );
+                }
+            }
         } else {
             return c::renderKeyValue(
                 $this->renderKeyName($key),
@@ -473,6 +549,21 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $this->modified = true;
 
         $this->refreshIndex();
+    }
+
+    /**
+     * Register the UUID of the given variable
+     *
+     * @param string $key
+     * @param UuidInterface $uuid
+     *
+     * @return void
+     */
+    public function registerVarUuid(string $key, UuidInterface $uuid): static
+    {
+        $this->vars[$key]->setUuid($uuid);
+
+        return $this;
     }
 
     public function __toString()

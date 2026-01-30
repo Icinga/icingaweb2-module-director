@@ -10,6 +10,7 @@ use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorJob;
@@ -39,6 +40,7 @@ class BasketSnapshot extends DbObject
     protected static $typeClasses = [
         'DatafieldCategory' => DirectorDatafieldCategory::class,
         'Datafield'       => DirectorDatafield::class,
+        'Property'        => DirectorProperty::class,
         'TimePeriod'      => IcingaTimePeriod::class,
         'CommandTemplate' => [IcingaCommand::class, ['object_type' => 'template']],
         'ExternalCommand' => [IcingaCommand::class, ['object_type' => 'external_object']],
@@ -154,6 +156,7 @@ class BasketSnapshot extends DbObject
         ], $db);
         $snapshot->addObjectsChosenByBasket($basket);
         $snapshot->resolveRequiredFields();
+        $snapshot->resolveRequiredProperties();
 
         return $snapshot;
     }
@@ -181,6 +184,27 @@ class BasketSnapshot extends DbObject
         }
         if (! empty($categories)) {
             $this->objects['DatafieldCategory'] = $categories;
+        }
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function resolveRequiredProperties()
+    {
+        /** @var Db $db */
+        $db = $this->getConnection();
+        $customPropertyResolver = new BasketSnapshotCustomPropertyResolver($this->objects, $db);
+
+        /** @var DirectorProperty[] $properties */
+        $properties = $customPropertyResolver->loadCurrentProperties($db);
+        if (! empty($properties)) {
+            $plain = [];
+            foreach ($properties as $uuid => $customProperty) {
+                $plain[$uuid] = $customProperty->export();
+            }
+
+            $this->objects['Property'] = $plain;
         }
     }
 
@@ -237,6 +261,7 @@ class BasketSnapshot extends DbObject
         $snapshot = static::create([
             'basket_uuid' => $basket->get('uuid')
         ]);
+
         $snapshot->objects = [];
         foreach ((array) JsonString::decode($string) as $type => $objects) {
             $snapshot->objects[$type] = (array) $objects;
@@ -261,11 +286,13 @@ class BasketSnapshot extends DbObject
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
         $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
+        $propertyResolver = new BasketSnapshotCustomPropertyResolver($all, $connection);
         $this->restoreType($all, 'DataList', $fieldResolver, $connection);
         $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
         $fieldResolver->storeNewFields();
+        $propertyResolver->storeNewProperties();
         foreach ($this->restoreOrder as $typeName) {
-            $this->restoreType($all, $typeName, $fieldResolver, $connection);
+            $this->restoreType($all, $typeName, $fieldResolver, $connection, $propertyResolver);
         }
         $db->commit();
     }
@@ -280,7 +307,8 @@ class BasketSnapshot extends DbObject
         stdClass $all,
         string $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
-        Db $connection
+        Db $connection,
+        BasketSnapshotCustomPropertyResolver $customPropertyResolver = null
     ) {
         if (isset($all->$typeName)) {
             $objects = (array) $all->$typeName;
@@ -302,12 +330,20 @@ class BasketSnapshot extends DbObject
                     if ($new instanceof IcingaObject) {
                         $fieldResolver->relinkObjectFields($new, $object);
                     }
+
+                    if ($new instanceof IcingaHost && $customPropertyResolver) {
+                        $customPropertyResolver->relinkObjectCustomProperties($new, $object);
+                    }
                 }
             } else {
                 // No modification on the object, still, fields might have
                 // been changed
                 if ($new instanceof IcingaObject) {
                     $fieldResolver->relinkObjectFields($new, $object);
+                }
+
+                if ($new instanceof IcingaHost && $customPropertyResolver) {
+                    $customPropertyResolver->relinkObjectCustomProperties($new, $object);
                 }
             }
         }
@@ -321,6 +357,10 @@ class BasketSnapshot extends DbObject
             // un-stored, let's do it right here
             if ($new instanceof IcingaObject) {
                 $fieldResolver->relinkObjectFields($new, $objects[$key]);
+            }
+
+            if ($new instanceof IcingaHost && $customPropertyResolver) {
+                $customPropertyResolver->relinkObjectCustomProperties($new, $objects[$key]);
             }
         }
     }

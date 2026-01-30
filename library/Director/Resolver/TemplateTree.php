@@ -17,6 +17,8 @@ class TemplateTree
 
     protected $parents;
 
+    protected $parentsUuids;
+
     protected $children;
 
     protected $rootNodes;
@@ -148,6 +150,19 @@ class TemplateTree
         }
     }
 
+    public function getAncestorsUuidsFor(IcingaObject $object)
+    {
+        if (
+            $object->hasBeenModified()
+            && $object->gotImports()
+            && $object->imports()->hasBeenModified()
+        ) {
+            return $this->getAncestorsUuidsForUnstoredObject($object);
+        } else {
+            return $this->getParentsUuidsById($object->getProperty('id'));
+        }
+    }
+
     protected function getAncestorsForUnstoredObject(IcingaObject $object)
     {
         $this->requireTree();
@@ -178,6 +193,36 @@ class TemplateTree
                 }
             }
             $ancestors[$pid] = $name;
+        }
+
+        return $ancestors;
+    }
+
+    protected function getAncestorsUuidsForUnstoredObject(IcingaObject $object)
+    {
+        $this->requireTree();
+        $ancestors = [];
+        foreach ($object->imports() as $import) {
+            $name = $import->get('uuid');
+            if ($import->hasBeenLoadedFromDb()) {
+                $pid = (int) $import->get('id');
+            } else {
+                if (! array_key_exists($name, $this->templateNameToId)) {
+                    continue;
+                }
+
+                $pid = $this->templateNameToId[$name];
+            }
+
+            $this->getAncestorsUuidsById($pid, $ancestors);
+
+            $uuid = $import->get('uuid');
+            // Hint: inheritance order matters
+            if (false !== ($key = array_search($uuid, $ancestors))) {
+                unset($ancestors[$key]);
+            }
+
+            $ancestors[$pid] = $uuid;
         }
 
         return $ancestors;
@@ -287,6 +332,38 @@ class TemplateTree
         return $ancestors;
     }
 
+    /**
+     * Get the ancestorUuids for the given object ID
+     *
+     * @param $id
+     * @param array $ancestors
+     * @param array $path
+     *
+     * @return array
+     */
+    public function getAncestorsUuidsById($id, &$ancestors = [], $path = [])
+    {
+        $path[$id] = true;
+        foreach ($this->getParentsUuidsById($id) as $pid => $uuid) {
+            $this->assertNotInList($pid, $path);
+            $path[$pid] = true;
+
+            $this->getAncestorsUuidsById($pid, $ancestors, $path);
+            unset($path[$pid]);
+
+            // Hint: inheritance order matters
+            if (false !== ($key = array_search($uuid, $ancestors))) {
+                unset($ancestors[$key]);
+            }
+
+            $ancestors[$pid] = $uuid;
+        }
+
+        unset($path[$id]);
+
+        return $ancestors;
+    }
+
     public function getChildrenFor(IcingaObject $object)
     {
         // can not use hasBeenLoadedFromDb() when in onStore()
@@ -386,6 +463,8 @@ class TemplateTree
         $rootNodes = [];
         $children = [];
         $names = [];
+        $parentsUuids = [];
+        $uuids = [];
         foreach ($templates as $row) {
             $id = (int) $row->id;
             $pid = (int) $row->parent_id;
@@ -404,6 +483,7 @@ class TemplateTree
 
             $names[$pid] = $row->parent_name;
             $parents[$id][$pid] = $row->parent_name;
+            $parentsUuids[$id][$pid] = $row->parent_uuid;
 
             if (! array_key_exists($pid, $children)) {
                 $children[$pid] = [];
@@ -412,7 +492,8 @@ class TemplateTree
             $children[$pid][$id] = $row->name;
         }
 
-        $this->parents   = $parents;
+        $this->parents = $parents;
+        $this->parentsUuids = $parentsUuids;
         $this->children  = $children;
         $this->rootNodes = $rootNodes;
         $this->names = $names;
@@ -458,6 +539,7 @@ class TemplateTree
                 'object_type' => 'o.object_type',
                 'parent_id'   => 'p.id',
                 'parent_name' => 'p.object_name',
+                'parent_uuid' => 'p.uuid'
             ]
         )->joinLeft(
             ['i' => $table . '_inheritance'],

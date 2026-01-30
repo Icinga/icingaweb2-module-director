@@ -651,20 +651,51 @@ CREATE TABLE icinga_host_field (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE director_property (
+  uuid binary(16) NOT NULL,
+  parent_uuid binary(16) NULL DEFAULT NULL,
+  key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
+  description text DEFAULT NULL,
+  value_type enum('string', 'number', 'bool', 'fixed-array', 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary') COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (uuid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE icinga_host_property (
+  host_uuid binary(16) NOT NULL,
+  property_uuid binary(16) NOT NULL,
+  required enum('y', 'n') NOT NULL DEFAULT 'n',
+  PRIMARY KEY (host_uuid, property_uuid),
+  CONSTRAINT icinga_host_property_host
+    FOREIGN KEY host(host_uuid)
+      REFERENCES icinga_host (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_custom_property
+    FOREIGN KEY property(property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE icinga_host_var (
   host_id INT(10) UNSIGNED NOT NULL,
   varname VARCHAR(255) NOT NULL COLLATE utf8_bin,
   varvalue TEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'), -- immer string vorerst
   checksum VARBINARY(20) DEFAULT NULL,
+  property_uuid BINARY(16) DEFAULT NULL,
   PRIMARY KEY (host_id, varname),
   INDEX search_idx (varname),
   INDEX checksum (checksum),
   CONSTRAINT icinga_host_var_host
-    FOREIGN KEY host (host_id)
-    REFERENCES icinga_host (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
+   FOREIGN KEY host (host_id)
+     REFERENCES icinga_host (id)
+     ON DELETE CASCADE
+     ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_var_property_uuid
+   FOREIGN KEY property(property_uuid)
+     REFERENCES director_property (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE icinga_host_template_choice
@@ -2446,4 +2477,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (189, NOW());
+  VALUES (191, NOW());
