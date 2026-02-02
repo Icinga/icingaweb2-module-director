@@ -231,7 +231,7 @@ class PropertyForm extends CompatForm
                     'class'             => 'autosubmit',
                     'disabledOptions'   => [''],
                     'value'             => 'string',
-                    'options'           => ['string' => 'String', 'array' => 'Array']
+                    'options'           => ['string' => 'String', 'dynamic-array' => 'Array']
                 ]
             );
 

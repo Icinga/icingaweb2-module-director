@@ -186,7 +186,7 @@ class DictionaryItem extends FieldsetElement
 
                     $this->addHtml($fieldset);
                 }
-            } elseif ($itemType === 'array') {
+            } elseif ($itemType === 'dynamic-array') {
                 $listEntriesInput = (new ArrayElement($valElementName))
                     ->setSuggestedValues($datalistEntries)
                     ->setLabel($label)
@@ -253,7 +253,7 @@ class DictionaryItem extends FieldsetElement
             $property['value_type'] === 'dynamic-array'
             || (
                 in_array($property['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
-                && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'array'
+                && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'dynamic-array'
             )
         ) {
             $values['var'] = $property['value'] ?? [];
@@ -302,6 +302,7 @@ class DictionaryItem extends FieldsetElement
             $value = $property['value'] ?? '';
             if (isset($dataListEntries[$value])) {
                 $values['var'] = $dataListEntries[$value];
+                $values['var-search'] = $dataListEntries[$value];
             } else {
                 $values['var'] = $value;
             }
