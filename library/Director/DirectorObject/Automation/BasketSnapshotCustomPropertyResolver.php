@@ -21,6 +21,7 @@ class BasketSnapshotCustomPropertyResolver
     /** @var array|null */
     protected $requiredUuids;
 
+    /** @var array all BasketSnapshot objects */
     protected $objects;
 
     /** @var array|null */
@@ -160,24 +161,28 @@ class BasketSnapshotCustomPropertyResolver
 
     protected function getRequiredUuids(): array
     {
-        if ($this->requiredUuids === null) {
-            if (isset($this->objects['Property'])) {
-                $this->requiredUuids = array_keys($this->objects['Property']);
-            } else {
-                $uuids = [];
-                foreach ($this->objects as $typeName => $objects) {
-                    foreach ($objects as $key => $object) {
-                        if (isset($object->properties)) {
-                            foreach ($object->properties as $property) {
-                                $uuids[$property->property_uuid] = true;
-                            }
-                        }
+        if ($this->requiredUuids !== null) {
+            return $this->requiredUuids;
+        }
+
+        if (isset($this->objects['Property'])) {
+            $this->requiredUuids = array_keys($this->objects['Property']);
+
+            return $this->requiredUuids;
+        }
+
+        $uuids = [];
+        foreach ($this->objects as $objects) {
+            foreach ($objects as $object) {
+                if (isset($object->properties)) {
+                    foreach ($object->properties as $property) {
+                        $uuids[$property->property_uuid] = true;
                     }
                 }
-
-                $this->requiredUuids = array_keys($uuids);
             }
         }
+
+        $this->requiredUuids = array_keys($uuids);
 
         return $this->requiredUuids;
     }
