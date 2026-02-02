@@ -657,8 +657,19 @@ CREATE TABLE director_property (
   key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
   description text DEFAULT NULL,
-  value_type enum('string', 'number', 'bool', 'fixed-array', 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary') COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (uuid)
+  value_type enum(
+          'string',
+          'number',
+          'bool',
+          'fixed-array',
+          'dynamic-array',
+          'fixed-dictionary',
+          'dynamic-dictionary',
+          'datalist-strict',
+          'datalist-non-strict'
+      ) COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (uuid),
+  UNIQUE INDEX unique_name_parent_uuid (key_name, parent_uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE director_property
