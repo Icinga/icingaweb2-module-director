@@ -296,7 +296,10 @@ class Exporter
     {
         $props = (array) $object->toPlainObject($this->resolveObjects, !$this->showDefaults);
         if ($object->supportsFields()) {
-            $props['fields'] = $this->fieldReferenceLoader->loadFor($object);
+            $fields = $this->fieldReferenceLoader->loadFor($object);
+            if (count($fields) > 0) {
+                $props['fields'] = $fields;
+            }
         }
 
         return $props;
