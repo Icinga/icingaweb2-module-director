@@ -113,23 +113,21 @@ class DictionaryItem extends FieldsetElement
                 [
                     'label' => $label . ' (Number)',
                     'placeholder' => $placeholder,
-                    'step' => 'any',
-                    'class' => 'autosubmit'
+                    'step' => 'any'
                 ]
             );
         } elseif ($type == 'bool') {
             $this->addElement(
                 new IplBoolean(
                     $valElementName,
-                    ['label' => $label, 'placeholder' => $placeholder, 'class' => 'autosubmit']
+                    ['label' => $label, 'placeholder' => $placeholder]
                 )
             );
         } elseif ($type === 'dynamic-array') {
             $this->addElement((new ArrayElement($valElementName))
                 ->setVerticalTermDirection()
                 ->setPlaceHolder($placeholder)
-                ->setLabel($label . ' (Array)'))
-                ->addAttributes(['class' => 'autosubmit']);
+                ->setLabel($label . ' (Array)'));
         } elseif (str_starts_with($type, 'datalist-')) {
             $isStrict = substr($type, strlen('datalist-')) === 'strict';
             $itemType = self::fetchItemType($uuid);
@@ -142,7 +140,6 @@ class DictionaryItem extends FieldsetElement
                         [
                             'label' => $label,
                             'placeholder' => $placeholder,
-                            'class' => 'autosubmit',
                             'value' => '',
                             'options' => ['' => $this->translate('- Please choose -')]
                                 + $datalistEntries
@@ -154,7 +151,6 @@ class DictionaryItem extends FieldsetElement
                         'autocomplete' => 'off',
                         'ignore' => true,
                         'label' => $label,
-                        'data-auto-submit' => true,
                         'data-enrichment-type' => 'completion',
                         'data-term-suggestions' => "#{$valElementName}-suggestions-{$fieldsetName}",
                         'data-suggest-url' =>Url::fromPath('director/suggestions/datalist-entry', [
@@ -228,7 +224,7 @@ class DictionaryItem extends FieldsetElement
             $this->addElement(
                 'text',
                 $valElementName,
-                ['label' => $label . ' (' . ucfirst($type) . ')', 'placeholder' => $placeholder, 'class' => 'autosubmit']
+                ['label' => $label . ' (' . ucfirst($type) . ')', 'placeholder' => $placeholder]
             );
         }
     }
