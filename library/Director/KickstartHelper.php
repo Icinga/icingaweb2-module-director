@@ -446,7 +446,7 @@ class KickstartHelper
                 $object->delete();
             } catch (Exception $e) {
                 throw new RuntimeException(sprintf(
-                    "Failed to remove %s '%s', it's eventually still in use",
+                    "Failed to remove %s '%s', it might still be in use",
                     $typeName,
                     $object->getObjectName()
                 ), 0, $e);
