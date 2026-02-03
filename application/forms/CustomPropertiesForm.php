@@ -77,20 +77,7 @@ class CustomPropertiesForm extends CompatForm
             ), count($removedItems));
         }
 
-        $hasChanges = $this->hasChanges || $this->hasAddedItems || $removedItems;
-        $discardButton = $this->createElement(
-            'submit',
-            'discard',
-            [
-                'label' => $this->translate('Discard Changes'),
-                'formnovalidate' => true,
-                'disabled' => ! $hasChanges,
-                'class' => 'btn-discard'
-            ]
-        );
-
         $this->registerElement($saveButton);
-        $this->registerElement($discardButton);
 
         if (! empty($message)) {
             $this->addHtml(
@@ -98,13 +85,7 @@ class CustomPropertiesForm extends CompatForm
             );
         }
 
-        $this->add(
-            new HtmlElement(
-                'footer',
-                new Attributes(['class' => 'buttons']),
-                ...[$discardButton, $saveButton]
-            )
-        );
+        $this->addElement($saveButton);
     }
 
     /**

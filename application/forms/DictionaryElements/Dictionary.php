@@ -100,7 +100,7 @@ class Dictionary extends FieldsetElement
             }
         }
 
-        $this->addElement('hidden', 'items_removed');
+        $this->addElement('hidden', 'items_removed', ['value' => implode(', ', array_keys($removedItems))]);
         $this->addElement('hidden', 'items_added', ['value' => implode(', ', $addedItems)]);
         $count = 0;
         foreach ($this->items as $item) {
@@ -142,6 +142,8 @@ class Dictionary extends FieldsetElement
     public static function prepare(array $items): array
     {
         $values = [];
+        $removedItems = Session::getSession()->getNamespace('director.variables')
+            ->get('removed-properties', []);
         foreach ($items as $item) {
             if (isset($item['removed'])) {
                 continue;
