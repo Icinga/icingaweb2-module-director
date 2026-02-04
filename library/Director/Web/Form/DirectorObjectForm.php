@@ -822,8 +822,7 @@ abstract class DirectorObjectForm extends DirectorForm
             $this->setDefaultsFromObject($this->object);
         }
 
-        $isHost = $this->object instanceof IcingaHost;
-
+        $this->prepareFields($this->object());
         IcingaObjectFormHook::callOnSetup($this);
         if ($this->hasBeenSent()) {
             $this->handlePost();
@@ -831,6 +830,7 @@ abstract class DirectorObjectForm extends DirectorForm
 
         try {
             $this->loadInheritedProperties();
+            $this->addFields();
             $this->callOnRequestCallables();
         } catch (Exception $e) {
             $this->addUniqueException($e);
@@ -851,7 +851,7 @@ abstract class DirectorObjectForm extends DirectorForm
         $this->populate($post);
         $values = $this->getValues();
 
-        if ($object instanceof IcingaObject && $object->getShortTableName() !== 'host') {
+        if ($object instanceof IcingaObject) {
             $this->setCustomVarValues($post);
         }
 

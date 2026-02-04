@@ -976,20 +976,19 @@ form.director-form {
     width: auto;
   }
 
-  p.description {
+  p.description:not(.deprecated-data-field) {
     color: @gray;
     font-style: italic;
     padding: 0.25em 0.5em;
     display: none;
   }
 
-  dd.active {
-    p.description {
-      font-style: normal;
-      display: block;
-      height: auto;
-      color: @text-color;
-    }
+  dd.active p.description,
+  dd p.description.deprecated-data-field {
+    font-style: normal;
+    display: block;
+    height: auto;
+    color: @text-color;
   }
 }
 
