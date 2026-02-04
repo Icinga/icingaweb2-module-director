@@ -353,14 +353,20 @@ class IcingaService extends IcingaObject implements ExportInterface
      */
     protected function renderObjectHeader()
     {
+        $applyFor = $this->get('apply_for');
         if (
             $this->isApplyRule()
             && !$this->hasBeenAssignedToHostTemplate()
-            && $this->get('apply_for') !== null
+            && $applyFor !== null
         ) {
             $name = $this->getObjectName();
             $extraName = '';
-            $isApplyFor = $this->isApplyRuleforDictionary(substr($this->get('apply_for') ?? '', strlen('host.vars.')));
+            $applyForVar = substr($applyFor, strlen('host.vars.'));
+            if (preg_match('/[^a-zA-Z0-9_]/', $applyForVar)) {
+                $applyFor = 'host.vars["' . $applyForVar . '"]';
+            }
+
+            $isApplyFor = $this->isApplyRuleforDictionary($applyForVar);
             $varName = '"' . $name . '"';
 
             if (c::stringHasMacro($name)) {
@@ -379,12 +385,14 @@ class IcingaService extends IcingaObject implements ExportInterface
 
             $extraInfo = sprintf("\n    vars.overridenVar = %s\n", $varName);
 
+
+
             return sprintf(
                     $header,
                     $this->getObjectTypeName(),
                     $this->getType(),
                     $name,
-                    $this->get('apply_for')
+                    $applyFor
                 )
                 . $extraName
                 . $extraInfo;
@@ -686,7 +694,7 @@ class IcingaService extends IcingaObject implements ExportInterface
 
             $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
 
-            $whiteList = ['value', 'host.*'];
+            $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
             foreach ($result as $row) {
                 if (str_contains($row['key_name'], ' ')) {
                     continue;

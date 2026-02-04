@@ -527,7 +527,12 @@ abstract class ObjectController extends ActionController
                         continue;
                     }
 
-                    $config = '$value.' . $keyAttributes['key_name'];
+                    if (preg_match('/[^a-zA-Z0-9_]/', $keyAttributes['key_name'])) {
+                        $config = '$value["' . $keyAttributes['key_name'] . '"]';
+                    } else {
+                        $config = '$value.' . $keyAttributes['key_name'];
+                    }
+
                     $content = [
                         new HtmlElement('div', null, Text::create(
                             $keyAttributes['label'] ?? $keyAttributes['key_name']
@@ -538,7 +543,9 @@ abstract class ObjectController extends ActionController
                         new HtmlElement('div', null, Text::create('=>'))
                     ];
 
-                    if ($keyAttributes['value_type'] === 'fixed-dictionary') {
+                    if ($keyAttributes['value_type'] !== 'fixed-dictionary') {
+                        $content[] = new HtmlElement('div', null, Text::create($config . '$'));
+                    } else {
                         $nestedContent = [];
 
                         foreach ($this->fetchNestedDictionaryKeys($keyAttributes['uuid']) as $nestedKeyAttributes) {
@@ -546,7 +553,12 @@ abstract class ObjectController extends ActionController
                                 continue;
                             }
 
-                            $nestedConfig = $config . '.' . $nestedKeyAttributes['key_name'] . '$';
+                            if (preg_match('/[^a-zA-Z0-9_]/', $nestedKeyAttributes['key_name'])) {
+                                $nestedConfig = $config . '["' . $nestedKeyAttributes['key_name'] . '"]$';
+                            } else {
+                                $nestedConfig = $config . '.' . $nestedKeyAttributes['key_name'] . '$';
+                            }
+
                             $nestedContent[] = new HtmlElement('div', null, Text::create($nestedConfig));
 
                             $nestedContent = [
@@ -577,14 +589,6 @@ abstract class ObjectController extends ActionController
                                 new HtmlElement('li', null, ...$nestedContent)
                             )
                         );
-                    } else {
-                        if (str_contains($keyAttributes['key_name'], ' ')) {
-                            $config = '$value["' . $keyAttributes['key_name'] . '"]$';
-                        } else {
-                            $config = '$value.' . $keyAttributes['key_name'] . '$';
-                        }
-
-                        $content[] = new HtmlElement('div', null, Text::create($config));
                     }
 
                     $configVariables->addHtml(new HtmlElement('li', null, ...$content));
