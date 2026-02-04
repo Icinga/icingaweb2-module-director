@@ -224,7 +224,7 @@ class DirectorProperty extends DbObject
         }
 
         if ($items) {
-            $property->items = $property->importItems($items, $db);
+            $property->items = $property->importItems((array) $items, $db);
         }
 
         return $property;
@@ -262,8 +262,22 @@ class DirectorProperty extends DbObject
                         $value->parent_uuid = Uuid::fromString($value->parent_uuid)->getBytes();
                     }
 
+                    $datalist = null;
+                    if (isset($value->datalist)) {
+                        $datalist = DirectorDatalist::loadOptional($value->datalist, $db);
+                        if (! $datalist && is_string($value->datalist)) {
+                            $datalist = DirectorDatalist::create(['list_name' => $value->datalist], $db);
+                        }
+
+                        unset($value->datalist);
+                    }
+
                     $itemCandidate->setProperties((array) $value);
                     $itemCandidate->items = $this->importItems((array) $nestedItems, $db);
+                    if ($datalist) {
+                        $itemCandidate->datalist = $datalist;
+                    }
+
                     $itemCandidates[$key] = $itemCandidate;
                 } else {
                     if (isset($value->parent_uuid)) {
