@@ -234,9 +234,10 @@ class DeletePropertyForm extends CompatForm
             $db->delete('director_property_datalist', Filter::where('property_uuid', $uuid->getBytes()));
         }
 
+        $this->removeObjectCustomVars($prop, $this->parent);
+
         $db->delete('director_property', Filter::where('uuid', $uuid->getBytes()));
         $db->delete('director_property', Filter::where('parent_uuid', $uuid->getBytes()));
-        $this->removeObjectCustomVars($prop, $this->parent);
 
         $objects = ['host', 'service', 'notification', 'command', 'user'];
         foreach ($objects as $object) {
