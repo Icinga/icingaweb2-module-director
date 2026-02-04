@@ -144,6 +144,7 @@ CREATE TABLE director_property_datalist (
          ON UPDATE CASCADE,
  CONSTRAINT director_property_list_property
      FOREIGN KEY property (property_uuid)
+         ON DELETE CASCADE
          REFERENCES director_property (uuid)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
