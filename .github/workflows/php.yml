@@ -28,7 +28,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          tools: phpcs
+          tools: phpcs:3
 
       - name: Setup dependencies
         run: composer require -n --no-progress overtrue/phplint phpunit/phpunit
