@@ -56,6 +56,9 @@ class PropertyController extends CompatController
         $parent = [];
         $db = $this->db->getDbAdapter();
         $property = $this->fetchProperty($uuid);
+        if (empty($property)) {
+            $this->redirectNow(Url::fromPath('director/properties'));
+        }
 
         if ($parentUuid) {
             $parentUuid = Uuid::fromString($parentUuid);
@@ -359,7 +362,7 @@ class PropertyController extends CompatController
             ])
             ->where('uuid = ?', $uuid->getBytes());
 
-        return $db->fetchRow($query, [], Zend_Db::FETCH_ASSOC);
+        return $db->fetchRow($query, [], Zend_Db::FETCH_ASSOC) ?: [];
     }
 
     private function fetchPropertyUsedCount(UuidInterface $uuid): int
