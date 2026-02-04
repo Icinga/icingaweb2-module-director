@@ -222,7 +222,22 @@ class DirectorDatafield extends DbObjectWithSettings
             $el->setLabel($caption);
         }
 
-        if ($description = $this->get('description')) {
+        // TODO: Use $form->getObject() to check for custom properties in that specific object
+        $varName = $this->get('varname');
+        $query = $form
+            ->getDb()
+            ->select()
+            ->from(['dp' => 'director_property'], ['key_name' => 'dp.key_name'])
+            ->where('parent_uuid IS NULL AND key_name', $varName);
+        if ($query->fetchOne() !== false) {
+            $el->setAttrib('hidden', true);
+            $el->getDecorator('Description')->setOptions(['tag' => 'p', 'class' => ['description', 'deprecated-data-field']]);
+            $description = $form->translate('There is a custom property with the same name. Go to Custom Properties tab to edit it.');
+        } else {
+            $description = $this->get('description');
+        }
+
+        if ($description) {
             $el->setDescription($description);
         }
 
