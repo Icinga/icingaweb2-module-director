@@ -76,7 +76,7 @@ class SelfServiceSettingsForm extends DirectorForm
                 . ' where your Windows nodes should fetch the Agent installer'
             ),
             'multiOptions' => [
-                null       => $this->translate('- no automatic installation -'),
+                ''         => $this->translate('- no automatic installation -'),
                 // TODO: not yet
                 // 'director' => $this->translate('Download via the Icinga Director'),
                 'icinga'   => $this->translate('Download from packages.icinga.com'),
@@ -249,11 +249,11 @@ class SelfServiceSettingsForm extends DirectorForm
         $default = $this->settings->getDefaultValue($key);
         if ($default === null) {
             return [
-                null => $this->translate('- please choose -')
+                '' => $this->translate('- please choose -')
             ] + $enum;
         } else {
             return [
-                null => sprintf($this->translate('%s (default)'), $enum[$default])
+                '' => sprintf($this->translate('%s (default)'), $enum[$default])
             ] + $enum;
         }
     }

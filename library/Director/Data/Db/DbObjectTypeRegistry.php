@@ -66,7 +66,7 @@ class DbObjectTypeRegistry
         return $object->getTableName();
     }
 
-    public static function newObject($type, $properties = [], Db $db = null)
+    public static function newObject($type, $properties = [], ?Db $db = null)
     {
         /** @var DbObject $class fake hint for the IDE, it's a string */
         $class = self::classByType($type);

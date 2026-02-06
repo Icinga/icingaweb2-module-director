@@ -193,7 +193,7 @@ class SettingsForm extends DirectorForm
             $default = $this->translate('- please choose -');
         }
 
-        return [null => $default] + $enum;
+        return ['' => $default] + $enum;
     }
 
     public function setSettings(Settings $settings)
