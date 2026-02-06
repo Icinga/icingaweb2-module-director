@@ -9,6 +9,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
@@ -193,6 +194,15 @@ class ConfigController extends ActionController
                     ->setDb($this->db())
                     ->setApi($this->api())
                     ->handleRequest());
+            }
+
+            if ((new DeploymentDashlet($this->db()))->lastDeploymentPending()) {
+                $this->actions()->prependHtml(
+                    Hint::warning($this->translate(
+                        'There is an active deployment running, please wait until it is finished'
+                        . ' before creating a new deployment.'
+                    ))
+                );
             }
         }
 
