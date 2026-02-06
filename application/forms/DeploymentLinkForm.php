@@ -6,7 +6,6 @@ use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Core\DeploymentApiInterface;
-use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -84,9 +83,8 @@ class DeploymentLinkForm extends DirectorForm
             );
         }
 
-        $this->setAttrib('class', ['gipfl-inline-form', 'deployment-link-form']);
+        $this->setAttrib('class', 'gipfl-inline-form');
         $this->addHtml(Icon::create('wrench'));
-
         try {
             // As this is shown for single objects, ignore errors caused by an
             // unreachable core
@@ -94,21 +92,11 @@ class DeploymentLinkForm extends DirectorForm
         } catch (\Exception $e) {
             $target = '_next';
         }
-
-        $lastDeploymentPending = (new DeploymentDashlet($this->db))->lastDeploymentPending();
-        $deployButtonAttributes = [
+        $this->addSubmitButton($this->translate('Deploy'), [
             'class'            => 'link-button icon-wrench',
             'title'            => $msg,
             'data-base-target' => $target,
-        ];
-        if ($lastDeploymentPending) {
-            $deployButtonAttributes['disabled'] = 'disabled';
-            $deployButtonAttributes['title'] = $this->translate(
-                'There is an active deployment, please wait until it is finished'
-            );
-        }
-
-        $this->addSubmitButton($this->translate('Deploy'), $deployButtonAttributes);
+        ]);
     }
 
     protected function canDeploy()
