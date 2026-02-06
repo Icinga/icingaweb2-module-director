@@ -141,22 +141,22 @@ class DeletePropertyForm extends CompatForm
         ));
 
         $objectClass = null;
-        $usageList = (new CustomVarObjectList($customVarUsage))
-            ->on(
-                CustomVarObjectList::BEFORE_ITEM_ADD,
-                function (ListItem $item, $data) use(&$objectClass, &$usageList) {
-                    if ($objectClass !== $data->object_class) {
-                        $usageList->addHtml(HtmlElement::create(
-                            'li',
-                            ['class' => 'list-item'],
-                            HtmlElement::create(
-                                'h2',
-                                content: ucfirst($data->object_class) . 's'
-                            )
-                        ));
-                        $objectClass = $data->object_class;
-                    }
-                });
+        $usageList = (new CustomVarObjectList($customVarUsage));
+        $usageList->on(
+            CustomVarObjectList::BEFORE_ITEM_ADD,
+            function (ListItem $item, $data) use(&$objectClass, $usageList) {
+                if ($objectClass !== $data->object_class) {
+                    $usageList->addHtml(HtmlElement::create(
+                        'li',
+                        ['class' => 'list-item'],
+                        HtmlElement::create(
+                            'h2',
+                            content: ucfirst($data->object_class) . 's'
+                        )
+                    ));
+                    $objectClass = $data->object_class;
+                }
+            });
 
         $this->addHtml($usageList);
 
@@ -249,77 +249,72 @@ class DeletePropertyForm extends CompatForm
 
     private function removeObjectCustomVars(array $property, ?array $parent = null): void
     {
+        if (empty($parent)) {
+            return;
+        }
+
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
         $db = $this->db->getDbAdapter();
-        if ($parent) {
-            if ($parent['parent_uuid'] !== null) {
-                // If the parent has in turn a parent
-                $rootUuid = Uuid::fromBytes($parent['parent_uuid']);
-                $rootProp = $this->fetchProperty($rootUuid);
-                $rootType = $rootProp['value_type'];
-            } else {
-                $rootType = $parent['value_type'];
-                $rootUuid = Uuid::fromBytes($parent['uuid']);
-            }
+        if ($parent['parent_uuid'] !== null) {
+            // If the parent has in turn a parent
+            $rootUuid = Uuid::fromBytes($parent['parent_uuid']);
+            $rootProp = $this->fetchProperty($rootUuid);
+            $rootType = $rootProp['value_type'];
+        } else {
+            $rootType = $parent['value_type'];
+            $rootUuid = Uuid::fromBytes($parent['uuid']);
+        }
 
-            foreach ($objectTypes as $objectType) {
-                $query = $db
-                    ->select()
-                    ->from(['iov' => "icinga_{$objectType}_var"], [])
-                    ->columns([
-                        "{$objectType}_id",
-                        'varname',
-                        'varvalue',
-                    ])
-                    ->where('property_uuid = ?', $rootUuid->getBytes());
+        foreach ($objectTypes as $objectType) {
+            $query = $db
+                ->select()
+                ->from(['iov' => "icinga_{$objectType}_var"], [])
+                ->columns([
+                    "{$objectType}_id",
+                    'varname',
+                    'varvalue',
+                ])
+                ->where('property_uuid = ?', $rootUuid->getBytes());
 
-                $customVars = $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC);
+            $customVars = $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC);
+            $class = DbObjectTypeRegistry::classByType($objectType);
 
-                foreach ($customVars as $customVar) {
-                    $class = DbObjectTypeRegistry::classByType($objectType);
-                    $object = $class::loadWithAutoIncId($customVar["{$objectType}_id"], $this->db);
-                    $varName = $customVar['varname'];
-                    $varValue = json_decode($customVar['varvalue'], true);
-                    if ($rootType === 'dynamic-dictionary') {
-                        foreach ($varValue as $key => $value) {
-                            if ($parent['parent_uuid'] === null) {
-                                $this->removeDictionaryItem($value, [$property['key_name']]);
-                            } else {
-                                $this->removeDictionaryItem(
-                                    $value,
-                                    [$parent['key_name'], $property['key_name']]
-                                );
-                            }
+            foreach ($customVars as $customVar) {
+                $object = $class::loadWithAutoIncId($customVar["{$objectType}_id"], $this->db);
+                $objectVars = $object->vars();
+                $varName = $customVar['varname'];
+                $varValue = json_decode($customVar['varvalue'], true);
 
-                            $varValue[$key] = (object) $value;
-                        }
-                    } else {
-                        if ($parent['parent_uuid'] === null) {
-                            $this->removeDictionaryItem($varValue, [$property['key_name']]);
-                        } else {
-                            $this->removeDictionaryItem(
-                                $varValue,
-                                [$parent['key_name'], $property['key_name']]
-                            );
-                        }
-                    }
+                $path = [$property['key_name']];
+                if ($parent['parent_uuid'] !== null) {
+                    array_unshift($path, $parent['key_name']);
+                }
 
-                    $objectVars = $object->vars();
-                    if (empty($varValue)) {
-                        $objectVars->set($varName, null);
-                    } else {
-                        if ($parent && $parent['value_type'] === 'fixed-array') {
-                            $this->updateFixedArrayItems(Uuid::fromBytes($parent['uuid']));
-                            $varValue[$parent['key_name']] = array_values($varValue[$parent['key_name']]);
-                        } elseif ($rootType === 'fixed-array') {
-                            $this->updateFixedArrayItems($rootUuid);
-                            $varValue = array_values($varValue);
-                        }
-
-                        $objectVars->set($varName, $varValue);
-                        $objectVars->storeToDb($object);
+                if ($rootType !== 'dynamic-dictionary') {
+                    $this->removeDictionaryItem($varValue, $path);
+                } else {
+                    foreach ($varValue as $key => $value) {
+                        $varValue[$key] = (object) $value;
+                        $this->removeDictionaryItem($varValue, $path);
                     }
                 }
+
+                if (empty($varValue)) {
+                    $objectVars->set($varName, null);
+
+                    continue;
+                }
+
+                if ($parent['value_type'] === 'fixed-array') {
+                    $this->updateFixedArrayItems(Uuid::fromBytes($parent['uuid']));
+                    $varValue[$parent['key_name']] = array_values($varValue[$parent['key_name']]);
+                } elseif ($rootType === 'fixed-array') {
+                    $this->updateFixedArrayItems($rootUuid);
+                    $varValue = array_values($varValue);
+                }
+
+                $objectVars->set($varName, $varValue);
+                $objectVars->storeToDb($object);
             }
         }
     }
