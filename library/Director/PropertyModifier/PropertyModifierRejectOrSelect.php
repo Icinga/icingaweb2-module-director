@@ -77,7 +77,10 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
 
     public function matchesRegexp($string, $expression)
     {
-        return preg_match($expression, $string);
+        if ($string === null) {
+            $string = '';
+        }
+        return preg_match($expression, (string) $string);
     }
 
     public function isNull($string, $expression)
