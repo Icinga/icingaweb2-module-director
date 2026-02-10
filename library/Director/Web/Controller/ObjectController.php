@@ -619,8 +619,8 @@ abstract class ObjectController extends ActionController
                             $this->Auth(),
                             $this->api()
                         )
-                            ->callOnSuccess(function (DeploymentLinkForm $form) {
-                                $this->getResponse()->setHeader('X-Icinga-Extra-Updates', join(',', ['#col1']));
+                            ->callOnSuccess(function () {
+                                $this->getResponse()->setHeader('X-Icinga-Extra-Updates', '#col1');
                             })
                             ->handleRequest()
                     );
