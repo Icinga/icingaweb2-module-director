@@ -28,10 +28,7 @@ class DependencyChecker
     {
         $dependencies = [];
         $isV290 = version_compare(Version::VERSION, '2.9.0', '>=');
-        foreach ($module->getDependencies() as $moduleName => $required) {
-            if ($isV290 && in_array($moduleName, ['ipl', 'reactbundle'], true)) {
-                continue;
-            }
+        foreach ($module->getRequiredModules() as $moduleName => $required) {
             $dependency = new Dependency($moduleName, $required);
             $dependency->setEnabled($this->modules->hasEnabled($moduleName));
             if ($this->modules->hasInstalled($moduleName)) {
