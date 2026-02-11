@@ -220,11 +220,6 @@ class ActivityLogTable extends IntlZfQueryBasedTable
                     ['title' => $this->translate('Jump to this object')]
                 );
             }
-                    'director/' . str_replace('_', '', $type),
-                    ['name' => $name],
-                    ['title' => $this->translate('Jump to this object')]
-                );
-            }
 
             return [
                 '[' . $row->author . ']',
