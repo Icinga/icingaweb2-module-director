@@ -121,7 +121,7 @@ class SyncJob extends JobHook
         $query = $db->select()->from('sync_rule', array('id', 'rule_name'))->order('rule_name');
         $res = $db->fetchPairs($query);
         return array(
-            null      => $form->translate('- please choose -'),
+            ''        => $form->translate('- please choose -'),
             '__ALL__' => $form->translate('Run all rules at once')
         ) + $res;
     }

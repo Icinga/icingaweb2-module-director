@@ -464,7 +464,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     protected function optionalEnum($enum)
     {
         return array_merge(
-            array(null => $this->view->translate('- please choose -')),
+            ['' => $this->view->translate('- please choose -')],
             $enum
         );
     }
