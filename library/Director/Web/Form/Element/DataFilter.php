@@ -97,7 +97,7 @@ class DataFilter extends FormElement
         $this->filter = null;
         foreach ($array as $id => $entry) {
             $filterId = $this->idToFilterId($id);
-            $sub = $this->entryToFilter($entry);
+            $sub = $this->entryToFilter($entry)->setId($filterId);
             $this->checkEntryForActions($filterId, $entry);
             $parentId = $this->parentIdFor($filterId);
 

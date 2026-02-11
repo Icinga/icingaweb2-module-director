@@ -585,13 +585,15 @@ class IcingaHost extends IcingaObject implements ExportInterface
         $query = $db->getDbAdapter()
             ->select()
             ->from('icinga_host')
-            ->where('api_key = ?', $key);
+            ->where('api_key IS NOT NULL')
+            ->query();
 
-        $result = self::loadAll($db, $query);
-        if (count($result) !== 1) {
-            throw new NotFoundError('Got invalid API key "%s"', $key);
+        foreach ($query as $row) {
+            if (hash_equals($row->api_key, $key)) {
+                return (new static())->setConnection($db)->setDbProperties($row);
+            }
         }
 
-        return current($result);
+        throw new NotFoundError('Got invalid API key "%s"', $key);
     }
 }
