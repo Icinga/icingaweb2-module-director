@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Web\Widget;
 
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use Icinga\Application\ApplicationBootstrap;
 use Icinga\Application\Icinga;
 use Icinga\Authentication\Auth;
@@ -11,7 +11,7 @@ use ipl\Html\Html;
 
 class Documentation
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var ApplicationBootstrap */
     protected $app;

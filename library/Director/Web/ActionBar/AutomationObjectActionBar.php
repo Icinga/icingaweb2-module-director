@@ -3,13 +3,13 @@
 namespace Icinga\Module\Director\Web\ActionBar;
 
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\ActionBar;
 use Icinga\Web\Request;
 
 class AutomationObjectActionBar extends ActionBar
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var Request */
     protected $request;

@@ -2,15 +2,15 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use gipfl\Translation\TranslationHelper;
 use gipfl\Web\Form;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Import\Sync;
 use Icinga\Module\Director\Objects\SyncRule;
+use ipl\I18n\Translation;
 
 class SyncRunForm extends Form
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $defaultDecoratorClass = null;
 
