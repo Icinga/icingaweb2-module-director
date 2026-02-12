@@ -4,22 +4,15 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbConnection;
-use Icinga\Web\Form;
 use Icinga\Web\Session;
-use ipl\Html\FormDecoration\FormElementDecorationResult;
-use ipl\Html\HtmlElement;
-use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
-use ipl\Web\Compat\FormDecorator\DescriptionDecorator;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use stdClass;
-use Throwable;
 use Zend_Db;
 
 class PropertyForm extends CompatForm
