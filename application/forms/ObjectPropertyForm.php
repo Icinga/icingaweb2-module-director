@@ -4,14 +4,12 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Session;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 
 class ObjectPropertyForm extends CompatForm
 {
