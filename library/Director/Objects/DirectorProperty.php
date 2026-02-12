@@ -7,7 +7,6 @@ use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 use stdClass;
 
 class DirectorProperty extends DbObject
