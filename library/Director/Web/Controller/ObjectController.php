@@ -37,6 +37,7 @@ use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Html;
@@ -483,10 +484,21 @@ abstract class ObjectController extends ActionController
             $form->setServiceSet($serviceSet);
         }
 
-        $form->on(CustomPropertiesForm::ON_SUCCESS, function () {
+        $form->on(CustomPropertiesForm::ON_SUBMIT, function (CustomPropertiesForm $form) {
                 $this->session->delete('vars');
                 $this->session->delete('added-properties');
                 $this->session->delete('removed-properties');
+                if ($form->varsHasBeenModified()) {
+                    Notification::success(
+                        sprintf(
+                            $this->translate('Custom variables have been successfully modified for %s'),
+                            $form->object->getObjectName(),
+                        )
+                    );
+                } else {
+                    Notification::success($this->translate('There is nothing to change.'));
+                }
+
                 $this->redirectNow(Url::fromRequest()->without(['_preserve_session', 'items-added']));
             })
             ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) use ($vars) {

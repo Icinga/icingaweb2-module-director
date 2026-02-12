@@ -9,7 +9,6 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlElement;
@@ -32,6 +31,8 @@ class CustomPropertiesForm extends CompatForm
 
     private ?IcingaHost $host = null;
 
+    private bool $varsHasBeenModified = false;
+
     public function __construct(
         public readonly IcingaObject $object,
         protected array $objectProperties = [],
@@ -39,6 +40,16 @@ class CustomPropertiesForm extends CompatForm
         private bool $hasChanges = false
     ) {
         $this->addAttributes(Attributes::create(['class' => 'custom-properties-form']));
+    }
+
+    /**
+     * Check if the custom properties have been modified
+     *
+     * @return bool
+     */
+    public function varsHasBeenModified(): bool
+    {
+        return $this->varsHasBeenModified;
     }
 
     protected function assemble(): void
@@ -204,7 +215,6 @@ class CustomPropertiesForm extends CompatForm
         $session->delete('properties');
         $session->delete('vars');
         $vars = $this->object->vars();
-        $modified = false;
 
         /** @var Dictionary $propertiesElement */
         $propertiesElement = $this->getElement('properties');
@@ -220,7 +230,7 @@ class CustomPropertiesForm extends CompatForm
 
             if (in_array($key, $itemsToRemove)) {
                 $itemsToRemoveUuids[] = $property['uuid'];
-                $modified = true;
+                $this->varsHasBeenModified = true;
 
                 continue;
             }
@@ -255,8 +265,8 @@ class CustomPropertiesForm extends CompatForm
                 $vars->registerVarUuid($key, $propertyUuid);
             }
 
-            if ($modified === false && $vars->hasBeenModified()) {
-                $modified = true;
+            if ($this->varsHasBeenModified === false && $vars->hasBeenModified()) {
+                $this->varsHasBeenModified = true;
             }
         }
 
@@ -312,17 +322,6 @@ class CustomPropertiesForm extends CompatForm
             $object = $this->object;
             DirectorActivityLog::logModification($object, $this->object->getConnection());
             $vars->storeToDb($object);
-        }
-
-        if ($modified) {
-            Notification::success(
-                sprintf(
-                    $this->translate('Custom variables have been successfully modified for %s'),
-                    $object->getObjectName(),
-                )
-            );
-        } else {
-            Notification::success($this->translate('There is nothing to change.'));
         }
     }
 }
