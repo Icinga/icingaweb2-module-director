@@ -39,7 +39,6 @@ use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
-use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
