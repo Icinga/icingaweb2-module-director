@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
+use Icinga\Data\Db\DbQuery;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterAnd;
 use Icinga\Data\Filter\FilterMatch;
@@ -19,6 +20,8 @@ use Ramsey\Uuid\Uuid;
  */
 class MigrateCommand extends Command
 {
+    private $existingCustomProperties = [];
+
     /**
      * Run any pending migrations
      *
@@ -27,108 +30,89 @@ class MigrateCommand extends Command
     public function datafieldsAction()
     {
         $db = $this->db();
-        $datafieldQuery = $db->select()
-            ->from(
-                ['dd' => 'director_datafield'],
-                [
-                    'id' => 'dd.id',
-                    'varname' => 'dd.varname',
-                    'caption' => 'dd.caption',
-                    'description' => 'dd.description',
-                    'datatype' => 'dd.datatype',
-                    'count' => 'COUNT(varname)'
-                ]
-            );
-        $categoryFieldsQuery = clone $datafieldQuery;
-        $datafieldQuery->group('dd.varname');
-        $duplicateFieldsQuery = clone $datafieldQuery;
-        $unsupportedTypeQuery = clone $datafieldQuery;
-        $filter = FilterAnd::matchAny(
-            FilterMatch::where('datatype', '*SqlQuery'),
-            FilterMatch::where('datatype', '*DirectorObject'),
-            FilterMatch::where('datatype', '*Dictionary')
-        );
-
-        $datafieldQuery = $datafieldQuery->addFilter(Filter::not($filter));
-        $unsupportedTypeQuery->addFilter($filter);
-
-        $supportedTypeQuery = clone $datafieldQuery;
-        $supportedTypeQuery->joinLeft(['dds' => 'director_datafield_setting'], "dd.id = dds.datafield_id AND dds.setting_name = 'visibility'", []);
-        $protectedDatafieldsQuery = clone $supportedTypeQuery;
-        $protectedDatafieldsQuery->addFilter(Filter::matchAll(
-            FilterMatch::where('dd.datatype', '*String'),
-            Filter::matchAll(
-                FilterMatch::where('dds.setting_name', 'visibility'),
-                FilterMatch::where('dds.setting_value', 'hidden')
-            )
-        ));
-
-        $supportedTypeQuery->addFilter(Filter::not($protectedDatafieldsQuery->getFilter()));
-        $supportedTypeQuery->select()
-            ->having('count = 1');
-
-        $duplicateFieldsQuery->select()->having('count > 1');
-
-        $supportedTypeQuery->addFilter(Filter::fromQueryString('category_id IS NULL'));
-        $categoryFieldsQuery->addFilter(Filter::fromQueryString('category_id IS NOT NULL'));
-
-        $supportedTypeQuery->addFilter(Filter::matchAll($datafieldQuery->getFilter()));
-
-        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
+        $customPropertiesToMigrate = $this->prepareCustomProperties();
         // Dry run summary
         if ($this->params->get('dry-run')) {
-            printf("The following datafield types and the corresponding number of datafields can be migrated:\n");
-            $total = 0;
-            foreach (
-                $db->select()->from(
-                    ['q' =>  new DbSelectParenthesis($supportedTypeQuery->getSelectQuery())],
-                    ['*', 'count_q' => 'COUNT(*)']
-                )->group('datatype') as $row
-            ) {
-                printf(
-                    "Data type: %s | count: %d\n",
-                    substr($row->datatype, $typeOffset),
-                    $row->count_q
-                );
-                $total += $row->count_q;
-            }
+            $this->checkMigrateableDatafieldTypes();
+            $this->checkProtectedDatafields();
+            $this->checkDatafieldsWithCategory();
+            $this->checkUnmigrateableDatafieldTypes();
+            $this->checkDatafieldsWithDuplicateNames();
+            printf(
+                "Number of datafields that can not be migrated as the custom properties with the same name already"
+                . " exists: %d\n",
+                count($this->existingCustomProperties)
+            );
 
-            printf("Total datafields that can be migrated: %d\n\n", $total);
-
-            printf("The following number of datafields are protected and can not be migrated: %d\n\n", $protectedDatafieldsQuery->count());
-            printf("The following number of datafields belong to a category and can not be migrated: %d\n\n", $categoryFieldsQuery->count());
-
-            printf("The following datafield types and the corresponding number of datafields can not be migrated:\n");
-            $total = 0;
-            foreach ($unsupportedTypeQuery->group('datatype') as $row) {
-                printf("Data type: %s | count: %d\n", substr($row->datatype, $typeOffset), $row->count);
-                $total += $row->count;
-            }
-
-            printf("Total datafields that can not be migrated because of incompatible datatypes with new custom property support: %d\n\n", $total);
-
-            printf("The following datafields can not be migrated as there are duplicates:\n");
-            $total = 0;
-            foreach ($duplicateFieldsQuery->group('varname') as $row) {
-                printf("Var name: %s | count: %d\n", $row->varname, $row->count);
-                $total += $row->count;
-            }
-
-            printf("Total datafields that can not be migrated because of having duplicates: %d\n", $total);
+            return;
         }
 
+        echo "Migrating Data fields\n";
+        foreach ($this->existingCustomProperties as $varname) {
+            unset($customPropertiesToMigrate[$varname]);
+
+            if ($this->isVerbose) {
+                echo "[-] Skipping migrating datafield '$varname' as a custom property with the same name already exists\n";
+            }
+        }
+
+        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
+        if ($this->isVerbose) {
+            foreach ($this->getDatafieldsWithUnsupportedValuetype() as $varname => $datatype) {
+                $dataType = substr($datatype, $typeOffset);
+
+                echo "[-] Skipping migrating datafield '$varname' as it has an unsupported datatype '$dataType'\n";
+            }
+
+            foreach ($this->getDatafieldsWithCategory() as $varname) {
+                echo "[-] Skipping migrating datafield '$varname' as it belongs to a category\n";
+            }
+
+            foreach ($this->getDatafieldsWithProtectedValues() as $varname) {
+                echo "[-] Skipping migrating datafield '$varname' as it is protected\n";
+            }
+
+            foreach ($this->getDatafieldsWithDuplicateNames() as $varname => $count) {
+                printf("[-] Skipping migrating datafield '%s' as there are '%d' datafields with same name\n", $varname, $count) ;
+            }
+        }
+
+        if (! empty($customPropertiesToMigrate)) {
+            $db->getDbAdapter()->beginTransaction();
+            $this->migrateDatafields($customPropertiesToMigrate);
+            $db->getDbAdapter()->commit();
+        }
+
+        echo "Migration completed\n";
+
+        $totalMigrated = count($customPropertiesToMigrate);
+        $totalSkipped = count(DirectorDatafield::loadAll($db)) - $totalMigrated;
+
+        echo "Summary:\n";
+        printf("Total datafields migrated: %d\n", $totalMigrated);
+        printf("Total datafields skipped: %d\n", $totalSkipped);
+    }
+
+    /**
+     * Prepare custom properties to migrate
+     *
+     * @return array
+     */
+    private function prepareCustomProperties(): array
+    {
+        $db = $this->db();
         $directorProperty = DirectorProperty::loadAll(
             $db,
             $db->getDbAdapter()->select()->from('director_property')->where('parent_uuid IS NULL'),
             'key_name'
         );
 
-        $alreadyExistingProperties = [];
-        $simpleCustomProperties = [];
-        $customPropertiesWithItems = [];
-        foreach ($supportedTypeQuery as $row) {
+        $customProperties = [];
+        $migrationQuery = $this->getDataFieldsMigrationQuery();
+        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
+        foreach ($migrationQuery as $row) {
             if (isset($directorProperty[$row->varname])) {
-                $alreadyExistingProperties[] = $row->varname;
+                $this->existingCustomProperties[] = $row->varname;
 
                 continue;
             }
@@ -160,71 +144,259 @@ class MigrateCommand extends Command
                     ? 'dynamic-array'
                     : 'string';
             } else {
-                echo "[-] Skipping migration of datafield '$row->varname' as it has an unsupported datatype '$dataType'\n";
+                $customProperty['value_type'] = "unsupported-$dataType";
+            }
+
+            $customProperties[$row->varname] = $customProperty;
+        }
+
+        return $customProperties;
+    }
+
+    /**
+     * Migrate given prepared custom properties
+     *
+     * @param array $customProperties
+     *
+     * @return void
+     */
+    private function migrateDatafields(array $customProperties): void
+    {
+        $db = $this->db();
+        foreach ($customProperties as $varName => $customProperty) {
+            if (str_starts_with($customProperty['value_type'], 'unsupported-')) {
+                echo "[-] Skipping migration of datafield '{$varName}' as it has an unsupported datatype '"
+                    . substr($customProperty['value_type'], strlen('unsupported-'))
+                    . "'\n";
+
                 continue;
             }
 
-            if ($dataType === 'array' || $dataType === 'datalist') {
-                $customPropertiesWithItems[$row->varname] = $customProperty;
-            } else {
-                $simpleCustomProperties[$row->varname] = $customProperty;
-            }
-        }
-
-        if ($this->params->get('dry-run')) {
-            printf(
-                "Total datafields that can not be migrated as the custom properties with the same name already"
-                . " exists: %d\n",
-                count($alreadyExistingProperties)
-            );
-
-            return;
-        }
-
-        echo "Migrating Data fields\n";
-        if ($this->isVerbose && ! empty( $alreadyExistingProperties)) {
-            foreach ($alreadyExistingProperties as $varname) {
-                printf("[-] Skipped migrating datafield '%s' as a custom property with the same name already exists\n", $varname);
-            }
-        }
-
-        if (! empty($customPropertiesWithItems) || ! empty($simpleCustomProperties)) {
-            $db->getDbAdapter()->beginTransaction();
-
-            foreach ($simpleCustomProperties as $varName => $customProperty) {
-                if ($this->isVerbose) {
-                    echo "[+] Datafield '$varName' successfully migrated\n";
-                }
-
-                $db->insert('director_property', $customProperty);
-            }
-
-            foreach ($customPropertiesWithItems as $varName => $customProperty) {
+            $itemType = null;
+            if (isset($customProperty['item_type'])) {
                 $itemType = $customProperty['item_type'];
                 unset($customProperty['item_type']);
-                $db->insert('director_property', $customProperty);
+            }
+
+            $db->insert('director_property', $customProperty);
+
+            if ($itemType !== null) {
                 $db->insert('director_property', [
                     'uuid' => Uuid::uuid4()->getBytes(),
                     'key_name' => 0,
                     'value_type' => $itemType,
                     'parent_uuid' => $customProperty['uuid']
                 ]);
-
-                if ($this->isVerbose) {
-                    echo "[+] Datafield '$varName' successfully migrated\n";
-                }
             }
 
-            $db->getDbAdapter()->commit();
+            if ($this->isVerbose) {
+                echo "[+] Datafield '$varName' successfully migrated\n";
+            }
+        }
+    }
+
+    /**
+     * Check what datafield types can be migrated
+     *
+     * @return void
+     */
+    private function checkMigrateableDatafieldTypes(): void
+    {
+        $db = $this->db();
+        printf("The following datafield types and the corresponding number of datafields can be migrated:\n");
+        $total = 0;
+        $query = $this->getDataFieldsMigrationQuery();
+        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
+        foreach (
+            $db->select()->from(
+                ['q' =>  new DbSelectParenthesis($query->getSelectQuery())],
+                ['*', 'count_q' => 'COUNT(*)']
+            )->group('datatype') as $row
+        ) {
+            printf(
+                "Data type: %s | count: %d\n",
+                substr($row->datatype, $typeOffset),
+                $row->count_q
+            );
+            $total += $row->count_q;
         }
 
-        echo "Migration completed\n";
+        printf("Total datafields that can be migrated: %d\n\n", $total);
+    }
 
-        $totalMigrated = count($simpleCustomProperties) + count($customPropertiesWithItems);
-        $totalSkipped = count(DirectorDatafield::loadAll($db)) - $totalMigrated;
+    /**
+     * Check what datafield types can not be migrated
+     *
+     * @return void
+     */
+    private function checkUnmigrateableDatafieldTypes(): void
+    {
+        printf("The following datafield types and the corresponding number of datafields can not be migrated:\n");
+        $total = 0;
+        $groupByDataType = [];
+        foreach ($this->getDatafieldsWithUnsupportedValuetype() as $varname => $datatype) {
+            $groupByDataType[$datatype][] = $varname;
+            $total++;
+        }
 
-        echo "Summary:\n";
-        printf("Total datafields migrated: %d\n", $totalMigrated);
-        printf("Total datafields skipped: %d\n", $totalSkipped);
+        foreach ($groupByDataType as $datatype => $datafields) {
+            printf("Data type: %s | count: %d\n", $datatype, count($datafields));
+        }
+
+        if ($total > 0) {
+            printf("Total datafields that can not be migrated because of incompatible datatypes with new custom property support: %d\n\n", $total);
+        }
+    }
+
+    /**
+     * Get query for datafields that can be migrated
+     *
+     * @return DbQuery
+     */
+    private function getDataFieldsMigrationQuery(): DbQuery
+    {
+        $query = $this->getDataFieldQuery();
+        $skippedFields = array_merge(
+            array_keys($this->getDatafieldsWithDuplicateNames()),
+            array_keys($this->getDatafieldsWithUnsupportedValuetype()),
+            $this->getDatafieldsWithProtectedValues(),
+            $this->getDatafieldsWithCategory()
+        );
+
+        $query->addFilter(Filter::not(Filter::where('varname', $skippedFields)));
+
+        return $query;
+    }
+
+    /**
+     * Check what datafields can not be migrated because they belong to a category
+     *
+     * @return void
+     */
+    private function checkDatafieldsWithCategory(): void
+    {
+        $count = count($this->getDatafieldsWithCategory());
+
+        if ($count > 0) {
+            printf("The following number of datafields belong to a category and can not be migrated: %d\n\n", $count);
+        }
+    }
+
+    /**
+     * Check what datafields can not be migrated because they have duplicate names
+     *
+     * @return void
+     */
+    private function checkDatafieldsWithDuplicateNames(): void
+    {
+        printf("The following datafields can not be migrated as there are duplicates:\n");
+        $total = 0;
+        foreach ($this->getDatafieldsWithDuplicateNames() as $varname => $count) {
+            printf("Var name: %s | count: %d\n", $varname, $count);
+            $total += $count;
+        }
+
+        printf("Total datafields that can not be migrated because of having duplicates: %d\n\n", $total);
+    }
+
+    /**
+     * Check what datafields can not be migrated because they are protected
+     *
+     * @return void
+     */
+    private function checkProtectedDatafields(): void
+    {
+        $count = count($this->getDatafieldsWithProtectedValues());
+
+        if ($count > 0) {
+            printf("The following number of datafields are protected and can not be migrated: %d\n\n", $count);
+        }
+    }
+
+    /**
+     * Get query for datafields
+     *
+     * @return DbQuery
+     */
+    private function getDataFieldQuery(): DbQuery
+    {
+        return $this->db()->select()
+            ->from(
+                ['dd' => 'director_datafield'],
+                [
+                    'id' => 'dd.id',
+                    'varname' => 'dd.varname',
+                    'caption' => 'dd.caption',
+                    'description' => 'dd.description',
+                    'datatype' => 'dd.datatype',
+                    'count' => 'COUNT(varname)'
+                ]
+            )->group('varname');
+    }
+
+    /**
+     * Get datafields with unsupported value type in new custom property support
+     *
+     * @return array
+     */
+    private function getDatafieldsWithUnsupportedValuetype()
+    {
+        $query = $this->getDataFieldQuery();
+        $query->addFilter(FilterAnd::matchAny(
+            FilterMatch::where('datatype', '*SqlQuery'),
+            FilterMatch::where('datatype', '*DirectorObject'),
+            FilterMatch::where('datatype', '*Dictionary')
+        ));
+
+        $query->columns(['varname', 'datatype']);
+
+        return $query->fetchPairs();
+    }
+
+    /**
+     * Get datafields with duplicate names
+     *
+     * @return array
+     */
+    private function getDatafieldsWithDuplicateNames(): array
+    {
+        $query = $this->getDataFieldQuery();
+        $query->columns(['varname', 'count' => 'COUNT(varname)']);
+        $query->select()->having('count > 1');
+
+        return $query->fetchPairs();
+    }
+
+    /**
+     * Get datafields with protected values
+     *
+     * @return array
+     */
+    private function getDatafieldsWithProtectedValues(): array
+    {
+        $query = $this->getDataFieldQuery();
+        $query->joinLeft(['dds' => 'director_datafield_setting'], "dd.id = dds.datafield_id AND dds.setting_name = 'visibility'", []);
+        $query->addFilter(Filter::matchAll(
+            FilterMatch::where('dd.datatype', '*String'),
+            FilterMatch::where('dds.setting_value', 'hidden')
+        ))->addFilter(Filter::fromQueryString('category_id IS NULL'));
+
+        $query->columns(['varname']);
+
+        return $query->fetchColumn();
+    }
+
+    /**
+     * Get datafields with categories
+     *
+     * @return array
+     */
+    private function getDatafieldsWithCategory(): array
+    {
+        $query = $this->getDataFieldQuery();
+        $query->addFilter(Filter::fromQueryString('category_id IS NOT NULL'));
+        $query->columns(['varname']);
+
+        return $query->fetchColumn();
     }
 }
