@@ -43,18 +43,14 @@ class MigrateCommand extends Command
         $datafieldQuery->group('dd.varname');
         $duplicateFieldsQuery = clone $datafieldQuery;
         $unsupportedTypeQuery = clone $datafieldQuery;
-        $datafieldQuery = $datafieldQuery->addFilter(
-            Filter::not(
-                FilterAnd::matchAny(
-                    FilterMatch::where('datatype', '*SqlQuery'),
-                    FilterMatch::where('datatype', '*DirectorObject'),
-                    FilterMatch::where('datatype', '*Dictionary')
-                )
-            )
+        $filter = FilterAnd::matchAny(
+            FilterMatch::where('datatype', '*SqlQuery'),
+            FilterMatch::where('datatype', '*DirectorObject'),
+            FilterMatch::where('datatype', '*Dictionary')
         );
-        $unsupportedTypeQuery->addFilter(Filter::not(
-            $datafieldQuery->getFilter()
-        ));
+
+        $datafieldQuery = $datafieldQuery->addFilter(Filter::not($filter));
+        $unsupportedTypeQuery->addFilter($filter);
 
         $supportedTypeQuery = clone $datafieldQuery;
         $supportedTypeQuery->joinLeft(['dds' => 'director_datafield_setting'], "dd.id = dds.datafield_id AND dds.setting_name = 'visibility'", []);
@@ -81,7 +77,7 @@ class MigrateCommand extends Command
         $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
         // Dry run summary
         if ($this->params->get('dry-run')) {
-            printf("The following datafield types and the corresponding number of datafields are migrated:\n");
+            printf("The following datafield types and the corresponding number of datafields can be migrated:\n");
             $total = 0;
             foreach (
                 $db->select()->from(
@@ -97,28 +93,28 @@ class MigrateCommand extends Command
                 $total += $row->count_q;
             }
 
-            printf("Total datafields that will be migrated: %d\n\n", $total);
+            printf("Total datafields that can be migrated: %d\n\n", $total);
 
-            printf("The following number of datafields are protected and are not migrated: %d\n\n", $protectedDatafieldsQuery->count());
-            printf("The following number of datafields belong to a category and will not be migrated: %d\n\n", $categoryFieldsQuery->count());
+            printf("The following number of datafields are protected and can not be migrated: %d\n\n", $protectedDatafieldsQuery->count());
+            printf("The following number of datafields belong to a category and can not be migrated: %d\n\n", $categoryFieldsQuery->count());
 
-            printf("The following datafield types and the corresponding number of datafields are not migrated:\n");
+            printf("The following datafield types and the corresponding number of datafields can not be migrated:\n");
             $total = 0;
             foreach ($unsupportedTypeQuery->group('datatype') as $row) {
                 printf("Data type: %s | count: %d\n", substr($row->datatype, $typeOffset), $row->count);
                 $total += $row->count;
             }
 
-            printf("Total datafields that are not migrated because of incompatible datatypes with new custom property support: %d\n\n", $total);
+            printf("Total datafields that can not be migrated because of incompatible datatypes with new custom property support: %d\n\n", $total);
 
-            printf("The following datafields will not be migrated as there are duplicates:\n");
+            printf("The following datafields can not be migrated as there are duplicates:\n");
             $total = 0;
             foreach ($duplicateFieldsQuery->group('varname') as $row) {
                 printf("Var name: %s | count: %d\n", $row->varname, $row->count);
                 $total += $row->count;
             }
 
-            printf("Total datafields that are not migrated because of having duplicates: %d\n", $total);
+            printf("Total datafields that can not be migrated because of having duplicates: %d\n", $total);
         }
 
         $directorProperty = DirectorProperty::loadAll(
@@ -177,7 +173,7 @@ class MigrateCommand extends Command
 
         if ($this->params->get('dry-run')) {
             printf(
-                "Total datafields that will not be migrated as the custom properties with the same name already"
+                "Total datafields that can not be migrated as the custom properties with the same name already"
                 . " exists: %d\n",
                 count($alreadyExistingProperties)
             );
