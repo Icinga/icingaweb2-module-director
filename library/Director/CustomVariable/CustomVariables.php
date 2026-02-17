@@ -399,10 +399,9 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     protected function renderSingleVar($key, $var, $renderExpressions = false)
     {
         if ($key === $this->overrideKeyName) {
-            return c::renderKeyOperatorValue(
+            return c::renderKeyValue(
                 $this->renderKeyName($key),
-                '+=',
-                $var->toConfigStringPrefetchable($renderExpressions)
+                'directorMergeOverrideConfig('.$this->renderKeyName($key) . ', ' . $var->toConfigStringPrefetchable($renderExpressions).')'
             );
         } else {
             return c::renderKeyValue(
