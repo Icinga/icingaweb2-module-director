@@ -53,12 +53,12 @@ class ServiceActions extends ServiceActionsHook
         }
 
         $title = null;
-        if (Util::hasPermission(Permission::HOSTS)) {
+        if (
+            Util::hasPermission(Permission::SERVICES)
+            && Util::hasPermission(Permission::MONITORING_SERVICES)
+            && (new Monitoring(Auth::getInstance()))->canModifyService($hostname, $serviceName)
+        ) {
             $title = mt('director', 'Modify');
-        } elseif (Util::hasPermission(Permission::MONITORING_SERVICES)) {
-            if ((new Monitoring(Auth::getInstance()))->canModifyService($hostname, $serviceName)) {
-                $title = mt('director', 'Modify');
-            }
         } elseif (Util::hasPermission(Permission::MONITORING_SERVICES_RO)) {
             $title = mt('director', 'Configuration');
         }
