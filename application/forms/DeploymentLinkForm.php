@@ -104,7 +104,7 @@ class DeploymentLinkForm extends DirectorForm
         return $this->auth->hasPermission(Permission::DEPLOY);
     }
 
-    public function render(Zend_View_Interface $view = null)
+    public function render(?Zend_View_Interface $view = null)
     {
         if (! $this->canDeploy()) {
             return '';
