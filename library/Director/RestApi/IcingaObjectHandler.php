@@ -148,7 +148,7 @@ class IcingaObjectHandler extends RequestHandler
                         );
                     }
 
-                    if (in_array($object->get('object_name'), $data['imports'])) {
+                    if (isset($data['imports']) && in_array($object->get('object_name'), $data['imports'])) {
                         throw new RuntimeException(
                             'You can not import the same object into itself: ' . $object->getObjectName()
                         );
