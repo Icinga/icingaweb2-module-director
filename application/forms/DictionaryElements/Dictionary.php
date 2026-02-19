@@ -142,8 +142,6 @@ class Dictionary extends FieldsetElement
     public static function prepare(array $items): array
     {
         $values = [];
-        $removedItems = Session::getSession()->getNamespace('director.variables')
-            ->get('removed-properties', []);
         foreach ($items as $item) {
             if (isset($item['removed'])) {
                 continue;
