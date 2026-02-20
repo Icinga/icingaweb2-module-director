@@ -78,6 +78,7 @@ class DeploymentInfo extends HtmlDocument
         $table->addNameValuePairs([
             $this->translate('Deployment time') => $dep->start_time,
             $this->translate('Sent to')         => $dep->peer_identity,
+            $this->translate('Triggered by')    => $dep->username,
         ]);
         if ($this->config !== null) {
             $table->addNameValuePairs([
