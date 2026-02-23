@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\Web\InlineForm;
 
 class ClickHereForm extends InlineForm
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $hasBeenClicked = false;
 

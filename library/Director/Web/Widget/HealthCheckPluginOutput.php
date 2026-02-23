@@ -5,13 +5,13 @@ namespace Icinga\Module\Director\Web\Widget;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlString;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use Icinga\Module\Director\CheckPlugin\PluginState;
 use Icinga\Module\Director\Health;
 
 class HealthCheckPluginOutput extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var Health */
     protected $health;
