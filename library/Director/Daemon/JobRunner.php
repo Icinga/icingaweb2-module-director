@@ -9,7 +9,6 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorJob;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
-use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
@@ -25,7 +24,7 @@ class JobRunner implements DbBasedComponent
     /** @var int[] */
     protected $scheduledIds = [];
 
-    /** @var Promise[] */
+    /** @var PromiseInterface[] */
     protected $runningIds = [];
 
     protected $checkInterval = 10;
