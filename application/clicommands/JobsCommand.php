@@ -10,7 +10,7 @@ use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Daemon\JsonRpcLogWriter as JsonRpcLogWriterAlias;
 use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Objects\DirectorJob;
-use React\EventLoop\Factory as Loop;
+use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\Stream\ReadableResourceStream;
 use React\Stream\WritableResourceStream;
@@ -20,7 +20,7 @@ class JobsCommand extends Command
     public function runAction()
     {
         $this->app->getModuleManager()->loadEnabledModules();
-        $loop = Loop::create();
+        $loop = Loop::get();
         if ($this->params->get('rpc')) {
             $this->enableRpc($loop);
         }
