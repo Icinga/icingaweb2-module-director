@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use React\EventLoop\LoopInterface;
+use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
 
@@ -31,7 +32,8 @@ class DeploymentChecker implements DbBasedComponent
 
     /**
      * @param Db $connection
-     * @return \React\Promise\ExtendedPromiseInterface
+     *
+     * @return PromiseInterface
      */
     public function initDb(Db $connection)
     {
@@ -41,7 +43,7 @@ class DeploymentChecker implements DbBasedComponent
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function stopDb()
     {

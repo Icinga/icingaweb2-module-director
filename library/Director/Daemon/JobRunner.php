@@ -10,6 +10,7 @@ use Icinga\Module\Director\Objects\DirectorJob;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 use React\Promise\Promise;
+use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
 
@@ -53,7 +54,8 @@ class JobRunner implements DbBasedComponent
 
     /**
      * @param Db $db
-     * @return \React\Promise\ExtendedPromiseInterface
+     *
+     * @return PromiseInterface
      */
     public function initDb(Db $db)
     {
@@ -79,7 +81,7 @@ class JobRunner implements DbBasedComponent
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function stopDb()
     {
