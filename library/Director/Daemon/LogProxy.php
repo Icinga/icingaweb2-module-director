@@ -42,7 +42,7 @@ class LogProxy implements DbBasedComponent
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
 
-        return resolve();
+        return resolve(null);
     }
 
     /**
@@ -53,7 +53,7 @@ class LogProxy implements DbBasedComponent
         $this->connection = null;
         $this->db = null;
 
-        return resolve();
+        return resolve(null);
     }
 
     public function log($severity, $message)

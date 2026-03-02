@@ -112,7 +112,7 @@ class DaemonDb
             $this->emitStatus('no configuration');
             $this->dbConfig = $config;
 
-            return resolve();
+            return resolve(null);
         } else {
             $this->emitStatus('configuration loaded');
             $this->dbConfig = $config;
@@ -243,7 +243,7 @@ class DaemonDb
             }
         }
 
-        return resolve();
+        return resolve(null);
     }
 
     /**
@@ -252,7 +252,7 @@ class DaemonDb
     public function disconnect()
     {
         if (! $this->connection) {
-            return resolve();
+            return resolve(null);
         }
         if ($this->pendingDisconnect) {
             return $this->pendingDisconnect->promise();
@@ -266,7 +266,7 @@ class DaemonDb
             $resolve = function () use ($pendingComponents, $component) {
                 $pendingComponents->detach($component);
                 if ($pendingComponents->count() === 0) {
-                    $this->pendingDisconnect->resolve();
+                    $this->pendingDisconnect->resolve(null);
                 }
             };
             // TODO: What should we do in case they don't?

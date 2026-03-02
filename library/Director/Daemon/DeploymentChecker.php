@@ -39,7 +39,7 @@ class DeploymentChecker implements DbBasedComponent
     {
         $this->connection = $connection;
 
-        return resolve();
+        return resolve(null);
     }
 
     /**
@@ -49,6 +49,6 @@ class DeploymentChecker implements DbBasedComponent
     {
         $this->connection = null;
 
-        return resolve();
+        return resolve(null);
     }
 }

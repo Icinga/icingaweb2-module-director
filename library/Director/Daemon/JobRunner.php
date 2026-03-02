@@ -77,7 +77,7 @@ class JobRunner implements DbBasedComponent
         }
         $this->timer = $this->loop->addPeriodicTimer($this->checkInterval, $check);
 
-        return resolve();
+        return resolve(null);
     }
 
     /**
