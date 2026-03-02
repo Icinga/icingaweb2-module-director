@@ -8,6 +8,7 @@ use ipl\Stdlib\EventEmitter;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
 
@@ -56,12 +57,13 @@ class ProcessList
 
     /**
      * @param int $timeout
-     * @return \React\Promise\ExtendedPromiseInterface
+     *
+     * @return PromiseInterface
      */
     public function killOrTerminate($timeout = 5)
     {
         if ($this->processes->count() === 0) {
-            return resolve();
+            return resolve(null);
         }
         $deferred = new Deferred();
         $killTimer = $this->loop->addTimer($timeout, function () use ($deferred) {
@@ -74,7 +76,7 @@ class ProcessList
 
             // Let's a little bit of delay after KILLing
             $this->loop->addTimer(0.1, function () use ($deferred) {
-                $deferred->resolve();
+                $deferred->resolve(null);
             });
         });
 
@@ -96,7 +98,7 @@ class ProcessList
             if ($this->processes->count() === 0) {
                 $this->loop->cancelTimer($timer);
                 $this->loop->cancelTimer($killTimer);
-                $deferred->resolve();
+                $deferred->resolve(null);
             }
         });
         /** @var Process $process */
