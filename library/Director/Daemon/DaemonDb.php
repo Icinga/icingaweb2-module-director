@@ -11,6 +11,7 @@ use Icinga\Module\Director\Db\Migrations;
 use ipl\Stdlib\EventEmitter;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 use RuntimeException;
 use SplObjectStorage;
 
@@ -219,7 +220,7 @@ class DaemonDb
     }
 
     /**
-     * @return \React\Promise\PromiseInterface
+     * @return PromiseInterface
      */
     protected function reconnect()
     {
@@ -232,7 +233,7 @@ class DaemonDb
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function connect()
     {
@@ -246,7 +247,7 @@ class DaemonDb
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function disconnect()
     {

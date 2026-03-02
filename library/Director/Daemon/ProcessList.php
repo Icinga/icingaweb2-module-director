@@ -8,6 +8,7 @@ use ipl\Stdlib\EventEmitter;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
 
@@ -56,7 +57,8 @@ class ProcessList
 
     /**
      * @param int $timeout
-     * @return \React\Promise\ExtendedPromiseInterface
+     *
+     * @return PromiseInterface
      */
     public function killOrTerminate($timeout = 5)
     {
