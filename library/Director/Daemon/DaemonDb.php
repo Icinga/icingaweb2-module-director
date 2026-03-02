@@ -125,7 +125,7 @@ class DaemonDb
     {
         if ($this->connection !== null) {
             Logger::error('Trying to establish a connection while being connected');
-            return reject();
+            return reject(new RuntimeException());
         }
         $callback = function () use ($config) {
             $this->reallyEstablishConnection($config);
