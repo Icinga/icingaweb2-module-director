@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Daemon;
 
-use gipfl\IcingaCliDaemon\FinishedProcessState;
 use gipfl\IcingaCliDaemon\IcingaCliRpc;
 use Icinga\Application\Logger;
 use Icinga\Module\Director\Db;
@@ -206,8 +205,6 @@ class JobRunner implements DbBasedComponent
             Logger::debug("Job ($jobName) finished");
         })->catch(function (\Exception $e) use ($id, $jobName) {
             Logger::error("Job ($jobName) failed: " . $e->getMessage());
-        })->catch(function (FinishedProcessState $state) use ($jobName) {
-            Logger::error("Job ($jobName) failed: " . $state->getReason());
         })->finally(function () use ($id) {
             unset($this->runningIds[$id]);
             $this->loop->futureTick(function () {
