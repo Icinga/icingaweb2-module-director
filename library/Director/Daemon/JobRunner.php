@@ -205,11 +205,11 @@ class JobRunner implements DbBasedComponent
         unset($this->scheduledIds[$id]);
         $this->runningIds[$id] = $cli->run($this->loop)->then(function () use ($id, $jobName) {
             Logger::debug("Job ($jobName) finished");
-        })->otherwise(function (\Exception $e) use ($id, $jobName) {
+        })->catch(function (\Exception $e) use ($id, $jobName) {
             Logger::error("Job ($jobName) failed: " . $e->getMessage());
-        })->otherwise(function (FinishedProcessState $state) use ($jobName) {
+        })->catch(function (FinishedProcessState $state) use ($jobName) {
             Logger::error("Job ($jobName) failed: " . $state->getReason());
-        })->always(function () use ($id) {
+        })->finally(function () use ($id) {
             unset($this->runningIds[$id]);
             $this->loop->futureTick(function () {
                 $this->runNextPendingJob();
