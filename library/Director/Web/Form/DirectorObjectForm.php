@@ -1301,8 +1301,12 @@ abstract class DirectorObjectForm extends DirectorForm
                     }
 
                     if ($this->object->isTemplate()) {
-                        $descendents = $templateTree->getDescendantsFor($this->object);
-                        $loopedImports = array_intersect($templateTree->getDescendantsFor($this->object), $value);
+                        $descendents = [];
+                        if (! $this->isNew()) {
+                            $descendents = $templateTree->getDescendantsFor($this->object);
+                        }
+
+                        $loopedImports = array_intersect($descendents, $value);
                         if (! empty($loopedImports)) {
                             $loopedImport = array_slice($loopedImports, 0, 1);
                             array_push($loopedImport, ...$descendents);
