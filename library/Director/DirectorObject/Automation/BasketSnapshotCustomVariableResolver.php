@@ -10,7 +10,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 
-class BasketSnapshotCustomPropertyResolver
+class BasketSnapshotCustomVariableResolver
 {
     /** @var BasketSnapshot */
     protected $snapshot;

@@ -437,6 +437,4 @@ The below screenshot show an example of the configuration basket snapshot for ho
 - New 'variables' (director/host/variables) endpoint for hosts have been provided to update only the custom variables for the hosts.
 
 The implementation does not cover everything currently. It does not include the following:
-- There is no support for data list, data field category
-- The new custom property works only for Hosts
 - The visibility of the custom properties like password cannot be changed. They are always visible.

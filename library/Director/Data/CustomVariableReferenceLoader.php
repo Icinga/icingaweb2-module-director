@@ -7,7 +7,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Ramsey\Uuid\Uuid;
 
-class PropertyReferenceLoader
+class CustomVariableReferenceLoader
 {
     /** @var Adapter|\Zend_Db_Adapter_Abstract */
     protected $db;

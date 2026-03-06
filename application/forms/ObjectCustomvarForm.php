@@ -12,25 +12,25 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use Ramsey\Uuid\Uuid;
 
-class ObjectPropertyForm extends CompatForm
+class ObjectCustomvarForm extends CompatForm
 {
     use CsrfCounterMeasure;
     use Translation;
 
-    protected $properties = [];
+    protected $customVars = [];
 
     public function __construct(
         public readonly DbConnection $db,
         public readonly IcingaObject $object
     ) {
-        $this->properties = $this->getProperties();
+        $this->customVars = $this->getCustomVars();
     }
 
     public function getPropertyName(): string
     {
         $propertyUuid = $this->getValue('property');
         if ($propertyUuid) {
-            return $this->properties[$propertyUuid] ?? '';
+            return $this->customVars[$propertyUuid] ?? '';
         }
 
         return '';
@@ -43,14 +43,14 @@ class ObjectPropertyForm extends CompatForm
             'select',
             'property',
             [
-                'label'     => $this->translate('Property'),
+                'label'     => $this->translate('Variable'),
                 'required'  => true,
                 'class' => ['autosubmit'],
                 'disabledOptions' => [''],
                 'value' => '',
                 'options'   => array_merge(
-                    ['' => $this->translate('Please choose a property')],
-                    $this->getProperties()
+                    ['' => $this->translate('Please choose a custom variable to add')],
+                    $this->getCustomVars()
                 )
             ]
         );
@@ -62,7 +62,7 @@ class ObjectPropertyForm extends CompatForm
         ]);
     }
 
-    protected function getProperties(): array
+    protected function getCustomVars(): array
     {
         $parents = $this->object->listAncestorIds();
         $type = $this->object->getShortTableName();

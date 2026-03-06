@@ -122,7 +122,8 @@ class MigrateCommand extends Command
                 'uuid' => Uuid::uuid4()->getBytes(),
                 'key_name' => $row->varname,
                 'label' => $row->caption,
-                'description' => $row->description
+                'description' => $row->description,
+                'category_id' => $row->category_id
             ];
             $dataType = strtolower(substr($row->datatype, $typeOffset));
 
@@ -346,6 +347,7 @@ class MigrateCommand extends Command
                     'caption' => 'dd.caption',
                     'description' => 'dd.description',
                     'datatype' => 'dd.datatype',
+                    'category_id' => 'dd.category_id',
                     'count' => 'COUNT(varname)'
                 ]
             )->group('varname');

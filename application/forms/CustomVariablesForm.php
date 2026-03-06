@@ -18,7 +18,7 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use Ramsey\Uuid\Uuid;
 
-class CustomPropertiesForm extends CompatForm
+class CustomVariablesForm extends CompatForm
 {
     use CsrfCounterMeasure;
     use Translation;
@@ -37,7 +37,7 @@ class CustomPropertiesForm extends CompatForm
         public readonly IcingaObject $object,
         protected array $objectProperties = []
     ) {
-        $this->addAttributes(Attributes::create(['class' => 'custom-properties-form']));
+        $this->addAttributes(Attributes::create(['class' => 'custom-variables-form']));
     }
 
     /**

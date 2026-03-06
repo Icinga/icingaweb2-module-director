@@ -194,7 +194,7 @@ class BasketSnapshot extends DbObject
     {
         /** @var Db $db */
         $db = $this->getConnection();
-        $customPropertyResolver = new BasketSnapshotCustomPropertyResolver($this->objects, $db);
+        $customPropertyResolver = new BasketSnapshotCustomVariableResolver($this->objects, $db);
 
         /** @var DirectorProperty[] $properties */
         $properties = $customPropertyResolver->loadCurrentProperties($db);
@@ -286,7 +286,7 @@ class BasketSnapshot extends DbObject
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
         $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
-        $propertyResolver = new BasketSnapshotCustomPropertyResolver($all, $connection);
+        $propertyResolver = new BasketSnapshotCustomVariableResolver($all, $connection);
         $this->restoreType($all, 'DataList', $fieldResolver, $connection);
         $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
         $fieldResolver->storeNewFields();
@@ -308,7 +308,7 @@ class BasketSnapshot extends DbObject
         string $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
         Db $connection,
-        ?BasketSnapshotCustomPropertyResolver $customPropertyResolver = null
+        ?BasketSnapshotCustomVariableResolver $customPropertyResolver = null
     ) {
         if (isset($all->$typeName)) {
             $objects = (array) $all->$typeName;

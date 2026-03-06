@@ -20,7 +20,7 @@ use Ramsey\Uuid\UuidInterface;
 use Zend_Db;
 use Zend_Db_Expr;
 
-class DeletePropertyForm extends CompatForm
+class DeleteCustomVariableForm extends CompatForm
 {
     use CsrfCounterMeasure;
     use Translation;

@@ -2,14 +2,11 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
-use GuzzleHttp\Psr7\ServerRequest;
 use Icinga\Module\Director\Cli\ObjectsCommand;
-use Icinga\Module\Director\Forms\CustomPropertiesForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use PDO;
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 
 /**
  * Manage Icinga Hosts

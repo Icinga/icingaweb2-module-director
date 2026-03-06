@@ -15,12 +15,12 @@ use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
-use Icinga\Module\Director\Forms\CustomPropertiesForm;
+use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
-use Icinga\Module\Director\Forms\ObjectPropertyForm;
+use Icinga\Module\Director\Forms\ObjectCustomvarForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -125,13 +125,13 @@ abstract class ObjectController extends ActionController
     protected function initializeWebRequest()
     {
         $action = $this->getRequest()->getActionName();
-        if (! ($action === 'variables' || $action === 'add-property')) {
+        if (! ($action === 'variables' || $action === 'add-var')) {
             $this->session->delete('vars');
             $this->session->delete('added-properties');
             $this->session->delete('removed-properties');
         }
 
-        if ($this->getRequest()->getActionName() === 'add-property') {
+        if ($this->getRequest()->getActionName() === 'add-var') {
             return;
         }
 
@@ -302,16 +302,16 @@ abstract class ObjectController extends ActionController
         }
     }
 
-    public function addPropertyAction()
+    public function addVarAction()
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
         $this->view->title = sprintf($this->translate('Add Custom Property: %s'), $this->object->getObjectName());
         $objectUuid = $this->object->get('uuid');
 
-        $form = (new ObjectPropertyForm($this->db(), $object))
+        $form = (new ObjectCustomvarForm($this->db(), $object))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(ObjectPropertyForm::ON_SUCCESS, function (ObjectPropertyForm $form) use ($objectUuid) {
+            ->on(ObjectCustomvarForm::ON_SUCCESS, function (ObjectCustomvarForm $form) use ($objectUuid) {
                 $properties = $this->session->get('added-properties', []);
                 $removedObjectProperties = $this->session->get('removed-properties', []);
                 $propertyName = $form->getPropertyName();
@@ -376,9 +376,9 @@ abstract class ObjectController extends ActionController
         if ($this->object->isTemplate()) {
             $this->actions()->add(
                 (new ButtonLink(
-                    $this->translate('Add Property'),
+                    $this->translate('Add Custom Variable'),
                     Url::fromPath(
-                        'director/'. $this->getType() .'/add-property',
+                        'director/'. $this->getType() .'/add-var',
                         ['uuid' => $this->getUuidFromUrl(), '_preserve_session' => true]
                     )->getAbsoluteUrl(),
                     null,
@@ -401,12 +401,12 @@ abstract class ObjectController extends ActionController
      * @param IcingaObject $object
      * @param IcingaHost|null $host
      *
-     * @return ?CustomPropertiesForm
+     * @return ?CustomVariablesForm
      */
     public function prepareCustomPropertiesForm(
         IcingaObject $object,
         ?IcingaHost $host = null
-    ): ?CustomPropertiesForm {
+    ): ?CustomVariablesForm {
         $addedProperties = $this->session->get('added-properties');
         $removedProperties = $this->session->get('removed-properties');
 
@@ -450,10 +450,10 @@ abstract class ObjectController extends ActionController
             $result[] = $row;
         }
 
-        $form = (new CustomPropertiesForm($object, $objectProperties))
+        $form = (new CustomVariablesForm($object, $objectProperties))
             ->setAction(Url::fromRequest()->setParam('_preserve_session')->getAbsoluteUrl());
 
-        $form->on(CustomPropertiesForm::ON_SUBMIT, function (CustomPropertiesForm $form) {
+        $form->on(CustomVariablesForm::ON_SUBMIT, function (CustomVariablesForm $form) {
                 $this->session->delete('vars');
                 $this->session->delete('added-properties');
                 $this->session->delete('removed-properties');
@@ -470,7 +470,7 @@ abstract class ObjectController extends ActionController
 
                 $this->redirectNow(Url::fromRequest()->without(['_preserve_session']));
             })
-            ->on(CustomPropertiesForm::ON_SENT, function (CustomPropertiesForm $form) {
+            ->on(CustomVariablesForm::ON_SENT, function (CustomVariablesForm $form) {
                 /** @var Dictionary $propertiesElement */
                 $propertiesElement = $form->getElement('properties');
                 $vars = $propertiesElement->getDictionary();

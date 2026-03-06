@@ -17,7 +17,7 @@ use Ramsey\Uuid\UuidInterface;
 use Zend_Db;
 use Zend_Db_Select_Exception;
 
-class PropertyForm extends CompatForm
+class CustomVariableForm extends CompatForm
 {
     use CsrfCounterMeasure;
     use Translation;
@@ -34,7 +34,7 @@ class PropertyForm extends CompatForm
         protected bool $field = false,
         protected ?UuidInterface $parentUuid = null
     ) {
-        $this->getAttributes()->add(['class' => ['property-form']]);
+        $this->getAttributes()->add(['class' => ['custom-variable-form']]);
     }
 
     /**
@@ -259,7 +259,7 @@ class PropertyForm extends CompatForm
                     (new ButtonLink(
                         $this->translate('Delete'),
                         Url::fromPath(
-                            'director/property/delete',
+                            'director/customvar/delete',
                             ['uuid' => $this->uuid->toString()]
                         ),
                         null,

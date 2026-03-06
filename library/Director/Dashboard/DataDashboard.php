@@ -8,6 +8,7 @@ class DataDashboard extends Dashboard
         'Datafield',
         'DatafieldCategory',
         'Datalist',
+        'CustomVariables',
         'Customvar'
     ];
 

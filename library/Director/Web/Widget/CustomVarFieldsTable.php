@@ -9,12 +9,12 @@ use ipl\Web\Url;
 use ipl\Web\Widget\Link;
 use Ramsey\Uuid\Uuid;
 
-class PropertyTable extends Table
+class CustomVarFieldsTable extends Table
 {
     use Translation;
 
     protected $defaultAttributes = [
-        'class' => 'common-table table-row-selectable property-table',
+        'class' => 'common-table table-row-selectable custom-var-fields-table',
         'data-base-target' => '_next',
     ];
 
@@ -28,7 +28,7 @@ class PropertyTable extends Table
     {
         foreach ($this->properties as $property) {
             $url = Url::fromPath(
-                'director/property',
+                'director/customvar',
                 ['uuid' => Uuid::fromBytes($property->uuid)->toString()]
             );
 

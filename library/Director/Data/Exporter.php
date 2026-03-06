@@ -34,7 +34,7 @@ class Exporter
     /** @var FieldReferenceLoader */
     protected $fieldReferenceLoader;
 
-    /** @var PropertyReferenceLoader */
+    /** @var CustomVariableReferenceLoader */
     protected $propertyReferenceLoader;
 
     /** @var ?HostServiceLoader */
@@ -56,7 +56,7 @@ class Exporter
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
         $this->fieldReferenceLoader = new FieldReferenceLoader($connection);
-        $this->propertyReferenceLoader = new PropertyReferenceLoader($connection);
+        $this->propertyReferenceLoader = new CustomVariableReferenceLoader($connection);
     }
 
     public function export(DbObject $object)

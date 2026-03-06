@@ -25,7 +25,7 @@ class BasketDiff
     /** @var BasketSnapshotFieldResolver */
     protected $fieldResolver;
 
-    /** @var BasketSnapshotCustomPropertyResolver */
+    /** @var BasketSnapshotCustomVariableResolver */
     protected $customPropertyResolver;
 
     public function __construct(BasketSnapshot $snapshot, Db $db)
@@ -61,10 +61,10 @@ class BasketDiff
         return $this->fieldResolver;
     }
 
-    protected function getCustomPropertyResolver(): BasketSnapshotCustomPropertyResolver
+    protected function getCustomPropertyResolver(): BasketSnapshotCustomVariableResolver
     {
         if ($this->customPropertyResolver === null) {
-            $this->customPropertyResolver = new BasketSnapshotCustomPropertyResolver(
+            $this->customPropertyResolver = new BasketSnapshotCustomVariableResolver(
                 $this->getBasketObjects(),
                 $this->db
             );

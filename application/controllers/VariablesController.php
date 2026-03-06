@@ -4,8 +4,8 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Forms\PropertyForm;
-use Icinga\Module\Director\Web\Widget\PropertyTable;
+use Icinga\Module\Director\Forms\CustomVariableForm;
+use Icinga\Module\Director\Web\Widget\CustomVarFieldsTable;
 use Icinga\Web\Notification;
 use ipl\Html\Html;
 use ipl\Html\Text;
@@ -13,11 +13,11 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 
-class PropertiesController extends CompatController
+class VariablesController extends CompatController
 {
     public function indexAction()
     {
-        $this->addTitleTab($this->translate('Properties'));
+        $this->addTitleTab($this->translate('Custom Variables'));
 
         $db = Db::fromResourceName(
             Config::module('director')->get('db', 'resource')
@@ -39,12 +39,12 @@ class PropertiesController extends CompatController
             ->group('dp.uuid')
             ->order('key_name');
 
-        $properties = new PropertyTable($db->fetchAll($query));
+        $properties = new CustomVarFieldsTable($db->fetchAll($query));
 
-        $this->addControl(Html::tag('div', ['class' => 'property-form'], [
+        $this->addControl(Html::tag('div', ['class' => 'custom-variable-form'], [
             (new ButtonLink(
-                [Text::create('Create property')],
-                Url::fromPath('director/properties/add'),
+                [Text::create($this->translate('Create Custom Variable'))],
+                Url::fromPath('director/variables/add'),
                 null,
                 [
                     'class' => 'control-button'
@@ -57,19 +57,19 @@ class PropertiesController extends CompatController
 
     public function addAction()
     {
-        $this->addTitleTab($this->translate('Add property'));
+        $this->addTitleTab($this->translate('Create Custom Variable'));
         $db = Db::fromResourceName(
             Config::module('director')->get('db', 'resource')
         );
 
-        $propertyForm = (new PropertyForm($db))
-            ->on(PropertyForm::ON_SUCCESS, function (PropertyForm $form) {
+        $propertyForm = (new CustomVariableForm($db))
+            ->on(CustomVariableForm::ON_SUCCESS, function (CustomVariableForm $form) {
                 Notification::success(sprintf(
                     $this->translate('Property "%s" has successfully been added'),
                     $form->getValue('key_name')
                 ));
 
-                $this->redirectNow(Url::fromPath('director/property', ['uuid' => $form->getUUid()->toString()]));
+                $this->redirectNow(Url::fromPath('director/customvar', ['uuid' => $form->getUUid()->toString()]));
             })
             ->handleRequest($this->getServerRequest());
 
