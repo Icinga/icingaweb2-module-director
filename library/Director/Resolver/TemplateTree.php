@@ -268,6 +268,8 @@ class TemplateTree
      */
     public function getAncestorsById($id, &$ancestors = [], $path = [])
     {
+        $id ??= ''; // NULL array keys are not allowed
+
         $path[$id] = true;
         foreach ($this->getParentsById($id) as $pid => $name) {
             $this->assertNotInList($pid, $path);

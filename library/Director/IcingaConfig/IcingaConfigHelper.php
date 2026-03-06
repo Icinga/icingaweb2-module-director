@@ -384,7 +384,7 @@ class IcingaConfigHelper
             && ! preg_match('/\.$/', $name);
     }
 
-    public static function renderStringWithVariables($string, array $whiteList = null)
+    public static function renderStringWithVariables($string, ?array $whiteList = null)
     {
         $len = strlen($string);
         $start = false;

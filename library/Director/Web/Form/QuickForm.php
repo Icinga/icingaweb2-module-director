@@ -167,10 +167,11 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function addButtonDisplayGroup()
     {
-        $grp = array(
+        // addDisplayGroup() uses these names as array indices which must not be null, hence array_filter().
+        $grp = array_filter([
             $this->submitButtonName,
             $this->deleteButtonName
-        );
+        ]);
         $this->addDisplayGroup($grp, 'buttons', array(
             'decorators' => array(
                 'FormElements',
@@ -355,6 +356,7 @@ abstract class QuickForm extends QuickBaseForm
 
         $req = $this->getRequest();
         $post = $req->getPost();
+        $name ??= ''; // NULL is not allowed as array index
 
         return array_key_exists($name, $post)
             && $post[$name] === $label;
@@ -376,7 +378,7 @@ abstract class QuickForm extends QuickBaseForm
         return $this;
     }
 
-    public function handleRequest(Request $request = null)
+    public function handleRequest(?Request $request = null)
     {
         if ($request === null) {
             $request = $this->getRequest();
@@ -413,7 +415,9 @@ abstract class QuickForm extends QuickBaseForm
     public function addException(Exception $e, $elementName = null)
     {
         $msg = $this->getErrorMessageForException($e);
-        if ($el = $this->getElement($elementName)) {
+
+        // getElement() uses $elementName as array index which must not be null.
+        if ($elementName !== null && $el = $this->getElement($elementName)) {
             $el->addError($msg);
         } else {
             $this->addError($msg);
