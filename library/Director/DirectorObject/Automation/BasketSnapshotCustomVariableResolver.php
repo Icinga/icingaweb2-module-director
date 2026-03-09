@@ -146,16 +146,18 @@ class BasketSnapshotCustomVariableResolver
      */
     public function tweakTargetUuids(object $object): void
     {
+        if (! isset($object->properties)) {
+            return;
+        }
+
         $forward = $this->getUuidMap();
         $map = array_flip($forward);
-        if (isset($object->properties)) {
-            foreach ($object->properties as $property) {
-                $uuid = $property->property_uuid;
-                if (isset($map[$uuid])) {
-                    $property->property_uuid = $map[$uuid];
-                } else {
-                    $property->property_uuid = '(UNKNOWN)';
-                }
+        foreach ($object->properties as $property) {
+            $uuid = $property->property_uuid;
+            if (isset($map[$uuid])) {
+                $property->property_uuid = $map[$uuid];
+            } else {
+                $property->property_uuid = '(UNKNOWN)';
             }
         }
     }
@@ -181,10 +183,12 @@ class BasketSnapshotCustomVariableResolver
         // Get the uuids of all custom properties associated with all the objects hosts, services, etc.
         foreach ($this->objects as $objects) {
             foreach ($objects as $object) {
-                if (isset($object->properties)) {
-                    foreach ($object->properties as $property) {
-                        $uuids[$property->property_uuid] = true;
-                    }
+                if (! isset($object->properties)) {
+                    continue;
+                }
+
+                foreach ($object->properties as $property) {
+                    $uuids[$property->property_uuid] = true;
                 }
             }
         }
