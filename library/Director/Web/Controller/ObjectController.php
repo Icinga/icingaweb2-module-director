@@ -49,7 +49,6 @@ use ipl\Web\Widget\ButtonLink;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use React\Socket\ServerInterface;
 
 abstract class ObjectController extends ActionController
 {
