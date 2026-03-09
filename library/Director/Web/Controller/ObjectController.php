@@ -614,16 +614,16 @@ abstract class ObjectController extends ActionController
     {
         $db = $this->db();
         $query = $db->getDbAdapter()
-                          ->select()
-                          ->from(
-                              ['dp' => 'director_property'],
-                              [
-                                  'uuid' => 'dp.uuid',
-                                  'key_name' => 'dp.key_name',
-                                  'label' => 'dp.label',
-                                  'value_type' => 'dp.value_type'
-                              ]
-                          )->where("parent_uuid = ?", $dictionaryUuid);
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'uuid' => 'dp.uuid',
+                    'key_name' => 'dp.key_name',
+                    'label' => 'dp.label',
+                    'value_type' => 'dp.value_type'
+                ]
+            )->where("parent_uuid = ?", $dictionaryUuid);
 
         return $db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
@@ -632,11 +632,11 @@ abstract class ObjectController extends ActionController
     {
         $db = $this->object->getConnection();
         $query = $db->select()
-                    ->from(
-                        ['dp' => 'director_property'],
-                        ['*']
-                    )
-                    ->where('parent_uuid IS NULL AND key_name ', $varName);
+            ->from(
+                ['dp' => 'director_property'],
+                ['*']
+            )
+            ->where('parent_uuid IS NULL AND key_name ', $varName);
 
         return $db->getDbAdapter()->fetchRow($query);
     }
@@ -664,28 +664,32 @@ abstract class ObjectController extends ActionController
         $objectUuid = $object->get('uuid');
         $uuids[] = $object->get('uuid');
         $query = $db->getDbAdapter()
-                    ->select()
-                    ->from(
-                        ['dp' => 'director_property'],
-                        [
-                            'key_name' => 'dp.key_name',
-                            'uuid' => 'dp.uuid',
-                            $type . '_uuid' => 'iop.' . $type . '_uuid',
-                            'value_type' => 'dp.value_type',
-                            'label' => 'dp.label',
-                            'children' => 'COUNT(cdp.uuid)'
-                        ]
-                    )
-                    ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
-                    ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-                    ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                    ->order(
-                        "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
-                        . " 'dynamic-array',  'fixed-dictionary', 'dynamic-dictionary')"
-                    )
-                    ->order('children')
-                    ->order('key_name');
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    $type . '_uuid' => 'iop.' . $type . '_uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label',
+                    'children' => 'COUNT(cdp.uuid)'
+                ]
+            )
+            ->join(['iop' => "icinga_$type" . '_property'],
+                'dp.uuid = iop.property_uuid',
+                [])
+            ->joinLeft(['cdp' => 'director_property'],
+                'cdp.parent_uuid = dp.uuid',
+                [])
+            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+            ->order(
+                "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
+                . " 'dynamic-array',  'fixed-dictionary', 'dynamic-dictionary')"
+            )
+            ->order('children')
+            ->order('key_name');
 
         $result = [];
         $removedProperties = $this->session->get('removed-properties', []);
@@ -722,26 +726,28 @@ abstract class ObjectController extends ActionController
         $addedProperties = $this->session->get('added-properties');
         if ($addedProperties) {
             $query = $db->getDbAdapter()
-                        ->select()
-                        ->from(
-                            ['dp' => 'director_property'],
-                            [
-                                'key_name' => 'dp.key_name',
-                                'uuid' => 'dp.uuid',
-                                'value_type' => 'dp.value_type',
-                                'label' => 'dp.label',
-                                'children' => 'COUNT(cdp.uuid)'
-                            ]
-                        )
-                        ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-                        ->where('dp.' . 'uuid IN (?)', $addedProperties)
-                        ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                        ->order(
-                            "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
-                            . " 'dynamic-array', 'fixed-array', 'fixed-dictionary', 'dynamic-dictionary')"
-                        )
-                        ->order('children')
-                        ->order('key_name');
+                ->select()
+                ->from(
+                    ['dp' => 'director_property'],
+                    [
+                        'key_name' => 'dp.key_name',
+                        'uuid' => 'dp.uuid',
+                        'value_type' => 'dp.value_type',
+                        'label' => 'dp.label',
+                        'children' => 'COUNT(cdp.uuid)'
+                    ]
+                )
+                ->joinLeft(['cdp' => 'director_property'],
+                    'cdp.parent_uuid = dp.uuid',
+                    [])
+                ->where('dp.' . 'uuid IN (?)', $addedProperties)
+                ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+                ->order(
+                    "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
+                    . " 'dynamic-array', 'fixed-array', 'fixed-dictionary', 'dynamic-dictionary')"
+                )
+                ->order('children')
+                ->order('key_name');
 
             foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
                 $row['allow_removal'] = true;
