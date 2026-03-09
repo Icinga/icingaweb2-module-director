@@ -517,34 +517,13 @@ abstract class ObjectController extends ActionController
                 $config = '$value.' . $keyAttributes['key_name'];
             }
 
-            $content = [
-                new HtmlElement(
-                    'td',
-                    Attributes::create(['class' => 'key']),
-                    new HtmlElement(
-                        'div',
-                        null,
-                        Text::create(
-                            $keyAttributes['label'] ??
-                            $keyAttributes['key_name']
-                            . ' ('
-                            . $keyAttributes['key_name']
-                            . ')'
-                        )
-                    )
-                )
-            ];
+            $content = [$this->createKey(
+                $keyAttributes['key_name'],
+                $keyAttributes['label'] ?? $keyAttributes['key_name']
+            )];
 
             if ($keyAttributes['value_type'] !== 'fixed-dictionary') {
-                $content[] = new HtmlElement(
-                    'td',
-                    Attributes::create(['class' => 'value']),
-                    new HtmlElement(
-                        'div',
-                        null,
-                        Text::create($config . '$')
-                    )
-                );
+                $content[] = $this->createValue($config . '$');
 
                 $configVariables->addHtml(new HtmlElement(
                     'tr',
@@ -568,34 +547,11 @@ abstract class ObjectController extends ActionController
                 }
 
                 $nestedContent[] = new HtmlElement('div', null, Text::create($nestedConfig));
-
+                $nestedKeyName = $nestedKeyAttributes['key_name'];
+                $nestedLabel = $nestedKeyAttributes['label'] ?? $nestedKeyAttributes['key_name'];
                 $nestedContent = [
-                    new HtmlElement(
-                        'td',
-                        Attributes::create(['class' => 'key']),
-                        new HtmlElement(
-                            'div',
-                            null,
-                            Text::create(
-                                $nestedKeyAttributes['label'] ??
-                                $nestedKeyAttributes['key_name']
-                                . ' ('
-                                . $nestedKeyAttributes['key_name']
-                                . ')'
-                            )
-                        )
-                    ),
-                    new HtmlElement(
-                        'td',
-                        Attributes::create(['class' => 'value']),
-                        new HtmlElement(
-                            'div',
-                            null,
-                            Text::create(
-                                $nestedConfig
-                            )
-                        )
-                    )
+                    $this->createKey($nestedKeyName, $nestedLabel),
+                    $this->createValue($nestedConfig)
                 ];
             }
 
@@ -1272,5 +1228,31 @@ abstract class ObjectController extends ActionController
                 $this->content()->add(Html::tag('br'));
             }
         }
+    }
+
+    private function createKey(mixed $keyName, mixed $label): HtmlElement
+    {
+        return new HtmlElement(
+            'td',
+            Attributes::create(['class' => 'key']),
+            new HtmlElement(
+                'div',
+                null,
+                Text::create($label . ' (' . $keyName . ')')
+            )
+        );
+    }
+
+    private function createValue(string $value)
+    {
+        return new HtmlElement(
+            'td',
+            Attributes::create(['class' => 'value']),
+            new HtmlElement(
+                'div',
+                null,
+                Text::create($value)
+            )
+        );
     }
 }
