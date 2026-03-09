@@ -13,7 +13,7 @@ class DirectorProperty extends DbObject
 {
     protected $table = 'director_property';
 
-    protected $keyName = 'id';
+    protected $keyName = 'key_name';
 
     protected $uuidColumn = 'uuid';
 
@@ -28,7 +28,12 @@ class DirectorProperty extends DbObject
     ];
 
     protected $binaryProperties = [
+        'uuid',
         'parent_uuid'
+    ];
+
+    protected $relations = [
+        'category' => 'DirectorDatafieldCategory'
     ];
 
     /** @var DirectorProperty[] */
@@ -36,6 +41,9 @@ class DirectorProperty extends DbObject
 
     /** @var ?DirectorDatalist */
     private $datalist = null;
+
+    /** @var ?DirectorDatafieldCategory */
+    private $category;
 
     protected function setDbProperties($properties)
     {
@@ -55,12 +63,15 @@ class DirectorProperty extends DbObject
     {
         if ($this->category) {
             return $this->category;
-        } elseif ($id = $this->get('category_id')) {
-            $this->category = DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
-            return $this->category;
-        } else {
-            return null;
         }
+
+        if ($id = $this->get('category_id')) {
+            $this->category = DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
+
+            return $this->category;
+        }
+
+        return null;
     }
 
     /**
@@ -73,8 +84,39 @@ class DirectorProperty extends DbObject
         $category = $this->getCategory();
         if ($category === null) {
             return null;
+        }
+
+        return $category->get('category_name');
+    }
+
+    /**
+     * Set the category to which the property belongs to
+     *
+     * @param DirectorDatafieldCategory|string|null $category
+     *
+     * @return void
+     */
+    public function setCategory($category): void
+    {
+        if ($category === null) {
+            $this->category = null;
+            $this->set('category_id', null);
+        } elseif ($category instanceof DirectorDatafieldCategory) {
+            if ($category->hasBeenLoadedFromDb()) {
+                $this->set('category_id', $category->get('id'));
+            }
+
+            $this->category = $category;
         } else {
-            return $category->get('category_name');
+            $category = DirectorDatafieldCategory::loadOptional($category, $this->getConnection());
+            if ($category) {
+                $this->setCategory($category);
+            } else {
+                $this->setCategory(DirectorDatafieldCategory::create(
+                    ['category_name' => $category],
+                    $this->getConnection())
+                );
+            }
         }
     }
 
@@ -96,10 +138,15 @@ class DirectorProperty extends DbObject
                     ->where($this->db->quoteInto('dpdl.property_uuid = ?', $uuid->getBytes()));
                 $plain->datalist = $this->db->fetchOne($query);
             }
+        }
 
-            if ($plain->parent_uuid !== null) {
-                $plain->parent_uuid = Uuid::fromBytes($plain->parent_uuid)->toString();
-            }
+        if ($plain->parent_uuid !== null) {
+            $plain->parent_uuid = Uuid::fromBytes($plain->parent_uuid)->toString();
+        }
+
+        if (property_exists($plain, 'category_id')) {
+            $plain->category = $this->getCategoryName();
+            unset($plain->category_id);
         }
 
         return $plain;
@@ -138,11 +185,11 @@ class DirectorProperty extends DbObject
 
         $uuid = Uuid::fromBytes($uuid);
         $query = $this->db->select()
-                          ->from('director_property')
-                          ->where(
-                              'parent_uuid = ?',
-                              Db\DbUtil::quoteBinaryLegacy($uuid->getBytes(), $this->db)
-                          );
+            ->from('director_property')
+            ->where(
+                'parent_uuid = ?',
+                Db\DbUtil::quoteBinaryLegacy($uuid->getBytes(), $this->db)
+            );
 
         foreach (DirectorProperty::loadAll($this->connection, $query) as $item) {
             foreach ($item->fetchItemsFromDb() as $nestedItem) {
@@ -190,13 +237,14 @@ class DirectorProperty extends DbObject
     {
         $dba = $db->getDbAdapter();
         $uuid = $plain->uuid ?? null;
-        $items = [];
+        $datalist = null;
+        // DirectorProperty items (children)
+        $items = $plain->items ?? [];
+        unset($plain->items);
+
+        // If DirectorProperty has a UUID, load it from the database using the "uuid" property
         if ($uuid) {
             $uuid = Uuid::fromString($uuid);
-            // DirectorProperty items (children)
-            $items = $plain->items ?? [];
-            unset($plain->items);
-            $datalist = null;
             if (isset($plain->datalist)) {
                 $datalist = DirectorDatalist::loadOptional($plain->datalist, $db);
                 if (! $datalist && is_string($plain->datalist)) {
@@ -216,34 +264,38 @@ class DirectorProperty extends DbObject
             }
         }
 
+        // If DirectorProperty has no UUID (mainly for property children), load it from the database using the "key_name" property
         $query = $dba->select()->from('director_property')->where('key_name = ?', $plain->key_name);
-        $candidates = DirectorProperty::loadAll($db, $query);
-        foreach ($candidates as $candidate) {
-            $export = $candidate->export();
-            CompareBasketObject::normalize($export);
+        if (isset($plain->parent_uuid)) {
+            $query->where('parent_uuid = ?', $plain->parent_uuid);
+        } else {
+            $query->where('parent_uuid is NULL');
+        }
 
+        $dbRow = $dba->fetchRow($query);
+        if ($dbRow !== false) {
+            $candidate = DirectorProperty::fromDbRow($dbRow, $db);
+            $export = $candidate->export();
             if (isset($export->parent_uuid)) {
                 $export->parent = DirectorProperty::loadWithUniqueId(Uuid::fromString($export->parent_uuid), $db)
                     ->get('key_name');
                 unset($export->parent_uuid);
             }
 
+            CompareBasketObject::normalize($export);
             $plainParentUuid = $plain->parent_uuid ?? null;
             if (isset($plain->parent_uuid)) {
                 $parent = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($plain->parent_uuid), $db);
                 if ($parent === null) {
                     unset($plain->parent);
                     $plain->parent_uuid = $plainParentUuid;
-
-                    continue;
+                } else {
+                    $plain->parent = $parent->get('key_name');
+                    unset($plain->parent_uuid);
                 }
-
-                $plain->parent = $parent->get('key_name');
-                unset($plain->parent_uuid);
             }
 
             unset($export->uuid);
-
             if (CompareBasketObject::equals($export, $plain)) {
                 return $candidate;
             }
@@ -295,6 +347,8 @@ class DirectorProperty extends DbObject
         $itemCandidates = [];
         foreach ($items as $key => $value) {
             $itemUUid = $value->uuid ?? null;
+            $nestedItems = (array) ($value->items ?? []);
+            unset($value->items);
             if ($itemUUid === null) {
                 continue;
             }
@@ -326,13 +380,14 @@ class DirectorProperty extends DbObject
                 unset($value->datalist);
             }
 
-            $nestedItems = (array) ($value->items ?? []);
-            unset($value->items);
-
             $itemCandidate->setProperties((array) $value);
-            $itemCandidate->items = $this->importItems($nestedItems, $db);
+
             if ($datalist) {
                 $itemCandidate->datalist = $datalist;
+            }
+
+            if ($nestedItems) {
+                $itemCandidate->items = $this->importItems($nestedItems, $db);
             }
 
             $itemCandidates[$key] = $itemCandidate;
