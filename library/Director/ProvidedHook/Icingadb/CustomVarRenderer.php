@@ -524,23 +524,26 @@ class CustomVarRenderer extends CustomVarRendererHook
                 $this->dictionaryLevel++;
                 foreach ($val as $childKey => $childVal) {
                     $childVal = $this->renderCustomVarValue($childKey, $childVal) ?? $childVal;
-                    if (! in_array($childKey, $this->dictionaryNames)) {
-                        $label = $this->renderCustomVarKey($childKey) ?? $childKey;
-
-                        if (is_array($childVal)) {
-                            $this->renderArrayVal($label, $childVal, $childKey);
-                        } else {
-                            $this->dictionaryBody->addHtml(
-                                new HtmlElement(
-                                    'tr',
-                                    Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
-                                    new HtmlElement('th', null, Html::wantHtml(
-                                        $label
-                                    )),
-                                    new HtmlElement('td', null, Html::wantHtml($childVal))
-                                )
-                            );
-                        }
+                    $label = $this->renderCustomVarKey($childKey) ?? $childKey;
+                    if (
+                        ! in_array($childKey, $this->dictionaryNames)
+                        && ! array_key_exists($childKey, $this->customPropertyDictionaries)
+                        && is_array($childVal)
+                    ) {
+                        $this->renderArrayVal($label, $childVal);
+                    } elseif (array_key_exists($childKey, $this->customPropertyDictionaries)) {
+                        $this->renderArrayVal($label, $childVal, $childKey);
+                    } else {
+                        $this->dictionaryBody->addHtml(
+                            new HtmlElement(
+                                'tr',
+                                Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
+                                new HtmlElement('th', null, Html::wantHtml(
+                                    $label
+                                )),
+                                new HtmlElement('td', null, Html::wantHtml($childVal))
+                            )
+                        );
                     }
                 }
 
@@ -580,12 +583,18 @@ class CustomVarRenderer extends CustomVarRendererHook
     {
         $numItems = count($array);
 
+        if ($key) {
+            $prefix = ' (Dictionary)';
+        } else {
+            $prefix = ' (Array)';
+        }
+
         if ($name instanceof HtmlElement) {
-            $name->addHtml(Text::create(" ('Array')"));
+            $name->addHtml(Text::create($prefix));
         } else {
             $name = (new HtmlDocument())->addHtml(
                 Html::wantHtml($name),
-                Text::create(" ('Array')")
+                Text::create($prefix)
             );
         }
 
