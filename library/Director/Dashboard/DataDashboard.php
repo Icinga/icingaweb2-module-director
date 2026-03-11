@@ -5,10 +5,10 @@ namespace Icinga\Module\Director\Dashboard;
 class DataDashboard extends Dashboard
 {
     protected $dashletNames = [
-        'Datafield',
+        'CustomVariables',
         'DatafieldCategory',
         'Datalist',
-        'CustomVariables',
+        'Datafield',
         'Customvar'
     ];
 
