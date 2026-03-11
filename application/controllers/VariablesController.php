@@ -26,6 +26,10 @@ class VariablesController extends CompatController
         $query = $db->select()
             ->from(['dp' => 'director_property'], [])
             ->joinLeft(['ihp' => 'icinga_host_property'], 'ihp.property_uuid = dp.uuid', [])
+            ->joinLeft(['isp' => 'icinga_service_property'], 'isp.property_uuid = dp.uuid', [])
+            ->joinLeft(['iup' => 'icinga_user_property'], 'isp.property_uuid = dp.uuid', [])
+            ->joinLeft(['icp' => 'icinga_command_property'], 'isp.property_uuid = dp.uuid', [])
+            ->joinLeft(['inp' => 'icinga_notification_property'], 'isp.property_uuid = dp.uuid', [])
             ->columns([
                 'key_name',
                 'uuid',
@@ -33,7 +37,8 @@ class VariablesController extends CompatController
                 'value_type',
                 'label',
                 'description',
-                'used_count' => 'COUNT(ihp.property_uuid)'
+                'used_count' => 'COUNT(ihp.property_uuid) + COUNT(isp.property_uuid)'
+                    . ' + COUNT(iup.property_uuid) + COUNT(icp.property_uuid) + COUNT(inp.property_uuid)'
             ])
             ->where('parent_uuid IS NULL')
             ->group('dp.uuid')
