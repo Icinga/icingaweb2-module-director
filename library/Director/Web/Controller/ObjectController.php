@@ -494,6 +494,24 @@ abstract class ObjectController extends ActionController
             return;
         }
 
+        $this->content()->addHtml(new HtmlElement(
+            'div',
+            Attributes::create(['class' => ['apply-for-header']]),
+            HtmlElement::create(
+                'div',
+                Attributes::create(['class' => ['apply-for-header-content']]),
+                [
+                    Text::create(sprintf(
+                        $this->translate(
+                            'The values of selected host variable for apply-for-rule'
+                            . ' is accessible through %s.'
+                        ),
+                        '$value$'
+                    ))
+                ]
+            )
+        ));
+
         if ($fetchVar->value_type !== 'dynamic-dictionary') {
             return;
         }
