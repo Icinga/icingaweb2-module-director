@@ -291,7 +291,7 @@ class IcingaObjectHandler extends RequestHandler
 
                     $query = $db->getDbAdapter()
                                 ->select()
-                                ->from('director_property', ['uuid'])
+                                ->from(['dp' => 'director_property'], ['uuid'])
                                 ->where('dp.key_name = ? AND dp.parent_uuid IS NULL', $key);
                     $customPropertyUuid = $db->getDbAdapter()->fetchOne($query);
 
