@@ -56,7 +56,7 @@ class DataFilter extends FormElement
      * @inheritdoc
      * @codingStandardsIgnoreStart
      */
-    protected function _filterValue(&$value, &$key)
+    protected function _filterValue(&$value, $key)
     {
         // @codingStandardsIgnoreEnd
         try {
