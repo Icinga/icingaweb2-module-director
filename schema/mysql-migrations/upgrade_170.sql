@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2020 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 
 ALTER TABLE sync_rule
   MODIFY COLUMN update_policy ENUM('merge', 'override', 'ignore', 'update-only') NOT NULL;

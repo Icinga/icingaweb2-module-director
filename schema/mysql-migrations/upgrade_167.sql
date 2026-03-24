@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE director_daemon_info (
   instance_uuid_hex VARCHAR(32) NOT NULL, -- random by daemon
   schema_version SMALLINT UNSIGNED NOT NULL,

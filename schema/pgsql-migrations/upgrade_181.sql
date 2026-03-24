@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2022 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE branched_icinga_host DROP CONSTRAINT branched_icinga_host_uuid_key;
 ALTER TABLE branched_icinga_hostgroup DROP CONSTRAINT branched_icinga_hostgroup_uuid_key;
 ALTER TABLE branched_icinga_servicegroup DROP CONSTRAINT branched_icinga_servicegroup_uuid_key;

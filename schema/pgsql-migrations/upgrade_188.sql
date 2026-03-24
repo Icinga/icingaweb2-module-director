@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2024 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 DROP INDEX IF EXISTS import_row_modifier_prio;
 DROP INDEX IF EXISTS service_branch_object_name;
 

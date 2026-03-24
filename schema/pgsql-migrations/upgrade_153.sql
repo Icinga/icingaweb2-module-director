@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TYPE enum_owner_type AS ENUM('user', 'usergroup', 'role');
 
 CREATE TABLE director_basket (

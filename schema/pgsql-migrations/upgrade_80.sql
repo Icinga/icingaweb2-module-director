@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_timeperiod_range
   DROP CONSTRAINT icinga_timeperiod_range_timeperiod,
   ADD CONSTRAINT icinga_timeperiod_range_timeperiod

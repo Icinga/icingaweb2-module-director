@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2019 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- when applying manually make sure to set a sensible timezone for your users
 -- otherwise the server / client timezone will be used!
 

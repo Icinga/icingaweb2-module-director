@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 UPDATE director_deployment_log SET startup_log = LEFT(startup_log, 20480) || '
 
 [..] shortened '

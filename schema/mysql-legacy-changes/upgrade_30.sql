@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 DROP TABLE import_row_modifier_settings;
 
 CREATE TABLE import_row_modifier_setting (

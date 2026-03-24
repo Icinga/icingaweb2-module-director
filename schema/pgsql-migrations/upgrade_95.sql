@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE import_source
   ADD COLUMN import_state enum_sync_state NOT NULL DEFAULT 'unknown',
   ADD COLUMN last_error_message character varying(255) NULL DEFAULT NULL,

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_datafield ADD COLUMN uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16);
 UPDATE director_datafield SET uuid = decode(replace(gen_random_uuid()::text, '-', ''), 'hex') WHERE uuid IS NULL;
 ALTER TABLE director_datafield ALTER COLUMN uuid SET NOT NULL;

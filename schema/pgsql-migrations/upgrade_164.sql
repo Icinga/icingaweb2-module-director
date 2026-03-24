@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2019 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_dependency
   ADD COLUMN parent_host_var character varying(128) DEFAULT NULL;
 

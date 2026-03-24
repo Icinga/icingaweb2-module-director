@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_host
   DROP FOREIGN KEY icinga_host_template_choice,
   ADD CONSTRAINT icinga_host_template_choice_v2

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE director_job (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   job_name VARCHAR(64) NOT NULL,

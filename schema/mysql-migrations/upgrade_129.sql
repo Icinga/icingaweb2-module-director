@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_datafield
   MODIFY COLUMN varname VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_bin;
 

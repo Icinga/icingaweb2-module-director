@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2021 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_service_set ADD COLUMN uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16);
 UPDATE icinga_service_set SET uuid = decode(replace(gen_random_uuid()::text, '-', ''), 'hex') WHERE uuid IS NULL;
 ALTER TABLE icinga_service_set ALTER COLUMN uuid SET NOT NULL;

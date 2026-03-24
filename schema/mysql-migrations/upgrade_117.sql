@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_notification_field (
   notification_id INT(10) UNSIGNED NOT NULL COMMENT 'Makes only sense for templates',
   datafield_id INT(10) UNSIGNED NOT NULL,
