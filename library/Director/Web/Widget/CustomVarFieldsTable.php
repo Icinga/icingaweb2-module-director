@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use Icinga\Module\Director\Db\DbUtil;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
 use ipl\I18n\Translation;
@@ -27,13 +28,15 @@ class CustomVarFieldsTable extends Table
     protected function assemble()
     {
         foreach ($this->properties as $property) {
+            $propertyUuid = DbUtil::binaryResult($property->uuid);
             $url = Url::fromPath(
                 'director/customvar',
-                ['uuid' => Uuid::fromBytes($property->uuid)->toString()]
+                ['uuid' => Uuid::fromBytes($propertyUuid)->toString()]
             );
 
             if (isset($property->parent_uuid)) {
-                $url->addParams(['parent_uuid' => Uuid::fromBytes($property->parent_uuid)->toString()]);
+                $parentUuid = DbUtil::binaryResult($property->parent_uuid);
+                $url->addParams(['parent_uuid' => Uuid::fromBytes($parentUuid)->toString()]);
             }
 
             $columns = [

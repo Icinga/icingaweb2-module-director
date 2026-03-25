@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\Validator\DatalistEntryValidator;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
@@ -48,7 +49,8 @@ class DictionaryItem extends FieldsetElement
                 ['dp' => 'director_property'],
                 ['value_type' => 'dp.value_type']
             )
-            ->where('dp.parent_uuid = ?', $uuid->getBytes());
+            ->where('dp.parent_uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
+
         return  $db->fetchOne($query);
     }
 
@@ -69,7 +71,7 @@ class DictionaryItem extends FieldsetElement
             )
             ->join(['dl' => 'director_datalist'], 'dl.id = dle.list_id', [])
             ->join(['dpl' => 'director_property_datalist'], 'dl.uuid = dpl.list_uuid', [])
-            ->where('dpl.property_uuid = ?', $uuid->getBytes());
+            ->where('dpl.property_uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
         return  $db->fetchPairs($query);
     }
@@ -78,7 +80,7 @@ class DictionaryItem extends FieldsetElement
     {
         $this->addElement('hidden', 'name', ['value' => $this->fields['key_name'] ?? '']);
         $this->addElement('hidden', 'type', ['value' => $this->fields['value_type'] ?? '']);
-        $this->addElement('hidden', 'label', ['value' => $this->fields['key_name'] ?? '']);
+        $this->addElement('hidden', 'label', ['value' => $this->fields['label'] ?? '']);
         $this->addElement('hidden', 'parent_type', ['value' => $this->fields['parent_type'] ?? '']);
 
         $this->addElement('hidden', 'inherited');
@@ -280,6 +282,8 @@ class DictionaryItem extends FieldsetElement
             'parent_type' => $property['parent_type'] ?? ''
         ];
 
+        $property['uuid'] = Dbutil::binaryResult($property['uuid'] ?? '');
+
         if (
             $property['value_type'] === 'dynamic-array'
             || (
@@ -373,7 +377,7 @@ class DictionaryItem extends FieldsetElement
                     'children' => 'COUNT(cdp.uuid)'
                 ]
             )
-            ->where('dp.parent_uuid = ?', $parentUuid->getBytes())
+            ->where('dp.parent_uuid = ?', Db\DbUtil::quoteBinaryCompat($parentUuid->getBytes(), $db))
             ->joinLeft(
                 ['cdp' => 'director_property'],
                 'cdp.parent_uuid = dp.uuid',
@@ -384,6 +388,12 @@ class DictionaryItem extends FieldsetElement
             ->order('key_name');
 
         $propertyItems = $db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+        foreach ($propertyItems as $key => $propertyItem) {
+            $propertyItem['uuid'] = DbUtil::binaryResult($propertyItem['uuid']);
+            $propertyItem['parent_uuid'] = DbUtil::binaryResult($propertyItem['parent_uuid']);
+            $propertyItems[$key] = $propertyItem;
+        }
+
         if (empty($values)) {
             return $propertyItems;
         }

@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -215,6 +216,7 @@ class CustomVariablesForm extends CompatForm
         $values = $propertiesElement->getDictionary();
         $itemsToRemove = $propertiesElement->getItemsToRemove();
         $type = $this->object->getShortTableName();
+        $db = $this->object->getDb();
         foreach ($this->objectProperties as $key => $property) {
             $propertyUuid = Uuid::fromBytes($property['uuid']);
             if (isset($property['removed'])) {
@@ -243,8 +245,8 @@ class CustomVariablesForm extends CompatForm
                 $this->object->getConnection()->insert(
                     "icinga_$type" . '_property',
                     [
-                        $type . '_uuid' => $this->object->uuid,
-                        'property_uuid' => $propertyUuid->getBytes()
+                        $type . '_uuid' => DbUtil::quoteBinaryCompat($this->object->uuid, $db),
+                        'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $db)
                     ]
                 );
             }
@@ -273,7 +275,7 @@ class CustomVariablesForm extends CompatForm
                 $db
                     ->select()
                     ->from('icinga_' . $type . '_var')
-                    ->where('property_uuid IN (?)', $itemsToRemoveUuids)
+                    ->where('property_uuid IN (?)', DbUtil::quoteBinaryCompat($itemsToRemoveUuids, $db))
             );
 
             foreach ($propertyAsObjectVar as $propertyAsObjectVarRow) {

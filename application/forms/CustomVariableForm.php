@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Forms;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\Data\Db\DbConnection;
+use Icinga\Module\Director\Db;
 use Icinga\Web\Session;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -95,7 +96,7 @@ class CustomVariableForm extends CompatForm
             $db = $this->db->getDbAdapter();
             $query = $db->select()
                 ->from('director_property', ['count' => 'COUNT(*)'])
-                ->where('parent_uuid = ?', $this->parentUuid->getBytes());
+                ->where('parent_uuid = ?', Db\DbUtil::quoteBinaryCompat($this->parentUuid->getBytes(), $db));
 
             $this->addElement(
                 'hidden',
@@ -314,7 +315,7 @@ class CustomVariableForm extends CompatForm
                 'label',
                 'description'
             ])
-            ->where('uuid = ?', $uuid->getBytes());
+            ->where('uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
         return $db->fetchRow($query, [], Zend_Db::FETCH_ASSOC);
     }
@@ -388,27 +389,29 @@ class CustomVariableForm extends CompatForm
         string $itemType = ''
     ): void {
         $this->uuid = Uuid::uuid4();
+        $quotedUuid = Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter());
         $dynamicArrayItemType = [];
         if ($itemType !== '') {
             $dynamicArrayItemType = [
-                'uuid' => Uuid::uuid4()->getBytes(),
+                'uuid' => Db\DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $this->db->getDbAdapter()),
                 'key_name' => '0',
                 'value_type' => $itemType,
-                'parent_uuid' => $this->uuid->getBytes()
+                'parent_uuid' => $quotedUuid
             ];
         }
 
         if ($this->field) {
+            $quotedParentUuid = Db\DbUtil::quoteBinaryCompat($this->parentUuid->getBytes(), $this->db->getDbAdapter());
             $values = array_merge(
                 [
-                    'uuid' => $this->uuid->getBytes(),
-                    'parent_uuid' => $this->parentUuid->getBytes()
+                    'uuid' => $quotedUuid,
+                    'parent_uuid' => $quotedParentUuid
                 ],
                 $values
             );
         } else {
             $values = array_merge(
-                ['uuid' => $this->uuid->getBytes()],
+                ['uuid' => $quotedUuid],
                 $values
             );
         }
@@ -421,8 +424,8 @@ class CustomVariableForm extends CompatForm
 
         if (! empty($datalist)) {
             $this->db->insert('director_property_datalist', [
-                'property_uuid' => $this->uuid->getBytes(),
-                'list_uuid' => $datalist['uuid'],
+                'property_uuid' => $quotedUuid,
+                'list_uuid' => Db\DbUtil::quoteBinaryCompat($datalist['uuid'], $this->db->getDbAdapter()),
             ]);
         }
     }
@@ -460,27 +463,36 @@ class CustomVariableForm extends CompatForm
             ) {
                 $this->db->delete(
                     'director_property',
-                    Filter::matchAll(Filter::where('parent_uuid', $this->uuid->getBytes()))
+                    Filter::matchAll(Filter::where(
+                        'parent_uuid',
+                        Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter())
+                    ))
                 );
 
                 $this->db->delete(
                     'director_property_datalist',
-                    Filter::matchAll(Filter::where('property_uuid', $this->uuid->getBytes()))
+                    Filter::matchAll(Filter::where(
+                        'property_uuid',
+                        Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter())
+                    ))
                 );
             }
 
             if ($itemType && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
                 $this->db->insert('director_property', [
-                    'uuid' => Uuid::uuid4()->getBytes(),
+                    'uuid' => Db\DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $this->db->getDbAdapter()),
                     'key_name' => '0',
                     'value_type' => $itemType,
-                    'parent_uuid' => $this->uuid->getBytes()
+                    'parent_uuid' => Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()),
                 ]);
 
                 if (str_starts_with($valueType, 'datalist-')) {
                     $this->db->insert('director_property_datalist', [
-                        'property_uuid' => $this->uuid->getBytes(),
-                        'list_uuid' => $datalist['uuid'],
+                        'property_uuid' => Db\DbUtil::quoteBinaryCompat(
+                            $this->uuid->getBytes(),
+                            $this->db->getDbAdapter()
+                        ),
+                        'list_uuid' => Db\DbUtil::quoteBinaryCompat($datalist['uuid'], $this->db->getDbAdapter()),
                     ]);
                 }
             }
@@ -488,7 +500,7 @@ class CustomVariableForm extends CompatForm
             $storedKeyName = $this->db->fetchOne(
                 $this->db->select()
                     ->from('director_property', ['key_name'])
-                    ->where('uuid', $this->uuid->getBytes())
+                    ->where('uuid', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()))
             );
 
             if ($storedKeyName !== $values['key_name']) {
@@ -499,7 +511,7 @@ class CustomVariableForm extends CompatForm
         $this->db->update(
             'director_property',
             $values,
-            Filter::where('uuid', $this->uuid->getBytes())
+            Filter::where('uuid', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()))
         );
     }
 
@@ -540,7 +552,7 @@ class CustomVariableForm extends CompatForm
                        'varvalue',
                        'property_uuid'
                    ])
-                   ->where('property_uuid = ?', $rootUuid->getBytes()),
+                   ->where('property_uuid = ?', Db\DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $db)),
                 [],
                 PDO::FETCH_ASSOC
             );
@@ -551,7 +563,7 @@ class CustomVariableForm extends CompatForm
                         "icinga_{$objectType}_var",
                         ['varname' => $keyName],
                         Filter::matchAll(
-                            Filter::where('property_uuid', $rootUuid->getBytes()),
+                            Filter::where('property_uuid', Db\DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $db)),
                             Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
                         )
                     );
@@ -585,7 +597,7 @@ class CustomVariableForm extends CompatForm
                     "icinga_{$objectType}_var",
                     ['varvalue' => json_encode($varValue)],
                     Filter::matchAll(
-                        Filter::where('property_uuid', $rootUuid->getBytes()),
+                        Filter::where('property_uuid', Db\DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $db)),
                         Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
                     )
                 );

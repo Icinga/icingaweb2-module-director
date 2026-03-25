@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Web\Widget\EmptyStateBar;
@@ -104,6 +105,11 @@ class Dictionary extends FieldsetElement
         $this->addElement('hidden', 'items_added', ['value' => implode(', ', $addedItems)]);
         $count = 0;
         foreach ($this->items as $item) {
+            $item['uuid'] = DbUtil::binaryResult($item['uuid']);
+            if (isset($item['parent_uuid'])) {
+                $item['parent_uuid'] = DbUtil::binaryResult($item['parent_uuid']);
+            }
+
             $element = new DictionaryItem($count, $item);
 
             // Only allow removal of items if the dictionary allows it and the item allows it

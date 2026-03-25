@@ -69,7 +69,9 @@ class CustomvarController extends CompatController
             $parent = $this->fetchProperty($parentUuid);
 
             if ($parent['parent_uuid'] !== null) {
-                $usedCount = $this->fetchPropertyUsedCount(Uuid::fromBytes($parent['parent_uuid']));
+                $usedCount = $this->fetchPropertyUsedCount(Uuid::fromBytes(
+                    Db\DbUtil::binaryResult($parent['parent_uuid'])
+                ));
             } else {
                 $usedCount = $this->fetchPropertyUsedCount($parentUuid);
             }
@@ -84,7 +86,7 @@ class CustomvarController extends CompatController
                 ->select()->from('director_property', 'value_type')
                 ->where(
                     'parent_uuid = ? AND key_name = \'0\'',
-                    $uuid->getBytes()
+                    Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db)
                 );
 
             $property['item_type'] = $db->fetchOne($itemTypeQuery);
@@ -96,7 +98,7 @@ class CustomvarController extends CompatController
                 ->join(['dpl' => 'director_property_datalist'], 'dpl.list_uuid = dl.uuid', [])
                 ->where(
                     'dpl.property_uuid = ?',
-                    $uuid->getBytes()
+                    Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db)
                 );
 
             $property['list'] = $db->fetchOne($datalistId);
@@ -162,7 +164,7 @@ class CustomvarController extends CompatController
                     'description',
                     'used_count' => $property['used_count'] > 0 ? 'COUNT(1)' : '0',
                 ])
-                ->where('parent_uuid = ?', $uuid->getBytes())
+                ->where('parent_uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db))
                 ->group('dp.uuid')
                 ->order('key_name');
 
@@ -233,12 +235,13 @@ class CustomvarController extends CompatController
     {
         $uuid = $this->uuid;
         $property = $this->fetchProperty($uuid);
+        $db = $this->db->getDbAdapter();
         if (isset($property['parent_uuid'])) {
-            $parentUuid = Uuid::fromBytes($property['parent_uuid']);
+            $parentUuid = Uuid::fromBytes(Db\DbUtil::binaryResult($property['parent_uuid']));
             $this->parentUuid = $parentUuid;
             $parentProperty = $this->fetchProperty($parentUuid);
             if (isset($parentProperty['parent_uuid'])) {
-                $rootUuid = Uuid::fromBytes($parentProperty['parent_uuid']);
+                $rootUuid = Uuid::fromBytes(Db\DbUtil::binaryResult($parentProperty['parent_uuid']));
             } else {
                 $rootUuid = $parentUuid;
             }
@@ -246,7 +249,6 @@ class CustomvarController extends CompatController
             $uuid = $rootUuid;
         }
 
-        $db = $this->db->getDbAdapter();
         $objectClasses = ['host', 'service', 'notification', 'command', 'user'];
         $usage = [];
 
@@ -279,11 +281,13 @@ class CustomvarController extends CompatController
                 $columns['host_name'] = 'ioh.object_name';
             }
 
-            $customPropertyQuery = $customPropertyQuery->columns($columns)
-                                                       ->where('dp.uuid = ?', $uuid->getBytes());
+            $customPropertyQuery = $customPropertyQuery
+                ->columns($columns)
+                ->where('dp.uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
-            $unionQuery = $unionQuery->columns($columns)
-                                     ->where('dp.uuid = ?', $uuid->getBytes());
+            $unionQuery = $unionQuery
+                ->columns($columns)
+                ->where('dp.uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
             $usage[] = $db->fetchAll($db->select()->union([$customPropertyQuery, $unionQuery]));
         }
@@ -379,7 +383,7 @@ class CustomvarController extends CompatController
                 'label',
                 'description'
             ])
-            ->where('uuid = ?', $uuid->getBytes());
+            ->where('uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
         return $db->fetchRow($query, [], Zend_Db::FETCH_ASSOC) ?: [];
     }
@@ -401,7 +405,7 @@ class CustomvarController extends CompatController
                     . ' + COUNT(iup.property_uuid) + COUNT(icp.property_uuid)'
                     . ' + COUNT(inp.property_uuid)'
             ])
-            ->where('uuid = ?', $uuid->getBytes());
+            ->where('uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
         return (int) $db->fetchOne($query);
     }

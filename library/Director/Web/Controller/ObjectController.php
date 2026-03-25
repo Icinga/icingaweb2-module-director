@@ -8,10 +8,12 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
+use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
@@ -652,7 +654,7 @@ abstract class ObjectController extends ActionController
                     'label' => 'dp.label',
                     'value_type' => 'dp.value_type'
                 ]
-            )->where("parent_uuid = ?", $dictionaryUuid);
+            )->where("parent_uuid = ?", DbUtil::quoteBinaryCompat($dictionaryUuid, $db->getDbAdapter()));
 
         return $db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
@@ -668,6 +670,19 @@ abstract class ObjectController extends ActionController
             ->where('parent_uuid IS NULL AND key_name ', $varName);
 
         return $db->getDbAdapter()->fetchRow($query);
+    }
+
+    private function valueTypeOrderExpr(DbConnection $db, array $types): string
+    {
+        if ($db->isPgsql()) {
+            $cases = [];
+            foreach ($types as $i => $type) {
+                $cases[] = "WHEN '$type' THEN " . ($i + 1);
+            }
+            return 'CASE dp.value_type ' . implode(' ', $cases) . ' ELSE ' . (count($types) + 1) . ' END';
+        }
+
+        return "FIELD(dp.value_type, '" . implode("', '", $types) . "')";
     }
 
     /**
@@ -687,11 +702,14 @@ abstract class ObjectController extends ActionController
         $uuids = [];
         $db = $this->db();
         foreach ($parents as $parent) {
-            $uuids[] = IcingaObject::loadByType($type, $parent, $db)->get('uuid');
+            $uuids[] = DbUtil::quoteBinaryCompat(
+                IcingaObject::loadByType($type, $parent, $db)->get('uuid'),
+                $db->getDbAdapter()
+            );
         }
 
         $objectUuid = $object->get('uuid');
-        $uuids[] = $object->get('uuid');
+        $uuids[] = Dbutil::quoteBinaryCompat($objectUuid, $db->getDbAdapter());
         $query = $db->getDbAdapter()
             ->select()
             ->from(
@@ -716,11 +734,17 @@ abstract class ObjectController extends ActionController
                 []
             )
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-            ->order(
-                "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
-                . " 'dynamic-array',  'fixed-dictionary', 'dynamic-dictionary')"
-            )
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', $type . '_uuid'])
+            ->order($this->valueTypeOrderExpr($db, [
+                'string',
+                'number',
+                'bool',
+                'datalist-strict',
+                'datalist-non-strict',
+                'dynamic-array',
+                'fixed-dictionary',
+                'dynamic-dictionary'
+            ]))
             ->order('children')
             ->order('key_name');
 
@@ -739,6 +763,8 @@ abstract class ObjectController extends ActionController
         }
 
         foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            $row['uuid'] = DbUtil::binaryResult($row['uuid']);
+            $row[$type . '_uuid'] = DbUtil::binaryResult($row[$type . '_uuid']);
             if ($objectUuid === $row[$type . '_uuid']) {
                 $row['allow_removal'] = true;
             } else {
@@ -775,18 +801,19 @@ abstract class ObjectController extends ActionController
                     'cdp.parent_uuid = dp.uuid',
                     []
                 )
-                ->where('dp.' . 'uuid IN (?)', $addedProperties)
+                ->where('dp.' . 'uuid IN (?)', DbUtil::quoteBinaryCompat($addedProperties, $db->getDbAdapter()))
                 ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                ->order(
-                    "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
-                    . " 'dynamic-array', 'fixed-array', 'fixed-dictionary', 'dynamic-dictionary')"
-                )
+                ->order($this->valueTypeOrderExpr($db, [
+                    'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',
+                    'dynamic-array', 'fixed-array', 'fixed-dictionary', 'dynamic-dictionary'
+                ]))
                 ->order('children')
                 ->order('key_name');
 
             foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
                 $row['allow_removal'] = true;
-                $row['host_uuid'] = $this->object->get('uuid');
+                $row['host_uuid'] = DbUtil::binaryResult($this->object->get('uuid'));
+                $row['uuid'] = DbUtil::binaryResult($row['uuid']);
                 if (! isset($result[$row['key_name']])) {
                     $row['new'] = true;
                 }

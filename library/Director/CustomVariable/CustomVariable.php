@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\CustomVariable;
 
 use Exception;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use InvalidArgumentException;
@@ -309,7 +310,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
         }
 
         if (property_exists($row, 'property_uuid') && $row->property_uuid) {
-            $var->setUuid(Uuid::fromBytes($row->property_uuid));
+            $var->setUuid(Uuid::fromBytes(DbUtil::binaryResult($row->property_uuid)));
         }
 
         $var->loadedFromDb = true;

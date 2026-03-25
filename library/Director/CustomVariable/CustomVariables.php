@@ -246,7 +246,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 ];
 
                 if ($uuid) {
-                    $row['property_uuid'] = $uuid;
+                    $row['property_uuid'] = Db\DbUtil::quoteBinaryCompat($uuid, $db);
                 }
 
                 $db->insert($table, $row);
@@ -267,7 +267,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 ];
 
                 if ($object->getShortTableName() === 'host' && $uuid) {
-                    $data['property_uuid'] = $uuid;
+                    $data['property_uuid'] = Db\DbUtil::quoteBinaryCompat($uuid, $db);
                 }
 
                 $db->update(

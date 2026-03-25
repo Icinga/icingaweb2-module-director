@@ -103,7 +103,8 @@ class ObjectCustomvarForm extends CompatForm
             ->getNamespace('director.variables')->get('added-properties', []);
         foreach ($properties as $property) {
             if (! isset($alreadyAddedProperties[$property->key_name])) {
-                $propUuidKeyPairs[Uuid::fromBytes($property->uuid)->toString()] = $property->key_name;
+                $uuid = DbUtil::binaryResult($property->uuid);
+                $propUuidKeyPairs[Uuid::fromBytes($uuid)->toString()] = $property->key_name;
             }
         }
 

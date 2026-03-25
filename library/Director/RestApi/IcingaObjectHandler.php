@@ -9,6 +9,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -253,7 +254,7 @@ class IcingaObjectHandler extends RequestHandler
 
                     $objectPropertyWhere = $db->getDbAdapter()->quoteInto(
                         "{$type}_uuid = ?",
-                        Uuid::fromBytes($this->object->get('uuid'))->getBytes()
+                        Uuid::fromBytes(DbUtil::binaryResult($this->object->get('uuid')))->getBytes()
                     );
                     $db->getDbAdapter()->delete(
                         'icinga_' . $type . '_property',
@@ -312,7 +313,7 @@ class IcingaObjectHandler extends RequestHandler
                         'icinga_' . $type . '_property',
                         [
                             'property_uuid' => $customPropertyUuid,
-                            $type . '_uuid' => $object->get('uuid')
+                            $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $db->getDbAdapter())
                         ]
                     );
 
