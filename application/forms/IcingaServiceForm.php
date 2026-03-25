@@ -7,7 +7,6 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -15,8 +14,12 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
+use ipl\Html\Attributes;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
+use PDO;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
@@ -40,8 +43,11 @@ class IcingaServiceForm extends DirectorObjectForm
     /** @var bool|null */
     private $blacklisted;
 
+
     /** @var ?IcingaHost */
     private $blacklistedAncestor;
+
+    private $dictionaryUuidMap = [];
 
     public function setApplyGenerated(IcingaService $applyGenerated)
     {
@@ -671,6 +677,35 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    protected function applyForVars(): ?array
+    {
+        $query = $this->db->getDbAdapter()
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label' => 'dp.label'
+                ]
+            )
+            ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
+            ->where("value_type IN ('dynamic-array', 'dynamic-dictionary')");
+
+        $vars = $this->db->getDbAdapter()->fetchAll($query);
+
+        $properties = [];
+        foreach ($vars as $var) {
+            $properties['host.vars.' . $var->key_name] = $var->label ?? $var->key_name . ' (' . $var->key_name . ')';
+            if ($var->value_type === 'dynamic-dictionary') {
+                $this->dictionaryUuidMap['host.vars.' . $var->key_name] = $var->uuid;
+            }
+        }
+
+        return [t('director', 'Custom variables') => $properties];
+    }
+
     /**
      * @return $this
      * @throws \Zend_Form_Exception
@@ -678,24 +713,20 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function addApplyForElement()
     {
         if ($this->object->isApplyRule()) {
-            $hostProperties = IcingaHost::enumProperties(
-                $this->object->getConnection(),
-                'host.',
-                new ArrayCustomVariablesFilter()
-            );
+            $hostProperties = $this->applyForVars();
 
-            $this->addElement('select', 'apply_for', array(
+            $this->addElement('select', 'apply_for', [
                 'label' => $this->translate('Apply For'),
                 'class' => 'assign-property autosubmit',
                 'multiOptions' => $this->optionalEnum($hostProperties, $this->translate('None')),
                 'description' => $this->translate(
                     'Evaluates the apply for rule for ' .
                     'all objects with the custom attribute specified. ' .
-                    'E.g selecting "host.vars.custom_attr" will generate "for (config in ' .
-                    'host.vars.array_var)" where "config" will be accessible through "$config$". ' .
-                    'NOTE: only custom variables of type "Array" are eligible.'
+                    'E.g selecting "host.vars.custom_attr" will generate "for (value in ' .
+                    'host.vars.array_var)" where "value" will be accessible through "$value$". ' .
+                    'NOTE: only custom variables of type "Array" and "Dictionary" are eligible.'
                 )
-            ));
+            ]);
         }
 
         return $this;

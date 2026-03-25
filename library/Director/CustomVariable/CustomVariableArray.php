@@ -8,7 +8,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 class CustomVariableArray extends CustomVariable
 {
     /** @var  CustomVariable[] */
-    protected $value;
+    protected $value = [];
 
     public function equals(CustomVariable $var)
     {

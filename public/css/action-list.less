@@ -1,0 +1,14 @@
+.action-list {
+  [data-action-item]:hover {
+    background-color: @tr-hover-color;
+    cursor: pointer;
+  }
+
+  [data-action-item].active {
+    background-color: @tr-active-color;
+  }
+
+  &[data-icinga-multiselect-url] * {
+    user-select: none;
+  }
+}

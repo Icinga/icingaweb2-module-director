@@ -32,6 +32,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'redundancy_group'       => null,
         'assign_filter'          => null,
         'parent_service_by_name' => null,
+        'redundancy_group'    => null,
     ];
 
     protected $uuidColumn = 'uuid';

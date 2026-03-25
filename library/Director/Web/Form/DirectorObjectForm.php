@@ -15,6 +15,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -823,11 +824,13 @@ abstract class DirectorObjectForm extends DirectorForm
         if ($this->object !== null) {
             $this->setDefaultsFromObject($this->object);
         }
+
         $this->prepareFields($this->object());
         IcingaObjectFormHook::callOnSetup($this);
         if ($this->hasBeenSent()) {
             $this->handlePost();
         }
+
         try {
             $this->loadInheritedProperties();
             $this->addFields();

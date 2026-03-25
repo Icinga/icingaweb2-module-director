@@ -218,7 +218,7 @@ class IcingaServiceTest extends BaseTestCase
             (string) $service
         );
 
-        $service->object_name = '___TEST$config$___service $host.var.bla$';
+        $service->object_name = '___TEST$value$___service $host.var.bla$';
         $this->assertEquals(
             $this->loadRendered('service6'),
             (string) $service
