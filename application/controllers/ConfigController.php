@@ -196,7 +196,10 @@ class ConfigController extends ActionController
                     ->handleRequest());
             }
 
-            if ((new DeploymentDashlet($this->db()))->lastDeploymentPending()) {
+            if (
+                DirectorDeploymentLog::hasDeployments($this->db())
+                && (new DeploymentDashlet($this->db()))->lastDeploymentPending()
+            ) {
                 $this->actions()->prependHtml(
                     Hint::warning($this->translate(
                         'There is an active deployment running, please wait until it is finished'
