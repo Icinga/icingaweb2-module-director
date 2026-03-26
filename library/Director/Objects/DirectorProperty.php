@@ -126,7 +126,8 @@ class DirectorProperty extends DbObject
     public function export(): stdClass
     {
         $plain = (object) $this->getProperties();
-        $uuid = $this->get('uuid');
+        $db = $this->getDb();
+        $uuid = Db\DbUtil::binaryResult($this->get('uuid'));
         if ($uuid) {
             $uuid = Uuid::fromBytes($uuid);
             $plain->uuid = $uuid->toString();
@@ -135,13 +136,18 @@ class DirectorProperty extends DbObject
             if (str_starts_with($plain->value_type, 'datalist-')) {
                 $query = $this->db->select()->from(['dd' => 'director_datalist'], ['list_name'])
                     ->join(['dpdl' => 'director_property_datalist'], 'dpdl.list_uuid = dd.uuid', [])
-                    ->where($this->db->quoteInto('dpdl.property_uuid = ?', $uuid->getBytes()));
+                    ->where($this->db->quoteInto(
+                        'dpdl.property_uuid = ?',
+                        Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db)
+                    ));
                 $plain->datalist = $this->db->fetchOne($query);
             }
         }
 
         if ($plain->parent_uuid !== null) {
-            $plain->parent_uuid = Uuid::fromBytes($plain->parent_uuid)->toString();
+            $plain->parent_uuid = Uuid::fromBytes(
+                Db\DbUtil::binaryResult($plain->parent_uuid)
+            )->toString();
         }
 
         if (property_exists($plain, 'category_id')) {
@@ -188,7 +194,7 @@ class DirectorProperty extends DbObject
             ->from('director_property')
             ->where(
                 'parent_uuid = ?',
-                Db\DbUtil::quoteBinaryLegacy($uuid->getBytes(), $this->db)
+                Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $this->db)
             );
 
         foreach (DirectorProperty::loadAll($this->connection, $query) as $item) {
@@ -211,7 +217,10 @@ class DirectorProperty extends DbObject
         if (str_starts_with($this->get('value_type'), 'datalist-')) {
             $query = $this->db->select()->from(['dd' => 'director_datalist'], ['list_name'])
                 ->join(['dpdl' => 'director_property_datalist'], 'dpdl.list_uuid = dd.uuid', [])
-                ->where($this->db->quoteInto('dpdl.property_uuid = ?', $this->get('uuid')));
+                ->where($this->db->quoteInto(
+                    'dpdl.property_uuid = ?',
+                    Db\DbUtil::quoteBinaryCompat($this->get('uuid'), $this->db)
+                ));
             $this->datalist = DirectorDatalist::load($this->db->fetchOne($query), $this->connection);
         }
 
@@ -268,7 +277,7 @@ class DirectorProperty extends DbObject
         // load it from the database using the "key_name" property
         $query = $dba->select()->from('director_property')->where('key_name = ?', $plain->key_name);
         if (isset($plain->parent_uuid)) {
-            $query->where('parent_uuid = ?', $plain->parent_uuid);
+            $query->where('parent_uuid = ?', Db\DbUtil::quoteBinaryCompat($plain->parent_uuid, $db->getDbAdapter()));
         } else {
             $query->where('parent_uuid is NULL');
         }

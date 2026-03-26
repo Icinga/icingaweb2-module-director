@@ -80,7 +80,7 @@ class Exporter
         }
         if ($column = $object->getUuidColumn()) {
             if ($uuid = $object->get($column)) {
-                $props[$column] = Uuid::fromBytes($uuid)->toString();
+                $props[$column] = Uuid::fromBytes(Db\DbUtil::binaryResult($uuid))->toString();
             }
         }
 
@@ -281,7 +281,9 @@ class Exporter
         }
 
         if ($object instanceof DirectorProperty && $props['parent_uuid'] !== null) {
-            $props['parent_uuid'] = Uuid::fromBytes($props['parent_uuid'])->toString();
+            $props['parent_uuid'] = Uuid::fromBytes(
+                Db\DbUtil::binaryResult($props['parent_uuid'])
+            )->toString();
         }
 
         unset($props['uuid']); // Not yet

@@ -27,7 +27,7 @@ class CustomVariableReferenceLoader
     public function loadFor(IcingaObject $object): array
     {
         $db = $this->db;
-        $uuid = $object->get('uuid');
+        $uuid = Db\DbUtil::quoteBinaryCompat($object->get('uuid'), $db);
         if ($uuid === null) {
             return [];
         }
@@ -46,7 +46,10 @@ class CustomVariableReferenceLoader
         }
 
         foreach ($res as $key => $property) {
-            $property->property_uuid = Uuid::fromBytes($property->property_uuid)->toString();
+            $propUuid = Db\DbUtil::binaryResult($property->property_uuid);
+            $property->property_uuid = Uuid::fromBytes(
+                $propUuid
+            )->toString();
             $res[$key] = $property;
         }
 

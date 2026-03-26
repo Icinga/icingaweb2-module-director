@@ -64,12 +64,16 @@ class BasketSnapshotCustomVariableResolver
         foreach ($this->getTargetProperties() as $uuid => $property) {
             if ($property->hasBeenModified()) {
                 $property->store();
-                $this->uuidMap[$uuid] = Uuid::fromBytes($property->get('uuid'))->toString();
+                $this->uuidMap[$uuid] = Uuid::fromBytes(
+                    DbUtil::binaryResult($property->get('uuid'))
+                )->toString();
             }
 
             $modified = $this->restoreCustomPropertyItems($property);
             if ($modified && ! isset($this->uuidMap[$uuid])) {
-                $this->uuidMap[$uuid] = Uuid::fromBytes($property->get('uuid'))->toString();
+                $this->uuidMap[$uuid] = Uuid::fromBytes(
+                    DbUtil::binaryResult($property->get('uuid'))
+                )->toString();
             }
         }
     }
@@ -88,7 +92,7 @@ class BasketSnapshotCustomVariableResolver
 
         $customPropertyMap = $this->getUuidMap();
         $db = $this->targetDb->getDbAdapter();
-        $objectUuid = DbUtil::quoteBinaryLegacy($new->get('uuid'), $db);
+        $objectUuid = DbUtil::quoteBinaryCompat($new->get('uuid'), $db);
         $type = $new->getShortTableName();
 
         $table = $new->getTableName() . '_property';
@@ -99,11 +103,12 @@ class BasketSnapshotCustomVariableResolver
                 $db->select()->from($table)->where("$objectKey = ?", $objectUuid)
             ) as $mapping
         ) {
-            $existingCustomProperties[Uuid::fromBytes($mapping->property_uuid)->toString()] = $mapping;
+            $propertyUuid = DbUtil::binaryResult($mapping->property_uuid);
+            $existingCustomProperties[Uuid::fromBytes($propertyUuid)->toString()] = $mapping;
         }
 
         foreach ($object->properties as $property) {
-            $propertyUuid = $property->property_uuid;
+            $propertyUuid = DbUtil::binaryResult($property->property_uuid);
             if (! isset($customPropertyMap[$propertyUuid])) {
                 throw new InvalidArgumentException(
                     'Basket Snapshot contains invalid custom property reference: ' . $propertyUuid
@@ -116,15 +121,15 @@ class BasketSnapshotCustomVariableResolver
                 unset($existingCustomProperties[$uuid]);
             } else {
                 $db->insert($table, [
-                    $objectKey      => $new->get('uuid'),
-                    'property_uuid' => Uuid::fromString($uuid)->getBytes(),
+                    $objectKey      => DbUtil::quoteBinaryCompat($new->get('uuid'), $db),
+                    'property_uuid' => DbUtil::quoteBinaryCompat(Uuid::fromString($uuid)->getBytes(), $db)
                 ]);
             }
         }
 
         $existingCustomPropertyUuids = array_keys($existingCustomProperties);
         foreach ($existingCustomPropertyUuids as $idx => $uuid) {
-            $existingCustomPropertyUuids[$idx] = DbUtil::quoteBinaryLegacy($uuid, $db);
+            $existingCustomPropertyUuids[$idx] = DbUtil::quoteBinaryCompat($uuid, $db);
         }
 
         if (! empty($existingCustomProperties)) {
@@ -132,7 +137,7 @@ class BasketSnapshotCustomVariableResolver
                 $table,
                 $db->quoteInto(
                     "$objectKey = $objectUuid AND property_uuid IN (?)",
-                    $existingCustomPropertyUuids
+                    DbUtil::quoteBinaryCompat($existingCustomPropertyUuids, $db)
                 )
             );
         }
@@ -255,7 +260,9 @@ class BasketSnapshotCustomVariableResolver
             // Hint: import() doesn't store!
             $new = DirectorProperty::import($object, $this->targetDb);
             if ($new->hasBeenLoadedFromDb()) {
-                $newUuid = Uuid::fromBytes($new->get('uuid'))->toString();
+                $newUuid = Uuid::fromBytes(
+                    Db\DbUtil::binaryResult($new->get('uuid'))
+                )->toString();
             } else {
                 $newUuid = Uuid::uuid4()->toString();
             }
