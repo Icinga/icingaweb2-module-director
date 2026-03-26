@@ -4,6 +4,78 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.12.0
+-------
+
+### Breaking Changes
+
+- Raise minimum required PHP version to 8.2
+- Change license to **GPL-3.0-only**
+
+### UI
+
+- Feature: Expose `display_name` field in the service form (#608)
+- Feature: Split event command out into its own section; now shown on hosts and services too, not just templates (#2531)
+- Fix: Check command box missing when editing service properties (#2732)
+- Fix: Associated service template lookup failed with a multicolumn key error (#2839)
+- Fix: Clear display name when cloning a host or service (no issue)
+- Fix: Template choice links broken in activity log table/info (#3104)
+- Fix: Command inheritance not shown (#3007)
+- Fix: Modifying a directly applied service set failed on PostgreSQL (#3076)
+- Fix: Sync rule form didn't explain how boolean values are interpreted in filter expressions (no issue)
+
+### Import and Sync
+
+- Feature: Import Modifier to cast int to string (#2880)
+- Feature: New custom variable support providing better integration for dictionary type custom variables (#2972)
+- Feature: Support for dictionary type custom variables in service apply-for rules (#2972)
+- Fix: Array to object conversion for the directory-to-row property modifier (no issue)
+- Fix: Rendering of assign filter for boolean filter expression (#2984)
+- Fix: Flatten nulls to empty string for `preg_match()` in PropertyModifierRejectOrSelect (no issue)
+
+### Baskets
+
+- Feature: Add "Add to Basket" action to the basket detail page (#2851)
+- Fix: Duplicate service set members on basket restore (#3089)
+- Fix: Service template choice basket restore (no issue)
+
+### Groups
+
+- Feature: Re-establish membership link with user on restoring a deleted usergroup using assign filters; adds a confirmation page before deleting a group (#2914)
+
+### Zones
+
+- Fix: Director allowed the creation of infinitely recursive zones (#3108)
+
+### Permissions
+
+- Fix: Drop the redundant `director/*` wildcard permission; Icinga Web already grants Full Module Access per module (#3094)
+- Fix: A non-existent hostgroup in a role restriction broke host creation for restricted users (#3098)
+
+### Housekeeping
+
+- Fix: `resolveCache` task reported zero pending membership changes (#3100)
+- Fix: Agent/zone documentation still suggested a template per satellite zone, no longer required since 1.3.0 (#3023)
+
+### Kickstart
+
+- Feature: Add `--kickstart` flag to `icingacli director daemon run`, running kickstart as part of daemon startup (#3046)
+- Feature: Add `--import`, `--run-sync` and `--deploy` flags to `icingacli director daemon run`, so restoring a basket snapshot, syncing and deploying config can also run at daemon startup; a failed kickstart import rolls back, and an interrupted deployment is retried automatically on the next startup (no issue)
+
+### CLI
+
+- Feature: Add a `--name` option to the `importsource` and `syncrule` commands, to check, run or delete by name instead of only by ID (#3067)
+
+### Internals
+
+- Support PHP 8.4/8.5 (no issue)
+- Replace the Icinga Incubator module dependency with the Icinga PHP Legacy library, and drop the now redundant dependency checker (no issue)
+- Hash the custom variable cache checksum in PHP instead of SQL, fixing deploys on MySQL 9.6 where `SHA1()` is disabled by default (#3091)
+- Remove bundled locale files; translations are now maintained exclusively via translate.icinga.com (no issue)
+- Feature: Support referencing external notification objects via CLI/API (#3138)
+
+You can find issues and feature requests related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/34?closed=1)
+
 v1.11.9
 -------
 
