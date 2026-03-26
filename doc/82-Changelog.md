@@ -4,6 +4,31 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.12.0
+-------
+
+### Import and Sync
+
+- Feature: Import Modifier to cast int to string (#2880)
+
+### Internals
+
+- Support PHP 8.4/8.5 (no issue)
+- Upgrade libraries: `react/promise` to v3 and `react/event-loop` to v1.6 (no issue)
+- Replace the old Icinga Incubator module dependency with Icinga PHP Legacy library requirement
+
+### Features
+
+- A new custom variable support providing better integration for dictionary type custom variables
+- Support for dictionary type custom variables in service apply-for rules
+- Re-establish membership link with user on restoring deleted usergroup (#2914)
+
+### Fixes
+
+- Modifying directly applied Service Set fails on Postgres (#3076)
+
+You can find issues and feature requests related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/34?closed=1)
+
 v1.11.9
 -------
 
