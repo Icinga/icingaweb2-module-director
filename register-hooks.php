@@ -53,6 +53,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierStripDomain;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSubstring;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierToInt;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierToString;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierTrim;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUppercase;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUpperCaseFirst;
@@ -136,6 +137,7 @@ $directorHooks = [
         PropertyModifierStripDomain::class,
         PropertyModifierSubstring::class,
         PropertyModifierToInt::class,
+        PropertyModifierToString::class,
         PropertyModifierTrim::class,
         PropertyModifierUppercase::class,
         PropertyModifierUpperCaseFirst::class,
