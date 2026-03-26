@@ -19,6 +19,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
+use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
@@ -625,7 +626,10 @@ abstract class ObjectController extends ActionController
                             ->handleRequest()
                     );
 
-                    if ((new DeploymentDashlet($this->db()))->lastDeploymentPending()) {
+                    if (
+                        DirectorDeploymentLog::hasDeployments($this->db())
+                        && (new DeploymentDashlet($this->db()))->lastDeploymentPending()
+                    ) {
                         $this->actions()->prependHtml(
                             Hint::warning($this->translate(
                                 'There is an active deployment running, please wait until it is finished'
