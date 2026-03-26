@@ -4,6 +4,18 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.7
+-------
+
+### Fixes
+
+- Fix: Creating services named identical to template name prevented by cyclic inheritance check (#3036)
+- Fix: Choosing templates prevented for new templates prevented by cyclic inheritance check (#3039)
+- Fix: Inherited service not shown in service list of host (#3041)
+- Fix: An Icinga 2 log-level below 'information' breaks Director's active deployment indicator (#3044)
+
+You can find issues and feature requests related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/42?closed=1)
+
 v1.11.6
 -------
 
