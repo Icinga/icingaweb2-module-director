@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2019 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_host
   ALTER COLUMN address TYPE character varying(255);
 

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TYPE enum_assign_type AS ENUM('assign', 'ignore');
 ALTER TABLE icinga_service_assignment ADD assign_type enum_assign_type NOT NULL DEFAULT 'assign';
 

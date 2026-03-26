@@ -1,5 +1,8 @@
 <?php
 
+// SPDX-FileCopyrightText: 2020 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 namespace Tests\Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Module\Director\Data\RecursiveUtf8Validator;

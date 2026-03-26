@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2021 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TYPE enum_sync_rule_purge_action AS ENUM('delete', 'disable');
 
 ALTER TABLE sync_rule

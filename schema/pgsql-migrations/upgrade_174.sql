@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2021 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_zone DROP COLUMN IF EXISTS uuid;
 
 ALTER TABLE icinga_zone ADD COLUMN uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16);

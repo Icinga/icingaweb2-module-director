@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2019 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE DOMAIN d_smallint AS integer CHECK (VALUE >= 0) CHECK (VALUE < 65536);
 
 ALTER TABLE icinga_endpoint ALTER COLUMN port TYPE d_smallint;

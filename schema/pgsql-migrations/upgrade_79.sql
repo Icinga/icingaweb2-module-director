@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_user_states_set 
   DROP CONSTRAINT icinga_user_states_set_pkey,
   ADD PRIMARY KEY (user_id, property, merge_behaviour);

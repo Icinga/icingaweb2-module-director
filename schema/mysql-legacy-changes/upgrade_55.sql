@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_zone
   DROP FOREIGN KEY icinga_zone_parent_zone,
   CHANGE parent_zone_id parent_id INT(10) UNSIGNED DEFAULT NULL,

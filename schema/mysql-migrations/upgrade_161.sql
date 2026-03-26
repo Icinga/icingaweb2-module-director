@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_scheduled_downtime (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,

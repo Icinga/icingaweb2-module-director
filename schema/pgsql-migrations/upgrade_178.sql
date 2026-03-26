@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2022 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE director_activity_log_remark (
   first_related_activity bigint NOT NULL,
   last_related_activity bigint NOT NULL,

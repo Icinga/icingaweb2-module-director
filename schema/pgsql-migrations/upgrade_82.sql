@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TYPE enum_sync_rule_object_type ADD VALUE 'service' AFTER 'host';
 ALTER TYPE enum_sync_rule_object_type ADD VALUE 'command' AFTER 'service';
 ALTER TYPE enum_sync_rule_object_type ADD VALUE 'hostgroup';

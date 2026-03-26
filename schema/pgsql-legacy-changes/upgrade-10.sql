@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_usergroup_inheritance (
   usergroup_id integer NOT NULL,
   parent_usergroup_id integer NOT NULL,

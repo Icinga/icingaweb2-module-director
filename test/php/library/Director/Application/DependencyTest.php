@@ -1,5 +1,8 @@
 <?php
 
+// SPDX-FileCopyrightText: 2021 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 namespace Tests\Icinga\Module\Director\Application;
 
 use Icinga\Module\Director\Application\Dependency;

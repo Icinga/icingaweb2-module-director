@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2022 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 DELETE sr.*
   FROM sync_run sr
   JOIN sync_rule s ON s.id = sr.rule_id

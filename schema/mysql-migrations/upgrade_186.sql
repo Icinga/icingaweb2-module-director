@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_datafield ADD COLUMN uuid VARBINARY(16) DEFAULT NULL AFTER id;
 SET @tmp_uuid = LOWER(CONCAT(
      LPAD(HEX(FLOOR(RAND()   * 0xffff)), 4, '0'),

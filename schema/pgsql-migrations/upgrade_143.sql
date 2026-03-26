@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_host_template_choice
   ADD COLUMN required_template_id integer DEFAULT NULL,
   ADD COLUMN allowed_roles character varying(255) DEFAULT NULL,

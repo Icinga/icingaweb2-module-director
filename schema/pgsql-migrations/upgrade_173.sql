@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2021 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE sync_rule
   ALTER COLUMN purge_action SET DEFAULT NULL;
 

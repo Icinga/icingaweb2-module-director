@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_usergroup
   ADD COLUMN zone_id INT(10) UNSIGNED DEFAULT NULL,
   ADD CONSTRAINT icinga_usergroup_zone
