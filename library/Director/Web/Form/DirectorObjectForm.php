@@ -1289,7 +1289,13 @@ abstract class DirectorObjectForm extends DirectorForm
             'class'        => 'autosubmit',
             'validators'   => [
                 new Zend_Validate_Callback(function ($value) {
-                    $templateTree = new TemplateTree($this->object->getShortTableName(), $this->getDb());
+                    $objectInstance = $this->object->getShortTableName();
+                    // Avoid cyclic imports for hosts and commands
+                    if ($objectInstance !== 'host' && $objectInstance !== 'command') {
+                        return true;
+                    }
+
+                    $templateTree = new TemplateTree($objectInstance, $this->getDb());
                     $importsElement = $this->getElement('imports');
                     $objectName = $this->object->getObjectName();
                     if (in_array($objectName, $value, true)) {
