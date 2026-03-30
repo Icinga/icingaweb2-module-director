@@ -3,15 +3,15 @@
 namespace Icinga\Module\Director\Db\Branch;
 
 use gipfl\Translation\StaticTranslator;
-use gipfl\Translation\TranslationHelper;
 use Icinga\Module\Director\Db;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
+use ipl\I18n\Translation;
 use Ramsey\Uuid\UuidInterface;
 
 class BranchModificationInspection
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $connection;
 

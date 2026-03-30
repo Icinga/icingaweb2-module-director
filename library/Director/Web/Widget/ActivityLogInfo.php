@@ -20,14 +20,14 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Icon;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\IcingaWeb2\Widget\Tabs;
 
 class ActivityLogInfo extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $defaultTab;
 
