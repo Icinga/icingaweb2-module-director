@@ -111,8 +111,8 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             $this->addFilterElement('var_filter', [
                 'description' => $this->translate(
                     'You might want to show this field only when certain conditions are met.'
-                    . ' Otherwise it will not be available and values eventually set before'
-                    . ' will be cleared once stored'
+                    . ' Be careful, if previously satisfied conditions are no longer met'
+                    . ' and the object is updated, the field\'s value will be lost.'
                 ),
                 'columns' => $filterFields,
             ]);

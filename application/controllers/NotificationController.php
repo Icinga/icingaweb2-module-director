@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaNotification;
@@ -78,6 +79,10 @@ class NotificationController extends ObjectController
             } else {
                 parent::loadObject();
             }
+        }
+
+        if (! $this->allowsObject($this->object)) {
+            throw new NotFoundError('No such object available');
         }
 
         return $this->object;

@@ -356,6 +356,18 @@ class SuggestController extends ActionController
         return $this->fetchTemplateNames('icinga_dependency');
     }
 
+    protected function suggestDependencyRedundancyGroups()
+    {
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->distinct()
+            ->from('icinga_dependency', 'redundancy_group')
+            ->where('redundancy_group IS NOT NULL')
+            ->order('redundancy_group');
+
+        return $db->fetchCol($query);
+    }
+
     protected function highlight($val, $search)
     {
         $search = ($search);

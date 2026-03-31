@@ -65,7 +65,7 @@ class ObjectsTabs extends Tabs
 
             if ($object->supportsGroups()) {
                 $this->add('groups', [
-                    'url'   => sprintf('director/%sgroups', $typeUrl),
+                    'url'   => sprintf('director/%sgroups', $type),
                     'label' => $this->translate('Groups')
                 ]);
             }

@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use Icinga\Module\Director\Daemon\DaemonUtil;
 
 class JobTable extends ZfQueryBasedTable
 {
@@ -37,11 +38,11 @@ class JobTable extends ZfQueryBasedTable
 
     protected function getJobClasses($row)
     {
-        if ($row->unixts_last_attempt === null) {
+        if ($row->ts_last_attempt === null) {
             return 'pending';
         }
 
-        if ($row->unixts_last_attempt + $row->run_interval < time()) {
+        if ($row->ts_last_attempt + $row->run_interval * 1000 < DaemonUtil::timestampWithMilliseconds()) {
             return 'pending';
         }
 
@@ -73,7 +74,6 @@ class JobTable extends ZfQueryBasedTable
                 'run_interval'           => 'j.run_interval',
                 'last_attempt_succeeded' => 'j.last_attempt_succeeded',
                 'ts_last_attempt'        => 'j.ts_last_attempt',
-                'unixts_last_attempt'    => 'UNIX_TIMESTAMP(j.ts_last_attempt)',
                 'ts_last_error'          => 'j.ts_last_error',
                 'last_error_message'     => 'j.last_error_message',
             ]

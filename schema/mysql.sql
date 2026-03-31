@@ -35,8 +35,8 @@ CREATE TABLE director_activity_log (
   object_type VARCHAR(64) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   action_name ENUM('create', 'delete', 'modify') NOT NULL,
-  old_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
-  new_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
+  old_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON',
+  new_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   author VARCHAR(64) NOT NULL,
   change_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   checksum VARBINARY(20) NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE director_activity_log (
   INDEX search_idx (object_name),
   INDEX search_idx2 (object_type(32), object_name(64), change_time),
   INDEX search_author (author),
-  INDEX checksum (checksum)
+  UNIQUE INDEX checksum (checksum)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_activity_log_remark (
@@ -114,7 +114,7 @@ CREATE TABLE director_generated_config (
   last_activity_checksum VARBINARY(20) NOT NULL,
   PRIMARY KEY (checksum),
   CONSTRAINT director_generated_config_activity
-    FOREIGN KEY activity_checksum (last_activity_checksum)
+    FOREIGN KEY (last_activity_checksum)
     REFERENCES director_activity_log (checksum)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT
@@ -347,8 +347,8 @@ CREATE TABLE director_job (
   run_interval INT(10) UNSIGNED NOT NULL, -- seconds
   timeperiod_id INT(10) UNSIGNED DEFAULT NULL,
   last_attempt_succeeded ENUM('y', 'n') DEFAULT NULL,
-  ts_last_attempt TIMESTAMP NULL DEFAULT NULL,
-  ts_last_error TIMESTAMP NULL DEFAULT NULL,
+  ts_last_attempt BIGINT(20) NULL DEFAULT NULL,
+  ts_last_error BIGINT(20) NULL DEFAULT NULL,
   last_error_message TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY (job_name),
@@ -654,7 +654,7 @@ CREATE TABLE icinga_host_field (
 CREATE TABLE icinga_host_var (
   host_id INT(10) UNSIGNED NOT NULL,
   varname VARCHAR(255) NOT NULL COLLATE utf8_bin,
-  varvalue TEXT DEFAULT NULL,
+  varvalue MEDIUMTEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'), -- immer string vorerst
   checksum VARBINARY(20) DEFAULT NULL,
   PRIMARY KEY (host_id, varname),
@@ -1774,6 +1774,7 @@ CREATE TABLE icinga_dependency (
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
+  redundancy_group VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
   CONSTRAINT icinga_dependency_parent_host
@@ -2431,6 +2432,7 @@ CREATE TABLE branched_icinga_dependency (
   zone VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
+  redundancy_group VARCHAR(255) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
@@ -2446,4 +2448,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (187, NOW());
+  VALUES (191, NOW());

@@ -4,6 +4,111 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.7
+-------
+
+### Fixes
+
+- Fix: Creating services named identical to template name prevented by cyclic inheritance check (#3036)
+- Fix: Choosing templates prevented for new templates prevented by cyclic inheritance check (#3039)
+- Fix: Inherited service not shown in service list of host (#3041)
+- Fix: An Icinga 2 log-level below 'information' breaks Director's active deployment indicator (#3044)
+
+You can find issues and feature requests related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/42?closed=1)
+
+v1.11.6
+-------
+
+### Database Schema
+
+- Fix: Update columns storing large strings to MEDIUMTEXT in MYSQL (no issue)
+
+### UI
+
+- Fix: Icinga Host Form shows applied groups that are not in restriction (#3001)
+- Fix: Host Choices shows the partially wrong template at Associated Template (#2982)
+- Fix: inherited "disabled" services not crossed out (#2983)
+- Fix: Hidden datafields should forbid autocompletion (#2347)
+- Fix: Cyclic inheritance causes UI to crash (#2853)
+- Fix: Clicking Groups repeatedly (x2) leads to "Page not found" (#2538)
+- Fix: Users with Director restrictions unable to create hosts unless you manually specify the host group (#2876)
+- Feature: Add support for 'Dependency Redundancy Groups' (no issue)
+- Feature: Show an indicator if there is an active deployment is running (#2917)
+
+### Kickstart
+
+- Fix: Kickstart fails to remove a zone and endpoint correctly (#2459)
+
+### CLI
+
+- Feature: Added an option to check a single import source or sync rule or director job by name (no issue)
+- Feature: Add command to delete sync rule and import source by Icingacli (#2706)
+
+### REST API
+
+- Fix: Possible timing attack in Self Service API (no issue)
+- Fix: Set a default agent version to the latest for Self Service API (#2968)
+
+### Integration
+
+- Fix: Don't require permissions for custom var rendering hooks (no issue)
+- Fix: Service modification still allowed in Monitoring View despite restricted permissions in Director (#3017)
+
+### Internals
+
+- Fix: indexing of the stripped filter chain (no issue)
+- Fix: Director creates wrong url for scheduled downtime in activity log (#2456)
+- Fix: Basket restore of Host Template and Host Template Choice fails (#2996)
+- Feature: Add wildcard support for 'contains' and render with match (no issue)
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/41?closed=1)
+
+v1.11.5
+-------
+
+## Database Schema
+
+- FIX: Failed schema migration of MySQL to version 188 due Integrity constraint violation ([#2970](https://github.com/Icinga/icingaweb2-module-director/issues/2970))
+
+## Deployment
+
+- Fix: Deprecation notice that sometimes appears on deployment form (no issue)
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/40?closed=1)
+
+v1.11.4
+-------
+
+### Security
+
+- Rest API endpoints accessible to restricted users ([GHSA-3233-ggc5-m3qg](https://github.com/Icinga/icingaweb2-module-director/security/advisories/GHSA-3233-ggc5-m3qg))
+
+### UI
+
+- Fix editing of custom variables for multi-selected objects [#2950](https://github.com/Icinga/icingaweb2-module-director/issues/2950)
+- Fix: Check for the existence of service templates to add services [#1249](https://github.com/Icinga/icingaweb2-module-director/issues/1249)
+
+### Import and Sync
+
+- Fix erratic job behavior during summer and winter time change (no issue)
+
+### Integration
+
+- Fix custom variable renderer for service apply for rules (no issue)
+- Fix custom variable renderer for array type data lists [#2960](https://github.com/Icinga/icingaweb2-module-director/issues/2960)
+
+### Database Schema
+
+- Fix MySQL 8.4 nonstandard foreign keys deprecation [#2885](https://github.com/Icinga/icingaweb2-module-director/issues/2885)
+
+### Fixed Issues
+
+You can find issues related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/39?closed=1)
+
 v1.11.3
 -------
 

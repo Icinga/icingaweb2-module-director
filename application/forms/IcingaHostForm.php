@@ -236,6 +236,12 @@ class IcingaHostForm extends DirectorObjectForm
         ));
 
         $applied = $this->getAppliedGroups();
+        if ($this->hasHostGroupRestriction()) {
+            $applied = (new HostgroupRestriction($this->getDb(), $this->getAuth()))
+                ->filterRestrictedHostgroups($applied);
+        }
+
+
         if (! empty($applied)) {
             $this->addElement('simpleNote', 'applied_groups', [
                 'label'  => $this->translate('Applied groups'),

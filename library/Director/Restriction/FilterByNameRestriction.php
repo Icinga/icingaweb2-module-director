@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Restriction;
 use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
 use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterEqual;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Zend_Db_Select as ZfSelect;
@@ -30,7 +31,11 @@ class FilterByNameRestriction extends ObjectRestriction
 
     protected function setNameForType($type)
     {
-        $this->name = "director/{$type}/filter-by-name";
+        if ($type === 'service_set') {
+            $this->name = "director/{$type}/filter-by-name";
+        } else {
+            $this->name = "director/{$type}/apply/filter-by-name";
+        }
     }
 
     public function allows(IcingaObject $object)
@@ -39,9 +44,9 @@ class FilterByNameRestriction extends ObjectRestriction
             return true;
         }
 
-        return $this->getFilter()->matches([
+        return $this->getFilter()->matches(
             (object) ['object_name' => $object->getObjectName()]
-        ]);
+        );
     }
 
     public function getFilter()

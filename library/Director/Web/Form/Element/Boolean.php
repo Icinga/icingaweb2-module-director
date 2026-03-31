@@ -43,7 +43,7 @@ class Boolean extends ZfSelect
      * @param string $key
      * @codingStandardsIgnoreStart
      */
-    protected function _filterValue(&$value, &$key)
+    protected function _filterValue(&$value, $key)
     {
         // @codingStandardsIgnoreEnd
         if ($value === true) {

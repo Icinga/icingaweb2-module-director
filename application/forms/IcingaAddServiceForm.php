@@ -30,7 +30,13 @@ class IcingaAddServiceForm extends DirectorObjectForm
             );
         }
 
-        $this->addSingleImportElement();
+        $this->addSingleImportElement(true);
+
+        if (empty($this->enumServiceTemplates())) {
+            $this->setSubmitLabel(false);
+
+            return;
+        }
 
         if (! ($imports = $this->getSentOrObjectValue('imports'))) {
             $this->setSubmitLabel($this->translate('Next'));

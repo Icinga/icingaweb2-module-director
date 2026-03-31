@@ -226,11 +226,14 @@ class ObjectsTable extends ZfQueryBasedTable
     {
         /** @var Db $db */
         $db = $this->connection();
+        $dummyObject = $this->getDummyObject();
+        $type = $dummyObject->getShortTableName();
 
-        return [
-            new HostgroupRestriction($db, $this->auth),
-            new FilterByNameRestriction($db, $this->auth, $this->getDummyObject()->getShortTableName())
-        ];
+        if ($dummyObject->isApplyRule()) {
+            return [new FilterByNameRestriction($db, $this->auth, $type)];
+        } else {
+            return [new HostgroupRestriction($db, $this->auth)];
+        }
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -101,6 +102,13 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
         ]);
 
         $this->setButtons();
+    }
+
+    protected function setDefaultsFromObject(DbObject $object)
+    {
+        parent::setDefaultsFromObject($object);
+
+        $this->getElement('required_template')->setValue($object->get('required_template'));
     }
 
     protected function fetchUnboundTemplates()
