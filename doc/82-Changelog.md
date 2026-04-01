@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.8
+-------
+
+### Fixes
+
+- Fix: SQLERROR when Displaying Services of a Host (#3058)
+- Fix: Zend Error when modifying Objects (#3056)
+
+You can find issues and feature requests related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/44?closed=1)
+
 v1.11.7
 -------
 
