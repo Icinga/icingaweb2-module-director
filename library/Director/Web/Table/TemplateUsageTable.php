@@ -10,11 +10,11 @@ use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Table;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class TemplateUsageTable extends Table
 {
-    use TranslationHelper;
+    use Translation;
 
     use TableWithBranchSupport;
 

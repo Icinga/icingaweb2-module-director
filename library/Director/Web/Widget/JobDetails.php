@@ -7,11 +7,11 @@ use Icinga\Date\DateFormatter;
 use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Objects\DirectorJob;
 use ipl\Html\Html;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class JobDetails extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     /**
      * JobDetails constructor.

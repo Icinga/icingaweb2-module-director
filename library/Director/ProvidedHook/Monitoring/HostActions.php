@@ -41,13 +41,12 @@ class HostActions extends HostActionsHook
         }
 
         $allowEdit = false;
-        if (Util::hasPermission(Permission::HOSTS) && IcingaHost::exists($hostname, $db)) {
-            $allowEdit = true;
-        }
-        if (Util::hasPermission(Permission::MONITORING_HOSTS)) {
-            if ((new Monitoring(Auth::getInstance()))->canModifyHost($hostname)) {
-                $allowEdit = IcingaHost::exists($hostname, $db);
-            }
+        if (
+            Util::hasPermission(Permission::HOSTS)
+            && Util::hasPermission(Permission::MONITORING_HOSTS)
+            && (new Monitoring(Auth::getInstance()))->canModifyHost($hostname)
+        ) {
+            $allowEdit = IcingaHost::exists($hostname, $db);
         }
 
         if ($allowEdit) {

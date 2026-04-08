@@ -7,11 +7,11 @@ use Icinga\Module\Director\IcingaConfig\ExtensibleSet as Set;
 use Icinga\Module\Director\Web\Form\IconHelper;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class ExtensibleSetElement extends BaseHtmlElement
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $tag = 'ul';
 

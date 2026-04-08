@@ -40,6 +40,9 @@ class IcingaServiceForm extends DirectorObjectForm
     /** @var bool|null */
     private $blacklisted;
 
+    /** @var ?IcingaHost */
+    private $blacklistedAncestor;
+
     public function setApplyGenerated(IcingaService $applyGenerated)
     {
         $this->applyGenerated = $applyGenerated;
@@ -140,9 +143,24 @@ class IcingaServiceForm extends DirectorObjectForm
             );
             $group = null;
             if (! $isBranch) {
-                $this->addDeleteButton($this->translate('Reactivate'));
+                $label = $this->translate('Reactivate');
+                $this->addDeleteButton($label);
+
+                if (! $this->isBlacklistedInCurrentHost()) {
+                    $this->getElement($label)
+                        ->setAttrib(
+                            'title',
+                            sprintf(
+                                $this->translate('This service is deactivated on host template "%s"'),
+                                $this->getBlacklistedAncestor()->getObjectName()
+                            )
+                        )
+                        ->setAttrib('disabled', true);
+                }
+
                 $hasDeleteButton = true;
             }
+
             $this->setSubmitLabel(false);
         } else {
             $this->addOverrideHint();
@@ -216,6 +234,33 @@ class IcingaServiceForm extends DirectorObjectForm
         return current($objects);
     }
 
+    private function getBlacklistedAncestor(): ?IcingaHost
+    {
+        if ($this->hasBeenBlacklisted() === false) {
+            return null;
+        }
+
+        return $this->blacklistedAncestor;
+    }
+
+    private function isBlacklistedInCurrentHost(): bool
+    {
+        if ($this->hasBeenBlacklisted() === false) {
+            return false;
+        }
+
+        $db = $this->db->getDbAdapter();
+
+        return (int) $db->fetchOne(
+            $db->select()->from('icinga_host_service_blacklist', 'host_id')
+                ->where('host_id = ?', $this->host->get('id'))
+                ->where(
+                    'service_id = ?',
+                    $this->getServiceToBeBlacklisted()->get('id')
+                )
+        );
+    }
+
     /**
      * @return bool
      * @throws \Icinga\Exception\NotFoundError
@@ -229,7 +274,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->blacklisted === null) {
             $host = $this->host;
             // Safety check, branches
-            $hostId = $host->get('id');
+            $hostId = (int) $host->get('id');
             $service = $this->getServiceToBeBlacklisted();
             $serviceId = $service->get('id');
             if (! $hostId || ! $serviceId) {
@@ -237,11 +282,25 @@ class IcingaServiceForm extends DirectorObjectForm
             }
             $db = $this->db->getDbAdapter();
             if ($this->providesOverrides()) {
-                $this->blacklisted = 1 === (int)$db->fetchOne(
-                    $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
-                        ->where('host_id = ?', $hostId)
-                        ->where('service_id = ?', $serviceId)
-                );
+                $hostIds = $host->listAncestorIds();
+                $hostIds[] = $hostId;
+
+                foreach ($hostIds as $hostId) {
+                    $host = IcingaHost::loadWithAutoIncId($hostId, $this->db);
+                    $ancestorIds = $host->listAncestorIds();
+                    $ancestorIds[] = $hostId;
+                    $this->blacklisted = 1 === (int) $db->fetchOne(
+                        $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
+                            ->where('host_id IN (?)', $ancestorIds)
+                            ->where('service_id = ?', $serviceId)
+                    );
+
+                    if ($this->blacklisted) {
+                        $this->blacklistedAncestor = $host;
+
+                        break;
+                    }
+                }
             } else {
                 $this->blacklisted = false;
             }
