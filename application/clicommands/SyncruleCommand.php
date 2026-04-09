@@ -77,6 +77,25 @@ class SyncruleCommand extends Command
         exit($this->getSyncStateExitCode($rule));
     }
 
+    /**
+     * This command deletes a Sync Rule.
+     *
+     * USAGE
+     *
+     * icingacli director syncrule delete --id <id>
+     *
+     * OPTIONS
+     *
+     *   --id <id>     A Sync Rule ID. Use the list command to figure out
+     */
+    public function deleteAction()
+    {
+        $rule = $this->getSyncRule();
+        if ($rule->delete()) {
+            echo sprintf("Sync rule '%s' has been deleted\n", $rule->get('rule_name'));
+        }
+    }
+
     protected function getExpectedModificationCounts(SyncRule $rule)
     {
         $modifications = $rule->getExpectedModifications();

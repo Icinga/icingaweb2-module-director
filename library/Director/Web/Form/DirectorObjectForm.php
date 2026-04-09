@@ -18,11 +18,13 @@ use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Resolver\TemplateTree;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
+use Zend_Validate_Callback;
 
 abstract class DirectorObjectForm extends DirectorForm
 {
@@ -553,6 +555,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'email',
             'pager',
             'enable_notifications',
+            'redundancy_group', //Dependencies
             'disable_checks', //Dependencies
             'disable_notifications',
             'ignore_soft_states',
@@ -1283,7 +1286,50 @@ abstract class DirectorObjectForm extends DirectorForm
             // 'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'value'        => $this->presetImports,
-            'class'        => 'autosubmit'
+            'class'        => 'autosubmit',
+            'validators'   => [
+                new Zend_Validate_Callback(function ($value) {
+                    $objectInstance = $this->object->getShortTableName();
+                    // Avoid cyclic imports for hosts and commands
+                    if ($objectInstance !== 'host' && $objectInstance !== 'command') {
+                        return true;
+                    }
+
+                    $templateTree = new TemplateTree($objectInstance, $this->getDb());
+                    $importsElement = $this->getElement('imports');
+                    $objectName = $this->object->getObjectName();
+                    if (in_array($objectName, $value, true)) {
+                        $importsElement->addErrorMessage(
+                            $this->translate('You can not import the same object into itself, please remove it first')
+                        );
+
+                        return false;
+                    }
+
+                    if ($this->object->isTemplate()) {
+                        $descendents = [];
+                        if (! $this->isNew()) {
+                            $descendents = $templateTree->getDescendantsFor($this->object);
+                        }
+
+                        $loopedImports = array_intersect($descendents, $value);
+                        if (! empty($loopedImports)) {
+                            $loopedImport = array_slice($loopedImports, 0, 1);
+                            array_push($loopedImport, ...$descendents);
+                            $importsElement->addErrorMessage(
+                                sprintf(
+                                    $this->translate('Loop detected for imports: %s'),
+                                    implode('->', $loopedImports)
+                                )
+                            );
+
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
+            ]
         ));
 
         return $this;

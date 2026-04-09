@@ -36,14 +36,23 @@ class Health
         return $this;
     }
 
-    public function getCheck($name)
+    public function getCheck(string $name, ?string $checkName = null): CheckResults
     {
-        if (array_key_exists($name, $this->checks)) {
-            $func = $this->checks[$name];
-            $check = $this->$func();
+        if (! array_key_exists($name, $this->checks)) {
+            return (new CheckResults('Invalid Parameter'))
+                ->fail("There is no check named '$name'");
+        }
+
+        if ($checkName !== null && ($name === 'deployment' || $name === 'config')) {
+            return (new CheckResults('Invalid Parameter'))
+                ->fail('--name is not supported with --check deployment or --check config');
+        }
+
+        $func = $this->checks[$name];
+        if ($checkName !== null) {
+            $check = $this->$func($checkName);
         } else {
-            $check = new CheckResults('Invalid Parameter');
-            $check->fail("There is no check named '$name'");
+            $check = $this->$func();
         }
 
         return $check;
@@ -142,15 +151,20 @@ class Health
         return $check;
     }
 
-    public function checkSyncRules()
+    public function checkSyncRules(?string $checkName = null): CheckResults
     {
         $check = new CheckResults('Sync Rules');
-        $rules = SyncRule::loadAll($this->getConnection(), null, 'rule_name');
-        if (empty($rules)) {
-            $check->succeed('No Sync Rules have been defined');
-            return $check;
+        if ($checkName !== null) {
+            $rules = [SyncRule::load($checkName, $this->getConnection())];
+        } else {
+            $rules = SyncRule::loadAll($this->getConnection(), null, 'rule_name');
+            if (empty($rules)) {
+                $check->succeed('No Sync Rules have been defined');
+                return $check;
+            }
+
+            ksort($rules);
         }
-        ksort($rules);
 
         foreach ($rules as $rule) {
             $state = $rule->get('sync_state');
@@ -170,16 +184,21 @@ class Health
         return $check;
     }
 
-    public function checkImportSources()
+    public function checkImportSources(?string $checkName = null): CheckResults
     {
         $check = new CheckResults('Import Sources');
-        $sources = ImportSource::loadAll($this->getConnection(), null, 'source_name');
-        if (empty($sources)) {
-            $check->succeed('No Import Sources have been defined');
-            return $check;
+        if ($checkName !== null) {
+            $sources = [ImportSource::load($checkName, $this->getConnection())];
+        } else {
+            $sources = ImportSource::loadAll($this->getConnection(), null, 'source_name');
+            if (empty($sources)) {
+                $check->succeed('No Import Sources have been defined');
+                return $check;
+            }
+
+            ksort($sources);
         }
 
-        ksort($sources);
         foreach ($sources as $src) {
             $state = $src->get('import_state');
             $name = $src->get('source_name');
@@ -198,15 +217,20 @@ class Health
         return $check;
     }
 
-    public function checkDirectorJobs()
+    public function checkDirectorJobs(?string $checkName = null): CheckResults
     {
         $check = new CheckResults('Director Jobs');
-        $jobs = DirectorJob::loadAll($this->getConnection(), null, 'job_name');
-        if (empty($jobs)) {
-            $check->succeed('No Jobs have been defined');
-            return $check;
+        if ($checkName !== null) {
+            $jobs = [DirectorJob::load($checkName, $this->getConnection())];
+        } else {
+            $jobs = DirectorJob::loadAll($this->getConnection(), null, 'job_name');
+            if (empty($jobs)) {
+                $check->succeed('No Jobs have been defined');
+                return $check;
+            }
+
+            ksort($jobs);
         }
-        ksort($jobs);
 
         foreach ($jobs as $job) {
             $name = $job->get('job_name');

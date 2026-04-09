@@ -10,12 +10,12 @@ use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 
 class DeployedConfigInfoHeader extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var IcingaConfig */
     protected $config;

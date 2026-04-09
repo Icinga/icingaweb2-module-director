@@ -137,7 +137,7 @@ Use this command to modify specific properties of an existing Icinga object.
 | `--<key> <value>`          | Provide all properties as single command line options |
 | `--append-<key> <value>`   | Appends to array values, like `imports`,              |
 |                            | `groups` or `vars.system_owners`                      |
-| `--remove-<key> [<value>]` | Remove a specific property, eventually only           |
+| `--remove-<key> [<value>]` | Remove a specific property, potentially only          |
 |                            | when matching `value`. In case the property is an     |
 |                            | array it will remove just `value` when given          |
 | `--json`                   | Otherwise provide all options as a JSON string        |
@@ -174,7 +174,7 @@ you whether an object has either been created or (not) modified.
 
 With `set` you only set the specified properties and do not touch the other
 ones. You could also want to completely override an object, purging all other
-eventually existing and unspecified parameters. Please use `--replace` if this
+unspecified parameters that might already exist. Please use `--replace` if this
 is the desired behaviour.
 
 
@@ -504,8 +504,8 @@ You can override this by adding the `--force` parameter. It will then tell you:
 Config matches active stage, deploying anyway
 ```
 
-In case you want to do not want `deploy` to waste time to re-render your
-config or in case you decide to re-deploy a specific, eventually older config
+In case you do not want `deploy` to waste time re-rendering your config
+or in case you decide to re-deploy a specific, possibly older, config
 version the `deploy` command allows you to provide a specific checksum:
 
 ```shell

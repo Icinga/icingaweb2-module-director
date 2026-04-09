@@ -4,8 +4,8 @@ use Icinga\Application\Modules\Module;
 use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\DataType\DataTypeBoolean;
 use Icinga\Module\Director\DataType\DataTypeDatalist;
-use Icinga\Module\Director\DataType\DataTypeDirectorObject;
 use Icinga\Module\Director\DataType\DataTypeDictionary;
+use Icinga\Module\Director\DataType\DataTypeDirectorObject;
 use Icinga\Module\Director\DataType\DataTypeNumber;
 use Icinga\Module\Director\DataType\DataTypeSqlQuery;
 use Icinga\Module\Director\DataType\DataTypeString;
@@ -53,6 +53,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierStripDomain;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSubstring;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierToInt;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierToString;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierTrim;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUppercase;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUpperCaseFirst;
@@ -71,9 +72,10 @@ if ($this->getConfig()->get('frontend', 'disabled', 'no') !== 'yes') {
     $this->provideHook('icingadb/icingadbSupport');
     $this->provideHook('cube/Actions', CubeLinks::class);
     $this->provideHook('cube/IcingaDbActions', IcingaDbCubeLinks::class);
-    $this->provideHook('Icingadb/CustomVarRenderer');
-    $this->provideHook('Monitoring/CustomVarRenderer');
 }
+
+$this->provideHook('Icingadb/CustomVarRenderer', null, true);
+$this->provideHook('Monitoring/CustomVarRenderer', null, true);
 
 $directorHooks = [
     'director/DataType' => [
@@ -135,6 +137,7 @@ $directorHooks = [
         PropertyModifierStripDomain::class,
         PropertyModifierSubstring::class,
         PropertyModifierToInt::class,
+        PropertyModifierToString::class,
         PropertyModifierTrim::class,
         PropertyModifierUppercase::class,
         PropertyModifierUpperCaseFirst::class,

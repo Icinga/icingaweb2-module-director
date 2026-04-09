@@ -212,9 +212,10 @@ class ActivityLogTable extends IntlZfQueryBasedTable
             if ($type === 'service' || $this->hasObjectFilter) {
                 $object = "\"$name\"";
             } else {
+                $delimiter = $type === 'scheduled_downtime' ? '-' : '';
                 $object = Link::create(
                     "\"$name\"",
-                    'director/' . str_replace('_', '', $type),
+                    'director/' . str_replace('_', $delimiter, $type),
                     ['name' => $name],
                     ['title' => $this->translate('Jump to this object')]
                 );

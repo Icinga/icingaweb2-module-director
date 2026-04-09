@@ -5,12 +5,12 @@ namespace Icinga\Module\Director\Web\Tabs;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaObject;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
 
 class ObjectTabs extends Tabs
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var string */
     private $type;
@@ -67,7 +67,8 @@ class ObjectTabs extends Tabs
                 'label'     => $this->translate(ucfirst($type))
             ]);
         }
-        if ($object->getShortTableName() === 'host') {
+
+        if ($object->getShortTableName() === 'host' && $auth->hasPermission(Permission::SERVICES)) {
             $this->add('services', [
                 'url' => 'director/host/services',
                 'urlParams' => $params,

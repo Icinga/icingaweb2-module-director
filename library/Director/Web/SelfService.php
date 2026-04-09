@@ -16,13 +16,13 @@ use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Widget\Documentation;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\ActionBar;
 use gipfl\IcingaWeb2\Widget\ControlsAndContent;
 
 class SelfService
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var IcingaHost */
     protected $host;
