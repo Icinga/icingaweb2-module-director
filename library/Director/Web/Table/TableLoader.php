@@ -9,7 +9,7 @@ use Icinga\Exception\ProgrammingError;
 class TableLoader
 {
     /** @return QuickTable */
-    public static function load($name, Module $module = null)
+    public static function load($name, ?Module $module = null)
     {
         if ($module === null) {
             $basedir = Icinga::app()->getApplicationDir('tables');

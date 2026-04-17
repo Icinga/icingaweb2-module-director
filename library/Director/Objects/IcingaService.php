@@ -584,7 +584,7 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
     }
 
-    protected function getDefaultZone(IcingaConfig $config = null)
+    protected function getDefaultZone(?IcingaConfig $config = null)
     {
         // Hint: this isn't possible yet, as we're unable to render dependent apply rules to multiple zones as well
         // if ($this->isTemplate()) {
@@ -627,13 +627,13 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     /**
      * TODO: Duplicate code, clean this up, split it into multiple methods
-     * @param Db|null $connection
+     * @param ?Db $connection
      * @param string $prefix
      * @param null $filter
      * @return array
      */
     public static function enumProperties(
-        Db $connection = null,
+        ?Db $connection = null,
         $prefix = '',
         $filter = null
     ) {

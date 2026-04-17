@@ -34,7 +34,7 @@ class DataTypeSqlQuery extends DataTypeHook
             $params = ['multiOptions' => $data];
         } else {
             $params = ['multiOptions' => [
-                    null => $form->translate('- please choose -'),
+                    '' => $form->translate('- please choose -')
                 ] + $data];
             $type = 'select';
         }

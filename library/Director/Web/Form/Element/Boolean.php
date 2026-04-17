@@ -10,7 +10,7 @@ use Zend_Form_Element_Select as ZfSelect;
 class Boolean extends ZfSelect
 {
     public $options = array(
-        null => '- please choose -',
+        ''   => '- please choose -',
         'y'  => 'Yes',
         'n'  => 'No',
     );

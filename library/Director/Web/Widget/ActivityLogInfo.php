@@ -344,10 +344,10 @@ class ActivityLogInfo extends HtmlDocument
     }
 
     /**
-     * @param Url|null $url
+     * @param ?Url $url
      * @return Tabs
      */
-    public function getTabs(Url $url = null)
+    public function getTabs(?Url $url = null)
     {
         if ($this->tabs === null) {
             $this->tabs = $this->createTabs($url);

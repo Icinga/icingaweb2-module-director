@@ -42,7 +42,7 @@ class BackgroundDaemon
     /** @var bool */
     protected $shuttingDown = false;
 
-    public function run(LoopInterface $loop = null)
+    public function run(?LoopInterface $loop = null)
     {
         if ($ownLoop = ($loop === null)) {
             $loop = Loop::create();
