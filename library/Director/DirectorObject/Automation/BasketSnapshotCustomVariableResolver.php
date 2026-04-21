@@ -158,6 +158,10 @@ class BasketSnapshotCustomVariableResolver
         $forward = $this->getUuidMap();
         $map = array_flip($forward);
         foreach ($object->properties as $property) {
+            if (! isset($property->property_uuid)) {
+                continue;
+            }
+
             $uuid = $property->property_uuid;
             if (isset($map[$uuid])) {
                 $property->property_uuid = $map[$uuid];
@@ -186,7 +190,20 @@ class BasketSnapshotCustomVariableResolver
 
         $uuids = [];
         // Get the uuids of all custom properties associated with all the objects hosts, services, etc.
-        foreach ($this->objects as $objects) {
+        foreach ($this->objects as $objectType => $objects) {
+            if (! in_array(
+                $objectType,
+                [
+                    'HostTemplate',
+                    'ServiceTemplate',
+                    'CommandTemplate',
+                    'NotificationTemplate',
+                    'UserTemplate'
+                ]
+            )) {
+                continue;
+            }
+
             foreach ($objects as $object) {
                 if (! isset($object->properties)) {
                     continue;
