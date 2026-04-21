@@ -54,7 +54,7 @@ class IplBoolean extends SelectElement
         $optionValue = match ($optionValue) {
             'y' => true,
             'n' => false,
-            default => null
+            default => '',
         };
 
         return parent::isSelectedOption(
