@@ -48,7 +48,7 @@ class CustomVariablesTest extends BaseTestCase
 
         $this->assertEquals(
             $expected,
-            $vars->toConfigString(true)
+            $vars->toConfigString(null, true)
         );
     }
 
@@ -61,7 +61,7 @@ class CustomVariablesTest extends BaseTestCase
             'vars.abc = "$val$"',
             'vars.bla = "da"'
         ]);
-        $this->assertEquals($expected, $vars->toConfigString(true));
+        $this->assertEquals($expected, $vars->toConfigString(null, true));
     }
 
     protected function indentVarsList($vars)
