@@ -40,7 +40,7 @@ class BasketSnapshot extends DbObject
     protected static $typeClasses = [
         'DatafieldCategory' => DirectorDatafieldCategory::class,
         'Datafield'       => DirectorDatafield::class,
-        'Property'        => DirectorProperty::class,
+        'CustomVariable'  => DirectorProperty::class,
         'TimePeriod'      => IcingaTimePeriod::class,
         'CommandTemplate' => [IcingaCommand::class, ['object_type' => 'template']],
         'ExternalCommand' => [IcingaCommand::class, ['object_type' => 'external_object']],
@@ -334,24 +334,24 @@ class BasketSnapshot extends DbObject
                     // Linking fields right now, as we're not in $changed
                     if ($new instanceof IcingaObject) {
                         $fieldResolver->relinkObjectFields($new, $object);
-                    }
 
-                    $customPropertyResolver?->relinkObjectCustomProperties(
-                        $new,
-                        $object
-                    );
+                        $customPropertyResolver?->relinkObjectCustomProperties(
+                            $new,
+                            $object
+                        );
+                    }
                 }
             } else {
                 // No modification on the object, still, fields might have
                 // been changed
                 if ($new instanceof IcingaObject) {
                     $fieldResolver->relinkObjectFields($new, $object);
-                }
 
-                $customPropertyResolver?->relinkObjectCustomProperties(
-                    $new,
-                    $object
-                );
+                    $customPropertyResolver?->relinkObjectCustomProperties(
+                        $new,
+                        $object
+                    );
+                }
             }
         }
 
@@ -364,12 +364,12 @@ class BasketSnapshot extends DbObject
             // un-stored, let's do it right here
             if ($new instanceof IcingaObject) {
                 $fieldResolver->relinkObjectFields($new, $objects[$key]);
-            }
 
-            $customPropertyResolver?->relinkObjectCustomProperties(
-                $new,
-                $objects[$key]
-            );
+                $customPropertyResolver?->relinkObjectCustomProperties(
+                    $new,
+                    $objects[$key]
+                );
+            }
         }
     }
 

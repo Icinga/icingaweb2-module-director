@@ -52,6 +52,13 @@ class DirectorProperty extends DbObject
         return parent::setDbProperties($properties);
     }
 
+    public function setProperties($props)
+    {
+        unset($props['parent_uuid_v']);
+
+        return parent::setProperties($props);
+    }
+
     /**
      * Get category to which the property belongs to
      *

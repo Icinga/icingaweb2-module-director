@@ -182,8 +182,8 @@ class BasketSnapshotCustomVariableResolver
             return $this->requiredUuids;
         }
 
-        if (isset($this->objects['Property'])) {
-            $this->requiredUuids = array_keys($this->objects['Property']);
+        if (isset($this->objects['CustomVariable'])) {
+            $this->requiredUuids = array_keys($this->objects['CustomVariable']);
 
             return $this->requiredUuids;
         }
@@ -191,16 +191,12 @@ class BasketSnapshotCustomVariableResolver
         $uuids = [];
         // Get the uuids of all custom properties associated with all the objects hosts, services, etc.
         foreach ($this->objects as $objectType => $objects) {
-            if (! in_array(
-                $objectType,
-                [
-                    'HostTemplate',
-                    'ServiceTemplate',
-                    'CommandTemplate',
-                    'NotificationTemplate',
-                    'UserTemplate'
-                ]
-            )) {
+            if (
+                ! in_array(
+                    $objectType,
+                    ['HostTemplate', 'ServiceTemplate', 'CommandTemplate', 'NotificationTemplate', 'UserTemplate']
+                )
+            ) {
                 continue;
             }
 
@@ -273,7 +269,7 @@ class BasketSnapshotCustomVariableResolver
     {
         $this->uuidMap = [];
         $this->targetProperties = [];
-        foreach ($this->getObjectsByType('Property') as $uuid => $object) {
+        foreach ($this->getObjectsByType('CustomVariable') as $uuid => $object) {
             // Hint: import() doesn't store!
             $new = DirectorProperty::import($object, $this->targetDb);
             if ($new->hasBeenLoadedFromDb()) {
