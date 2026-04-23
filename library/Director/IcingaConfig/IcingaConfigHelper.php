@@ -396,7 +396,7 @@ class IcingaConfigHelper
             return false;
         }
 
-        if (in_array($name, $whiteList, true)) {
+        if (in_array($name, $whiteList ?? [], true)) {
             return true;
         }
 
