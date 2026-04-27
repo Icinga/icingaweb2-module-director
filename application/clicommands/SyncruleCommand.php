@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
+use Icinga\Exception\MissingParameterException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -56,7 +58,8 @@ class SyncruleCommand extends Command
      *
      * OPTIONS
      *
-     *   --id <id>     A Sync Rule ID. Use the list command to figure out
+     *   --id <id>     A Sync Rule ID. Use the list command to figure out. Should not be used together --name
+     *   --name <rule_name> A Sync Rule name. Should not be used together --id
      *   --benchmark   Show timing and memory usage details
      */
     public function checkAction()
@@ -86,7 +89,8 @@ class SyncruleCommand extends Command
      *
      * OPTIONS
      *
-     *   --id <id>     A Sync Rule ID. Use the list command to figure out
+     *   --id <id>     A Sync Rule ID. Use the list command to figure out. Should not be used together --name
+     *   --name <rule_name> A Sync Rule name. Should not be used together --id
      */
     public function deleteAction()
     {
@@ -136,7 +140,8 @@ class SyncruleCommand extends Command
      *
      * OPTIONS
      *
-     *   --id <id>     A Sync Rule ID. Use the list command to figure out
+     *   --id <id>     A Sync Rule ID. Use the list command to figure out. Should not be used together --name
+     *   --name <rule_name> A Sync Rule name. Should not be used together --id
      *   --benchmark   Show timing and memory usage details
      */
     public function runAction()
@@ -152,14 +157,33 @@ class SyncruleCommand extends Command
     }
 
     /**
+     *  Get the sync rule based on its id or name
+     *
      * @return SyncRule
+     *
+     * @throws MissingParameterException|RuntimeException|NotFoundError
      */
-    protected function getSyncRule()
+    protected function getSyncRule(): SyncRule
     {
-        return SyncRule::loadWithAutoIncId(
-            (int) $this->params->getRequired('id'),
-            $this->db()
-        );
+        $id = null;
+        if ($this->params->has('id')) {
+            $id = (int) $this->params->get('id');
+        }
+
+        $name = null;
+        if ($id === null) {
+            $name = $this->params->get('name');
+        }
+
+        if ($id === null && $name === null) {
+            throw new MissingParameterException($this->translate('Either --id or --name is required'));
+        } elseif ($id !== null && $name !== null) {
+            throw new RuntimeException('Only one of --id or --name may be used, not both');
+        } elseif ($id !== null) {
+            return SyncRule::loadWithAutoIncId($id, $this->db());
+        }
+
+        return SyncRule::loadWithAutoIncId($name, $this->db());
     }
 
     /**
