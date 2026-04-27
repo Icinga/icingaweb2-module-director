@@ -8,7 +8,7 @@ Make sure you use `director` as the module name. The following requirements must
 
 ## Requirements
 
-* PHP (≥7.3)
+* PHP (≥8.2)
     * Director v1.10 is the last version with support for PHP v5.6
 * [Icinga 2](https://github.com/Icinga/icinga2) (≥2.8.0)
     * It is recommended to use the latest feature release of Icinga 2
