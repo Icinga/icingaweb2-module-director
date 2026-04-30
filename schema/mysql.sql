@@ -673,7 +673,7 @@ CREATE TABLE director_property (
   parent_uuid_v BINARY(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) STORED,
   PRIMARY KEY (uuid),
   UNIQUE INDEX unique_name_parent_uuid (key_name, parent_uuid_v),
-  CONSTRAINT director_datafield_category
+  CONSTRAINT director_property_category
     FOREIGN KEY category (category_id)
     REFERENCES director_datafield_category (id)
     ON DELETE RESTRICT
