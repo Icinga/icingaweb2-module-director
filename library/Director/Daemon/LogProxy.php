@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Daemon;
 
 use Exception;
 use Icinga\Module\Director\Db;
+use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
 
@@ -33,25 +34,26 @@ class LogProxy implements DbBasedComponent
 
     /**
      * @param Db $connection
-     * @return \React\Promise\ExtendedPromiseInterface
+     *
+     * @return PromiseInterface
      */
     public function initDb(Db $connection)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
 
-        return resolve();
+        return resolve(null);
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function stopDb()
     {
         $this->connection = null;
         $this->db = null;
 
-        return resolve();
+        return resolve(null);
     }
 
     public function log($severity, $message)
