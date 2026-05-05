@@ -641,6 +641,7 @@ A new node will `POST` to `self-service/register-host`, with two parameters in
 the URL:
 
 * `name`: it's desired object name, usually the FQDN
+* `object_name`: Name that will be displayed
 * `key`: a valid Host Template API key
 
 In it's body it is allowed to specify a specific set of properties. At the time
