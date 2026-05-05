@@ -78,6 +78,9 @@ class PropertyModifierDictionaryToRow extends PropertyModifierHook
         }
         $result = [];
         foreach ($value as $key => $properties) {
+            if (is_array($properties)) {
+            $properties = (object) $properties;
+            }
             if (! is_object($properties)) {
                 throw new InvalidDataException(
                     sprintf('Nested "%s" dictionary', $key),
@@ -87,7 +90,7 @@ class PropertyModifierDictionaryToRow extends PropertyModifierHook
 
             $properties->$keyColumn = $key;
             $result[] = $properties;
-        }
+    }
 
         return $result;
     }
