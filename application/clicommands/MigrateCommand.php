@@ -290,7 +290,9 @@ class MigrateCommand extends Command
             $this->getDatafieldsWithCategory()
         );
 
-        $query->addFilter(Filter::not(Filter::where('varname', $skippedFields)));
+        if (! empty($skippedFields)) {
+            $query->addFilter(Filter::not(Filter::where('varname', $skippedFields)));
+        }
 
         return $query;
     }
