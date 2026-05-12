@@ -40,6 +40,7 @@ use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
+use Icinga\Web\Form;
 use Icinga\Web\Notification;
 use ipl\Html\Attributes;
 use ipl\Html\Html;
@@ -52,6 +53,7 @@ use ipl\Web\Compat\ViewRenderer;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
+use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -122,8 +124,11 @@ abstract class ObjectController extends ActionController
     protected function initializeWebRequest()
     {
         $action = $this->getRequest()->getActionName();
+        if ($action === 'add-var') {
+            return;
+        }
 
-        if ($action === 'add-var' || $this->params->has('_newVarUuid')) {
+        if ($action === 'variables' && $this->params->has('newVarUuid')) {
             return;
         }
 
@@ -335,8 +340,8 @@ abstract class ObjectController extends ActionController
         $object = $this->requireObject();
         $this->view->title = sprintf($this->translate('Add Custom Property: %s'), $this->object->getObjectName());
 
-        $addedVarUuids = $this->params->getValues('_addedVarUuids');
-        $nextSlotIndex = (int) $this->params->shift('_nextSlotIndex');
+        $addedVarUuids = $this->params->getValues('addedVarUuids');
+        $nextSlotIndex = (int) $this->params->shift('nextSlotIndex');
 
         $form = (new ObjectCustomvarForm($this->db(), $object, $addedVarUuids))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
@@ -354,11 +359,11 @@ abstract class ObjectController extends ActionController
                     'director/' . $this->getType() . '/variables',
                     [
                         'uuid'           => Uuid::fromBytes($object->get('uuid'))->toString(),
-                        '_newVarUuid'    => $newUuid,
-                        '_nextSlotIndex' => $nextSlotIndex
+                        'newVarUuid'    => $newUuid,
+                        'nextSlotIndex' => $nextSlotIndex
                     ]
                 );
-                $redirectUrl->getParams()->addValues('_addedVarUuids', $addedVarUuids);
+                $redirectUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
 
                 $this->redirectNow($redirectUrl);
             })
@@ -398,24 +403,27 @@ abstract class ObjectController extends ActionController
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
 
-        $newVarUuid = $this->params->shift('_newVarUuid');
-        $nextSlotIndex = (int) $this->params->shift('_nextSlotIndex');
+        $newVarUuid = $this->params->shift('newVarUuid');
+        $nextSlotIndex = (int) $this->params->shift('nextSlotIndex');
+
         $addedVarUuids = array_unique(array_merge(
-            $this->params->getValues('_addedVarUuids'),
-            (array) ($this->getRequest()->getPost('_addedVarUuids') ?? [])
+            $this->params->getValues('addedVarUuids'),
+            array_filter(explode(',', $this->getRequest()->getPost('addedVarUuids', '')))
         ));
 
         $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids);
         if ($newVarUuid !== null) {
             $this->sendNewVarMultipartUpdate($object, $form, $newVarUuid, $nextSlotIndex, $addedVarUuids);
+            $form->on(
+                CustomVariablesForm::ON_REQUEST,
+                function (ServerRequestInterface $request, CustomVariablesForm $form) {
+                    $this->params->remove('addedVarUuids');
+                    $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
+                }
+            );
 
             return;
         }
-
-        $this->addTitle(
-            $this->translate('Custom Variables: %s'),
-            $object->getObjectName()
-        );
 
         $this->prepareApplyForHeader();
 
@@ -426,9 +434,9 @@ abstract class ObjectController extends ActionController
 
             $buttonUrl = Url::fromPath(
                 'director/' . $this->getType() . '/add-var',
-                ['uuid' => $this->getUuidFromUrl(), '_nextSlotIndex' => $slotIndex]
+                ['uuid' => $this->getUuidFromUrl(), 'nextSlotIndex' => $slotIndex]
             );
-            $buttonUrl->getParams()->addValues('_addedVarUuids', $addedVarUuids);
+            $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
 
             $this->actions()->add(
                 Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
@@ -448,6 +456,11 @@ abstract class ObjectController extends ActionController
             $form->handleRequest($this->getServerRequest());
             $this->content()->add($form);
         }
+
+        $this->addTitle(
+            $this->translate('Custom Variables: %s'),
+            $object->getObjectName()
+        );
 
         $this->tabs()->activate('variables');
     }
@@ -490,7 +503,6 @@ abstract class ObjectController extends ActionController
             $type . '_uuid'  => $object->get('uuid')
         ];
 
-//        $form = new CustomVariablesForm($object, $propertyData);
         $newItem = $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
         $newSlotIndex = $nextSlotIndex + 1;
 
@@ -513,9 +525,10 @@ abstract class ObjectController extends ActionController
         // Part 3: update Add Custom Variable button with new slot index
         $buttonUrl = Url::fromPath(
             'director/' . $this->getType() . '/add-var',
-            ['uuid' => Uuid::fromBytes($object->get('uuid'))->toString(), '_nextSlotIndex' => $newSlotIndex]
+            ['uuid' => Uuid::fromBytes($object->get('uuid'))->toString(), 'nextSlotIndex' => $newSlotIndex]
         );
-        $buttonUrl->getParams()->addValues('_addedVarUuids', $addedVarUuids);
+
+        $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
 
         $this->addPart(
             (new ButtonLink(
@@ -527,20 +540,22 @@ abstract class ObjectController extends ActionController
             'add-custom-var-button'
         );
 
-        // Part 4: update hidden _addedVarUuids inputs so POST form submission carries them
+        // Part 4: update hidden addedVarUuids inputs so POST form submission carries them
         $addedUuidsContainer = new HtmlDocument();
-        foreach ($addedVarUuids as $uuid) {
-            $addedUuidsContainer->add(Html::tag('input', [
-                'type'  => 'hidden',
-                'name'  => '_addedVarUuids[]',
-                'value' => $uuid
-            ]));
-        }
+        $addedUuidsElement = $form->createElement(
+            'hidden',
+            'addedVarUuids',
+            [
+                'value' => implode(',', $addedVarUuids)
+            ]
+        );
+
+        $addedUuidsContainer->addHtml($addedUuidsElement);
         $this->addPart($addedUuidsContainer, 'added-var-uuids');
     }
 
     /**
-     * Prepare Custom Properties Form for hosts, services, apply rules and service sets
+     * Prepare the Custom Properties Form for hosts, services, apply rules and service sets
      *
      * @param IcingaObject    $object
      * @param IcingaHost|null $host
@@ -564,15 +579,12 @@ abstract class ObjectController extends ActionController
         $vars = json_decode(json_encode($storedVars), true);
         $inheritedVars = json_decode(json_encode($object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
         $origins = $object->getOriginsVars();
-//        $newVarUuid = $this->params->shift('_newVarUuid');
-//        $nextSlotIndex = (int) $this->params->shift('_nextSlotIndex');
+
         $objectProperties = $this->getObjectCustomProperties($object, $isOverrideVars, $addedVarUuids);
         $form = (new CustomVariablesForm($object, $objectProperties))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->setAddedVarUuids($addedVarUuids);
         if (empty($objectProperties)) {
-//            $this->content()->add(Hint::info($this->translate('No custom properties defined.')));
-
             return $form;
         }
 
@@ -589,54 +601,8 @@ abstract class ObjectController extends ActionController
 
             $result[] = $row;
         }
-//
-//        $form = (new CustomVariablesForm($object, $objectProperties))
-//            ->setAction(Url::fromRequest()->getAbsoluteUrl())
-//            ->setAddedVarUuids($addedVarUuids);
 
         $form
-//            ->on(
-//                CustomVariablesForm::ON_REQUEST,
-//                function (
-//                    ServerRequestInterface $request,
-//                    CustomVariablesForm $form,
-//                ) use ($newVarUuid, $nextSlotIndex, $object) {
-//                    if ($newVarUuid) {
-//                        $type = $object->getShortTableName();
-//                         $db = $this->db()->getDbAdapter();
-//                         $uuidBytes = Uuid::fromString($newVarUuid)->getBytes();
-//
-//                         $query = $db->select()
-//                             ->from(
-//                                 ['dp' => 'director_property'],
-//                                 [
-//                                     'key_name'   => 'dp.key_name',
-//                                     'uuid'       => 'dp.uuid',
-//                                     'value_type' => 'dp.value_type',
-//                                     'label'      => 'dp.label'
-//                                 ]
-//                             )
-//                             ->where('dp.uuid = ?', DbUtil::quoteBinaryCompat($uuidBytes, $db));
-//
-//                         $row = $db->fetchRow($query, fetchMode: PDO::FETCH_ASSOC);
-//                         if (! $row) {
-//                             return;
-//                         }
-//
-//                         $propertyData = [
-//                             'key_name'       => $row['key_name'],
-//                             'uuid'           => $row['uuid'],
-//                             'value_type'     => $row['value_type'],
-//                             'label'          => $row['label'],
-//                             'allow_removal'  => true,
-//                             'new'            => true,
-//                             $type . '_uuid'  => $object->get('uuid')
-//                         ];
-//
-//                        $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
-//                    }
-//                }
-//            )
             ->on(
             CustomVariablesForm::ON_SUBMIT,
             function (CustomVariablesForm $form) {
@@ -651,7 +617,7 @@ abstract class ObjectController extends ActionController
                     Notification::success($this->translate('There is nothing to change.'));
                 }
 
-                $this->redirectNow(Url::fromRequest()->without(['_addedVarUuids', '_newVarUuid', '_nextSlotIndex']));
+                $this->redirectNow(Url::fromRequest()->without(['addedVarUuids', 'newVarUuid', 'nextSlotIndex']));
             }
         );
 

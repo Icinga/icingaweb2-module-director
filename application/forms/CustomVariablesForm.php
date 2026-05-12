@@ -83,14 +83,16 @@ class CustomVariablesForm extends CompatForm
             Attributes::create(['id' => 'added-var-uuids', 'class' => 'added-var-uuids', 'tabindex' => -1])
         );
 
-        foreach ($this->addedVarUuids as $uuid) {
-            $addedUuidsContainer->addHtml(new HtmlElement('input', Attributes::create([
-                'type'  => 'hidden',
-                'name'  => '_addedVarUuids[]',
-                'tabindex' => -1,
-                'value' => $uuid
-            ])));
-        }
+        $addedUuidsElement = $this->createElement(
+            'hidden',
+            'addedVarUuids',
+            [
+                'value' => implode(',', $this->addedVarUuids)
+            ]
+        );
+
+        $this->registerElement($addedUuidsElement);
+        $addedUuidsContainer->addHtml($addedUuidsElement);
 
         $this->addElement($this->duplicateSubmitButton($saveButton));
         $this->addElement($dictionary);
@@ -102,16 +104,23 @@ class CustomVariablesForm extends CompatForm
         $this->registerElement($saveButton);
 
         $removedItems = $dictionary->getItemsToRemove();
-        if (! empty($removedItems)) {
+        $removedUuids = [];
+        foreach ($removedItems as $removedItem) {
+            $removedUuids[] = Uuid::fromBytes($this->objectProperties[$removedItem]['uuid'])->toString();
+        }
+
+        $removedUuids = array_diff($removedUuids, $this->addedVarUuids);
+
+        if (! empty($removedUuids)) {
             $this->addHtml(
                 new HtmlElement('div', Attributes::create(['class' => 'message']), Text::create(
                     sprintf(
                         $this->translatePlural(
                             '(%d) property has been removed',
                             '(%d) properties have been removed',
-                            count($removedItems)
+                            count($removedUuids)
                         ),
-                        count($removedItems)
+                        count($removedUuids)
                     )
                 ))
             );
