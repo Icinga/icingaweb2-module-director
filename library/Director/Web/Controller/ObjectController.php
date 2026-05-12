@@ -128,10 +128,6 @@ abstract class ObjectController extends ActionController
             return;
         }
 
-        if ($action === 'variables' && $this->params->has('newVarUuid')) {
-            return;
-        }
-
         if ($this->getRequest()->getActionName() === 'add') {
             $this->addSingleTab(
                 sprintf($this->translate('Add %s'), ucfirst($this->getType())),
@@ -159,6 +155,10 @@ abstract class ObjectController extends ActionController
                 ->setHeader('X-Icinga-Multipart-Content', $partSeparator);
             $document->setSeparator("\n$partSeparator\n");
             $document->add($this->parts);
+            // content and controls of the controller view property must be set to null,
+            // so that the SimpleViewRenderer is not called in ActionController
+            $this->view->content = null;
+            $this->view->controls = null;
         } else {
             if (! $this->content()->isEmpty()) {
                 $document->prepend($this->content());
@@ -412,20 +412,53 @@ abstract class ObjectController extends ActionController
         ));
 
         $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids);
-        if ($newVarUuid !== null) {
-            $this->sendNewVarMultipartUpdate($object, $form, $newVarUuid, $nextSlotIndex, $addedVarUuids);
-            $this->params->remove('addedVarUuids');
-            $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
 
+        $form
+            ->on(
+                CustomVariablesForm::ON_SUBMIT,
+                function (CustomVariablesForm $form) {
+                    if ($form->varsHasBeenModified()) {
+                        Notification::success(
+                            sprintf(
+                                $this->translate('Custom variables have been successfully modified for %s'),
+                                $form->object->getObjectName(),
+                            )
+                        );
+                    } else {
+                        Notification::success($this->translate('There is nothing to change.'));
+                    }
+
+                    $this->redirectNow(Url::fromRequest()->without(['addedVarUuids', 'newVarUuid', 'nextSlotIndex']));
+                }
+            )->on(
+                CustomVariablesForm::ON_REQUEST,
+                function (
+                    ServerRequestInterface $request,
+                    CustomVariablesForm $form
+                ) use (
+                    $object,
+                    $newVarUuid,
+                    $nextSlotIndex,
+                    $addedVarUuids
+                ) {
+                    if ($newVarUuid === null) {
+                        return;
+                    }
+
+                    $this->sendNewVarMultipartUpdate($object, $form, $newVarUuid, $nextSlotIndex, $addedVarUuids);
+                    $this->params->remove('addedVarUuids');
+                    $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
+                }
+            )->handleRequest($this->getServerRequest());
+
+        if ($newVarUuid !== null) {
             return;
         }
 
         $this->prepareApplyForHeader();
 
         if ($this->object->isTemplate()) {
-            $slotIndex = $form
-                ? $form->handleRequest($this->getServerRequest())->getElement('properties')->getItemCount()
-                : 0;
+            $slotIndex = $form->getElement('properties')->getItemCount();
 
             $buttonUrl = Url::fromPath(
                 'director/' . $this->getType() . '/add-var',
@@ -501,23 +534,25 @@ abstract class ObjectController extends ActionController
         $newItem = $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
         $newSlotIndex = $nextSlotIndex + 1;
 
-        // Part 1: fill the slot with the new DictionaryItem + next empty slot
+        // Fill the slot with the new DictionaryItem + next empty slot
         $slotContent = new HtmlDocument();
         $slotContent->add($newItem);
         $slotContent->add(Html::tag('div', ['id' => 'new-var-slot-' . $newSlotIndex]));
         $this->addPart($slotContent, 'new-var-slot-' . $nextSlotIndex);
 
-        // Part 2: update item-count input
+        // Update item-count input
+        $itemCount = $form->createElement(
+            'hidden',
+            'properties[item-count]',
+            ['value' => $newSlotIndex]
+        );
+
         $this->addPart(
-            Html::tag('input', [
-                'type'  => 'hidden',
-                'name'  => 'properties[item-count]',
-                'value' => $newSlotIndex
-            ]),
+            $itemCount,
             'properties-item-count'
         );
 
-        // Part 3: update Add Custom Variable button with new slot index
+        // Update Add Custom Variable button with new slot index
         $buttonUrl = Url::fromPath(
             'director/' . $this->getType() . '/add-var',
             ['uuid' => Uuid::fromBytes($object->get('uuid'))->toString(), 'nextSlotIndex' => $newSlotIndex]
@@ -535,7 +570,7 @@ abstract class ObjectController extends ActionController
             'add-custom-var-button'
         );
 
-        // Part 4: update hidden addedVarUuids inputs so POST form submission carries them
+        // Update hidden addedVarUuids inputs so POST form submission carries them
         $addedUuidsContainer = new HtmlDocument();
         $addedUuidsElement = $form->createElement(
             'hidden',
@@ -596,25 +631,6 @@ abstract class ObjectController extends ActionController
 
             $result[] = $row;
         }
-
-        $form
-            ->on(
-                CustomVariablesForm::ON_SUBMIT,
-                function (CustomVariablesForm $form) {
-                    if ($form->varsHasBeenModified()) {
-                        Notification::success(
-                            sprintf(
-                                $this->translate('Custom variables have been successfully modified for %s'),
-                                $form->object->getObjectName(),
-                            )
-                        );
-                    } else {
-                        Notification::success($this->translate('There is nothing to change.'));
-                    }
-
-                    $this->redirectNow(Url::fromRequest()->without(['addedVarUuids', 'newVarUuid', 'nextSlotIndex']));
-                }
-            );
 
         $form->load($result);
 
