@@ -414,13 +414,8 @@ abstract class ObjectController extends ActionController
         $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids);
         if ($newVarUuid !== null) {
             $this->sendNewVarMultipartUpdate($object, $form, $newVarUuid, $nextSlotIndex, $addedVarUuids);
-            $form->on(
-                CustomVariablesForm::ON_REQUEST,
-                function (ServerRequestInterface $request, CustomVariablesForm $form) {
-                    $this->params->remove('addedVarUuids');
-                    $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
-                }
-            );
+            $this->params->remove('addedVarUuids');
+            $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
 
             return;
         }
@@ -604,22 +599,22 @@ abstract class ObjectController extends ActionController
 
         $form
             ->on(
-            CustomVariablesForm::ON_SUBMIT,
-            function (CustomVariablesForm $form) {
-                if ($form->varsHasBeenModified()) {
-                    Notification::success(
-                        sprintf(
-                            $this->translate('Custom variables have been successfully modified for %s'),
-                            $form->object->getObjectName(),
-                        )
-                    );
-                } else {
-                    Notification::success($this->translate('There is nothing to change.'));
-                }
+                CustomVariablesForm::ON_SUBMIT,
+                function (CustomVariablesForm $form) {
+                    if ($form->varsHasBeenModified()) {
+                        Notification::success(
+                            sprintf(
+                                $this->translate('Custom variables have been successfully modified for %s'),
+                                $form->object->getObjectName(),
+                            )
+                        );
+                    } else {
+                        Notification::success($this->translate('There is nothing to change.'));
+                    }
 
-                $this->redirectNow(Url::fromRequest()->without(['addedVarUuids', 'newVarUuid', 'nextSlotIndex']));
-            }
-        );
+                    $this->redirectNow(Url::fromRequest()->without(['addedVarUuids', 'newVarUuid', 'nextSlotIndex']));
+                }
+            );
 
         $form->load($result);
 
