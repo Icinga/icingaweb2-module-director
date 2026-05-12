@@ -19,7 +19,6 @@ use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
-use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
@@ -42,11 +41,14 @@ use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
 use Icinga\Web\Notification;
-use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Html;
+use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
+use ipl\Html\ValidHtml;
+use ipl\Web\Compat\Multipart;
+use ipl\Web\Compat\ViewRenderer;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use PDO;
@@ -75,8 +77,8 @@ abstract class ObjectController extends ActionController
     /** @var string|null */
     protected $objectBaseUrl;
 
-    /** @var Session\SessionNamespace */
-    protected Session\SessionNamespace $session;
+    /** @var Multipart[] */
+    protected array $parts = [];
 
     public function init()
     {
@@ -88,13 +90,6 @@ abstract class ObjectController extends ActionController
         if ($this->getRequest()->isApiRequest()) {
             $this->initializeRestApi();
         } else {
-            $this->session = Session::getSession()->getNamespace('director.variables');
-            if (! $this->params->shift('_preserve_session')) {
-                $this->session->delete('vars');
-                $this->session->delete('added-properties');
-                $this->session->delete('removed-properties');
-            }
-
             $this->initializeWebRequest();
         }
     }
@@ -127,13 +122,8 @@ abstract class ObjectController extends ActionController
     protected function initializeWebRequest()
     {
         $action = $this->getRequest()->getActionName();
-        if (! ($action === 'variables' || $action === 'add-var')) {
-            $this->session->delete('vars');
-            $this->session->delete('added-properties');
-            $this->session->delete('removed-properties');
-        }
 
-        if ($this->getRequest()->getActionName() === 'add-var') {
+        if ($action === 'add-var' || $this->params->has('_newVarUuid')) {
             return;
         }
 
@@ -153,6 +143,41 @@ abstract class ObjectController extends ActionController
         if ($this->object !== null) {
             $this->addDeploymentLink();
         }
+    }
+
+    public function postDispatch()
+    {
+        $document = new HtmlDocument();
+        if (! empty($this->parts)) {
+            $partSeparator = base64_encode(random_bytes(16));
+            $this->getResponse()
+                ->setHeader('X-Icinga-Multipart-Content', $partSeparator);
+            $document->setSeparator("\n$partSeparator\n");
+            $document->add($this->parts);
+        } else {
+            if (! $this->content()->isEmpty()) {
+                $document->prepend($this->content());
+
+                if (! $this->view->compact && ! $this->controls()->isEmpty()) {
+                    $document->prepend($this->controls());
+                }
+            }
+        }
+
+        ViewRenderer::inject();
+
+        $this->view->document = $document;
+
+        parent::postDispatch();
+    }
+
+    private function addPart(ValidHtml $content, string $id): static
+    {
+        $part = new Multipart();
+        $part->add($content);
+        $this->parts[] = $part->setFor($id);
+
+        return $this;
     }
 
     /**
@@ -309,29 +334,33 @@ abstract class ObjectController extends ActionController
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
         $this->view->title = sprintf($this->translate('Add Custom Property: %s'), $this->object->getObjectName());
-        $objectUuid = $this->object->get('uuid');
 
-        $form = (new ObjectCustomvarForm($this->db(), $object))
+        $addedVarUuids = $this->params->getValues('_addedVarUuids');
+        $nextSlotIndex = (int) $this->params->shift('_nextSlotIndex');
+
+        $form = (new ObjectCustomvarForm($this->db(), $object, $addedVarUuids))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(ObjectCustomvarForm::ON_SUBMIT, function (ObjectCustomvarForm $form) use ($objectUuid) {
-                $properties = $this->session->get('added-properties', []);
-                $removedObjectProperties = $this->session->get('removed-properties', []);
-                $propertyName = $form->getPropertyName();
-                if (array_key_exists($propertyName, $removedObjectProperties)) {
-                    unset($removedObjectProperties[$propertyName]);
-                } elseif (! isset($properties[$propertyName])) {
-                    $properties[$propertyName] = Uuid::fromString($form->getValue('property'))->getBytes();
+            ->on(ObjectCustomvarForm::ON_SUBMIT, function (ObjectCustomvarForm $form) use (
+                $object,
+                $addedVarUuids,
+                $nextSlotIndex
+            ) {
+                $newUuid = $form->getValue('property');
+                if (! in_array($newUuid, $addedVarUuids, true)) {
+                    $addedVarUuids[] = $newUuid;
                 }
 
-                $this->session->set('added-properties', $properties);
-                $this->session->set('removed-properties', $removedObjectProperties);
-                $this->redirectNow(Url::fromPath(
+                $redirectUrl = Url::fromPath(
                     'director/' . $this->getType() . '/variables',
                     [
-                        'uuid' => UUid::fromBytes($objectUuid)->toString(),
-                        '_preserve_session' => true
+                        'uuid'           => Uuid::fromBytes($object->get('uuid'))->toString(),
+                        '_newVarUuid'    => $newUuid,
+                        '_nextSlotIndex' => $nextSlotIndex
                     ]
-                ));
+                );
+                $redirectUrl->getParams()->addValues('_addedVarUuids', $addedVarUuids);
+
+                $this->redirectNow($redirectUrl);
             })
             ->handleRequest($this->getServerRequest());
 
@@ -369,73 +398,182 @@ abstract class ObjectController extends ActionController
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
 
+        $newVarUuid = $this->params->shift('_newVarUuid');
+        $nextSlotIndex = (int) $this->params->shift('_nextSlotIndex');
+        $addedVarUuids = array_unique(array_merge(
+            $this->params->getValues('_addedVarUuids'),
+            (array) ($this->getRequest()->getPost('_addedVarUuids') ?? [])
+        ));
+
+        $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids);
+        if ($newVarUuid !== null) {
+            $this->sendNewVarMultipartUpdate($object, $form, $newVarUuid, $nextSlotIndex, $addedVarUuids);
+
+            return;
+        }
+
         $this->addTitle(
             $this->translate('Custom Variables: %s'),
             $object->getObjectName()
         );
 
         $this->prepareApplyForHeader();
-        if ($this->object->isTemplate()) {
-            $this->actions()->add(
-                (new ButtonLink(
-                    $this->translate('Add Custom Variable'),
-                    Url::fromPath(
-                        'director/' . $this->getType() . '/add-var',
-                        ['uuid' => $this->getUuidFromUrl(), '_preserve_session' => true]
-                    )->getAbsoluteUrl(),
-                    null,
-                    ['class' => 'control-button']
-                ))->openInModal()
-            );
-        }
 
-        $form = $this->prepareCustomPropertiesForm($object);
-        if ($form) {
-            $this->content()->add($form->handleRequest($this->getServerRequest()));
+        if ($this->object->isTemplate()) {
+            $slotIndex = $form
+                ? $form->handleRequest($this->getServerRequest())->getElement('properties')->getItemCount()
+                : 0;
+
+            $buttonUrl = Url::fromPath(
+                'director/' . $this->getType() . '/add-var',
+                ['uuid' => $this->getUuidFromUrl(), '_nextSlotIndex' => $slotIndex]
+            );
+            $buttonUrl->getParams()->addValues('_addedVarUuids', $addedVarUuids);
+
+            $this->actions()->add(
+                Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
+                    (new ButtonLink(
+                        $this->translate('Add Custom Variable'),
+                        $buttonUrl->getAbsoluteUrl(),
+                        null,
+                        ['class' => 'control-button']
+                    ))->openInModal()
+                ])
+            );
+
+            if ($form) {
+                $this->content()->add($form);
+            }
+        } elseif ($form) {
+            $form->handleRequest($this->getServerRequest());
+            $this->content()->add($form);
         }
 
         $this->tabs()->activate('variables');
     }
 
+    private function sendNewVarMultipartUpdate(
+        IcingaObject $object,
+        CustomVariablesForm $form,
+        string $newVarUuid,
+        int $nextSlotIndex,
+        array $addedVarUuids
+    ): void {
+        $type = $object->getShortTableName();
+        $db = $this->db()->getDbAdapter();
+        $uuidBytes = Uuid::fromString($newVarUuid)->getBytes();
+
+        $query = $db->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name'   => 'dp.key_name',
+                    'uuid'       => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                    'label'      => 'dp.label'
+                ]
+            )
+            ->where('dp.uuid = ?', DbUtil::quoteBinaryCompat($uuidBytes, $db));
+
+        $row = $db->fetchRow($query, fetchMode: PDO::FETCH_ASSOC);
+        if (! $row) {
+            return;
+        }
+
+        $propertyData = [
+            'key_name'       => $row['key_name'],
+            'uuid'           => $row['uuid'],
+            'value_type'     => $row['value_type'],
+            'label'          => $row['label'],
+            'allow_removal'  => true,
+            'new'            => true,
+            $type . '_uuid'  => $object->get('uuid')
+        ];
+
+//        $form = new CustomVariablesForm($object, $propertyData);
+        $newItem = $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
+        $newSlotIndex = $nextSlotIndex + 1;
+
+        // Part 1: fill the slot with the new DictionaryItem + next empty slot
+        $slotContent = new HtmlDocument();
+        $slotContent->add($newItem);
+        $slotContent->add(Html::tag('div', ['id' => 'new-var-slot-' . $newSlotIndex]));
+        $this->addPart($slotContent, 'new-var-slot-' . $nextSlotIndex);
+
+        // Part 2: update item-count input
+        $this->addPart(
+            Html::tag('input', [
+                'type'  => 'hidden',
+                'name'  => 'properties[item-count]',
+                'value' => $newSlotIndex
+            ]),
+            'properties-item-count'
+        );
+
+        // Part 3: update Add Custom Variable button with new slot index
+        $buttonUrl = Url::fromPath(
+            'director/' . $this->getType() . '/add-var',
+            ['uuid' => Uuid::fromBytes($object->get('uuid'))->toString(), '_nextSlotIndex' => $newSlotIndex]
+        );
+        $buttonUrl->getParams()->addValues('_addedVarUuids', $addedVarUuids);
+
+        $this->addPart(
+            (new ButtonLink(
+                $this->translate('Add Custom Variable'),
+                $buttonUrl->getAbsoluteUrl(),
+                null,
+                ['class' => 'control-button']
+            ))->openInModal(),
+            'add-custom-var-button'
+        );
+
+        // Part 4: update hidden _addedVarUuids inputs so POST form submission carries them
+        $addedUuidsContainer = new HtmlDocument();
+        foreach ($addedVarUuids as $uuid) {
+            $addedUuidsContainer->add(Html::tag('input', [
+                'type'  => 'hidden',
+                'name'  => '_addedVarUuids[]',
+                'value' => $uuid
+            ]));
+        }
+        $this->addPart($addedUuidsContainer, 'added-var-uuids');
+    }
+
     /**
      * Prepare Custom Properties Form for hosts, services, apply rules and service sets
      *
-     * @param IcingaObject $object
+     * @param IcingaObject    $object
      * @param IcingaHost|null $host
+     * @param string[]        $addedVarUuids UUID strings of properties added this session
      *
      * @return ?CustomVariablesForm
      */
     public function prepareCustomPropertiesForm(
         IcingaObject $object,
-        ?IcingaHost $host = null
+        ?IcingaHost $host = null,
+        array $addedVarUuids = []
     ): ?CustomVariablesForm {
-        $addedProperties = $this->session->get('added-properties');
-        $removedProperties = $this->session->get('removed-properties');
-
         $isOverrideVars = $host !== null;
-        if (! $isOverrideVars) {
+        if ($isOverrideVars) {
+            $storedVars = $host->getOverriddenServiceVars($object);
+        } else {
             $storedVars = $object->getVars();
             unset($storedVars->{'_override_servicevars'});
-        } else {
-            $storedVars = $host->getOverriddenServiceVars($object);
         }
 
-        if ($this->session->get('vars')) {
-            $vars = $this->session->get('vars');
-        } else {
-            $vars = json_decode(json_encode($storedVars), true);
-
-            $this->session->set('vars', $vars);
-        }
-
+        $vars = json_decode(json_encode($storedVars), true);
         $inheritedVars = json_decode(json_encode($object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
         $origins = $object->getOriginsVars();
+//        $newVarUuid = $this->params->shift('_newVarUuid');
+//        $nextSlotIndex = (int) $this->params->shift('_nextSlotIndex');
+        $objectProperties = $this->getObjectCustomProperties($object, $isOverrideVars, $addedVarUuids);
+        $form = (new CustomVariablesForm($object, $objectProperties))
+            ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->setAddedVarUuids($addedVarUuids);
+        if (empty($objectProperties)) {
+//            $this->content()->add(Hint::info($this->translate('No custom properties defined.')));
 
-        $objectProperties = $this->getObjectCustomProperties($object, $isOverrideVars);
-        if (empty($objectProperties) && empty($addedProperties) && empty($removedProperties)) {
-            $this->content()->add(Hint::info($this->translate('No custom properties defined.')));
-
-            return null;
+            return $form;
         }
 
         $result = [];
@@ -451,16 +589,57 @@ abstract class ObjectController extends ActionController
 
             $result[] = $row;
         }
+//
+//        $form = (new CustomVariablesForm($object, $objectProperties))
+//            ->setAction(Url::fromRequest()->getAbsoluteUrl())
+//            ->setAddedVarUuids($addedVarUuids);
 
-        $form = (new CustomVariablesForm($object, $objectProperties))
-            ->setAction(Url::fromRequest()->setParam('_preserve_session')->getAbsoluteUrl());
-
-        $form->on(
+        $form
+//            ->on(
+//                CustomVariablesForm::ON_REQUEST,
+//                function (
+//                    ServerRequestInterface $request,
+//                    CustomVariablesForm $form,
+//                ) use ($newVarUuid, $nextSlotIndex, $object) {
+//                    if ($newVarUuid) {
+//                        $type = $object->getShortTableName();
+//                         $db = $this->db()->getDbAdapter();
+//                         $uuidBytes = Uuid::fromString($newVarUuid)->getBytes();
+//
+//                         $query = $db->select()
+//                             ->from(
+//                                 ['dp' => 'director_property'],
+//                                 [
+//                                     'key_name'   => 'dp.key_name',
+//                                     'uuid'       => 'dp.uuid',
+//                                     'value_type' => 'dp.value_type',
+//                                     'label'      => 'dp.label'
+//                                 ]
+//                             )
+//                             ->where('dp.uuid = ?', DbUtil::quoteBinaryCompat($uuidBytes, $db));
+//
+//                         $row = $db->fetchRow($query, fetchMode: PDO::FETCH_ASSOC);
+//                         if (! $row) {
+//                             return;
+//                         }
+//
+//                         $propertyData = [
+//                             'key_name'       => $row['key_name'],
+//                             'uuid'           => $row['uuid'],
+//                             'value_type'     => $row['value_type'],
+//                             'label'          => $row['label'],
+//                             'allow_removal'  => true,
+//                             'new'            => true,
+//                             $type . '_uuid'  => $object->get('uuid')
+//                         ];
+//
+//                        $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
+//                    }
+//                }
+//            )
+            ->on(
             CustomVariablesForm::ON_SUBMIT,
             function (CustomVariablesForm $form) {
-                $this->session->delete('vars');
-                $this->session->delete('added-properties');
-                $this->session->delete('removed-properties');
                 if ($form->varsHasBeenModified()) {
                     Notification::success(
                         sprintf(
@@ -472,15 +651,7 @@ abstract class ObjectController extends ActionController
                     Notification::success($this->translate('There is nothing to change.'));
                 }
 
-                $this->redirectNow(Url::fromRequest()->without(['_preserve_session']));
-            }
-        )->on(
-            CustomVariablesForm::ON_SENT,
-            function (CustomVariablesForm $form) {
-                /** @var Dictionary $propertiesElement */
-                $propertiesElement = $form->getElement('properties');
-                $vars = $propertiesElement->getDictionary();
-                $this->session->set('vars', $vars);
+                $this->redirectNow(Url::fromRequest()->without(['_addedVarUuids', '_newVarUuid', '_nextSlotIndex']));
             }
         );
 
@@ -686,12 +857,17 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get custom properties for the host.
+     * Get custom properties for the object, including session-added ones.
+     *
+     * @param string[] $addedVarUuids UUID strings of properties added this session
      *
      * @return array
      */
-    protected function getObjectCustomProperties(IcingaObject $object, bool $isOverrideVars = false): array
-    {
+    protected function getObjectCustomProperties(
+        IcingaObject $object,
+        bool $isOverrideVars = false,
+        array $addedVarUuids = []
+    ): array {
         if ($object->uuid === null) {
             return [];
         }
@@ -709,18 +885,18 @@ abstract class ObjectController extends ActionController
         }
 
         $objectUuid = $object->get('uuid');
-        $uuids[] = Dbutil::quoteBinaryCompat($objectUuid, $db->getDbAdapter());
+        $uuids[] = DbUtil::quoteBinaryCompat($objectUuid, $db->getDbAdapter());
         $query = $db->getDbAdapter()
             ->select()
             ->from(
                 ['dp' => 'director_property'],
                 [
-                    'key_name' => 'dp.key_name',
-                    'uuid' => 'dp.uuid',
-                    $type . '_uuid' => 'iop.' . $type . '_uuid',
-                    'value_type' => 'dp.value_type',
-                    'label' => 'dp.label',
-                    'children' => 'COUNT(cdp.uuid)'
+                    'key_name'          => 'dp.key_name',
+                    'uuid'              => 'dp.uuid',
+                    $type . '_uuid'     => 'iop.' . $type . '_uuid',
+                    'value_type'        => 'dp.value_type',
+                    'label'             => 'dp.label',
+                    'children'          => 'COUNT(cdp.uuid)'
                 ]
             )
             ->join(
@@ -748,8 +924,6 @@ abstract class ObjectController extends ActionController
             ->order('children')
             ->order('key_name');
 
-        $result = [];
-        $removedProperties = $this->session->get('removed-properties', []);
         if ($isOverrideVars) {
             if ($object->isApplyRule()) {
                 $serviceName = $object->getObjectName();
@@ -762,57 +936,49 @@ abstract class ObjectController extends ActionController
             $vars = json_decode(json_encode($object->getVars()), true);
         }
 
+        $result = [];
         foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
             $row['uuid'] = DbUtil::binaryResult($row['uuid']);
             $row[$type . '_uuid'] = DbUtil::binaryResult($row[$type . '_uuid']);
-            if ($objectUuid === $row[$type . '_uuid']) {
-                $row['allow_removal'] = true;
-            } else {
-                $row['allow_removal'] = false;
-            }
+            $row['allow_removal'] = $objectUuid === $row[$type . '_uuid'];
 
             if (isset($vars[$row['key_name']])) {
                 $row['value'] = $vars[$row['key_name']];
             }
 
-            if (array_key_exists($row['key_name'], $removedProperties)) {
-                $row['removed'] = true;
-            }
-
             $result[$row['key_name']] = $row;
         }
 
-        $addedProperties = $this->session->get('added-properties');
-        if ($addedProperties) {
-            $query = $db->getDbAdapter()
+        if (! empty($addedVarUuids)) {
+            $uuidBytes = array_map(
+                fn($uuid) => Uuid::fromString($uuid)->getBytes(),
+                $addedVarUuids
+            );
+
+            $addedQuery = $db->getDbAdapter()
                 ->select()
                 ->from(
                     ['dp' => 'director_property'],
                     [
-                        'key_name' => 'dp.key_name',
-                        'uuid' => 'dp.uuid',
+                        'key_name'   => 'dp.key_name',
+                        'uuid'       => 'dp.uuid',
                         'value_type' => 'dp.value_type',
-                        'label' => 'dp.label',
-                        'children' => 'COUNT(cdp.uuid)'
+                        'label'      => 'dp.label'
                     ]
                 )
-                ->joinLeft(
-                    ['cdp' => 'director_property'],
-                    'cdp.parent_uuid = dp.uuid',
-                    []
-                )
-                ->where('dp.' . 'uuid IN (?)', DbUtil::quoteBinaryCompat($addedProperties, $db->getDbAdapter()))
-                ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                ->order($this->valueTypeOrderExpr($db, [
-                    'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',
-                    'dynamic-array', 'fixed-array', 'fixed-dictionary', 'dynamic-dictionary'
-                ]))
-                ->order('children')
-                ->order('key_name');
+                ->where('dp.uuid IN (?)', DbUtil::quoteBinaryCompat($uuidBytes, $db->getDbAdapter()));
 
-            foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+            $addedRows = $db->getDbAdapter()->fetchAll($addedQuery, fetchMode: PDO::FETCH_ASSOC);
+            $uuidBytes = array_flip($uuidBytes);
+            usort($addedRows, function ($a, $b) use ($uuidBytes) {
+                $posA = $uuidBytes[$a['uuid']] ?? PHP_INT_MAX;
+                $posB = $uuidBytes[$b['uuid']] ?? PHP_INT_MAX;
+
+                return $posA <=> $posB;
+            });
+
+            foreach ($addedRows as $row) {
                 $row['allow_removal'] = true;
-                $row['host_uuid'] = DbUtil::binaryResult($this->object->get('uuid'));
                 $row['uuid'] = DbUtil::binaryResult($row['uuid']);
                 if (! isset($result[$row['key_name']])) {
                     $row['new'] = true;

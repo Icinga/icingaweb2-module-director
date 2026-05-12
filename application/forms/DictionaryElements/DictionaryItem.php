@@ -78,6 +78,10 @@ class DictionaryItem extends FieldsetElement
 
     protected function assemble(): void
     {
+        if (empty($this->fields)) {
+            return;
+        }
+
         $this->addElement('hidden', 'name', ['value' => $this->fields['key_name'] ?? '']);
         $this->addElement('hidden', 'type', ['value' => $this->fields['value_type'] ?? '']);
         $this->addElement('hidden', 'label', ['value' => $this->fields['label'] ?? '']);
@@ -123,15 +127,14 @@ class DictionaryItem extends FieldsetElement
                 [
                     'label' => $label . ' (Number)',
                     'placeholder' => $placeholder,
-                    'step' => 'any',
-                    'class' => 'autosubmit'
+                    'step' => 'any'
                 ]
             );
         } elseif ($type == 'bool') {
             $this->addElement(
                 new IplBoolean(
                     $valElementName,
-                    ['label' => $label, 'placeholder' => $placeholder, 'class' => 'autosubmit']
+                    ['label' => $label, 'placeholder' => $placeholder]
                 )
             );
         } elseif ($type === 'dynamic-array') {
@@ -241,7 +244,7 @@ class DictionaryItem extends FieldsetElement
                 $valElementName,
                 [
                     'label' => $label . ' (' . ucfirst($type) . ')',
-                    'placeholder' => $placeholder, 'class' => 'autosubmit'
+                    'placeholder' => $placeholder
                 ]
             );
         }
@@ -249,6 +252,10 @@ class DictionaryItem extends FieldsetElement
 
     public function populate($values): void
     {
+        if (empty($values)) {
+            return;
+        }
+
         if (
             $values['type'] === 'datalist-non-strict'
             && self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string'

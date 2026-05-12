@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use Icinga\Module\Director\Db\DbUtil;
-use Icinga\Web\Session;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\Html;
 use ipl\Web\Widget\EmptyStateBar;
 
 /**
@@ -23,6 +23,8 @@ class Dictionary extends FieldsetElement
     /** @var bool Whether the dictionary is an array */
     protected bool $isArray = false;
 
+    /** @var bool Whether the dictionary is the root */
+
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->items = $items;
@@ -37,14 +39,24 @@ class Dictionary extends FieldsetElement
         return $this;
     }
 
+    public function getAllowItemRemoval(): bool
+    {
+        return $this->allowItemRemoval;
+    }
+
     protected function assemble(): void
     {
         $expectedCount = (int) $this->getPopulatedValue('item-count', 0);
         $count = 0;
 
-        $removedItems = [];
+        // Load previously removed items from the hidden field (no session)
+        $removedItemsPopulated = $this->getPopulatedValue('items_removed', '');
+        $removedItems = $removedItemsPopulated !== ''
+            ? array_fill_keys(explode(', ', $removedItemsPopulated), true)
+            : [];
+
+        $remove = null;
         if ($this->allowItemRemoval) {
-            $removedItems = Session::getSession()->getNamespace('director.variables')->get('removed-properties', []);
             while ($count < $expectedCount) {
                 $remove = $this->createElement(
                     'submitButton',
@@ -59,27 +71,18 @@ class Dictionary extends FieldsetElement
                 $this->registerElement($remove);
                 if ($remove->hasBeenPressed()) {
                     $removedValue = $this->getPopulatedValue($count);
-                    $clearedItemName = null;
-                    $session = Session::getSession()->getNamespace('director.variables');
                     if (isset($removedValue['name'])) {
                         $clearedItemName = $removedValue['name'];
-                        $addedProperties = $session->get('added-properties');
-
-                        if (! empty($addedProperties) && isset($addedProperties[$clearedItemName])) {
-                            unset($addedProperties[$clearedItemName]);
-                            unset($this->items[$clearedItemName]);
-                            $session->set('added-properties', $addedProperties);
-                        }
-
                         if (isset($this->items[$clearedItemName])) {
-                            $removedItems[$clearedItemName] = $this->items[$clearedItemName]['uuid'];
+                            $removedItems[$clearedItemName] = true;
+                        } elseif (isset($this->items[$clearedItemName]['new'])) {
+                            unset($this->items[$clearedItemName]);
                         }
                     }
 
                     $this->clearPopulatedValue('items_removed');
                     $this->clearPopulatedValue($remove->getName());
                     $this->clearPopulatedValue($count);
-                    $session->set('removed-properties', $removedItems);
                     $this->populate(['items_removed' => implode(', ', array_keys($removedItems))]);
 
                     // Re-index populated values to ensure proper association with form data
@@ -110,7 +113,7 @@ class Dictionary extends FieldsetElement
                 $item['parent_uuid'] = DbUtil::binaryResult($item['parent_uuid']);
             }
 
-            $element = new DictionaryItem($count, $item);
+            $element = new DictionaryItem((string) $count, $item);
 
             // Only allow removal of items if the dictionary allows it and the item allows it
             if (
@@ -126,7 +129,17 @@ class Dictionary extends FieldsetElement
         }
 
         $this->clearPopulatedValue('item-count');
-        $this->addElement('hidden', 'item-count', ['ignore' => true, 'value' => $count]);
+        $itemCountInput = $this->createElement('hidden', 'item-count', ['ignore' => true, 'value' => $count]);
+        $this->registerElement($itemCountInput);
+        $this->addHtml(Html::tag('div', ['id' => $this->getName() . '-item-count'], $itemCountInput));
+
+
+        $newVarSlot = Html::tag('div', ['id' => 'new-var-slot-' . $count]);
+
+        if ($this->allowItemRemoval) {
+            $this->addHtml($newVarSlot);
+        }
+
         if ($count === 0) {
             if ($this->allowItemRemoval) {
                 $message = $this->translate('All custom properties in the object has been removed');
@@ -184,6 +197,21 @@ class Dictionary extends FieldsetElement
         }
 
         return $itemsToRemove;
+    }
+
+    /**
+     * Get the number of rendered DictionaryItem children
+     */
+    public function getItemCount(): int
+    {
+        $count = 0;
+        foreach ($this->ensureAssembled()->getElements() as $element) {
+            if ($element instanceof DictionaryItem) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     /**

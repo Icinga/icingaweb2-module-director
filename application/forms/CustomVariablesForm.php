@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Forms;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
+use Icinga\Module\Director\Forms\DictionaryElements\DictionaryItem;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -12,6 +13,8 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
+use ipl\Html\BaseHtmlElement;
+use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
@@ -34,6 +37,8 @@ class CustomVariablesForm extends CompatForm
 
     private bool $varsHasBeenModified = false;
 
+    private array $addedVarUuids = [];
+
     public function __construct(
         public readonly IcingaObject $object,
         protected array $objectProperties = []
@@ -51,6 +56,13 @@ class CustomVariablesForm extends CompatForm
         return $this->varsHasBeenModified;
     }
 
+    public function setAddedVarUuids(array $uuids): static
+    {
+        $this->addedVarUuids = $uuids;
+
+        return $this;
+    }
+
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
@@ -66,16 +78,30 @@ class CustomVariablesForm extends CompatForm
                 : $this->translate('Save Custom Variables')
         ]);
 
+        $addedUuidsContainer = new HtmlElement(
+            'div',
+            Attributes::create(['id' => 'added-var-uuids', 'class' => 'added-var-uuids', 'tabindex' => -1])
+        );
+
+        foreach ($this->addedVarUuids as $uuid) {
+            $addedUuidsContainer->addHtml(new HtmlElement('input', Attributes::create([
+                'type'  => 'hidden',
+                'name'  => '_addedVarUuids[]',
+                'tabindex' => -1,
+                'value' => $uuid
+            ])));
+        }
+
         $this->addElement($this->duplicateSubmitButton($saveButton));
         $this->addElement($dictionary);
         if ($this->hasBeenSent()) {
             $dictionary->ensureAssembled();
         }
 
+        $this->addHtml($addedUuidsContainer);
         $this->registerElement($saveButton);
 
-        $removedItems = Session::getSession()
-                               ->getNamespace('director.variables')->get('removed-properties', []);
+        $removedItems = $dictionary->getItemsToRemove();
         if (! empty($removedItems)) {
             $this->addHtml(
                 new HtmlElement('div', Attributes::create(['class' => 'message']), Text::create(
@@ -181,6 +207,46 @@ class CustomVariablesForm extends CompatForm
     }
 
     /**
+     * Build a standalone DictionaryItem row for use in a multipart update.
+     *
+     * @param array $propertyData  Row data as returned by getObjectCustomProperties()
+     * @param int   $index         The slot index this item occupies
+     *
+     * @return BaseHtmlElement
+     */
+    public function prepareNewPropertyRow(array $propertyData, int $index): BaseHtmlElement
+    {
+        $this->ensureAssembled();
+        /** @var Dictionary $dictionary */
+        $dictionary = $this->getElement('properties');
+
+        if ($propertyData['allow_removal']) {
+            $removeButton = $dictionary->createElement('submitButton', 'remove_' . $index, [
+                'label' => 'Remove Item',
+                'class' => ['remove-property'],
+                'formnovalidate' => true
+            ]);
+            $dictionary->registerElement($removeButton);
+        } else {
+            $removeButton = null;
+        }
+
+        $propertyData['uuid'] = DbUtil::binaryResult($propertyData['uuid']);
+        $newItem = new DictionaryItem((string) $index, $propertyData);
+
+        $this->decorate($newItem);
+        if ($removeButton !== null) {
+            $newItem->setRemoveButton($removeButton);
+        }
+
+        $dictionary->registerElement($newItem);
+
+        $newItem->populate(DictionaryItem::prepare($propertyData));
+
+        return $newItem;
+    }
+
+    /**
      * Filter empty values from array
      *
      * @param array $array
@@ -206,9 +272,6 @@ class CustomVariablesForm extends CompatForm
 
     protected function onSuccess(): void
     {
-        $session = Session::getSession();
-        $session->delete('properties');
-        $session->delete('vars');
         $vars = $this->object->vars();
 
         /** @var Dictionary $propertiesElement */

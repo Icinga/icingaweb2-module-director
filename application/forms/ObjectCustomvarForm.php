@@ -21,7 +21,8 @@ class ObjectCustomvarForm extends CompatForm
 
     public function __construct(
         public readonly DbConnection $db,
-        public readonly IcingaObject $object
+        public readonly IcingaObject $object,
+        private readonly array $alreadyAddedUuids = []
     ) {
         $this->customVars = $this->getCustomVars();
     }
@@ -75,7 +76,6 @@ class ObjectCustomvarForm extends CompatForm
         }
 
         $uuids[] = $this->object->get('uuid');
-        $removedProperties = Session::getSession()->getNamespace('director.variables')->get('removed-properties', []);
 
         $query = $db
             ->select()
@@ -86,10 +86,6 @@ class ObjectCustomvarForm extends CompatForm
                 Dbutil::quoteBinaryCompat($uuids, $db)
             );
 
-        if (! empty($removedProperties)) {
-            $query->where('dp.uuid NOT IN (?)', Dbutil::quoteBinaryCompat($removedProperties, $db));
-        }
-
         $properties = $db->fetchAll(
             $db->select()->from(
                 ['odp' => 'director_property'],
@@ -99,12 +95,11 @@ class ObjectCustomvarForm extends CompatForm
         );
 
         $propUuidKeyPairs = [];
-        $alreadyAddedProperties = Session::getSession()
-            ->getNamespace('director.variables')->get('added-properties', []);
         foreach ($properties as $property) {
-            if (! isset($alreadyAddedProperties[$property->key_name])) {
-                $uuid = DbUtil::binaryResult($property->uuid);
-                $propUuidKeyPairs[Uuid::fromBytes($uuid)->toString()] = $property->key_name;
+            $uuid = DbUtil::binaryResult($property->uuid);
+            $uuidStr = Uuid::fromBytes($uuid)->toString();
+            if (! in_array($uuidStr, $this->alreadyAddedUuids, true)) {
+                $propUuidKeyPairs[$uuidStr] = $property->key_name;
             }
         }
 
