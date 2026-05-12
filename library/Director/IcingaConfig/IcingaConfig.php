@@ -569,6 +569,7 @@ if (! globals.contains(DirectorOverrideTemplate)) {
     var overridenVar = name
     if (vars.overridenVar) {
       overridenVar = vars.overridenVar
+      vars.remove("overridenVar")
     }
 
     if (vars) {
@@ -576,8 +577,6 @@ if (! globals.contains(DirectorOverrideTemplate)) {
     } else {
       vars = host.vars[DirectorOverrideVars][overridenVar]
     }
-
-    vars.remove("overridenVar")
   }
 }
 ',
