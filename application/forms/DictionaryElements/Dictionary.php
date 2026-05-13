@@ -142,7 +142,7 @@ class Dictionary extends FieldsetElement
 
         if ($count === 0) {
             if ($this->allowItemRemoval) {
-                $message = $this->translate('All custom properties in the object has been removed');
+                $message = $this->translate('No custom variables have been added yet');
             } else {
                 $message = $this->translate('No fields configured');
             }
