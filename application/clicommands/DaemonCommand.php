@@ -10,8 +10,11 @@ use Icinga\Module\Director\Daemon\BackgroundDaemon;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Deployment\ConditionalDeployment;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\KickstartHelper;
+use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Objects\SyncRule;
 
 class DaemonCommand extends Command
 {
@@ -21,16 +24,18 @@ class DaemonCommand extends Command
      * USAGE
      *
      * icingacli director daemon run [--db-resource <name>] [--kickstart]
+     *                                [--import <path>] [--run-sync] [--deploy]
      *
      * OPTIONS
      *
-     *   --kickstart        Run migrations, kickstart (if required) and deploy
-     *                      config before starting the daemon. Unlike chaining
-     *                      the migration/kickstart/deploy commands by hand,
-     *                      this refuses to touch a DB that already has
-     *                      imported Endpoint, Zone or Command objects. Run
-     *                      'icingacli director kickstart run' separately to
-     *                      recover an existing installation
+     *   --kickstart        Run migrations and kickstart (if required) before
+     *                      starting the daemon. Unlike chaining the
+     *                      migration/kickstart commands by hand, this
+     *                      refuses to touch a DB that already has
+     *                      Endpoint, Zone or Command objects
+     *   --import <path>    Restore a basket snapshot from the given file
+     *   --run-sync         Run all import sources and sync rules
+     *   --deploy           Deploy the generated config
      */
     public function runAction(): void
     {
@@ -49,7 +54,7 @@ class DaemonCommand extends Command
     }
 
     /**
-     * Run migrations, kickstart and deploy config before the daemon starts
+     * Run migrations, kickstart and the requested setup steps before the daemon starts
      *
      * @param ?string $dbResource DB resource to use, falls back to the configured default
      *
@@ -69,17 +74,7 @@ class DaemonCommand extends Command
             exit(1);
         }
 
-        $settings = $db->settings();
-        $kickstartRequired = $kickstart->isRequired();
-        if (! $kickstartRequired && $settings->get('initial_deployment_pending') !== 'y') {
-            if ($this->isVerbose) {
-                echo "Kickstart configured, execution is not required\n";
-            }
-
-            return;
-        }
-
-        if ($kickstartRequired) {
+        if ($kickstart->isRequired()) {
             if ($this->hasExistingKickstartObjects($db)) {
                 echo "Refusing to kickstart, this DB already has Endpoint, Zone or Command objects.\n"
                     . "Run 'icingacli director kickstart run' separately to recover this installation.\n";
@@ -91,24 +86,97 @@ class DaemonCommand extends Command
             }
 
             // Persist before the import so a restart cannot lose the pending deployment.
-            $settings->set('initial_deployment_pending', 'y');
+            $db->settings()->set('initial_deployment_pending', 'y');
 
             // Like icingacli director kickstart run
             $this->raiseLimits();
             $kickstart->loadConfigFromFile()->run();
+        } elseif ($this->isVerbose) {
+            echo "Kickstart configured, execution is not required\n";
         }
+
+        // import = "/etc/icingaweb2/modules/director/<basket>.json"
+        $import = $this->params->get('import');
+        if ($import) {
+            BasketSnapshot::restoreJson(file_get_contents($import), $db);
+        }
+
+        if ($this->params->get('run-sync')) {
+            $this->runImportAndSync($db);
+        }
+
+        if ($this->params->get('deploy')) {
+            $this->deployConfig($db);
+        }
+    }
+
+    /**
+     * Run all import sources and apply sync rules with pending changes
+     *
+     * @param Db $db Database connection to use
+     *
+     * @return void
+     */
+    protected function runImportAndSync(Db $db): void
+    {
+        $sources = ImportSource::loadAll($db);
+        if (empty($sources)) {
+            echo "No import sources have been configured\n";
+        } else {
+            foreach ($sources as $source) {
+                if ($source->runImport()) {
+                    echo "New data has been imported\n";
+                } else {
+                    echo "Nothing has been changed, imported data is still up to date\n";
+                }
+            }
+        }
+
+        $rules = SyncRule::loadAll($db);
+        if (empty($rules)) {
+            echo "No sync rules have been configured\n";
+        } else {
+            foreach ($rules as $rule) {
+                if ($rule->checkForChanges(true)) {
+                    echo "New data has been applied\n";
+                } else {
+                    echo "Nothing has been changed, synced data is still up to date\n";
+                }
+            }
+        }
+    }
+
+    /**
+     * Generate and deploy the current config
+     *
+     * @param Db $db Database connection to use
+     *
+     * @return void
+     */
+    protected function deployConfig(Db $db): void
+    {
+        $settings = $db->settings();
+        $pending = $settings->get('initial_deployment_pending') === 'y';
 
         // Like icingacli director config deploy
         $config = IcingaConfig::generate($db);
         $checksum = $config->getHexChecksum();
         $deployer = new ConditionalDeployment($db, $db->getDeploymentEndpoint()->api());
-        // A matching deployment log may belong to another package.
-        $deployer->force()->deploy($config);
-        if ($this->isVerbose) {
-            printf("Config '%s' has been deployed\n", $checksum);
+        if ($pending) {
+            // A matching deployment log may belong to another package.
+            $deployer->force();
         }
 
-        $settings->set('initial_deployment_pending', null);
+        if ($deployer->deploy($config)) {
+            if ($this->isVerbose) {
+                printf("Config '%s' has been deployed\n", $checksum);
+            }
+
+            $settings->set('initial_deployment_pending', null);
+        } else {
+            echo $deployer->getNoDeploymentReason() . "\n";
+            exit(1);
+        }
     }
 
     /**
