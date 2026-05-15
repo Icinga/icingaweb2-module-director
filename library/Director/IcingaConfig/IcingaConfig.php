@@ -13,6 +13,7 @@ use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Hook\ShipConfigFilesHook;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -449,6 +450,7 @@ class IcingaConfig
     protected function generateFromDb()
     {
         PrefetchCache::initialize($this->connection);
+        IcingaTemplateRepository::clear();
         $start = microtime(true);
 
         MemoryLimit::raiseTo('1024M');
