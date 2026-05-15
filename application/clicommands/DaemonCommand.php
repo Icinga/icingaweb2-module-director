@@ -5,6 +5,8 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
+use Icinga\Application\Logger;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Daemon\BackgroundDaemon;
 use Icinga\Module\Director\Db;
@@ -21,22 +23,24 @@ class DaemonCommand extends Command
      * USAGE
      *
      * icingacli director daemon run [--db-resource <name>] [--kickstart]
+     *                               [--deploy]
      *
      * OPTIONS
      *
-     *   --kickstart  Run migrations, kickstart (if required) and deploy config before
-     *                starting the daemon. Unlike chaining the
-     *                migration/kickstart/deploy commands by hand, this refuses to
-     *                touch a DB that already has imported Endpoint, Zone or Command
-     *                objects. Run 'icingacli director kickstart run' separately to
-     *                recover an existing installation
+     *   --kickstart  Run kickstart if configured and required, before starting
+     *                the daemon. Refuses to touch a DB that already has
+     *                Endpoint, Zone or Command objects. Run 'icingacli director
+     *                kickstart run' separately to recover an existing
+     *                installation instead. Fails if kickstart isn't configured
+     *                at all
+     *   --deploy     Deploy the generated config
      */
     public function runAction(): void
     {
         $this->app->getModuleManager()->loadEnabledModules();
         $dbResource = $this->params->get('db-resource');
-        if ($this->params->get('kickstart')) {
-            $this->runKickstart($dbResource);
+        if ($this->wantsSetup()) {
+            $this->runSetup($dbResource);
         }
 
         $daemon = new BackgroundDaemon();
@@ -48,66 +52,116 @@ class DaemonCommand extends Command
     }
 
     /**
-     * Run migrations, kickstart and deploy config before the daemon starts
+     * Check if any startup flag was passed
+     *
+     * @return bool
+     */
+    protected function wantsSetup(): bool
+    {
+        foreach (['kickstart', 'deploy'] as $flag) {
+            if ($this->params->has($flag)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Connect to the database and run the requested startup steps
      *
      * @param ?string $dbResource DB resource to use, falls back to the configured default
      *
      * @return void
      */
-    protected function runKickstart(?string $dbResource): void
+    protected function runSetup(?string $dbResource): void
     {
         $db = $dbResource === null ? $this->db() : Db::fromResourceName($dbResource);
 
         // Like icingacli director migration run
         (new Migrations($db))->applyPendingMigrations();
 
+        if ($this->params->has('kickstart')) {
+            $this->runKickstart($db);
+        }
+
+        if ($this->params->has('deploy')) {
+            $this->deployConfig($db);
+        }
+    }
+
+    /**
+     * Run kickstart if it's configured and required
+     *
+     * @param Db $db Database connection to use
+     *
+     * @return void
+     */
+    protected function runKickstart(Db $db): void
+    {
         // Like icingacli director kickstart required
         $kickstart = new KickstartHelper($db);
         if (! $kickstart->isConfigured()) {
-            echo "Kickstart has not been configured\n";
-            exit(1);
+            $this->fail('Kickstart has not been configured');
         }
 
-        $settings = $db->settings();
-        $kickstartRequired = $kickstart->isRequired();
-        if (! $kickstartRequired && $settings->get('initial_deployment_pending') !== 'y') {
-            if ($this->isVerbose) {
-                echo "Kickstart configured, execution is not required\n";
-            }
+        if (! $kickstart->isRequired()) {
+            Logger::info('Kickstart is configured, execution is not required');
 
             return;
         }
 
-        if ($kickstartRequired) {
-            if ($this->hasExistingKickstartObjects($db)) {
-                echo "Refusing to kickstart, this DB already has Endpoint, Zone or Command objects.\n"
-                    . "Run 'icingacli director kickstart run' separately to recover this installation.\n";
-                exit(1);
-            }
-
-            if ($this->isVerbose) {
-                echo "Kickstart has been configured and will be triggered\n";
-            }
-
-            // Persist before the import so a restart cannot lose the pending deployment.
-            $settings->set('initial_deployment_pending', 'y');
-
-            // Like icingacli director kickstart run
-            $this->raiseLimits();
-            $kickstart->loadConfigFromFile()->run();
+        if ($this->hasExistingKickstartObjects($db)) {
+            $this->fail(
+                "Refusing to kickstart, this DB already has Endpoint, Zone or Command objects.\n"
+                . "Run 'icingacli director kickstart run' separately to recover this installation."
+            );
         }
+
+        Logger::info('Kickstart has been configured and will be triggered');
+
+        // Persist before the import so a restart cannot lose the pending deployment.
+        $db->settings()->set('initial_deployment_pending', 'y');
+
+        // Like icingacli director kickstart run
+        $this->raiseLimits();
+        $kickstart->loadConfigFromFile()->run();
+    }
+
+    /**
+     * Generate and deploy the current config
+     *
+     * @param Db $db Database connection to use
+     *
+     * @return void
+     */
+    protected function deployConfig(Db $db): void
+    {
+        $settings = $db->settings();
+        $pending = $settings->get('initial_deployment_pending') === 'y';
 
         // Like icingacli director config deploy
         $config = IcingaConfig::generate($db);
         $checksum = $config->getHexChecksum();
-        $deployer = new ConditionalDeployment($db, $db->getDeploymentEndpoint()->api());
-        // A matching deployment log may belong to another package.
-        $deployer->force()->deploy($config);
-        if ($this->isVerbose) {
-            printf("Config '%s' has been deployed\n", $checksum);
+
+        try {
+            $endpoint = $db->getDeploymentEndpoint();
+        } catch (ConfigurationError $e) {
+            $this->fail('Cannot deploy, no deployment endpoint is configured yet: %s', $e->getMessage());
         }
 
-        $settings->set('initial_deployment_pending', null);
+        $deployer = new ConditionalDeployment($db, $endpoint->api());
+        if ($pending) {
+            // A matching deployment log may belong to another package.
+            $deployer->force();
+        }
+
+        if ($deployer->deploy($config)) {
+            Logger::info("Config '%s' has been deployed", $checksum);
+            $settings->set('initial_deployment_pending', null);
+        } else {
+            Logger::info('Nothing has been deployed: %s', $deployer->getNoDeploymentReason());
+        }
     }
 
     /**
