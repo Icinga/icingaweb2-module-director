@@ -314,6 +314,7 @@ class CustomVariablesForm extends CompatForm
             }
 
             if (isset($property['new'])) {
+                $this->varsHasBeenModified = true;
                 $this->object->getConnection()->insert(
                     "icinga_$type" . '_property',
                     [

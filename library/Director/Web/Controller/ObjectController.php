@@ -420,7 +420,7 @@ abstract class ObjectController extends ActionController
                     if ($form->varsHasBeenModified()) {
                         Notification::success(
                             sprintf(
-                                $this->translate('Custom variables have been successfully modified for %s'),
+                                $this->translate('Custom variables have been successfully saved for %s'),
                                 $form->object->getObjectName(),
                             )
                         );
