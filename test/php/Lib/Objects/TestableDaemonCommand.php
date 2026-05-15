@@ -14,9 +14,9 @@ use RuntimeException;
 /**
  * Test adapter that bypasses CLI bootstrap for DaemonCommand
  *
- * Injects DB and params directly, and stubs out the startup steps so tests
- * can check which ones ran without kickstarting or deploying for real.
- * Failing the command throws instead of exiting.
+ * Injects DB and params directly, and stubs out the four startup steps
+ * so tests can check which ones ran without touching kickstart, import,
+ * sync or deploy for real. Failing the command throws instead of exiting.
  */
 class TestableDaemonCommand extends DaemonCommand
 {
@@ -70,8 +70,18 @@ class TestableDaemonCommand extends DaemonCommand
         $this->stepsRun[] = 'kickstart';
     }
 
+    protected function runImportAndSync(Db $db): void
+    {
+        $this->stepsRun[] = 'run-automation';
+    }
+
     protected function deployConfig(Db $db): void
     {
         $this->stepsRun[] = 'deploy';
+    }
+
+    protected function restoreBasket(Db $db, string $path): void
+    {
+        $this->stepsRun[] = 'import:' . $path;
     }
 }

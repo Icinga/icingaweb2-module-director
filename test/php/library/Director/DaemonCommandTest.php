@@ -15,8 +15,10 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaApiUser;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Test\BaseTestCase;
+use Icinga\Module\Director\Test\ImportSourceDummy;
 use PHPUnit\Framework\MockObject\MockObject;
 use RuntimeException;
 
@@ -71,6 +73,8 @@ class DaemonCommandTest extends BaseTestCase
 
     public function tearDown(): void
     {
+        ImportSourceDummy::clearRows();
+
         try {
             if ($this->transactionStarted) {
                 $this->getDb()->getDbAdapter()->rollBack();
@@ -207,6 +211,42 @@ class DaemonCommandTest extends BaseTestCase
         self::callMethod($command, 'runKickstart', [$this->connection]);
 
         self::assertNull((new Settings($this->connection))->get('initial_deployment_pending'));
+    }
+
+    /**
+     * @return void
+     */
+    public function testRunImportAndSyncFailsWhenImportBreaksAfterProvidingChanges(): void
+    {
+        $source = ImportSource::create([
+            'source_name'    => '___TEST___daemon-import',
+            'provider_class' => ImportSourceDummy::class,
+            'key_column'     => 'name',
+        ]);
+        $source->store($this->connection);
+
+        // The name is too long to store, so storing fails after the changes were found.
+        ImportSourceDummy::setRows([['name' => str_repeat('x', 256)]]);
+
+        $command = $this->getMockBuilder(DaemonCommand::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['fail'])
+            ->getMock();
+        $command->expects($this->once())->method('fail')->with(
+            "Import '%s' failed: %s",
+            '___TEST___daemon-import',
+            $this->anything()
+        )->willThrowException(new RuntimeException('daemon reported the import as failed'));
+
+        try {
+            self::callMethod($command, 'runImportAndSync', [$this->connection]);
+            self::fail('An import that breaks while storing its rowset must not be reported as successful');
+        } catch (RuntimeException $exception) {
+            self::assertSame('daemon reported the import as failed', $exception->getMessage());
+        }
+
+        $reloaded = ImportSource::load('___TEST___daemon-import', $this->connection);
+        self::assertSame('failing', $reloaded->get('import_state'));
     }
 
     /**

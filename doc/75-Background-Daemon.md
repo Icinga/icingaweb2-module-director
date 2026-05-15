@@ -50,22 +50,36 @@ takes a few flags to fold your usual setup steps into a single command
 instead of chaining them by hand:
 
 ```sh
-icingacli director daemon run --kickstart --deploy
+icingacli director daemon run --kickstart --run-automation --deploy
 ```
 
 - `--kickstart` runs kickstart if it's configured and required
+- `--import-basket <path>` restores a basket snapshot from the given file,
+  for example `/etc/icingaweb2/modules/director/basket.json`
+- `--run-automation` runs all import sources and sync rules
 - `--deploy` deploys the generated config
 
-Pass both or just one. Either one applies pending migrations first.
+Pass any combination of these, or just one. Any of these applies pending
+migrations first.
 
 `--kickstart` on its own is safe to use every time you start the daemon. If
 kickstart already ran, that step gets skipped and the daemon starts as
 normal. If kickstart was never set up at all, the command stops with an
 error instead of starting, since that means the install isn't ready yet.
-`--deploy` doesn't need kickstart at all, but it does need an Endpoint with
-an API user already in the Director DB. Provision that separately or run
-kickstart. Without a deployment endpoint, deployment fails with a clear
-error.
+`--import-basket` and `--run-automation` don't need kickstart to be
+configured at all, so they also work on a setup seeded purely from a basket
+snapshot with no Icinga 2 API to kickstart from. `--deploy` doesn't need
+kickstart either, but it does need an Endpoint with an API user already
+in the Director DB. Provision these separately or run kickstart, since
+basket snapshots do not contain Endpoints or API users. Without a
+deployment endpoint, deployment fails with a clear error.
+
+A failing import source or sync rule stops the whole startup, and the
+daemon does not start. That is deliberate, since deploying a config built
+from stale or half-synced data is worse than not starting. Keep in mind
+that the shipped unit restarts the service, so one broken sync rule keeps
+the daemon down until you fix it. Drop `--run-automation` from the unit if
+you would rather have the daemon running with the data it already has.
 
 If the kickstart import fails partway through, its database changes are
 rolled back so the next startup can retry from a clean state. If it

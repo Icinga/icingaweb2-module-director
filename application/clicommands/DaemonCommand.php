@@ -12,8 +12,12 @@ use Icinga\Module\Director\Daemon\BackgroundDaemon;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Deployment\ConditionalDeployment;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\KickstartHelper;
+use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Objects\SyncRule;
+use Throwable;
 
 class DaemonCommand extends Command
 {
@@ -23,17 +27,21 @@ class DaemonCommand extends Command
      * USAGE
      *
      * icingacli director daemon run [--db-resource <name>] [--kickstart]
+     *                               [--import-basket <path>] [--run-automation]
      *                               [--deploy]
      *
      * OPTIONS
      *
-     *   --kickstart  Run kickstart if configured and required, before starting
-     *                the daemon. Refuses to touch a DB that already has
-     *                Endpoint, Zone or Command objects. Run 'icingacli director
-     *                kickstart run' separately to recover an existing
-     *                installation instead. Fails if kickstart isn't configured
-     *                at all
-     *   --deploy     Deploy the generated config
+     *   --kickstart             Run kickstart if configured and required,
+     *                           before starting the daemon. Refuses to touch a
+     *                           DB that already has Endpoint, Zone or Command
+     *                           objects. Run 'icingacli director kickstart run'
+     *                           separately to recover an existing installation
+     *                           instead. Fails if kickstart isn't configured at
+     *                           all
+     *   --import-basket <path>  Restore a basket snapshot from the given file
+     *   --run-automation        Run all import sources and sync rules
+     *   --deploy                Deploy the generated config
      */
     public function runAction(): void
     {
@@ -58,7 +66,7 @@ class DaemonCommand extends Command
      */
     protected function wantsSetup(): bool
     {
-        foreach (['kickstart', 'deploy'] as $flag) {
+        foreach (['kickstart', 'import-basket', 'run-automation', 'deploy'] as $flag) {
             if ($this->params->has($flag)) {
                 return true;
             }
@@ -70,12 +78,18 @@ class DaemonCommand extends Command
     /**
      * Connect to the database and run the requested startup steps
      *
+     * Validates basket option values and file readability before accessing the
+     * database. Setup is not atomic. A failure stops startup, but changes
+     * committed by earlier steps remain.
+     *
      * @param ?string $dbResource DB resource to use, falls back to the configured default
      *
      * @return void
      */
     protected function runSetup(?string $dbResource): void
     {
+        $basket = $this->getBasketSnapshotPath();
+
         $db = $dbResource === null ? $this->db() : Db::fromResourceName($dbResource);
 
         // Like icingacli director migration run
@@ -85,8 +99,73 @@ class DaemonCommand extends Command
             $this->runKickstart($db);
         }
 
+        if ($basket !== null) {
+            $this->restoreBasket($db, $basket);
+        }
+
+        if ($this->params->has('run-automation')) {
+            $this->runImportAndSync($db);
+        }
+
         if ($this->params->has('deploy')) {
             $this->deployConfig($db);
+        }
+    }
+
+    /**
+     * Get the basket snapshot file passed with --import-basket
+     *
+     * Fails the command unless the option carries a readable path.
+     *
+     * @return ?string Null if --import-basket wasn't passed at all
+     */
+    protected function getBasketSnapshotPath(): ?string
+    {
+        $path = $this->params->get('import-basket');
+        if ($path === null) {
+            return null;
+        }
+
+        if (! is_string($path)) {
+            $this->fail('--import-basket requires a file path');
+        }
+
+        if (! is_file($path) || ! is_readable($path)) {
+            $this->fail('Cannot read basket snapshot "%s"', $path);
+        }
+
+        return $path;
+    }
+
+    /**
+     * Restore a basket snapshot from a file
+     *
+     * @param Db $db Database connection to use
+     * @param string $path Path to a readable basket snapshot file
+     *
+     * @return void
+     */
+    protected function restoreBasket(Db $db, string $path): void
+    {
+        $json = file_get_contents($path);
+        if ($json === false) {
+            $this->fail('Failed to read basket snapshot "%s"', $path);
+        }
+
+        try {
+            $keptValuesCount = BasketSnapshot::restoreJson($json, $db);
+        } catch (Throwable $e) {
+            $this->fail('Failed to restore basket snapshot "%s": %s', $path, $e->getMessage());
+        }
+
+        Logger::info('Objects from basket snapshot "%s" have been restored', $path);
+        if ($keptValuesCount > 0) {
+            Logger::warning(
+                '%d stored value(s) were kept under their old name or dropped in this'
+                . ' basket, either a Data Field still owns the name, or a renamed'
+                . " value's new key was already taken",
+                $keptValuesCount
+            );
         }
     }
 
@@ -126,6 +205,62 @@ class DaemonCommand extends Command
         // Like icingacli director kickstart run
         $this->raiseLimits();
         $kickstart->loadConfigFromFile()->run();
+    }
+
+    /**
+     * Run all import sources and apply sync rules with pending changes
+     *
+     * @param Db $db Database connection to use
+     *
+     * @return void
+     */
+    protected function runImportAndSync(Db $db): void
+    {
+        Logger::info('Running all import sources and sync rules');
+
+        $sources = ImportSource::loadAll($db);
+        if (empty($sources)) {
+            Logger::info('No import sources have been configured');
+        }
+
+        foreach ($sources as $source) {
+            // runImport() reports changes before it stores them, so only the
+            // import state tells whether the run as a whole succeeded.
+            $hasChanges = $source->runImport();
+            if ($source->get('import_state') === 'failing') {
+                $this->fail(
+                    "Import '%s' failed: %s",
+                    $source->get('source_name'),
+                    $source->get('last_error_message')
+                );
+            } elseif ($hasChanges) {
+                Logger::info("Import '%s' provided new data", $source->get('source_name'));
+            } else {
+                Logger::info("Import '%s' is still up to date", $source->get('source_name'));
+            }
+        }
+
+        $rules = SyncRule::loadAll($db);
+        if (empty($rules)) {
+            Logger::info('No sync rules have been configured');
+        }
+
+        foreach ($rules as $rule) {
+            // As for import sources, check the state first. The return value
+            // is false both for a failed run and for a run without changes.
+            $hasChanges = $rule->applyChanges();
+            if ($rule->get('sync_state') === 'failing') {
+                $this->fail(
+                    "Sync rule '%s' failed: %s",
+                    $rule->get('rule_name'),
+                    $rule->get('last_error_message')
+                );
+            } elseif ($hasChanges) {
+                Logger::info("Sync rule '%s' applied new data", $rule->get('rule_name'));
+            } else {
+                Logger::info("Sync rule '%s' is still up to date", $rule->get('rule_name'));
+            }
+        }
     }
 
     /**
