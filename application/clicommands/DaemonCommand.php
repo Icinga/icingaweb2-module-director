@@ -56,7 +56,6 @@ class DaemonCommand extends Command
 
         // import = "/etc/icingaweb2/modules/director/<basket>.json"
         $import = $this->params->get('import');
-        $kickstartTriggered = false;
         if (! $kickstart->isConfigured()) {
             echo "Kickstart has not been configured\n";
             exit(1);
@@ -64,7 +63,6 @@ class DaemonCommand extends Command
 
         if (! $kickstart->isRequired()) {
             echo "Kickstart configured, execution is not required\n";
-            $kickstartTriggered = true;
             if ($import === null) {
                 exit(1);
             }
@@ -77,20 +75,6 @@ class DaemonCommand extends Command
         // Like icingacli director kickstart run
         $this->raiseLimits();
         $kickstart->loadConfigFromFile()->run();
-        if ($this->isVerbose && ! $kickstartTriggered) {
-            echo "Kickstart has been configured and will be triggered\n";
-        }
-
-        if (! $kickstartTriggered && ! $kickstart->isRequired()) {
-            // Like icingacli director kickstart run
-            $this->raiseLimits();
-            $kickstart->loadConfigFromFile()->run();
-            $kickstartTriggered = true;
-        }
-
-        if (! $kickstartTriggered) {
-            exit(1);
-        }
 
         if ($import) {
             // import the basket from the given path
