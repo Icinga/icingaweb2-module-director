@@ -54,13 +54,13 @@ class DaemonCommand extends Command
         // Like icingacli director kickstart required
         $kickstart = new KickstartHelper($db);
 
-        // import = "/etc/icingaweb2/modules/director/<basket>.json"
-        $import = $this->params->get('import');
         if (! $kickstart->isConfigured()) {
             echo "Kickstart has not been configured\n";
             exit(1);
         }
 
+        // import = "/etc/icingaweb2/modules/director/<basket>.json"
+        $import = $this->params->get('import');
         if (! $kickstart->isRequired()) {
             echo "Kickstart configured, execution is not required\n";
             if ($import === null) {
@@ -82,32 +82,25 @@ class DaemonCommand extends Command
             BasketSnapshot::restoreJson($json, $this->db());
         }
 
-        $runSync = $this->params->get('run-sync');
-        if ($runSync) {
+        if ($this->params->get('run-sync')) {
             $sources = ImportSource::loadAll($this->db());
             if (empty($sources)) {
-                print "No import sources have been configured\n";
-            } else {
-                foreach ($sources as $source) {
-                    if ($source->runImport()) {
-                        print "New data has been imported\n";
-                    } else {
-                        print "Nothing has been changed, imported data is still up to date\n";
-                    }
-                }
+                echo "No import sources have been configured\n";
+            }
+            foreach ($sources as $source) {
+                echo $source->runImport()
+                    ? "New data has been imported\n"
+                    : "Nothing has been changed, imported data is still up to date\n";
             }
 
             $rules = SyncRule::loadAll($this->db());
             if (empty($rules)) {
-                print "No sync rules have been configured\n";
-            }  else {
-                foreach ($rules as $rule) {
-                    if ($rule->checkForChanges(true)) {
-                        print "New data has been applied\n";
-                    } else {
-                        print "Nothing has been changed, synced data is still up to date\n";
-                    }
-                }
+                echo "No sync rules have been configured\n";
+            }
+            foreach ($rules as $rule) {
+                echo $rule->applyChanges()
+                    ? "New data has been applied\n"
+                    : "Nothing has been changed, synced data is still up to date\n";
             }
         }
 
