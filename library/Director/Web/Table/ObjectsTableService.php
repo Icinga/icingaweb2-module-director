@@ -20,6 +20,7 @@ class ObjectsTableService extends ObjectsTable
 
     protected $title;
 
+    /** @var bool Use deprecated links instead of the new links for the services */
     private $useDeprecatedLink = false;
 
     /** @var IcingaHost */
@@ -63,6 +64,13 @@ class ObjectsTableService extends ObjectsTable
         return $this;
     }
 
+    /**
+     * Whether to use deprecated links instead of new links.
+     *
+     * @param bool $useDeprecatedLink
+     *
+     * @return $this
+     */
     public function useDeprecatedLink(bool $useDeprecatedLink = true): self
     {
         $this->useDeprecatedLink = $useDeprecatedLink;

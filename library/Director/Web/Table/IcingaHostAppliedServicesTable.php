@@ -30,6 +30,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     private $allApplyRules;
 
+    /** @var bool Use deprecated links instead of the new links for the services linked to hosts */
     private $useDeprecatedLink = false;
 
     /**
