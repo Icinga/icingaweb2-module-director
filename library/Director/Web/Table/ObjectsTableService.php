@@ -20,6 +20,8 @@ class ObjectsTableService extends ObjectsTable
 
     protected $title;
 
+    private $useDeprecatedLink = false;
+
     /** @var IcingaHost */
     protected $inheritedBy;
 
@@ -58,6 +60,13 @@ class ObjectsTableService extends ObjectsTable
     public function setTitle($title)
     {
         $this->title = $title;
+        return $this;
+    }
+
+    public function useDeprecatedLink(bool $useDeprecatedLink = true): self
+    {
+        $this->useDeprecatedLink = $useDeprecatedLink;
+
         return $this;
     }
 
@@ -150,9 +159,14 @@ class ObjectsTableService extends ObjectsTable
             'inheritedFrom' => $row->host,
         ];
 
+        $url = 'director/host/inheritedservice';
+        if ($this->useDeprecatedLink) {
+            $url .= 'deprecated';
+        }
+
         return Link::create(
             $row->object_name,
-            'director/host/inheritedservice',
+            $url,
             $params
         );
     }
