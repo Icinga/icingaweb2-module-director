@@ -14,6 +14,7 @@ use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorDatalistEntry;
 use Icinga\Module\Director\Objects\DirectorJob;
+use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -32,6 +33,9 @@ class Exporter
 
     /** @var FieldReferenceLoader */
     protected $fieldReferenceLoader;
+
+    /** @var CustomVariableReferenceLoader */
+    protected $propertyReferenceLoader;
 
     /** @var ?HostServiceLoader */
     protected $serviceLoader = null;
@@ -52,6 +56,7 @@ class Exporter
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
         $this->fieldReferenceLoader = new FieldReferenceLoader($connection);
+        $this->propertyReferenceLoader = new CustomVariableReferenceLoader($connection);
     }
 
     public function export(DbObject $object)
@@ -75,7 +80,7 @@ class Exporter
         }
         if ($column = $object->getUuidColumn()) {
             if ($uuid = $object->get($column)) {
-                $props[$column] = Uuid::fromBytes($uuid)->toString();
+                $props[$column] = Uuid::fromBytes(Db\DbUtil::binaryResult($uuid))->toString();
             }
         }
 
@@ -274,6 +279,13 @@ class Exporter
                 $props['objects'] = JsonString::decode($props['objects']);
             }
         }
+
+        if ($object instanceof DirectorProperty && $props['parent_uuid'] !== null) {
+            $props['parent_uuid'] = Uuid::fromBytes(
+                Db\DbUtil::binaryResult($props['parent_uuid'])
+            )->toString();
+        }
+
         unset($props['uuid']); // Not yet
         if (! $this->showDefaults) {
             foreach ($props as $key => $value) {
@@ -296,6 +308,7 @@ class Exporter
     {
         $props = (array) $object->toPlainObject($this->resolveObjects, !$this->showDefaults);
         if ($object->supportsFields()) {
+            $props['customVariables'] = $this->propertyReferenceLoader->loadFor($object);
             $props['fields'] = $this->fieldReferenceLoader->loadFor($object);
         }
 
