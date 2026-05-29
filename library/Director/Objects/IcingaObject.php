@@ -23,6 +23,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use LogicException;
 use RuntimeException;
+use stdClass;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
@@ -47,6 +48,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     /** @var bool Allows controlled custom var access through Fields */
     protected $supportsFields = false;
+
+    /** @var bool Allows controlled custom var access through Custom Variables */
+    protected $supportsCustomVariables = false;
 
     /** @var bool Whether this object can be rendered as 'apply Object' */
     protected $supportsApplyRules = false;
@@ -375,6 +379,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
+    }
+
+    /**
+     * Whether this Object supports custom properties
+     *
+     * @return bool
+     */
+    public function supportsCustomProperties(): bool
+    {
+        return $this->supportsCustomVariables;
     }
 
     /**
@@ -1310,6 +1324,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $getOrigins   = 'getOrigins'  . $what;
 
         $blacklist = ['id', 'uuid', 'object_type', 'object_name', 'disabled'];
+        $linkedCustomProperties = [];
+        if ($what === 'Vars') {
+            $linkedCustomProperties = $this->fetchAllLinkedCustomProperties();
+        }
+
         foreach ($objects as $name => $object) {
             $origins = $object->$getOrigins();
 
@@ -1326,7 +1345,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
-                $vals['_INHERITED_']->$key = $value;
+                if (is_object($value)) {
+                    $vals['_INHERITED_']->$key = clone $value;
+                } else {
+                    $vals['_INHERITED_']->$key = $value;
+                }
+
                 $vals['_ORIGINS_']->$key = $origins->$key;
             }
 
@@ -1338,9 +1362,35 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 if (in_array($key, $blacklist)) {
                     continue;
                 }
-                $vals['_MERGED_']->$key = $value;
-                $vals['_INHERITED_']->$key = $value;
-                $vals['_ORIGINS_']->$key = $name;
+
+                if (
+                    $what === 'Vars'
+                    && array_key_exists($key, $linkedCustomProperties)
+                    && $linkedCustomProperties[$key]->value_type === 'dynamic-dictionary'
+                ) {
+                    foreach ($value as $k => $v) {
+                        if (! isset($vals['_MERGED_']->$key)) {
+                            $vals['_MERGED_']->$key = new stdClass();
+                        }
+
+                        if (! isset($vals['_INHERITED_']->$key)) {
+                            $vals['_INHERITED_']->$key = new stdClass();
+                        }
+
+                        $vals['_MERGED_']->$key->$k = $v;
+                        $vals['_INHERITED_']->$key->$k = $v;
+
+                        if (! isset($vals['_ORIGINS_']->$key)) {
+                            $vals['_ORIGINS_']->$key = $name;
+                        } elseif ($vals['_ORIGINS_']->$key !== $name) {
+                            $vals['_ORIGINS_']->$key .= ', ' . $name;
+                        }
+                    }
+                } else {
+                    $vals['_MERGED_']->$key = $value;
+                    $vals['_INHERITED_']->$key = $value;
+                    $vals['_ORIGINS_']->$key = $name;
+                }
             }
         }
 
@@ -1349,7 +1399,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 continue;
             }
 
-            $vals['_MERGED_']->$key = $value;
+            if (
+                $what === 'Vars'
+                && array_key_exists($key, $linkedCustomProperties)
+                && $linkedCustomProperties[$key]->value_type === 'dynamic-dictionary'
+            ) {
+                foreach ($value as $k => $v) {
+                    if (! isset($vals['_MERGED_']->$key)) {
+                        $vals['_MERGED_']->$key = new stdClass();
+                    }
+
+                    $vals['_MERGED_']->$key->$k = $v;
+                }
+            } else {
+                $vals['_MERGED_']->$key = $value;
+            }
         }
 
         $this->storeResolvedCache($what, $vals);
@@ -1442,6 +1506,38 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this->vars;
+    }
+
+    public function fetchAllLinkedCustomProperties(): array
+    {
+        $type = $this->getShortTableName();
+        $templates = IcingaTemplateRepository::instanceByObject($this)
+            ->getTemplatesIndexedByNameFor($this, true);
+        if (empty($templates)) {
+            return [];
+        }
+
+        $query = $this->db->select()->from(
+            ['dp' => 'director_property'],
+            ['dp.key_name', 'dp.uuid', 'dp.value_type']
+        )->join(
+            ['iop' => "icinga_{$type}_property"],
+            'dp.uuid = iop.property_uuid',
+            []
+        )->join(
+            ['io' => "icinga_{$type}"],
+            "iop.{$type}_uuid = io.uuid",
+            []
+        )
+         ->where('io.object_name IN (?)', array_keys($templates));
+
+        $customProperties = [];
+
+        foreach ($this->db->fetchAll($query) as $property) {
+            $customProperties[$property->key_name] = $property;
+        }
+
+        return $customProperties;
     }
 
     /**
@@ -2216,7 +2312,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderCustomVars()
     {
         if ($this->supportsCustomVars()) {
-            return $this->vars()->toConfigString($this->isApplyRule());
+            return $this->vars()->toConfigString($this->isApplyRule(), $this);
         }
 
         return '';
