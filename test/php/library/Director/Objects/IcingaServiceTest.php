@@ -1,5 +1,8 @@
 <?php
 
+// SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -218,7 +221,7 @@ class IcingaServiceTest extends BaseTestCase
             (string) $service
         );
 
-        $service->object_name = '___TEST$config$___service $host.var.bla$';
+        $service->object_name = '___TEST$value$___service $host.var.bla$';
         $this->assertEquals(
             $this->loadRendered('service6'),
             (string) $service

@@ -126,4 +126,70 @@ class IcingaConfigHelperTest extends BaseTestCase
             c::renderStringWithVariables('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$')
         );
     }
+
+    public function testIsValidMacroNameWithNoWhitelist()
+    {
+        // Valid names: letter/underscore start, letters/digits/underscores/dots, no trailing dot
+        $this->assertTrue(c::isValidMacroName('host.vars.custom'));
+        $this->assertTrue(c::isValidMacroName('value.path'));
+        $this->assertTrue(c::isValidMacroName('check_interval'));
+        $this->assertTrue(c::isValidMacroName('ab'));
+
+        // Single character is invalid: the pattern requires at least 2 characters
+        $this->assertFalse(c::isValidMacroName('a'));
+
+        // Trailing dot is explicitly rejected
+        $this->assertFalse(c::isValidMacroName('value.'));
+        $this->assertFalse(c::isValidMacroName('host.'));
+
+        // Starts with a digit: not matched by [A-z_]
+        $this->assertFalse(c::isValidMacroName('1invalid'));
+
+        // Empty string
+        $this->assertFalse(c::isValidMacroName(''));
+    }
+
+    public function testIsValidMacroNameNullWhitelistBehavesLikeNoWhitelist()
+    {
+        // Passing null explicitly is the same as omitting the argument
+        $this->assertTrue(c::isValidMacroName('host.vars.custom', null));
+        $this->assertFalse(c::isValidMacroName('a', null));
+        $this->assertFalse(c::isValidMacroName('value.', null));
+    }
+
+    public function testIsValidMacroNameExactWhitelistMatch()
+    {
+        $this->assertTrue(c::isValidMacroName('value.path', ['value.path']));
+        $this->assertTrue(c::isValidMacroName('value.mount_point', ['value.path', 'value.mount_point']));
+    }
+
+    public function testIsValidMacroNameWildcardWhitelistMatch()
+    {
+        $this->assertTrue(c::isValidMacroName('value.mount_point', ['value.*']));
+        $this->assertTrue(c::isValidMacroName('value.warn', ['value.*']));
+        $this->assertTrue(c::isValidMacroName('host.custom', ['host.*', 'value.*']));
+    }
+
+    public function testIsValidMacroNameWhitelistNoMatch()
+    {
+        // Name not in whitelist and not matching any wildcard returns false
+        $this->assertFalse(c::isValidMacroName('host.vars.custom', ['value.*']));
+        $this->assertFalse(c::isValidMacroName('host.vars.custom', ['other.field']));
+    }
+
+    public function testIsValidMacroNameEmptyWhitelistReturnsFalse()
+    {
+        // When a non-null whitelist is provided, only whitelist matches count —
+        // an empty whitelist means nothing is permitted
+        $this->assertFalse(c::isValidMacroName('host.vars.custom', []));
+        $this->assertFalse(c::isValidMacroName('value.path', []));
+    }
+
+    public function testIsValidMacroNameWhitelistOverridesPatternCheck()
+    {
+        // A name that does not match the base macro pattern is still valid when
+        // explicitly listed in the whitelist
+        $this->assertTrue(c::isValidMacroName('a', ['a']));
+        $this->assertTrue(c::isValidMacroName('value.', ['value.']));
+    }
 }
