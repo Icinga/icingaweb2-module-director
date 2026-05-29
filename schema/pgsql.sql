@@ -17,6 +17,18 @@ CREATE TYPE enum_merge_behaviour AS ENUM('set', 'add', 'substract', 'override');
 CREATE TYPE enum_set_merge_behaviour AS ENUM('override', 'extend', 'blacklist');
 CREATE TYPE enum_command_object_type AS ENUM('object', 'template', 'external_object');
 CREATE TYPE enum_apply_object_type AS ENUM('object', 'template', 'apply', 'external_object');
+CREATE TYPE enum_property_value_type AS ENUM(
+  'string',
+  'number',
+  'bool',
+  'fixed-array',
+  'dynamic-array',
+  'fixed-dictionary',
+  'dynamic-dictionary',
+  'datalist-strict',
+  'datalist-non-strict'
+);
+
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
 CREATE TYPE enum_type_name AS ENUM('DowntimeStart', 'DowntimeEnd', 'DowntimeRemoved', 'Custom', 'Acknowledgement', 'Problem', 'Recovery', 'FlappingStart', 'FlappingEnd');
 CREATE TYPE enum_sync_rule_object_type AS ENUM(
@@ -246,7 +258,7 @@ CREATE INDEX start_time_idx ON director_deployment_log (start_time);
 
 CREATE TABLE director_datalist (
   id serial,
-  uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16) NOT NULL,
   list_name character varying(255) NOT NULL,
   owner character varying(255) NOT NULL,
   PRIMARY KEY (id)
@@ -317,6 +329,46 @@ CREATE TABLE director_datafield_setting (
 );
 
 CREATE INDEX director_datafield_datafield ON director_datafield_setting (datafield_id);
+
+CREATE TABLE director_property (
+  uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
+  parent_uuid bytea CHECK(LENGTH(parent_uuid) = 16) DEFAULT NULL,
+  key_name character varying(255) NOT NULL,
+  label character varying(255) DEFAULT NULL,
+  description text DEFAULT NULL,
+  value_type enum_property_value_type NOT NULL,
+  category_id integer DEFAULT NULL,
+  PRIMARY KEY (uuid),
+  CONSTRAINT director_property_category
+    FOREIGN KEY (category_id)
+    REFERENCES director_datafield_category (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX unique_property_name_root
+  ON director_property (key_name)
+  WHERE parent_uuid IS NULL;
+
+CREATE UNIQUE INDEX unique_property_name_parent
+  ON director_property (key_name, parent_uuid)
+  WHERE parent_uuid IS NOT NULL;
+
+CREATE TABLE director_property_datalist (
+  list_uuid bytea CHECK(LENGTH(list_uuid) = 16) NOT NULL,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  PRIMARY KEY (list_uuid, property_uuid),
+  CONSTRAINT director_list_property_list
+    FOREIGN KEY (list_uuid)
+      REFERENCES director_datalist (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT director_property_list_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
 
 
 CREATE TABLE director_schema_migration (
@@ -572,6 +624,22 @@ CREATE TABLE icinga_command_field (
     ON UPDATE CASCADE
 );
 
+CREATE TABLE icinga_command_property (
+  command_uuid bytea CHECK(LENGTH(command_uuid) = 16) NOT NULL,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  required enum_boolean NOT NULL DEFAULT 'n',
+  PRIMARY KEY (command_uuid, property_uuid),
+  CONSTRAINT icinga_command_property_command
+    FOREIGN KEY (command_uuid)
+      REFERENCES icinga_command (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_command_custom_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
 
 CREATE TABLE icinga_command_var (
   command_id integer NOT NULL,
@@ -579,6 +647,7 @@ CREATE TABLE icinga_command_var (
   varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format NOT NULL DEFAULT 'string',
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL,
   PRIMARY KEY (command_id, varname),
   CONSTRAINT icinga_command_var_command
   FOREIGN KEY (command_id)
@@ -802,12 +871,30 @@ CREATE INDEX host_field_datafield ON icinga_host_field (datafield_id);
 COMMENT ON COLUMN icinga_host_field.host_id IS 'Makes only sense for templates';
 
 
+CREATE TABLE icinga_host_property (
+  host_uuid bytea CHECK(LENGTH(host_uuid) = 16) NOT NULL,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  required enum_boolean NOT NULL DEFAULT 'n',
+  PRIMARY KEY (host_uuid, property_uuid),
+  CONSTRAINT icinga_host_property_host
+    FOREIGN KEY (host_uuid)
+      REFERENCES icinga_host (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_custom_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
 CREATE TABLE icinga_host_var (
   host_id integer NOT NULL,
   checksum bytea DEFAULT NULL UNIQUE CHECK(LENGTH(checksum) = 20),
   varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format, -- immer string vorerst
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL,
   PRIMARY KEY (host_id, varname),
   CONSTRAINT icinga_host_var_host
   FOREIGN KEY (host_id)
@@ -975,12 +1062,31 @@ CREATE INDEX service_inheritance_service ON icinga_service_inheritance (service_
 CREATE INDEX service_inheritance_service_parent ON icinga_service_inheritance (parent_service_id);
 
 
+CREATE TABLE icinga_service_property (
+  service_uuid bytea CHECK(LENGTH(service_uuid) = 16) NOT NULL,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  required enum_boolean NOT NULL DEFAULT 'n',
+  PRIMARY KEY (service_uuid, property_uuid),
+  CONSTRAINT icinga_service_property_service
+    FOREIGN KEY (service_uuid)
+      REFERENCES icinga_service (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_custom_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
+
 CREATE TABLE icinga_service_var (
   service_id integer NOT NULL,
   checksum bytea DEFAULT NULL UNIQUE CHECK(LENGTH(checksum) = 20),
   varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL,
   PRIMARY KEY (service_id, varname),
   CONSTRAINT icinga_service_var_service
   FOREIGN KEY (service_id)
@@ -1088,12 +1194,31 @@ CREATE INDEX service_set_inheritance_set ON icinga_service_set_inheritance (serv
 CREATE INDEX service_set_inheritance_parent ON icinga_service_set_inheritance (parent_service_set_id);
 
 
+CREATE TABLE icinga_service_set_property (
+  service_set_uuid bytea CHECK(LENGTH(service_set_uuid) = 16) NOT NULL,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  required enum_boolean NOT NULL DEFAULT 'n',
+  PRIMARY KEY (service_set_uuid, property_uuid),
+  CONSTRAINT icinga_service_set_property_service_set
+    FOREIGN KEY (service_set_uuid)
+      REFERENCES icinga_service_set (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_set_custom_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
+
 CREATE TABLE icinga_service_set_var (
   service_set_id integer NOT NULL,
   checksum bytea DEFAULT NULL UNIQUE CHECK(LENGTH(checksum) = 20),
   varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format NOT NULL DEFAULT 'string',
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL,
   PRIMARY KEY (service_set_id, varname),
   CONSTRAINT icinga_service_set_var_service_set
   FOREIGN KEY (service_set_id)
@@ -1370,6 +1495,7 @@ CREATE TABLE icinga_user_var (
   varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format NOT NULL DEFAULT 'string',
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL,
   PRIMARY KEY (user_id, varname),
   CONSTRAINT icinga_user_var_user
   FOREIGN KEY (user_id)
@@ -1405,6 +1531,24 @@ CREATE UNIQUE INDEX user_field_key ON icinga_user_field (user_id, datafield_id);
 CREATE INDEX user_field_user ON icinga_user_field (user_id);
 CREATE INDEX user_field_datafield ON icinga_user_field (datafield_id);
 COMMENT ON COLUMN icinga_user_field.user_id IS 'Makes only sense for templates';
+
+
+CREATE TABLE icinga_user_property (
+  user_uuid bytea CHECK(LENGTH(user_uuid) = 16) NOT NULL,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  required enum_boolean NOT NULL DEFAULT 'n',
+  PRIMARY KEY (user_uuid, property_uuid),
+  CONSTRAINT icinga_user_property_user
+    FOREIGN KEY (user_uuid)
+      REFERENCES icinga_user (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_user_custom_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
 
 
 CREATE TABLE icinga_usergroup (
@@ -1823,6 +1967,7 @@ CREATE TABLE icinga_notification_var (
   varname VARCHAR(255) NOT NULL,
   varvalue TEXT DEFAULT NULL,
   format enum_property_format,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL,
   PRIMARY KEY (notification_id, varname),
   CONSTRAINT icinga_notification_var_notification
   FOREIGN KEY (notification_id)
@@ -1857,6 +2002,24 @@ CREATE UNIQUE INDEX notification_field_key ON icinga_notification_field (notific
 CREATE INDEX notification_field_notification ON icinga_notification_field (notification_id);
 CREATE INDEX notification_field_datafield ON icinga_notification_field (datafield_id);
 COMMENT ON COLUMN icinga_notification_field.notification_id IS 'Makes only sense for templates';
+
+
+CREATE TABLE icinga_notification_property (
+  notification_uuid bytea CHECK(LENGTH(notification_uuid) = 16) NOT NULL,
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  required enum_boolean NOT NULL DEFAULT 'n',
+  PRIMARY KEY (notification_uuid, property_uuid),
+  CONSTRAINT icinga_notification_property_notification
+    FOREIGN KEY (notification_uuid)
+      REFERENCES icinga_notification (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_notification_custom_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
 
 
 CREATE TABLE icinga_notification_inheritance (
@@ -2803,4 +2966,4 @@ CREATE INDEX usergroup_user_resolved_usergroup ON icinga_usergroup_user_resolved
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (192, NOW());
+  VALUES (193, NOW());
