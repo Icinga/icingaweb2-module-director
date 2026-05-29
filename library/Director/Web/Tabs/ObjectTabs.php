@@ -7,6 +7,7 @@ use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaObject;
 use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 
 class ObjectTabs extends Tabs
 {
@@ -98,7 +99,15 @@ class ObjectTabs extends Tabs
             $this->add('fields', array(
                 'url'       => sprintf('director/%s/fields', $type),
                 'urlParams' => $params,
-                'label'     => $this->translate('Fields')
+                'label'     => $this->translate('Fields (Deprecated)')
+            ));
+        }
+
+        if ($auth->hasPermission(Permission::ADMIN) && $this->hasCustomProperties()) {
+            $this->add('variables', array(
+                'url'       => sprintf('director/%s/variables', $type),
+                'urlParams' => $params,
+                'label'     => $this->translate('Custom Variables')
             ));
         }
 
@@ -156,5 +165,15 @@ class ObjectTabs extends Tabs
         return $object->hasBeenLoadedFromDb()
             && $object->supportsFields()
             && ($object->isTemplate() || $this->type === 'command');
+    }
+
+    protected function hasCustomProperties()
+    {
+        if (! ($object = $this->object)) {
+            return false;
+        }
+
+        return $object->hasBeenLoadedFromDb()
+            && $object->supportsCustomProperties();
     }
 }

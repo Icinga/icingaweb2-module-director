@@ -39,6 +39,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     /** @var string|null */
     protected $highlightedService;
 
+    /** @var bool Use deprecated links instead of the new links for the services linked to service sets */
     private $useDeprecatedLink = false;
 
     /**
@@ -103,6 +104,13 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this;
     }
 
+    /**
+     * Whether to use deprecated links instead of the new links for the services
+     *
+     * @param bool $useDeprecatedLink
+     *
+     * @return $this
+     */
     public function useDeprecatedLink(bool $useDeprecatedLink = true): self
     {
         $this->useDeprecatedLink = $useDeprecatedLink;

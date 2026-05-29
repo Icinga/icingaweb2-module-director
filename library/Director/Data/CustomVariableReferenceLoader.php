@@ -6,10 +6,11 @@ use gipfl\ZfDb\Adapter\Adapter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Ramsey\Uuid\Uuid;
+use Zend_Db_Adapter_Abstract;
 
 class CustomVariableReferenceLoader
 {
-    /** @var Adapter|\Zend_Db_Adapter_Abstract */
+    /** @var Adapter|Zend_Db_Adapter_Abstract */
     protected $db;
 
     public function __construct(Db $connection)
