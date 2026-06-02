@@ -676,27 +676,44 @@ abstract class ObjectController extends ActionController
             return;
         }
 
-        $this->content()->addHtml(new HtmlElement(
+        $applyForHeader = new HtmlElement('div', Attributes::create(['class' => ['apply-for-header']]));
+        $applyForHeaderContent = HtmlElement::create(
             'div',
-            Attributes::create(['class' => ['apply-for-header']]),
-            HtmlElement::create(
-                'div',
-                Attributes::create(['class' => ['apply-for-header-content']]),
-                [
-                    Text::create(sprintf(
-                        $this->translate(
-                            'The values of selected host variable for apply-for-rule'
-                            . ' is accessible through %s.'
-                        ),
-                        '$value$'
-                    ))
-                ]
-            )
-        ));
+            Attributes::create(['class' => ['apply-for-header-content']])
+        );
 
         if ($fetchVar->value_type !== 'dynamic-dictionary') {
+            $applyForHeaderContent->addHtml(
+                Text::create(sprintf(
+                    $this->translate(
+                        'The values of selected host variable for apply-for-rule'
+                        . ' is accessible through %s.'
+                    ),
+                    '$value$'
+                ))
+            );
+
+            $applyForHeader->addHtml($applyForHeaderContent);
+
+            $this->content()->addHtml($applyForHeader);
+
             return;
         }
+
+        $applyForHeaderContent->addHtml(
+            Text::create(sprintf(
+                $this->translate(
+                    'The values of selected host variable for apply-for-rule'
+                    . ' is accessible through %s and keys through %s.'
+                ),
+                '$value$',
+                '$key$'
+            ))
+        );
+
+        $applyForHeader->addHtml($applyForHeaderContent);
+
+        $this->content()->addHtml($applyForHeader);
 
         $dictionaryKeys = $this->fetchNestedDictionaryKeys(DbUtil::binaryResult($fetchVar->uuid));
         if (empty($dictionaryKeys)) {
