@@ -280,7 +280,6 @@ class CustomVariablesForm extends CompatForm
         return array_filter(
             array_map(function ($item) {
                 if (! is_array($item)) {
-                    // Recursively clean nested arrays
                     return $item;
                 }
 
@@ -320,10 +319,23 @@ class CustomVariablesForm extends CompatForm
             $value = $values[$key] ?? null;
 
             if (is_array($value)) {
-                $filteredValue = self::filterEmpty($value);
-                // Store the fixed array as empty only if the filtered array is empty
-                if ($property['value_type'] !== 'fixed-array' || empty($filteredValue)) {
-                    $value = $filteredValue;
+                if ($property['value_type'] === 'dynamic-dictionary') {
+                    // Preserve outer keys; only filter empty sub-field values within each entry
+                    $value = array_map(function ($entry) {
+                        if (! is_array($entry)) {
+                            return $entry;
+                        }
+
+                        $filtered = self::filterEmpty($entry);
+
+                        return empty($filtered) ? (object) [] : $filtered;
+                    }, $value);
+                } else {
+                    $filteredValue = self::filterEmpty($value);
+                    // Store the fixed array as empty only if the filtered array is empty
+                    if ($property['value_type'] !== 'fixed-array' || empty($filteredValue)) {
+                        $value = $filteredValue;
+                    }
                 }
             }
 
@@ -338,7 +350,7 @@ class CustomVariablesForm extends CompatForm
                 );
             }
 
-            if (! is_bool($value) && empty($value)) {
+            if ($property['value_type'] !== 'dynamic-dictionary' && ! is_bool($value) && empty($value)) {
                 $vars->set($key, null);
             } else {
                 $vars->set($key, $value);
