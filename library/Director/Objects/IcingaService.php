@@ -368,7 +368,7 @@ class IcingaService extends IcingaObject implements ExportInterface
             }
 
             $propertyType = $this->fetchApplyForPropertyType($applyForVar);
-            $isApplyFor = in_array($propertyType, ['fixed-dictionary', 'dynamic-dictionary'], true);
+            $isApplyFor = $propertyType === 'dynamic-dictionary';
             $varName = '"' . $name . '"';
 
             if (c::stringHasMacro($name)) {
@@ -693,7 +693,13 @@ class IcingaService extends IcingaObject implements ExportInterface
 
             $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
 
+            $propertyType = $this->fetchApplyForPropertyType($applyFor);
+            $isApplyFor = $propertyType === 'dynamic-dictionary';
             $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
+            if ($isApplyFor) {
+                $whiteList[] = 'key';
+            }
+
             foreach ($result as $row) {
                 if (str_contains($row['key_name'], ' ')) {
                     continue;
