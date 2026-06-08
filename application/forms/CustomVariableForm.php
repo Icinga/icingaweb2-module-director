@@ -6,6 +6,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Web\Form\Element\IplBoolean;
 use Icinga\Web\Session;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -28,6 +29,9 @@ class CustomVariableForm extends CompatForm
 
     /** @var bool Whether the field is a nested field or not */
     private $isNestedField = false;
+
+    /** @var ?string The key name as stored in the database, used to detect pending renames */
+    private ?string $storedKeyName = null;
 
     public function __construct(
         protected DbConnection $db,
@@ -86,11 +90,42 @@ class CustomVariableForm extends CompatForm
         return $this;
     }
 
+    public function setStoredKeyName(string $keyName): self
+    {
+        $this->storedKeyName = $keyName;
+
+        return $this;
+    }
+
+    public function getStoredKeyName(): string
+    {
+        return $this->storedKeyName;
+    }
+
+    public function isPendingRenameConfirmation(): bool
+    {
+        return $this->uuid !== null
+            && $this->storedKeyName !== null
+            && (int) $this->getPopulatedValue('used_count', 0) > 0
+            && $this->getPopulatedValue('confirm_rename_change', '') === ''
+            && $this->getPopulatedValue('key_name') !== $this->storedKeyName;
+    }
+
+    public function hasBeenSubmitted(): bool
+    {
+        if ($this->isPendingRenameConfirmation()) {
+            return false;
+        }
+
+        return parent::hasBeenSubmitted();
+    }
+
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
         $this->addElement('hidden', 'used_count', ['ignore' => true]);
         $used = (int) $this->getValue('used_count') > 0;
+        $pendingRename = $this->isPendingRenameConfirmation();
 
         if ($this->hideKeyNameElement) {
             $db = $this->db->getDbAdapter();
@@ -101,19 +136,15 @@ class CustomVariableForm extends CompatForm
             $this->addElement(
                 'hidden',
                 'key_name',
-                [
-                    'label'     => $this->translate('Property Key *'),
-                    'required'  => true,
-                    'value'     => $db->fetchOne($query)
-                ]
+                ['value' => $db->fetchOne($query)]
             );
         } else {
             $this->addElement(
                 'text',
                 'key_name',
                 [
-                    'label'     => $this->translate('Property Key *'),
-                    'required'  => true
+                    'label'    => $this->translate('Property Key *'),
+                    'required' => true
                 ]
             );
         }
@@ -241,11 +272,25 @@ class CustomVariableForm extends CompatForm
                      ->setAttribute(
                          'title',
                          $this->translate(
-                             'This property is used in one or more templates and hence the item type cannot be changed.'
+                             'This property is used in one or more templates'
+                             . ' and hence the item type cannot be changed.'
                          )
                      )
                      ->setAttribute('disabled', true);
             }
+        }
+
+        if ($pendingRename) {
+            $this->addElement(new IplBoolean('confirm_rename_change', [
+                'label'    => $this->translate('Confirm rename'),
+                'required' => true
+            ]));
+
+            $this->getElement('confirm_rename_change')->addMessage(
+                'There are objects with this custom variable. Renaming changes the name of the'
+                . ' custom variable in those objects. And this may break the apply rules. Are you'
+                . ' sure you want to rename the custom variable?'
+            );
         }
 
         $this->addElement('submit', 'submit', [
@@ -253,9 +298,8 @@ class CustomVariableForm extends CompatForm
         ]);
 
         if ($this->uuid) {
-            // TODO: Ask for confirmation before deleting
             $this->getElement('submit')
-                 ->getWrapper()
+                ->getWrapper()
                 ->prepend(
                     (new ButtonLink(
                         $this->translate('Delete'),
@@ -388,6 +432,14 @@ class CustomVariableForm extends CompatForm
 
         if (isset($values['item_type'])) {
             unset($values['item_type']);
+        }
+
+        if (
+            $this->uuid !== null
+            && $this->storedKeyName !== null
+            && $this->getPopulatedValue('confirm_rename_change', '') === 'n'
+        ) {
+            $values['key_name'] = $this->storedKeyName;
         }
 
         $this->db->getDbAdapter()->beginTransaction();

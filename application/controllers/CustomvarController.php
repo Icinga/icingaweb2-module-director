@@ -105,14 +105,24 @@ class CustomvarController extends CompatController
         $showFields = $this->showFields($property['value_type']);
         $propertyForm = (new CustomVariableForm($this->db, $uuid, $parentUuid !== null, $parentUuid))
             ->populate($property)
+            ->setStoredKeyName($property['key_name'])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(CustomVariableForm::ON_SENT, function (CustomVariableForm $form) use ($property, &$showFields) {
                 $showFields = $showFields && $form->getValue('value_type') === $property['value_type'];
             })
             ->on(CustomVariableForm::ON_SUBMIT, function (CustomVariableForm $form) {
+                if (
+                    (int) $form->getValue('used') > 0
+                    && $form->getPopulatedValue('confirm_rename_change') !== 'y'
+                ) {
+                    $keyName = $form->getStoredKeyName();
+                } else {
+                    $keyName = $form->getValue('key_name');
+                }
+
                 Notification::success(sprintf(
                     $this->translate('Custom variable configuration "%s" has successfully been saved'),
-                    $form->getValue('key_name')
+                    $keyName
                 ));
 
                 $this->sendExtraUpdates(['#col1']);
