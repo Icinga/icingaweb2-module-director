@@ -7,6 +7,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -702,9 +703,28 @@ class IcingaServiceForm extends DirectorObjectForm
 
         $properties = [];
         foreach ($vars as $var) {
-            $properties['host.vars.' . $var->key_name] = $var->label ?? $var->key_name . ' (' . $var->key_name . ')';
+            $properties['host.vars.' . $var->key_name] = $var->label
+                ? $var->key_name . ' (' . $var->key_name . ')'
+                : $var->key_name;
             if ($var->value_type === 'dynamic-dictionary') {
                 $this->dictionaryUuidMap['host.vars.' . $var->key_name] = $var->uuid;
+            }
+        }
+
+        $datafieldQuery = $this->db->getDbAdapter()
+            ->select()
+            ->distinct()
+            ->from(
+                ['df' => 'director_datafield'],
+                ['varname' => 'df.varname', 'caption' => 'df.caption']
+            )
+            ->join(['ihf' => 'icinga_host_field'], 'df.id = ihf.datafield_id', [])
+            ->where("df.datatype = ?", DataTypeArray::class);
+
+        foreach ($this->db->getDbAdapter()->fetchAll($datafieldQuery) as $df) {
+            $key = 'host.vars.' . $df->varname;
+            if (! array_key_exists($key, $properties)) {
+                $properties[$key] = $df->caption . ' (' . $df->varname . ')';
             }
         }
 
