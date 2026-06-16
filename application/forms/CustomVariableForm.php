@@ -8,11 +8,14 @@ use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
 use Icinga\Web\Session;
+use ipl\Html\Text;
 use ipl\I18n\Translation;
+use ipl\Web\Common\CalloutType;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
+use ipl\Web\Widget\Callout;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -286,11 +289,14 @@ class CustomVariableForm extends CompatForm
                 'required' => true
             ]));
 
-            $this->getElement('confirm_rename_change')->addMessage(
-                'There are objects with this custom variable. Renaming changes the name of the'
-                . ' custom variable in those objects. And this may break the apply rules. Are you'
-                . ' sure you want to rename the custom variable?'
-            );
+            $this->addHtml(new Callout(
+                CalloutType::Warning,
+                Text::create($this->translate(
+                    'There are objects with this custom variable. Renaming changes the name of the'
+                    . ' custom variable in those objects. And this may break the apply rules. Are you'
+                    . ' sure you want to rename the custom variable?'
+                ))
+            ));
         }
 
         $this->addElement('submit', 'submit', [
