@@ -203,7 +203,6 @@ class CustomvarController extends CompatController
 
         $this->setTitle($title);
         $this->setTitleTab('customvar');
-        $this->setAutorefreshInterval(10);
     }
 
     public function usageAction(): void
@@ -231,7 +230,6 @@ class CustomvarController extends CompatController
 
         $this->setTitle($this->translate('Custom Variable Usage'));
         $this->setTitleTab('usage');
-        $this->setAutorefreshInterval(10);
     }
 
     /**
