@@ -318,7 +318,7 @@ class CustomVariablesForm extends CompatForm
 
             $value = $values[$key] ?? null;
 
-            if (is_array($value)) {
+            if (is_array($value) && ! empty($value)) {
                 if ($property['value_type'] === 'dynamic-dictionary') {
                     // Preserve outer keys; only filter empty sub-field values within each entry
                     $value = array_map(function ($entry) {
@@ -350,7 +350,7 @@ class CustomVariablesForm extends CompatForm
                 );
             }
 
-            if ($property['value_type'] !== 'dynamic-dictionary' && ! is_bool($value) && empty($value)) {
+            if (! is_bool($value) && empty($value)) {
                 $vars->set($key, null);
             } else {
                 $vars->set($key, $value);
