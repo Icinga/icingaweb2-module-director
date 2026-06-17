@@ -110,9 +110,9 @@ class CustomvarController extends CompatController
             ->on(CustomVariableForm::ON_SENT, function (CustomVariableForm $form) use ($property, &$showFields) {
                 $showFields = $showFields && $form->getValue('value_type') === $property['value_type'];
             })
-            ->on(CustomVariableForm::ON_SUBMIT, function (CustomVariableForm $form) {
+            ->on(CustomVariableForm::ON_SUBMIT, function (CustomVariableForm $form) use ($usedCount) {
                 if (
-                    (int) $form->getValue('used') > 0
+                    $usedCount > 0
                     && $form->getPopulatedValue('confirm_rename_change') !== 'y'
                 ) {
                     $keyName = $form->getStoredKeyName();
