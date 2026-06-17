@@ -6,7 +6,6 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Web\Form\Element\IplBoolean;
 use Icinga\Web\Session;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
@@ -284,10 +283,9 @@ class CustomVariableForm extends CompatForm
         }
 
         if ($pendingRename) {
-            $this->addElement(new IplBoolean('confirm_rename_change', [
-                'label'    => $this->translate('Confirm rename'),
-                'required' => true
-            ]));
+            $this->addElement('checkbox', 'confirm_rename_change', [
+                'label'    => $this->translate('Confirm rename')
+            ]);
 
             $this->addHtml(new Callout(
                 CalloutType::Warning,
