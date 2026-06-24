@@ -1,6 +1,6 @@
 apply Service "___TEST___disk-check" for (key => value in host.vars.___TEST___disk_checks_fix) {
 
-    vars.overridenVar = "___TEST___disk-check"
+    vars.overriddenVar = "___TEST___disk-check"
     display_name = "Disk + key"
     check_command = "disk"
     assign where host.vars.___TEST___disk_checks_fix == 1
