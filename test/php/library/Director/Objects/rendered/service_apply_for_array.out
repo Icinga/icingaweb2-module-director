@@ -1,6 +1,6 @@
 apply Service "___TEST___http-check" for (value in host.vars.___TEST___http_vhosts_fix) {
 
-    vars.overridenVar = "___TEST___http-check"
+    vars.overriddenVar = "___TEST___http-check"
     display_name = "HTTP + value"
     check_command = "http"
     assign where host.vars.___TEST___http_vhosts_fix == 1
