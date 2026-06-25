@@ -704,7 +704,7 @@ class IcingaServiceForm extends DirectorObjectForm
         $properties = [];
         foreach ($vars as $var) {
             $properties['host.vars.' . $var->key_name] = $var->label
-                ? $var->key_name . ' (' . $var->key_name . ')'
+                ? $var->label . ' (' . $var->key_name . ')'
                 : $var->key_name;
             if ($var->value_type === 'dynamic-dictionary') {
                 $this->dictionaryUuidMap['host.vars.' . $var->key_name] = $var->uuid;
