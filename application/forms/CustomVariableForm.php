@@ -584,7 +584,7 @@ class CustomVariableForm extends CompatForm
                 $this->db->select()
                     ->from('director_property', ['key_name'])
                     ->where(
-                        'uuid = ?',
+                        'uuid',
                         Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter())
                     )
             );
