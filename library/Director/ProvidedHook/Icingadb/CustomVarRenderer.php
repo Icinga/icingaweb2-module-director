@@ -333,6 +333,19 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
     }
 
+    private function valueTypeOrderExpr(Db $db, array $types): string
+    {
+        if ($db->isPgsql()) {
+            $cases = [];
+            foreach ($types as $i => $type) {
+                $cases[] = "WHEN '$type' THEN " . ($i + 1);
+            }
+            return 'CASE dp.value_type ' . implode(' ', $cases) . ' ELSE ' . (count($types) + 1) . ' END';
+        }
+
+        return "FIELD(dp.value_type, '" . implode("', '", $types) . "')";
+    }
+
     /**
      * Get custom properties for the host.
      *
@@ -375,10 +388,16 @@ class CustomVarRenderer extends CustomVarRendererHook
             ->joinLeft(['cpc' => 'director_datafield_category'], 'dp.category_id = cpc.id', [])
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
             ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-            ->order(
-                "FIELD(dp.value_type, 'string', 'number', 'bool', 'datalist-strict', 'datalist-non-strict',"
-                . " 'dynamic-array',  'fixed-dictionary', 'dynamic-dictionary')"
-            )
+            ->order($this->valueTypeOrderExpr($db, [
+                'string',
+                'number',
+                'bool',
+                'datalist-strict',
+                'datalist-non-strict',
+                'dynamic-array',
+                'fixed-dictionary',
+                'dynamic-dictionary'
+            ]))
             ->order('children')
             ->order('key_name');
 
