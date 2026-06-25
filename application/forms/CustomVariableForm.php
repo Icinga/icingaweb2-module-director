@@ -553,27 +553,30 @@ class CustomVariableForm extends CompatForm
                         Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter())
                     ))
                 );
-            }
 
-            if ($itemType && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
-                $this->db->insert('director_property', [
-                    'uuid' => Db\DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $this->db->getDbAdapter()),
-                    'key_name' => '0',
-                    'value_type' => $itemType,
-                    'parent_uuid' => Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()),
-                ]);
-
-                if (str_starts_with($valueType, 'datalist-')) {
-                    $this->db->insert('director_property_datalist', [
-                        'property_uuid' => Db\DbUtil::quoteBinaryCompat(
+                if ($itemType && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
+                    $this->db->insert('director_property', [
+                        'uuid' => Db\DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $this->db->getDbAdapter()),
+                        'key_name' => '0',
+                        'value_type' => $itemType,
+                        'parent_uuid' => Db\DbUtil::quoteBinaryCompat(
                             $this->uuid->getBytes(),
                             $this->db->getDbAdapter()
                         ),
-                        'list_uuid' => Db\DbUtil::quoteBinaryCompat(
-                            Db\DbUtil::binaryResult($datalist['uuid']),
-                            $this->db->getDbAdapter()
-                        ),
                     ]);
+
+                    if (str_starts_with($valueType, 'datalist-')) {
+                        $this->db->insert('director_property_datalist', [
+                            'property_uuid' => Db\DbUtil::quoteBinaryCompat(
+                                $this->uuid->getBytes(),
+                                $this->db->getDbAdapter()
+                            ),
+                            'list_uuid' => Db\DbUtil::quoteBinaryCompat(
+                                Db\DbUtil::binaryResult($datalist['uuid']),
+                                $this->db->getDbAdapter()
+                            ),
+                        ]);
+                    }
                 }
             }
         } else {
