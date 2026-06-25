@@ -469,7 +469,10 @@ CREATE TABLE icinga_command_var (
     FOREIGN KEY command (command_id)
     REFERENCES icinga_command (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_command_var_property_uuid
+    FOREIGN KEY property (property_uuid)
+    REFERENCES director_property (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_apiuser (
@@ -868,7 +871,10 @@ CREATE TABLE icinga_service_var (
     FOREIGN KEY service (service_id)
     REFERENCES icinga_service (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_var_property_uuid
+    FOREIGN KEY property (property_uuid)
+    REFERENCES director_property (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_service_field (
@@ -960,7 +966,10 @@ CREATE TABLE icinga_service_set_var (
     FOREIGN KEY command (service_set_id)
     REFERENCES icinga_service_set (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_set_var_property_uuid
+    FOREIGN KEY property (property_uuid)
+    REFERENCES director_property (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_hostgroup (
@@ -1210,7 +1219,10 @@ CREATE TABLE icinga_user_var (
     FOREIGN KEY icinga_user (user_id)
     REFERENCES icinga_user (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_user_var_property_uuid
+    FOREIGN KEY property (property_uuid)
+    REFERENCES director_property (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_user_field (
@@ -1362,7 +1374,10 @@ CREATE TABLE icinga_notification_var (
     FOREIGN KEY notification (notification_id)
     REFERENCES icinga_notification (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_notification_var_property_uuid
+    FOREIGN KEY property (property_uuid)
+    REFERENCES director_property (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_notification_field (

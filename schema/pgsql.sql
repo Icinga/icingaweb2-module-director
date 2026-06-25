@@ -653,7 +653,10 @@ CREATE TABLE icinga_command_var (
   FOREIGN KEY (command_id)
     REFERENCES icinga_command (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_command_var_property_uuid
+  FOREIGN KEY (property_uuid)
+    REFERENCES director_property (uuid)
 );
 
 CREATE INDEX command_var_command ON icinga_command_var (command_id);
@@ -900,7 +903,10 @@ CREATE TABLE icinga_host_var (
   FOREIGN KEY (host_id)
     REFERENCES icinga_host (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_var_property_uuid
+  FOREIGN KEY (property_uuid)
+    REFERENCES director_property (uuid)
 );
 
 CREATE INDEX host_var_search_idx ON icinga_host_var (varname);
@@ -1092,7 +1098,10 @@ CREATE TABLE icinga_service_var (
   FOREIGN KEY (service_id)
     REFERENCES icinga_service (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_var_property_uuid
+  FOREIGN KEY (property_uuid)
+    REFERENCES director_property (uuid)
 );
 
 CREATE INDEX service_var_search_idx ON icinga_service_var (varname);
@@ -1224,7 +1233,10 @@ CREATE TABLE icinga_service_set_var (
   FOREIGN KEY (service_set_id)
     REFERENCES icinga_service_set (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_set_var_property_uuid
+  FOREIGN KEY (property_uuid)
+    REFERENCES director_property (uuid)
 );
 
 CREATE INDEX service_set_var_service_set ON icinga_service_set_var (service_set_id);
@@ -1501,7 +1513,10 @@ CREATE TABLE icinga_user_var (
   FOREIGN KEY (user_id)
     REFERENCES icinga_user (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_user_var_property_uuid
+  FOREIGN KEY (property_uuid)
+    REFERENCES director_property (uuid)
 );
 
 CREATE INDEX user_var_search_idx ON icinga_user_var (varname);
@@ -1973,7 +1988,10 @@ CREATE TABLE icinga_notification_var (
   FOREIGN KEY (notification_id)
   REFERENCES icinga_notification (id)
   ON DELETE CASCADE
-  ON UPDATE CASCADE
+  ON UPDATE CASCADE,
+  CONSTRAINT icinga_notification_var_property_uuid
+  FOREIGN KEY (property_uuid)
+    REFERENCES director_property (uuid)
 );
 
 CREATE INDEX notification_var_command ON icinga_notification_var (notification_id);
