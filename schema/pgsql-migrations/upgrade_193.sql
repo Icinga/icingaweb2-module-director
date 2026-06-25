@@ -160,20 +160,50 @@ CREATE TABLE director_property_datalist (
 ALTER TABLE icinga_host_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
 
+ALTER TABLE icinga_host_var
+  ADD CONSTRAINT icinga_host_var_property_uuid
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid);
+
 ALTER TABLE icinga_service_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
+
+ALTER TABLE icinga_service_var
+  ADD CONSTRAINT icinga_service_var_property_uuid
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid);
 
 ALTER TABLE icinga_command_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
 
+ALTER TABLE icinga_command_var
+  ADD CONSTRAINT icinga_command_var_property_uuid
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid);
+
 ALTER TABLE icinga_notification_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
+
+ALTER TABLE icinga_notification_var
+  ADD CONSTRAINT icinga_notification_var_property_uuid
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid);
 
 ALTER TABLE icinga_service_set_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
 
+ALTER TABLE icinga_service_set_var
+  ADD CONSTRAINT icinga_service_set_var_property_uuid
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid);
+
 ALTER TABLE icinga_user_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
+
+ALTER TABLE icinga_user_var
+  ADD CONSTRAINT icinga_user_var_property_uuid
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
