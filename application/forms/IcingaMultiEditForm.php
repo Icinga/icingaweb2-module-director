@@ -47,6 +47,12 @@ class IcingaMultiEditForm extends DirectorObjectForm
     public function setup()
     {
         $object = $this->object;
+
+        $loader = new IcingaObjectFieldLoader($object);
+        $loader->prepareElements($this);
+        $loader->addFieldsToForm($this);
+        $this->varNameMap = $loader->getNameMap();
+
         if ($form = $this->relatedForm) {
             if ($form instanceof DirectorObjectForm) {
                 $form->setDb($object->getConnection())
