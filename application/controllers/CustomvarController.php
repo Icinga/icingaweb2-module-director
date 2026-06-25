@@ -65,7 +65,6 @@ class CustomvarController extends CompatController
         }
 
         if ($parentUuid) {
-            $parentUuid = Uuid::fromString($parentUuid);
             $parent = $this->fetchProperty($parentUuid);
 
             if ($parent['parent_uuid'] !== null) {
