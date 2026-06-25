@@ -261,12 +261,14 @@ class DictionaryItem extends FieldsetElement
             && self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string'
         ) {
             $datalistEntries = array_flip(self::fetchDataListEntries(Uuid::fromBytes($this->fields['uuid'])));
+            $varValue = is_string($values['var'] ?? null) ? $values['var'] : '';
+            $values['var'] = $varValue;
 
-            if (isset($datalistEntries[$values['var']])) {
-                $values['var-search'] = $datalistEntries[$values['var']];
-                $values['var-label'] = $values['var'];
+            if (isset($datalistEntries[$varValue])) {
+                $values['var-search'] = $datalistEntries[$varValue];
+                $values['var-label'] = $varValue;
             } else {
-                $values['var-search'] = $values['var'];
+                $values['var-search'] = $varValue;
             }
         }
 
@@ -341,7 +343,7 @@ class DictionaryItem extends FieldsetElement
             && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'string'
         ) {
             $dataListEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
-            $value = $property['value'] ?? '';
+            $value = is_string($property['value'] ?? null) ? $property['value'] : '';
             if (isset($dataListEntries[$value])) {
                 $values['var'] = $dataListEntries[$value];
                 $values['var-search'] = $value;

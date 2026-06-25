@@ -553,6 +553,36 @@ abstract class ObjectController extends ActionController
             $type . '_uuid'  => $object->get('uuid')
         ];
 
+        if (isset($object->vars()->{$row['key_name']})) {
+            // Normalize via JSON round-trip (same as getObjectCustomProperties) so stdClass becomes array
+            $existingValue = json_decode(
+                json_encode($object->vars()->{$row['key_name']}->getValue()),
+                true
+            );
+
+            $datalistItemType = null;
+            if (in_array($row['value_type'], ['datalist-strict', 'datalist-non-strict'], true)) {
+                $datalistItemType = $db->fetchOne(
+                    $db->select()
+                        ->from(['cdp' => 'director_property'], ['value_type' => 'cdp.value_type'])
+                        ->where('cdp.parent_uuid = ?', DbUtil::quoteBinaryCompat($row['uuid'], $db))
+                );
+            }
+
+            $isCompatibleType = match (true) {
+                $row['value_type'] === 'string' => is_string($existingValue),
+                $row['value_type'] === 'number' => is_numeric($existingValue),
+                $row['value_type'] === 'bool' => is_bool($existingValue),
+                in_array($row['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
+                    => $datalistItemType === 'dynamic-array' ? is_array($existingValue) : is_string($existingValue),
+                default => is_array($existingValue),
+            };
+
+            if ($isCompatibleType) {
+                $propertyData['value'] = $existingValue;
+            }
+        }
+
         $newItem = $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
         $newSlotIndex = $nextSlotIndex + 1;
 
