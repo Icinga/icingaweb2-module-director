@@ -244,13 +244,13 @@ class DeleteCustomVariableForm extends CompatForm
         $this->removeObjectCustomVars($prop, $this->parent);
         $this->removeFromOverrideServiceVars($prop, $this->parent);
 
-        $db->delete('director_property', Filter::where('uuid', $quotedUuid));
-        $db->delete('director_property', Filter::where('parent_uuid', $quotedUuid));
-
-        $objects = ['host', 'service', 'notification', 'command', 'user'];
+        $objects = ['host', 'service', 'notification', 'command', 'user', 'service_set'];
         foreach ($objects as $object) {
             $this->db->delete("icinga_{$object}_var", Filter::where('property_uuid', $quotedUuid));
         }
+
+        $db->delete('director_property', Filter::where('uuid', $quotedUuid));
+        $db->delete('director_property', Filter::where('parent_uuid', $quotedUuid));
 
         $db->getDbAdapter()->commit();
     }
