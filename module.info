@@ -1,7 +1,7 @@
 Name: Icinga Director
 Version: 1.11.9
 Requires:
-  Libraries: icinga-php-library (>=0.14.2), icinga-php-thirdparty (>=0.12.1)
+  Libraries: icinga-php-library (>=0.14.2), icinga-php-thirdparty (>=0.15.3)
   Modules: incubator (>=0.22.0)
 Description: Director - Config tool for Icinga 2
  Icinga Director is a configuration tool that has been designed to make
