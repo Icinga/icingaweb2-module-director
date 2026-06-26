@@ -2,14 +2,14 @@
 
 namespace Icinga\Module\Director\Daemon;
 
-use gipfl\IcingaCliDaemon\FinishedProcessState;
 use gipfl\IcingaCliDaemon\IcingaCliRpc;
 use Icinga\Application\Logger;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorJob;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
-use React\Promise\Promise;
+use React\Promise\PromiseInterface;
+use Icinga\Module\Director\Daemon\PromiseUtil;
 
 use function React\Promise\resolve;
 
@@ -24,7 +24,7 @@ class JobRunner implements DbBasedComponent
     /** @var int[] */
     protected $scheduledIds = [];
 
-    /** @var Promise[] */
+    /** @var PromiseInterface[] */
     protected $runningIds = [];
 
     protected $checkInterval = 10;
@@ -53,7 +53,8 @@ class JobRunner implements DbBasedComponent
 
     /**
      * @param Db $db
-     * @return \React\Promise\ExtendedPromiseInterface
+     *
+     * @return PromiseInterface
      */
     public function initDb(Db $db)
     {
@@ -75,11 +76,11 @@ class JobRunner implements DbBasedComponent
         }
         $this->timer = $this->loop->addPeriodicTimer($this->checkInterval, $check);
 
-        return resolve();
+        return resolve(null);
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function stopDb()
     {
@@ -201,13 +202,13 @@ class JobRunner implements DbBasedComponent
             $cli->rpc()->setHandler($logger, 'logger');
         }
         unset($this->scheduledIds[$id]);
-        $this->runningIds[$id] = $cli->run($this->loop)->then(function () use ($id, $jobName) {
+        $promise = $cli->run($this->loop)->then(function () use ($id, $jobName) {
             Logger::debug("Job ($jobName) finished");
-        })->otherwise(function (\Exception $e) use ($id, $jobName) {
+        });
+        $promise = PromiseUtil::catch($promise, function (\Exception $e) use ($id, $jobName) {
             Logger::error("Job ($jobName) failed: " . $e->getMessage());
-        })->otherwise(function (FinishedProcessState $state) use ($jobName) {
-            Logger::error("Job ($jobName) failed: " . $state->getReason());
-        })->always(function () use ($id) {
+        });
+        $this->runningIds[$id] = PromiseUtil::finally($promise, function () use ($id) {
             unset($this->runningIds[$id]);
             $this->loop->futureTick(function () {
                 $this->runNextPendingJob();

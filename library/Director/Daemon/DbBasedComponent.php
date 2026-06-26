@@ -3,17 +3,19 @@
 namespace Icinga\Module\Director\Daemon;
 
 use Icinga\Module\Director\Db;
+use React\Promise\PromiseInterface;
 
 interface DbBasedComponent
 {
     /**
      * @param Db $db
-     * @return \React\Promise\ExtendedPromiseInterface;
+     *
+     * @return PromiseInterface;
      */
     public function initDb(Db $db);
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface;
+     * @return PromiseInterface;
      */
     public function stopDb();
 }

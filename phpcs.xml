@@ -2,7 +2,6 @@
 <ruleset name="PRS12">
     <file>configuration.php</file>
     <file>run.php</file>
-    <file>run-php5.3.php</file>
     <file>application/</file>
     <file>library/Director/</file>
     <file>test/</file>
