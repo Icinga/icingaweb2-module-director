@@ -1,5 +1,5 @@
 Name: Icinga Director
-Version: 1.11.8
+Version: 1.11.9
 Requires:
   Libraries: icinga-php-library (>=0.14.2), icinga-php-thirdparty (>=0.12.1)
   Modules: incubator (>=0.22.0)
