@@ -9,6 +9,7 @@ use Icinga\Module\Director\Objects\DirectorJob;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
+use Icinga\Module\Director\Daemon\PromiseUtil;
 
 use function React\Promise\resolve;
 
@@ -201,11 +202,13 @@ class JobRunner implements DbBasedComponent
             $cli->rpc()->setHandler($logger, 'logger');
         }
         unset($this->scheduledIds[$id]);
-        $this->runningIds[$id] = $cli->run($this->loop)->then(function () use ($id, $jobName) {
+        $promise = $cli->run($this->loop)->then(function () use ($id, $jobName) {
             Logger::debug("Job ($jobName) finished");
-        })->catch(function (\Exception $e) use ($id, $jobName) {
+        });
+        $promise = PromiseUtil::catch($promise, function (\Exception $e) use ($id, $jobName) {
             Logger::error("Job ($jobName) failed: " . $e->getMessage());
-        })->finally(function () use ($id) {
+        });
+        $this->runningIds[$id] = PromiseUtil::finally($promise, function () use ($id) {
             unset($this->runningIds[$id]);
             $this->loop->futureTick(function () {
                 $this->runNextPendingJob();
