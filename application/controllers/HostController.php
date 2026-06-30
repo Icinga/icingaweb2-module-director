@@ -603,7 +603,7 @@ class HostController extends ObjectController
         } else {
             $this->controls()->prepend($deactivateForm);
             $form = $this->prepareCustomPropertiesForm($parent, $host);
-            $form->setInheritedServiceFrom($from);
+            $form->setInheritedServiceFrom($from->getObjectName());
             $form->setHostForService($host);
 
             $this->content()->add(
