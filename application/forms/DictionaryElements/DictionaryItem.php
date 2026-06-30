@@ -469,11 +469,15 @@ class DictionaryItem extends FieldsetElement
 
                 // Use the default value for fixed-array items only if the fixed array does not have an inherited value
                 if ($this->getElement('parent_type')->getValue() === 'fixed-array') {
-                    match ($this->getElement('type')->getValue()) {
+                    $type = $this->getElement('type')->getValue();
+                    $itemType = self::fetchItemType(Uuid::fromBytes($this->fields['uuid']));
+                    match ($type) {
                         'string' => $defaultValue = '',
                         'number' => $defaultValue = 0,
                         'bool' => $defaultValue = 'n',
-                        'fixed-array', 'dynamic-array' => $defaultValue = []
+                        'fixed-array', 'dynamic-array' => $defaultValue = [],
+                        'datalist-strict', 'datalist-non-strict' => $defaultValue = $itemType === 'string' ? '' : [],
+                        default => $defaultValue = null
                     };
                 }
 
