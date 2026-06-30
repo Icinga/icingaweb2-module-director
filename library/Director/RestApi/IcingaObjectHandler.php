@@ -232,7 +232,10 @@ class IcingaObjectHandler extends RequestHandler
                             throw new InvalidArgumentException('Overrides are not (yet) available for HTTP PUT');
                         }
 
+                        $data['vars'] = $overRiddenCustomVars;
                         $this->setServiceProperties($params->getRequired('host'), $params->getRequired('name'), $data);
+
+                        return;
                     } else {
                         $object = IcingaObject::createByType($type, $data, $db);
                         $this->persistChanges($object);
