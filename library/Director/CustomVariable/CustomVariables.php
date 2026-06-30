@@ -31,6 +31,9 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     /** @var array Array of values to be used as whitelist */
     private $whiteList = [];
 
+    /** @var array<string, array{value_type: string, object_id: int}>|null */
+    private ?array $cachedCustomVariableTypes = null;
+
     protected static $allTables = array(
         'icinga_command_var',
         'icinga_host_var',
@@ -39,6 +42,46 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         'icinga_service_var',
         'icinga_user_var',
     );
+
+    /**
+     * Batch-fetch property value_type rows for all vars in this set.
+     * Stores results in $this->cachedCustomVariableTypes keyed by key_name.
+     *
+     * @param IcingaObject $object
+     *
+     * @return void
+     */
+    protected function prefetchCustomVarTypes(IcingaObject $object): void
+    {
+        $this->cachedCustomVariableTypes = [];
+
+        $keys = array_keys($this->vars);
+        if (empty($keys)) {
+            return;
+        }
+
+        $type = $object->getShortTableName();
+        $objectId = $object->get('id');
+        $ids = $object->listAncestorIds();
+        $ids[] = $objectId;
+
+        $query = $object->getDb()->select()->from(
+            ['dp' => 'director_property'],
+            ['key_name' => 'dp.key_name', 'value_type' => 'dp.value_type', 'object_id' => 'io.id']
+        )
+            ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
+            ->join(['io' => 'icinga_' . $type], 'iop.' . $type . '_uuid = io.uuid', [])
+            ->join(['iov' => 'icinga_' . $type . '_var'], 'iov.' . $type . '_id = io.id', [])
+            ->where('dp.key_name IN (?)', $keys)
+            ->where('io.id IN (?)', $ids);
+
+        foreach ($object->getDb()->fetchAll($query) as $row) {
+            $this->cachedCustomVariableTypes[$row->key_name] = [
+                'value_type' => $row->value_type,
+                'object_id'  => (int) $row->object_id,
+            ];
+        }
+    }
 
     public static function countAll($varname, Db $connection)
     {
@@ -379,6 +422,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         $out = '';
 
+        if ($object !== null && !empty($object->get('id'))) {
+            $this->prefetchCustomVarTypes($object);
+        }
+
         foreach ($this as $key => $var) {
             // TODO: ctype_alnum + underscore?
             $out .= $this->renderSingleVar($key, $var, $renderExpressions, $object);
@@ -451,38 +498,24 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
-        $type = $object->getShortTableName();
         $objectId = $object->get('id');
-        $ids = $object->listAncestorIds();
-        $ids[] = $objectId;
-
-        $query = $object->getDb()->select()->from(
-            ['dp' => 'director_property'],
-            ['value_type']
-        )
-            ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
-            ->join(['io' => 'icinga_' . $type], 'iop.' . $type . '_uuid = io.uuid', ['object_id' => 'io.id'])
-            ->join(['iov' => 'icinga_' . $type . '_var'], 'iov.' . $type . '_id = io.id', [])
-            ->where('dp.key_name = ?', $var->getKey())
-            ->where('io.id IN (?)', $ids);
-
-        $row = (array) $object->getDb()->fetchRow($query);
+        $cachedRow = $this->cachedCustomVariableTypes[$key] ?? null;
         if (
-            isset($row['value_type'])
-            && $row['value_type'] === 'dynamic-dictionary'
-            && (int) $objectId !== (int) $row['object_id']
+            $cachedRow !== null
+            && $cachedRow['value_type'] === 'dynamic-dictionary'
+            && (int) $objectId !== $cachedRow['object_id']
         ) {
             return c::renderKeyOperatorValue(
                 $this->renderKeyName($key),
                 '+=',
                 $var->toConfigStringPrefetchable($renderExpressions)
             );
-        } else {
-            return c::renderKeyValue(
-                $this->renderKeyName($key),
-                $var->toConfigStringPrefetchable($renderExpressions)
-            );
         }
+
+        return c::renderKeyValue(
+            $this->renderKeyName($key),
+            $var->toConfigStringPrefetchable($renderExpressions)
+        );
     }
 
     protected function renderKeyName($key)
