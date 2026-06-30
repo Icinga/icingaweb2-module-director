@@ -652,7 +652,7 @@ class CustomVariableForm extends CompatForm
                     );
                 }
 
-                return;
+                continue;
             }
 
             foreach ($objectCustomVars as $objectCustomVar) {
