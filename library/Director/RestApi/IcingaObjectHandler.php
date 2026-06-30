@@ -251,22 +251,26 @@ class IcingaObjectHandler extends RequestHandler
                 $objectVars = $object->vars();
                 if ($this->object->get('id') && $request->getMethod() === 'PUT') {
                     $objectWhere = $db->getDbAdapter()->quoteInto("{$type}_id = ?", $this->object->get('id'));
-                    $db->getDbAdapter()->delete(
+                    $dbAdapter = $db->getDbAdapter();
+                    $dbAdapter->beginTransaction();
+                    $dbAdapter->delete(
                         'icinga_' . $type . '_var',
                         $objectWhere
                     );
 
                     $uuidExpr = DbUtil::quoteBinaryCompat(
                         DbUtil::binaryResult($this->object->get('uuid')),
-                        $db->getDbAdapter()
+                        $dbAdapter
                     );
-                    $db->getDbAdapter()->delete(
+                    $dbAdapter->delete(
                         'icinga_' . $type . '_property',
-                        $db->getDbAdapter()->quoteInto(
+                        $dbAdapter->quoteInto(
                             "{$type}_uuid = ?",
                             $uuidExpr
                         )
                     );
+
+                    $dbAdapter->commit();
 
                     $objectVars = new CustomVariables();
                 }
