@@ -82,13 +82,16 @@ class IcingaUser extends IcingaObject implements ExportInterface
      * Enumerate properties for user objects
      *
      * @param ?DbConnection $connection
-     * @param $prefix
-     * @param $filter
+     * @param string $prefix
+     * @param ?PropertiesFilter $filter
      *
      * @return array
      */
-    public static function enumProperties(DbConnection $connection = null, $prefix = '', $filter = null): array
-    {
+    public static function enumProperties(
+        ?DbConnection $connection = null,
+        string $prefix = '',
+        ?PropertiesFilter $filter = null
+    ): array {
         $userProperties = array();
         if ($filter === null) {
             $filter = new PropertiesFilter();
@@ -102,7 +105,7 @@ class IcingaUser extends IcingaObject implements ExportInterface
         }
 
         foreach ($realProperties as $prop) {
-            if (!$filter->match(PropertiesFilter::$USER_PROPERTY, $prop)) {
+            if (! $filter->match(PropertiesFilter::$USER_PROPERTY, $prop)) {
                 continue;
             }
 
