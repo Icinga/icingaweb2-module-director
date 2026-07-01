@@ -15,12 +15,8 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
-use ipl\Html\Attributes;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use ipl\Html\HtmlElement;
-use ipl\Html\Text;
-use PDO;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
