@@ -230,6 +230,203 @@ director/host?name=pe2015.example.com&resolved
 
 JSON is pretty-printed per default, at least for PHP >= 5.4
 
+<a id="Custom-Variables"></a>Custom Variables
+-------------------------------------------------
+
+Custom variable values on an existing object can also be updated
+directly, without having to submit the whole object, using a dedicated
+endpoint:
+
+    POST director/<objectType>/variables?<params>
+    PUT  director/<objectType>/variables?<params>
+
+with a JSON body whose keys are variable names and values are the new
+values. Strings, numbers, booleans, arrays and nested dictionaries are
+all accepted, matching the types described in
+[Working with custom variables](12-Handling-custom-variables.md). The
+custom variable must already be configured under `Custom Variables`
+**and** already be attached to (or inherited from) the object you are
+updating. Sending a variable that isn't yet configured under `Custom
+Variables` at all always returns a `404 Not Found`, regardless of method
+-- see [Error: variable not configured](#Custom-Variables-not-configured)
+below.
+
+As with the general `POST`/`PUT` semantics described above, the two
+methods differ in how they treat variables you don't mention in the
+body:
+
+* `POST` **merges**: only the keys you send are touched, all other
+  existing variables on the object are left untouched.
+* `PUT` **replaces**: every custom variable set directly on the object
+  is removed first, then the ones from the body are (re-)applied. Values
+  inherited from templates are not affected either way, since they
+  aren't stored on the object itself.
+
+#### Setting a `string` variable
+
+    POST director/host/variables?name=apitest
+
+```json
+{ "environment": "production" }
+```
+
+#### Setting a `number` variable
+
+    POST director/service/variables?name=Uptime&host=apitest
+
+```json
+{ "snmp_timeout": 30 }
+```
+
+#### Setting a `bool` variable
+
+    POST director/host/variables?name=apitest
+
+```json
+{ "ssl_verify": true }
+```
+
+#### Setting an array variable (`fixed-array`, `dynamic-array`, or a datalist array)
+
+    POST director/host/variables?name=apitest
+
+```json
+{ "ssh_args": ["monitoring", "22", "/etc/icinga2/ssh/id_rsa"] }
+```
+
+#### Setting a dictionary variable (`fixed-dictionary`)
+
+    POST director/host/variables?name=apitest
+
+```json
+{
+    "mysql": {
+        "host": "db-primary.internal",
+        "port": "3306",
+        "user": "icinga_monitor",
+        "password": "s3cr3t",
+        "database": "app_production"
+    }
+}
+```
+
+#### Setting several variables at once
+
+    POST director/host/variables?name=apitest
+
+```json
+{
+    "environment": "production",
+    "owner_teams": ["networking", "platform"]
+}
+```
+
+##### Response
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+    "environment": "production",
+    "owner_teams": [
+        "networking",
+        "platform"
+    ]
+}
+```
+
+#### Replacing all variables set on an object
+
+Unlike the examples above, `PUT` drops every custom variable
+previously set directly on `apitest` before applying the body, so only
+`environment` survives this call even if other variables had been set
+before:
+
+    PUT director/host/variables?name=apitest
+
+```json
+{ "environment": "production" }
+```
+
+#### Attaching a variable to a template for the first time
+
+Both `POST` and `PUT` can update the value of a variable that is
+already attached to the object (or inherited from one of its imported
+templates). Only `PUT`, and only when the target object is itself a
+**template**, can additionally attach a variable that is configured
+under `Custom Variables` but not yet used on that template -- Director
+creates the attachment and then stores the value in the same call:
+
+    PUT director/host/variables?name=generic-host
+
+```json
+{ "datacenter": "eu-west-1" }
+```
+
+Sending the very same body with `POST` instead fails, because `POST` is
+not allowed to change which custom variables are attached to a
+template:
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "The custom variable datacenter should be first added to the template"
+}
+```
+
+The same restriction applies to non-template objects (hosts, services,
+...) regardless of method: a variable must first be attached to one of
+the object's imported templates before it can be set on the object
+itself:
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "The custom variable datacenter should be first added to one of the imported templates for this object"
+}
+```
+
+<a id="Custom-Variables-not-configured"></a>#### Error: variable not configured
+
+Trying to set a variable that hasn't been configured under `Custom
+Variables` at all yet returns a `404`, for both `POST` and `PUT`:
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "No such custom variable: unknown_var"
+}
+```
+
+#### GET
+
+`GET` is also accepted on this endpoint:
+
+    GET director/host/variables?name=apitest
+
+It behaves exactly like `GET` on the object's base endpoint
+(`director/host?name=apitest`) and returns the full object, not just
+its custom variables -- there's no dedicated "variables only" response.
+Use the `properties` parameter if you only want the `vars` property
+back:
+
+    GET director/host/variables?name=apitest&properties=vars
+
 Error handling
 --------------
 

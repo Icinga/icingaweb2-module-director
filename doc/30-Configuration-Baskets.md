@@ -90,3 +90,16 @@ selections).
 For each item in that list, the keywords *unchanged* or *new* will appear to the right.
 Clicking on *new* will show the differences between the version in the snapshot and the
 current configuration.
+
+
+
+### Version Compatibility
+
+Snapshots created on a Director version that supports new [Custom Variables](12-Handling-custom-variables.md) (>= 1.12.0)
+include a `CustomVariable` element type. Restoring such a snapshot on an older Director
+version (< 1.12.0) that predates this feature will silently drop the `CustomVariable` data, since older
+versions do not know how to interpret it. This is relevant when using baskets to share or sync
+configuration between Director instances that are not on the same version, for example between
+a master and a satellite/config master. To avoid losing custom variable data, keep Director
+versions aligned across instances that exchange baskets, or upgrade the receiving instance
+before restoring a snapshot from a newer one.
