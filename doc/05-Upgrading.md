@@ -46,6 +46,24 @@ pending database migrations to an imported old database snapshot.
 <a name="upgrade-to-1.12.x"></a>Upgrading to 1.12.x
 --------------------------------------------------
 
+PHP 8.2 is now required.
+
+A MySQL (>=8) or MariaDB (>=10.2.2) database is now required, up from the
+previous MySQL 5.7 / MariaDB 10.1 minimums. Upgrade your database server
+first if you're on an older version, otherwise the schema migrations below
+will fail.
+
+Please check your module dependencies. The incubator module requirement has
+been replaced by a dependency on [Icinga PHP Legacy](https://github.com/Icinga/icinga-php-legacy)
+(>=1.1.0), and the minimum versions of `icinga-php-library` (now >=1.0.0)
+and `icinga-php-thirdparty` (now >=1.0.0) have been raised as well. Install
+or upgrade whichever of these you're missing before upgrading Director.
+
+Director's own dependency check screen has been removed in this release, so
+a missing or outdated library now causes a hard error instead of a friendly
+notice in the frontend. As always, once the dependencies are in place
+you'll be prompted to apply pending Database Migrations.
+
 The custom property schema migration (version 193) uses the `citext` PostgreSQL
 extension and installs it automatically if it's missing. This works without any
 manual action on PostgreSQL 13+, since the database owner (the role Director
