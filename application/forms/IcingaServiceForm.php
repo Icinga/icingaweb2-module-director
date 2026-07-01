@@ -17,6 +17,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\HtmlElement;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
@@ -725,6 +726,15 @@ class IcingaServiceForm extends DirectorObjectForm
             ));
         }
 
+        $applied = $this->getAppliedGroups();
+        if (! empty($applied)) {
+            $this->addElement('simpleNote', 'applied_groups', [
+                'label'  => $this->translate('Applied groups'),
+                'value'  => $this->createServicegroupLinks($applied),
+                'ignore' => true,
+            ]);
+        }
+
         return $this;
     }
 
@@ -866,5 +876,47 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->object->set('object_name', end($imports));
             }
         }
+    }
+
+    /**
+     * Create links to applied servicegroups.
+     *
+     * @param $groups
+     *
+     * @return HtmlElement
+     */
+    protected function createServicegroupLinks($groups): HtmlElement
+    {
+        $links = [];
+        foreach ($groups as $name) {
+            if (! empty($links)) {
+                $links[] = ', ';
+            }
+            $links[] = Link::create(
+                $name,
+                'director/servicegroup',
+                ['name' => $name],
+                ['data-base-target' => '_next']
+            );
+        }
+
+        return Html::tag('span', ['class' => 'host-group-links'], $links);
+    }
+
+    /**
+     * Get applied servicegroups.
+     *
+     * @return array
+     */
+    protected function getAppliedGroups(): array
+    {
+        if ($this->isNew()) {
+            return [];
+        }
+
+        /** @var IcingaService $object */
+        $object = $this->object();
+
+        return $object->getAppliedGroups();
     }
 }
