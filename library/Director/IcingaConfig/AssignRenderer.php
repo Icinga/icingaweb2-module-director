@@ -143,7 +143,11 @@ class AssignRenderer
 
         $column = $filter->getColumn();
         try {
-            $rawExpression = JsonString::decode($filter->getExpression());
+            $rawExpression = $filter->getExpression();
+            if (is_string($rawExpression)) {
+                $rawExpression = JsonString::decode($filter->getExpression());
+            }
+
             $expression = $this->renderExpressionValue($rawExpression);
         } catch (JsonDecodeException $e) {
             throw new InvalidArgumentException(
