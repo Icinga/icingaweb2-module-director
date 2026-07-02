@@ -1,17 +1,23 @@
 <?php
 
+// SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaZone;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Test\BaseTestCase;
-use Icinga\Exception\IcingaException;
+use Ramsey\Uuid\Uuid;
 
 class IcingaHostTest extends BaseTestCase
 {
@@ -731,6 +737,60 @@ class IcingaHostTest extends BaseTestCase
             "{$prefix}templates" => "templates"
         );
     }
+
+    public function testDynamicDictionaryVarUsesOverrideOperator(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        // Template needs at least one icinga_host_var row to satisfy the JOIN in
+        // CustomVariables::renderSingleVar() that detects dynamic-dictionary properties.
+        $template = IcingaHost::create([
+            'object_name' => '___TEST___linux-server',
+            'object_type' => 'template',
+            'vars'        => ['env' => 'production'],
+        ], $db);
+        $template->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___disk_checks_dyn',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Disk Checks',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+        ]);
+
+        $child = IcingaHost::create([
+            'object_name' => '___TEST___db-server-01',
+            'object_type' => 'object',
+            'address'     => '10.0.1.42',
+            'vars'        => [
+                '___TEST___disk_checks_dyn' => (object) [
+                    'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+                    'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+                ],
+            ],
+        ], $db);
+        $child->imports = '___TEST___linux-server';
+        $child->store();
+
+        $loaded = IcingaHost::load('___TEST___db-server-01', $db);
+
+        $this->assertEquals(
+            $this->loadRendered('host_dynamic_dict'),
+            (string) $loaded
+        );
+    }
+
     protected function loadRendered($name)
     {
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
@@ -740,7 +800,15 @@ class IcingaHostTest extends BaseTestCase
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
-            $kill = array($this->testHostName, '___TEST___parent', '___TEST___a', '___TEST___b');
+            $dba = $db->getDbAdapter();
+            $kill = array(
+                $this->testHostName,
+                '___TEST___parent',
+                '___TEST___a',
+                '___TEST___b',
+                '___TEST___db-server-01',
+                '___TEST___linux-server',
+            );
             foreach ($kill as $name) {
                 if (IcingaHost::exists($name, $db)) {
                     IcingaHost::load($name, $db)->delete();
@@ -755,8 +823,19 @@ class IcingaHostTest extends BaseTestCase
             }
 
             $this->deleteDatafields();
+
+            $rows = $dba->fetchAll(
+                $dba->select()
+                    ->from('director_property', ['uuid'])
+                    ->where('key_name = ?', '___TEST___disk_checks_dyn')
+            );
+            foreach ($rows as $row) {
+                $dba->delete('director_property', $dba->quoteInto('parent_uuid = ?', $row->uuid));
+            }
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', '___TEST___disk_checks_dyn'));
         }
 
+        IcingaTemplateRepository::clear();
         parent::tearDown();
     }
 

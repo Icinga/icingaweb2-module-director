@@ -566,10 +566,16 @@ if (! globals.contains(DirectorOverrideTemplate)) {
       globals.directorWarnOnceForServiceWithoutHost()
     }
 
+    var overriddenVar = name
+    if (vars.overriddenVar) {
+      overriddenVar = vars.overriddenVar
+      vars.remove("overriddenVar")
+    }
+
     if (vars) {
-      vars += host.vars[DirectorOverrideVars][name]
+      vars += host.vars[DirectorOverrideVars][overriddenVar]
     } else {
-      vars = host.vars[DirectorOverrideVars][name]
+      vars = host.vars[DirectorOverrideVars][overriddenVar]
     }
   }
 }

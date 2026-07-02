@@ -25,6 +25,26 @@ class DbUtil
         return $value;
     }
 
+    /**
+     * Normalize all stream resources in an associative row array to raw binary strings.
+     *
+     * PostgreSQL returns bytea columns as PHP stream resources; calling this once at the
+     * fetch boundary avoids scattered binaryResult() calls throughout business logic.
+     *
+     * @param array $row
+     *
+     * @return array
+     */
+    public static function normalizeRow(array $row): array
+    {
+        foreach ($row as $key => $value) {
+            if (is_resource($value)) {
+                $row[$key] = stream_get_contents($value);
+            }
+        }
+
+        return $row;
+    }
 
     /**
      * @param string|array $binary

@@ -14,6 +14,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
+use PDO;
 use RuntimeException;
 
 class IcingaService extends IcingaObject implements ExportInterface
@@ -98,6 +99,8 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     protected $supportsFields = true;
 
+    protected $supportsCustomVariables = true;
+
     protected $supportsImports = true;
 
     protected $supportsApplyRules = true;
@@ -121,6 +124,9 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     /** @var ServiceGroupMembershipResolver */
     protected $servicegroupMembershipResolver;
+
+    /** @var array|null Whitelist to be used in custom variables of apply for rule */
+    protected ?array $applyForWhiteList = null;
 
     /**
      * @return IcingaCommand
@@ -348,13 +354,22 @@ class IcingaService extends IcingaObject implements ExportInterface
      */
     protected function renderObjectHeader()
     {
+        $applyFor = $this->get('apply_for');
         if (
             $this->isApplyRule()
             && !$this->hasBeenAssignedToHostTemplate()
-            && $this->get('apply_for') !== null
+            && $applyFor !== null
         ) {
             $name = $this->getObjectName();
             $extraName = '';
+            $applyForVar = substr($applyFor, strlen('host.vars.'));
+            if (preg_match('/[^a-zA-Z0-9_]/', $applyForVar)) {
+                $applyFor = 'host.vars["' . addcslashes($applyForVar, '"\\') . '"]';
+            }
+
+            $propertyType = $this->fetchApplyForPropertyType($applyForVar);
+            $isApplyFor = $propertyType === 'dynamic-dictionary';
+            $varName = '"' . $name . '"';
 
             if (c::stringHasMacro($name)) {
                 $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
@@ -363,13 +378,25 @@ class IcingaService extends IcingaObject implements ExportInterface
                 $name = ' ' . c::renderString($name);
             }
 
+            if ($isApplyFor) {
+                $header = "%s %s%s for (key => value in %s) {\n";
+            } else {
+                $header = "%s %s%s for (value in %s) {\n";
+            }
+
+            $extraInfo = $propertyType !== null
+                ? sprintf("\n    vars.overriddenVar = %s\n", $varName)
+                : '';
+
             return sprintf(
-                "%s %s%s for (config in %s) {\n",
+                $header,
                 $this->getObjectTypeName(),
                 $this->getType(),
                 $name,
-                $this->get('apply_for')
-            ) . $extraName;
+                $applyFor
+            )
+                . $extraName
+                . $extraInfo;
         }
 
         return parent::renderObjectHeader();
@@ -385,6 +412,19 @@ class IcingaService extends IcingaObject implements ExportInterface
         } else {
             return 'service_description';
         }
+    }
+
+    protected function fetchApplyForPropertyType(string $applyFor): ?string
+    {
+        $query = $this->db
+            ->select()
+            ->from(['dp' => 'director_property'], ['value_type' => 'dp.value_type'])
+            ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
+            ->where('dp.key_name = ?', $applyFor);
+
+        $result = $this->db->fetchOne($query);
+
+        return $result === false ? null : $result;
     }
 
     protected function rendersConditionalTemplate(): bool
@@ -622,6 +662,87 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
 
         return $where;
+    }
+
+    public function vars()
+    {
+        $vars = parent::vars();
+        if ($this->connection === null || ! $this->isApplyRule()) {
+            return $vars;
+        }
+
+        $applyFor = substr($this->get('apply_for') ?? '', strlen('host.vars.'));
+        if (empty($applyFor)) {
+            return $vars;
+        }
+
+        if ($this->applyForWhiteList === null) {
+            $query = $this->db
+                ->select()
+                ->from(
+                    ['dp' => 'director_property'],
+                    [
+                        'key_name' => 'dp.key_name',
+                        'uuid' => 'dp.uuid',
+                        'value_type' => 'dp.value_type'
+                    ]
+                )
+                ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
+                ->where("parent_dp.value_type = 'dynamic-dictionary'")
+                ->where("parent_dp.key_name = ?", $applyFor);
+
+            $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+
+            $propertyType = $this->fetchApplyForPropertyType($applyFor);
+            $isApplyFor = $propertyType === 'dynamic-dictionary';
+            $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
+            if ($isApplyFor) {
+                $whiteList[] = 'key';
+            }
+
+            foreach ($result as $row) {
+                if (str_contains($row['key_name'], ' ')) {
+                    continue;
+                }
+
+                $variable = sprintf('value.%s', $row['key_name']);
+                if ($row['value_type'] === 'dynamic-dictionary') {
+                    foreach ($this->fetchItemsForDictionary($row['uuid']) as $value) {
+                        if (str_contains($value['key_name'], ' ')) {
+                            continue;
+                        }
+
+                        $whiteList[] = sprintf('%s.%s', $variable, $value['key_name']);
+                    }
+                }
+
+                $whiteList[] = $variable;
+            }
+
+            $this->applyForWhiteList = $whiteList;
+        }
+
+        $vars->setWhiteList($this->applyForWhiteList);
+
+        return $vars;
+    }
+
+    protected function fetchItemsForDictionary(string $uuid): array
+    {
+        $query = $this->db
+            ->select()
+            ->from(
+                ['dp' => 'director_property'],
+                [
+                    'key_name' => 'dp.key_name',
+                    'uuid' => 'dp.uuid',
+                    'value_type' => 'dp.value_type',
+                ]
+            )
+            ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
+            ->where("dp.parent_uuid = ?", $uuid);
+
+        return $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
 
 

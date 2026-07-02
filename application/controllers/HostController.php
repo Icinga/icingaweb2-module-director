@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Forms\HostServiceBlacklistForm;
+use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
@@ -12,11 +14,9 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use Exception;
-use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
-use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -25,7 +25,6 @@ use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\SelfService;
-use Icinga\Module\Director\Web\Table\IcingaHostAppliedForServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 
@@ -250,11 +249,19 @@ class HostController extends ObjectController
                 ->removeQueryLimit();
 
             if (count($table)) {
+                $deprecatedTable = clone $table;
                 $content->add(
                     $table->setTitle(sprintf(
                         $this->translate('Inherited from %s'),
                         $parent->getObjectName()
-                    ))
+                    )),
+                );
+
+                $content->add(
+                    $deprecatedTable->setTitle(sprintf(
+                        $this->translate('Inherited from %s (referencing deprecated Datafields)'),
+                        $parent->getObjectName(),
+                    ))->useDeprecatedLink()
                 );
             }
         }
@@ -268,23 +275,36 @@ class HostController extends ObjectController
 
         $appliedSets = AppliedServiceSetLoader::fetchForHost($host);
         foreach ($appliedSets as $set) {
-            $title = sprintf($this->translate('%s (Applied Service set)'), $set->getObjectName());
+            $servicesetserviceTable = IcingaServiceSetServiceTable::load($set)
+                ->setBranch($branch)
+                ->setAffectedHost($host)
+                ->removeQueryLimit();
+
+            $deprecatedservicesetserviceTable = clone $servicesetserviceTable;
+            $content->add($servicesetserviceTable->setTitle(sprintf(
+                $this->translate('%s (Applied Service set)'),
+                $set->getObjectName()
+            )));
 
             $content->add(
-                IcingaServiceSetServiceTable::load($set)
-                    // ->setHost($host)
-                    ->setBranch($branch)
-                    ->setAffectedHost($host)
-                    ->setTitle($title)
-                    ->removeQueryLimit()
+                $deprecatedservicesetserviceTable
+                    ->setTitle(sprintf($this->translate(
+                        '%s (Applied Service set [referencing deprecated Datafields])'
+                    ), $set->getObjectName()))
+                    ->useDeprecatedLink()
             );
         }
 
-        $table = IcingaHostAppliedServicesTable::load($host)
-            ->setTitle($this->translate('Applied services'));
+        $table = IcingaHostAppliedServicesTable::load($host);
 
         if (count($table)) {
-            $content->add($table);
+            $deprecatedTable = clone $table;
+            $content->add($table->setTitle($this->translate('Applied services')));
+            $content->add(
+                $deprecatedTable
+                    ->setTitle($this->translate('Applied services (referencing deprecated Datafields)'))
+                    ->useDeprecatedLink()
+            );
         }
     }
 
@@ -406,12 +426,23 @@ class HostController extends ObjectController
                 ->setHost($host)
                 ->setBranch($this->getBranch())
                 ->setAffectedHost($affectedHost)
-                ->removeQueryLimit()
-                ->setTitle($title);
+                ->removeQueryLimit();
+
+            $deprecatedTable = clone $table;
+
+            $table->setTitle($title);
+            $deprecatedTable
+                ->useDeprecatedLink()
+                ->setTitle(sprintf(
+                    $this->translate('%s (Service set [referencing deprecated Datafields])'),
+                    $name
+                ));
             if ($roService) {
                 $table->setReadonly()->highlightService($roService);
+                $deprecatedTable->setReadonly()->highlightService($roService);
             }
             $this->content()->add($table);
+            $this->content()->add($deprecatedTable);
         }
     }
 
@@ -426,12 +457,50 @@ class HostController extends ObjectController
         $parent = IcingaService::loadWithAutoIncId($serviceId, $db);
         $serviceName = $parent->getObjectName();
 
+        $this->addTitle(
+            $this->translate('Applied service: %s'),
+            $serviceName,
+        );
+
+        $deactivateForm = (new HostServiceBlacklistForm($db, $host, $parent))
+            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+                $this->redirectNow(Url::fromRequest());
+            })
+            ->handleRequest($this->getServerRequest());
+
+        if ($deactivateForm->hasBeenBlacklisted()) {
+            $this->content()->add(
+                Hint::warning($this->translate('This Service has been deactivated on this host'))
+            );
+            $this->content()->add($deactivateForm);
+        } else {
+            $this->controls()->prepend($deactivateForm);
+            $form = $this->prepareCustomPropertiesForm($parent, $host);
+            $form->setApplyGenerated($parent);
+            $form->setHostForService($host);
+            $this->content()->add($form->handleRequest($this->getServerRequest()));
+        }
+
+        $this->commonForServices();
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function appliedservicedeprecatedAction()
+    {
+        $db = $this->db();
+        $host = $this->getHostObject();
+        $serviceId = $this->params->get('service_id');
+        $parent = IcingaService::loadWithAutoIncId($serviceId, $db);
+        $serviceName = $parent->getObjectName();
+
         $service = IcingaService::create([
-            'imports'     => $parent,
+            'imports' => $parent,
             'object_type' => 'apply',
             'object_name' => $serviceName,
-            'host_id'     => $host->get('id'),
-            'vars'        => $host->getOverriddenServiceVars($serviceName),
+            'host_id' => $host->get('id'),
+            'vars' => $host->getOverriddenServiceVars($serviceName),
         ], $db);
 
         $this->addTitle(
@@ -455,16 +524,19 @@ class HostController extends ObjectController
     /**
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function inheritedserviceAction()
+    public function inheritedservicedeprecatedAction()
     {
         $db = $this->db();
         $host = $this->getHostObject();
         $serviceName = $this->params->get('service');
-        $from = IcingaHost::load($this->params->get('inheritedFrom'), $this->db());
+        $from = IcingaHost::load(
+            $this->params->get('inheritedFrom'),
+            $this->db()
+        );
 
         $parent = IcingaService::load([
             'object_name' => $serviceName,
-            'host_id'     => $from->get('id')
+            'host_id' => $from->get('id')
         ], $this->db());
 
         // TODO: we want to eventually show the host template name, doesn't work
@@ -474,12 +546,15 @@ class HostController extends ObjectController
         $service = IcingaService::create([
             'object_type' => 'apply',
             'object_name' => $serviceName,
-            'host_id'     => $host->get('id'),
-            'imports'     => [$parent],
-            'vars'        => $host->getOverriddenServiceVars($serviceName),
+            'host_id' => $host->get('id'),
+            'imports' => [$parent],
+            'vars' => $host->getOverriddenServiceVars($serviceName),
         ], $db);
 
-        $this->addTitle($this->translate('Inherited service: %s'), $serviceName);
+        $this->addTitle(
+            $this->translate('Inherited service: %s'),
+            $serviceName
+        );
 
         $form = IcingaServiceForm::load()
             ->setDb($db)
@@ -489,6 +564,53 @@ class HostController extends ObjectController
             ->setObject($service)
             ->handleRequest();
         $this->content()->add($form);
+        $this->commonForServices();
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function inheritedserviceAction()
+    {
+        $host = $this->getHostObject();
+        $serviceName = $this->params->get('service');
+        $db = $this->db();
+        $from = IcingaHost::load($this->params->get('inheritedFrom'), $db);
+        $parent = IcingaService::load([
+            'object_name' => $serviceName,
+            'host_id' => $from->get('id'),
+        ], $db);
+        $deactivateForm = (new HostServiceBlacklistForm($db, $host, $parent))
+            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+                $this->redirectNow(Url::fromRequest());
+            })
+            ->handleRequest($this->getServerRequest());
+
+        $this->addTitle(
+            $this->translate('Inherited service: %s'),
+            $serviceName
+        );
+        if ($deactivateForm->hasBeenBlacklisted()) {
+            $this->content()->add(
+                Hint::warning(
+                    $this->translate(
+                        'This Service has been deactivated on this host'
+                    )
+                )
+            );
+
+            $this->content()->add($deactivateForm);
+        } else {
+            $this->controls()->prepend($deactivateForm);
+            $form = $this->prepareCustomPropertiesForm($parent, $host);
+            $form->setInheritedServiceFrom($from->getObjectName());
+            $form->setHostForService($host);
+
+            $this->content()->add(
+                $form->handleRequest($this->getServerRequest())
+            );
+        }
+
         $this->commonForServices();
     }
 
@@ -511,7 +633,8 @@ class HostController extends ObjectController
             $this->params->get('setId')
         )->where('ss.host_id = ?', $this->object->get('id'));
 
-        IcingaServiceSet::loadWithAutoIncId($db->fetchOne($query), $this->db())->delete();
+        IcingaServiceSet::loadWithAutoIncId($db->fetchOne($query), $this->db())
+            ->delete();
         $this->redirectNow(
             Url::fromPath('director/host/services', array(
                 'name' => $this->object->getObjectName()
@@ -538,17 +661,73 @@ class HostController extends ObjectController
             $set = $setTemplate;
         }
 
-        $service = IcingaService::load([
+        $originalService = IcingaService::load([
             'object_name'    => $serviceName,
+            'service_set_id' => $setTemplate->get('id'),
+        ], $this->db());
+
+        // $set->copyVarsToService($service);
+        $this->addTitle(
+            $this->translate('%s on %s (from set: %s)'),
+            $serviceName,
+            $host->getObjectName(),
+            $set->getObjectName(),
+        );
+
+        $deactivateForm = (new HostServiceBlacklistForm($db, $host, $originalService))
+            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+                $this->redirectNow(Url::fromRequest());
+            })
+            ->handleRequest($this->getServerRequest());
+
+        if ($deactivateForm->hasBeenBlacklisted()) {
+            $this->content()->add(Hint::warning($this->translate('This Service has been deactivated on this host')));
+            $this->content()->add($deactivateForm);
+        } else {
+            $this->controls()->prepend($deactivateForm);
+            $form = $this->prepareCustomPropertiesForm($originalService, $host);
+            $form->setServiceSet($setTemplate);
+            $form->setHostForService($host);
+
+            $this->tabs()->activate('services');
+            $this->content()->add(
+                $form->handleRequest($this->getServerRequest())
+            );
+        }
+
+        $this->commonForServices();
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function servicesetservicedeprecatedAction()
+    {
+        $db = $this->db();
+        $host = $this->getHostObject();
+        $serviceName = $this->params->get('service');
+        $setParams = [
+            'object_name' => $this->params->get('set'),
+            'host_id' => $host->get('id'),
+        ];
+        $setTemplate = IcingaServiceSet::load($this->params->get('set'), $db);
+        if (IcingaServiceSet::exists($setParams, $db)) {
+            $set = IcingaServiceSet::load($setParams, $db);
+        } else {
+            $set = $setTemplate;
+        }
+
+        $service = IcingaService::load([
+            'object_name' => $serviceName,
             'service_set_id' => $setTemplate->get('id')
         ], $this->db());
         $service = IcingaService::create([
-            'id'          => $service->get('id'),
+            'id' => $service->get('id'),
             'object_type' => 'apply',
             'object_name' => $serviceName,
-            'host_id'     => $host->get('id'),
-            'imports'     => $service->listImportNames(),
-            'vars'        => $host->getOverriddenServiceVars($serviceName),
+            'host_id' => $host->get('id'),
+            'imports' => $service->listImportNames(),
+            'vars' => $host->getOverriddenServiceVars($serviceName),
         ], $db);
 
         // $set->copyVarsToService($service);

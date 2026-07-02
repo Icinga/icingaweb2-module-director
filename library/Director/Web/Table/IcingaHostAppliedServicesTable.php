@@ -30,6 +30,9 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     private $allApplyRules;
 
+    /** @var bool Use deprecated links instead of the new links for the services linked to hosts */
+    private $useDeprecatedLink = false;
+
     /**
      * @param IcingaHost $host
      * @return static
@@ -103,18 +106,31 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                 $applyFor = sprintf('(apply for %s) ', $row->apply_for);
             }
 
+            $url = 'director/host/appliedservice';
+
+            if ($this->useDeprecatedLink) {
+                $url .= 'deprecated';
+            }
+
             $link = Link::create(sprintf(
                 $this->translate('%s %s(%s)'),
                 $row->name,
                 $applyFor,
                 $this->renderApplyFilter($row->filter)
-            ), 'director/host/appliedservice', [
+            ), $url, [
                 'name'       => $this->host->getObjectName(),
                 'service_id' => $row->id,
             ]);
         }
 
         return $this::row([$link], $attributes);
+    }
+
+    public function useDeprecatedLink(bool $useDeprecatedLink = true): self
+    {
+        $this->useDeprecatedLink = $useDeprecatedLink;
+
+        return $this;
     }
 
     /**

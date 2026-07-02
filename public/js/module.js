@@ -637,6 +637,10 @@
         toggleFieldset: function (ev) {
             ev.stopPropagation();
             var $fieldset = $(ev.currentTarget).closest('fieldset');
+            if (! $fieldset.closest('form').hasClass('director-form')) {
+                return;
+            }
+
             $fieldset.toggleClass('collapsed');
             this.fixFieldsetInfo($fieldset);
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
@@ -731,7 +735,7 @@
                 url = $container.data('icingaUrl');
                 $actions = $('.main-actions', $('#col1'));
             }
-            if (! $actions.length) {
+            if ($actions) {
                 return;
             }
 
@@ -786,6 +790,10 @@
 
         restoreFieldsets: function (idx, form) {
             var $form = $(form);
+            if (! $form.hasClass('director-form')) {
+                return;
+            }
+
             var self = this;
             var $sets = $('fieldset', $form);
 
@@ -814,7 +822,7 @@
         },
 
         fixFieldsetInfo: function ($fieldset) {
-            if ($fieldset.hasClass('collapsed')) {
+            if ($fieldset.hasClass('collapsed') && $fieldset.closest('form').hasClass('director-form')) {
                 if ($fieldset.find('legend span.element-count').length === 0) {
                     var cnt = $fieldset.find('dt, li').not('.extensible-set li').length;
                     if (cnt > 0) {
