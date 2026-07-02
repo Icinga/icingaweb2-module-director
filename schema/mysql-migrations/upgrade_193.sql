@@ -1,6 +1,6 @@
 CREATE TABLE director_property (
-  uuid binary(16) NOT NULL,
-  parent_uuid binary(16) DEFAULT NULL,
+  uuid varbinary(16) NOT NULL,
+  parent_uuid varbinary(16) DEFAULT NULL,
   key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   label varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   value_type enum(
@@ -16,7 +16,7 @@ CREATE TABLE director_property (
   ) COLLATE utf8mb4_unicode_ci NOT NULL,
   category_id INT(10) UNSIGNED DEFAULT NULL,
   description text,
-  parent_uuid_v BINARY(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) STORED,
+  parent_uuid_v varbinary(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) STORED,
   PRIMARY KEY (uuid),
   UNIQUE INDEX unique_name_parent_uuid (key_name, parent_uuid_v),
   CONSTRAINT director_property_category
@@ -27,8 +27,8 @@ CREATE TABLE director_property (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_host_property (
-  host_uuid binary(16) NOT NULL,
-  property_uuid binary(16) NOT NULL,
+  host_uuid varbinary(16) NOT NULL,
+  property_uuid varbinary(16) NOT NULL,
   required enum('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (host_uuid, property_uuid),
   CONSTRAINT icinga_host_property_host
@@ -44,8 +44,8 @@ CREATE TABLE icinga_host_property (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_service_property (
-  service_uuid binary(16) NOT NULL,
-  property_uuid binary(16) NOT NULL,
+  service_uuid varbinary(16) NOT NULL,
+  property_uuid varbinary(16) NOT NULL,
   required enum('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (service_uuid, property_uuid),
   CONSTRAINT icinga_service_property_service
@@ -61,8 +61,8 @@ CREATE TABLE icinga_service_property (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_command_property (
- command_uuid binary(16) NOT NULL,
- property_uuid binary(16) NOT NULL,
+ command_uuid varbinary(16) NOT NULL,
+ property_uuid varbinary(16) NOT NULL,
  required enum('y', 'n') NOT NULL DEFAULT 'n',
  PRIMARY KEY (command_uuid, property_uuid),
  CONSTRAINT icinga_command_property_command
@@ -78,8 +78,8 @@ CREATE TABLE icinga_command_property (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_notification_property (
- notification_uuid binary(16) NOT NULL,
- property_uuid binary(16) NOT NULL,
+ notification_uuid varbinary(16) NOT NULL,
+ property_uuid varbinary(16) NOT NULL,
  required enum('y', 'n') NOT NULL DEFAULT 'n',
  PRIMARY KEY (notification_uuid, property_uuid),
  CONSTRAINT icinga_notification_property_notification
@@ -95,8 +95,8 @@ CREATE TABLE icinga_notification_property (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_service_set_property (
- service_set_uuid binary(16) NOT NULL,
- property_uuid binary(16) NOT NULL,
+ service_set_uuid varbinary(16) NOT NULL,
+ property_uuid varbinary(16) NOT NULL,
  required enum('y', 'n') NOT NULL DEFAULT 'n',
  PRIMARY KEY (service_set_uuid, property_uuid),
  CONSTRAINT icinga_service_set_property_service_set
@@ -112,8 +112,8 @@ CREATE TABLE icinga_service_set_property (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_user_property (
- user_uuid binary(16) NOT NULL,
- property_uuid binary(16) NOT NULL,
+ user_uuid varbinary(16) NOT NULL,
+ property_uuid varbinary(16) NOT NULL,
  required enum('y', 'n') NOT NULL DEFAULT 'n',
  PRIMARY KEY (user_uuid, property_uuid),
  CONSTRAINT icinga_user_property_user
@@ -132,8 +132,8 @@ ALTER TABLE director_datalist
     ADD UNIQUE KEY (uuid);
 
 CREATE TABLE director_property_datalist (
- list_uuid binary(16) NOT NULL,
- property_uuid binary(16) NOT NULL,
+ list_uuid varbinary(16) NOT NULL,
+ property_uuid varbinary(16) NOT NULL,
  PRIMARY KEY (list_uuid, property_uuid),
  CONSTRAINT director_list_property_list
      FOREIGN KEY list (list_uuid)
@@ -147,7 +147,7 @@ CREATE TABLE director_property_datalist (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
 ALTER TABLE icinga_host_var
-  ADD COLUMN property_uuid binary(16) DEFAULT NULL;
+  ADD COLUMN property_uuid varbinary(16) DEFAULT NULL;
 
 ALTER TABLE icinga_host_var
   ADD CONSTRAINT icinga_host_var_property_uuid
@@ -155,7 +155,7 @@ ALTER TABLE icinga_host_var
       REFERENCES director_property (uuid);
 
 ALTER TABLE icinga_service_var
-  ADD COLUMN property_uuid binary(16) DEFAULT NULL;
+  ADD COLUMN property_uuid varbinary(16) DEFAULT NULL;
 
 ALTER TABLE icinga_service_var
   ADD CONSTRAINT icinga_service_var_property_uuid
@@ -163,7 +163,7 @@ ALTER TABLE icinga_service_var
       REFERENCES director_property (uuid);
 
 ALTER TABLE icinga_command_var
-  ADD COLUMN property_uuid binary(16) DEFAULT NULL;
+  ADD COLUMN property_uuid varbinary(16) DEFAULT NULL;
 
 ALTER TABLE icinga_command_var
   ADD CONSTRAINT icinga_command_var_property_uuid
@@ -171,7 +171,7 @@ ALTER TABLE icinga_command_var
       REFERENCES director_property (uuid);
 
 ALTER TABLE icinga_notification_var
-  ADD COLUMN property_uuid binary(16) DEFAULT NULL;
+  ADD COLUMN property_uuid varbinary(16) DEFAULT NULL;
 
 ALTER TABLE icinga_notification_var
   ADD CONSTRAINT icinga_notification_var_property_uuid
@@ -179,7 +179,7 @@ ALTER TABLE icinga_notification_var
       REFERENCES director_property (uuid);
 
 ALTER TABLE icinga_service_set_var
-  ADD COLUMN property_uuid binary(16) DEFAULT NULL;
+  ADD COLUMN property_uuid varbinary(16) DEFAULT NULL;
 
 ALTER TABLE icinga_service_set_var
   ADD CONSTRAINT icinga_service_set_var_property_uuid
@@ -187,7 +187,7 @@ ALTER TABLE icinga_service_set_var
       REFERENCES director_property (uuid);
 
 ALTER TABLE icinga_user_var
-  ADD COLUMN property_uuid binary(16) DEFAULT NULL;
+  ADD COLUMN property_uuid varbinary(16) DEFAULT NULL;
 
 ALTER TABLE icinga_user_var
   ADD CONSTRAINT icinga_user_var_property_uuid
