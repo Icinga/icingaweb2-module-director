@@ -41,7 +41,6 @@ class JobsController extends ActionController
 
     protected function deleteJob($name)
     {
-        // Use direct SQL to avoid ORM hooks that may throw in production.
         $db = $this->db()->getDbAdapter();
         $id = (int) $db->fetchOne(
             $db->select()->from('director_job', 'id')->where('job_name = ?', $name)
