@@ -275,7 +275,7 @@ CREATE TABLE director_property (
     REFERENCES director_datafield_category (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 ALTER TABLE director_datalist
     ADD UNIQUE KEY (uuid);
@@ -716,7 +716,7 @@ CREATE TABLE icinga_host_property (
       REFERENCES director_property (uuid)
       ON DELETE CASCADE
       ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_host_var (
   host_id INT(10) UNSIGNED NOT NULL,
