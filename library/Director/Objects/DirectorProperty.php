@@ -47,14 +47,24 @@ class DirectorProperty extends DbObject
 
     protected function setDbProperties($properties)
     {
-        unset($properties->parent_uuid_v); // hack to ignore virtual column, need a better solution
+        $connection = $this->getConnection();
+        if (! is_array($properties)) {
+            $properties = (array) $properties;
+        }
+
+        if ($connection && $connection->isMysql() && isset($properties['parent_uuid_v'])) {
+            unset($properties['parent_uuid_v']); // hack to ignore virtual column, need a better solution
+        }
 
         return parent::setDbProperties($properties);
     }
 
     public function setProperties($props)
     {
-        unset($props['parent_uuid_v']);
+        $connection = $this->getConnection();
+        if ($connection && $connection->isMysql() && isset($props['parent_uuid_v'])) {
+            unset($props['parent_uuid_v']);
+        }
 
         return parent::setProperties($props);
     }
