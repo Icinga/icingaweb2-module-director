@@ -237,9 +237,14 @@ class DeleteCustomVariableForm extends CompatForm
         $db->getDbAdapter()->beginTransaction();
         $prop = $this->property;
 
-        if (str_starts_with($prop['value_type'], 'datalist-')) {
-            $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedUuid));
-        }
+        // A dictionary can be nested arbitrarily deep (dictionary -> dictionary -> ...),
+        // and any level of that nesting might itself be a datalist-backed field. Hence,
+        // any links between datalists and children or grandchildren in the hierarchy must
+        // also be removed.
+        $allUuids = array_merge([$uuid], $this->collectDescendantUuids($uuid));
+        $quotedAllUuids = DbUtil::quoteBinaryCompat($allUuids, $this->db->getDbAdapter());
+
+        $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedAllUuids));
 
         $this->removeObjectCustomVars($prop, $this->parent);
         $this->removeFromOverrideServiceVars($prop, $this->parent);
@@ -249,10 +254,38 @@ class DeleteCustomVariableForm extends CompatForm
             $this->db->delete("icinga_{$object}_var", Filter::where('property_uuid', $quotedUuid));
         }
 
-        $db->delete('director_property', Filter::where('uuid', $quotedUuid));
-        $db->delete('director_property', Filter::where('parent_uuid', $quotedUuid));
+        $db->delete('director_property', Filter::where('uuid', $quotedAllUuids));
 
         $db->getDbAdapter()->commit();
+    }
+
+    /**
+     * Recursively collect the raw binary UUIDs of all descendants (children and
+     * grandchildren) of the property with the given raw binary UUID.
+     *
+     * @param string $uuid Raw binary UUID of the property to start from
+     *
+     * @return string[] Raw binary UUIDs of all descendants, not including $uuid itself
+     */
+    private function collectDescendantUuids(string $uuid): array
+    {
+        $dba = $this->db->getDbAdapter();
+        $descendants = [];
+        $parents = [$uuid];
+
+        while (! empty($parents)) {
+            $children = $dba->fetchCol(
+                $dba->select()
+                    ->from('director_property', ['uuid'])
+                    ->where('parent_uuid IN (?)', DbUtil::quoteBinaryCompat($parents, $dba))
+            );
+            $children = array_map([DbUtil::class, 'binaryResult'], $children);
+
+            $descendants = array_merge($descendants, $children);
+            $parents = $children;
+        }
+
+        return $descendants;
     }
 
     /**
