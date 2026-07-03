@@ -145,6 +145,7 @@ CREATE TABLE director_property_datalist (
   list_uuid bytea CHECK(LENGTH(list_uuid) = 16) NOT NULL,
   property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
   PRIMARY KEY (list_uuid, property_uuid),
+  UNIQUE (property_uuid),
   CONSTRAINT director_list_property_list
     FOREIGN KEY (list_uuid)
       REFERENCES director_datalist (uuid)

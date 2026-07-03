@@ -284,6 +284,7 @@ CREATE TABLE director_property_datalist (
  list_uuid varbinary(16) NOT NULL,
  property_uuid varbinary(16) NOT NULL,
  PRIMARY KEY (list_uuid, property_uuid),
+ UNIQUE KEY unique_property_uuid (property_uuid),
  CONSTRAINT director_list_property_list
      FOREIGN KEY list (list_uuid)
          REFERENCES director_datalist (uuid)
