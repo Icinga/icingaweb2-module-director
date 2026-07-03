@@ -538,19 +538,31 @@ class CustomVariableForm extends CompatForm
         if (! $used) {
             $dbProperty = $this->fetchProperty($this->uuid);
             if ($dbProperty['value_type'] !== $valueType) {
-                $this->db->delete(
-                    'director_property',
-                    Filter::matchAll(Filter::where(
-                        'parent_uuid',
-                        Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter())
-                    ))
-                );
+                $db = $this->db->getDbAdapter();
+                // A dictionary can be nested arbitrarily deep (dictionary -> dictionary -> ...),
+                // and any level of that nesting might itself be a datalist-backed field. Hence,
+                // any links between datalists and children or grandchildren in the hierarchy must
+                // also be removed.
+                $descendantUuids = $this->collectDescendantUuids($this->uuid->getBytes());
+
+                if (! empty($descendantUuids)) {
+                    $this->db->delete(
+                        'director_property',
+                        Filter::matchAll(Filter::where(
+                            'uuid',
+                            Db\DbUtil::quoteBinaryCompat($descendantUuids, $db)
+                        ))
+                    );
+                }
 
                 $this->db->delete(
                     'director_property_datalist',
                     Filter::matchAll(Filter::where(
                         'property_uuid',
-                        Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter())
+                        Db\DbUtil::quoteBinaryCompat(
+                            array_merge([$this->uuid->getBytes()], $descendantUuids),
+                            $db
+                        )
                     ))
                 );
 
@@ -599,6 +611,35 @@ class CustomVariableForm extends CompatForm
             $values,
             Filter::where('uuid', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()))
         );
+    }
+
+    /**
+     * Recursively collect the raw binary UUIDs of all descendants (children,
+     * grandchildren, ...) of the property with the given raw binary UUID.
+     *
+     * @param string $uuid Raw binary UUID of the property to start from
+     *
+     * @return string[] Raw binary UUIDs of all descendants, not including $uuid itself
+     */
+    private function collectDescendantUuids(string $uuid): array
+    {
+        $db = $this->db->getDbAdapter();
+        $descendants = [];
+        $parents = [$uuid];
+
+        while (! empty($parents)) {
+            $children = $db->fetchCol(
+                $db->select()
+                    ->from('director_property', ['uuid'])
+                    ->where('parent_uuid IN (?)', Db\DbUtil::quoteBinaryCompat($parents, $db))
+            );
+            $children = array_map([Db\DbUtil::class, 'binaryResult'], $children);
+
+            $descendants = array_merge($descendants, $children);
+            $parents = $children;
+        }
+
+        return $descendants;
     }
 
     /**
