@@ -177,6 +177,7 @@ $section->add(N_('Deployments'))
     ->setPermission(Permission::DEPLOYMENTS);
 $section->add(N_('Custom Variables'))
     ->setUrl('director/variables')
+    ->setPermission(Permission::ADMIN)
     ->setPriority(903);
 
 $cssDirectory = $this->getCssDir();

@@ -38,6 +38,8 @@ class CustomvarController extends CompatController
     {
         parent::init();
 
+        $this->assertPermission('director/admin');
+
         $uuid = $this->params->shift('uuid');
         if ($uuid !== null) {
             $this->uuid = Uuid::fromString($uuid);

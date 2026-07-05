@@ -15,6 +15,13 @@ use ipl\Web\Widget\ButtonLink;
 
 class VariablesController extends CompatController
 {
+    protected function prepareInit()
+    {
+        parent::prepareInit();
+
+        $this->assertPermission('director/admin');
+    }
+
     public function indexAction(): void
     {
         $this->addTitleTab($this->translate('Custom Variables'));
