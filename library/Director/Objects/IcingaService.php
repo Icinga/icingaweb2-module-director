@@ -746,7 +746,10 @@ class IcingaService extends IcingaObject implements ExportInterface
                 ]
             )
             ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
-            ->where("dp.parent_uuid = ?", $uuid);
+            ->where(
+                'dp.parent_uuid = ?',
+                Db\DbUtil::quoteBinaryCompat(Db\DbUtil::binaryResult($uuid), $this->db)
+            );
 
         return $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
     }
