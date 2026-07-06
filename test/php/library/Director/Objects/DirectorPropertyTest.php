@@ -221,6 +221,125 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals($listName, $restored->getDatalist()->get('list_name'));
     }
 
+    /**
+     * Regression test: restoring a dynamic-dictionary property whose CHILD references a
+     * datalist that does not exist yet in the target database must not fail with
+     * "SQLSTATE[23000]: ..." error (a brand-new DirectorDatalist
+     * created during import() must be persisted before onStore() reads its uuid).
+     */
+    public function testDatalistChildOfDynamicDictionaryIsPersistedWhenListDoesNotExistYet(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $parentKeyName = self::PREFIX . 'dict_with_new_list_child';
+        $listName = self::PREFIX . 'never_seen_list_child';
+        $this->createdKeyNames[] = $parentKeyName;
+        $this->createdListNames[] = $listName;
+
+        $this->assertFalse(DirectorDatalist::exists($listName, $db), 'Precondition: datalist must not exist yet');
+
+        $parentUuid = Uuid::uuid4()->toString();
+        $plain = (object) [
+            'uuid'        => $parentUuid,
+            'key_name'    => $parentKeyName,
+            'value_type'  => 'dynamic-dictionary',
+            'label'       => 'Dict With New List Child',
+            'parent_uuid' => null,
+            'category'    => null,
+            'description' => null,
+            'items'       => [
+                'choice' => $this->datalistItemPlain('choice', $parentUuid, $listName),
+            ],
+        ];
+
+        $imported = DirectorProperty::import($plain, $db);
+        $imported->store();
+        foreach ($imported->fetchItemsFromDb() as $child) {
+            $child->store();
+        }
+
+        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromString($parentUuid), $db);
+        $items = $reloaded->fetchItemsFromDb();
+        $this->assertCount(1, $items);
+
+        $childDatalist = $items[0]->getDatalist();
+        $this->assertNotNull(
+            $childDatalist,
+            'Newly created datalist referenced by a dictionary child must be persisted and linked'
+        );
+        $this->assertEquals($listName, $childDatalist->get('list_name'));
+        $this->assertNotNull($childDatalist->get('uuid'), 'Newly created datalist must have a persisted uuid');
+    }
+
+    /**
+     * Same regression as above, one level deeper: the not-yet-existing datalist is referenced
+     * by a GRANDCHILD (dynamic-dictionary -> fixed-dictionary -> datalist-strict).
+     */
+    public function testDatalistGrandchildOfDynamicDictionaryIsPersistedWhenListDoesNotExistYet(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $parentKeyName = self::PREFIX . 'dict_with_new_list_grandchild';
+        $listName = self::PREFIX . 'never_seen_list_grandchild';
+        $this->createdKeyNames[] = $parentKeyName;
+        $this->createdListNames[] = $listName;
+
+        $this->assertFalse(DirectorDatalist::exists($listName, $db), 'Precondition: datalist must not exist yet');
+
+        $parentUuid = Uuid::uuid4()->toString();
+        $groupUuid = Uuid::uuid4()->toString();
+        $plain = (object) [
+            'uuid'        => $parentUuid,
+            'key_name'    => $parentKeyName,
+            'value_type'  => 'dynamic-dictionary',
+            'label'       => 'Dict With New List Grandchild',
+            'parent_uuid' => null,
+            'category'    => null,
+            'description' => null,
+            'items'       => [
+                'group' => (object) [
+                    'uuid'        => $groupUuid,
+                    'key_name'    => 'group',
+                    'value_type'  => 'fixed-dictionary',
+                    'label'       => null,
+                    'parent_uuid' => $parentUuid,
+                    'category'    => null,
+                    'description' => null,
+                    'items'       => [
+                        'choice' => $this->datalistItemPlain('choice', $groupUuid, $listName),
+                    ],
+                ],
+            ],
+        ];
+
+        $imported = DirectorProperty::import($plain, $db);
+        $imported->store();
+        foreach ($imported->fetchItemsFromDb() as $child) {
+            $child->store();
+            foreach ($child->fetchItemsFromDb() as $grandchild) {
+                $grandchild->store();
+            }
+        }
+
+        $reloadedGroup = DirectorProperty::loadWithUniqueId(Uuid::fromString($groupUuid), $db);
+        $grandchildren = $reloadedGroup->fetchItemsFromDb();
+        $this->assertCount(1, $grandchildren);
+
+        $grandchildDatalist = $grandchildren[0]->getDatalist();
+        $this->assertNotNull(
+            $grandchildDatalist,
+            'Newly created datalist referenced by a dictionary grandchild must be persisted and linked'
+        );
+        $this->assertEquals($listName, $grandchildDatalist->get('list_name'));
+        $this->assertNotNull($grandchildDatalist->get('uuid'), 'Newly created datalist must have a persisted uuid');
+    }
+
     public function testExportRoundTrip(): void
     {
         if ($this->skipForMissingDb()) {
@@ -313,9 +432,20 @@ class DirectorPropertyTest extends BaseTestCase
                     $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', $keyName)
                 );
                 foreach ($rows as $row) {
-                    $quotedUuid = DbUtil::quoteBinaryCompat(DbUtil::binaryResult($row->uuid), $dba);
-                    $dba->delete('director_property', $dba->quoteInto('parent_uuid = ?', $quotedUuid));
-                    $dba->delete('director_property_datalist', $dba->quoteInto('property_uuid = ?', $quotedUuid));
+                    $uuid = DbUtil::binaryResult($row->uuid);
+                    $descendants = $this->collectDescendantUuids($uuid, $dba);
+                    foreach (array_merge([$uuid], $descendants) as $descendantUuid) {
+                        $dba->delete(
+                            'director_property_datalist',
+                            $dba->quoteInto('property_uuid = ?', DbUtil::quoteBinaryCompat($descendantUuid, $dba))
+                        );
+                    }
+                    foreach ($descendants as $descendantUuid) {
+                        $dba->delete(
+                            'director_property',
+                            $dba->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($descendantUuid, $dba))
+                        );
+                    }
                 }
                 $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
             }
@@ -328,6 +458,29 @@ class DirectorPropertyTest extends BaseTestCase
         }
 
         parent::tearDown();
+    }
+
+    /**
+     * Recursively collect the raw binary UUIDs of all descendants (children, grandchildren, ...)
+     * of the property with the given raw binary UUID, not including $uuid itself.
+     */
+    private function collectDescendantUuids(string $uuid, $dba): array
+    {
+        $descendants = [];
+        $parents = [$uuid];
+
+        while (! empty($parents)) {
+            $children = $dba->fetchCol(
+                $dba->select()->from('director_property', ['uuid'])
+                    ->where('parent_uuid IN (?)', DbUtil::quoteBinaryCompat($parents, $dba))
+            );
+            $children = array_map([DbUtil::class, 'binaryResult'], $children);
+
+            $descendants = array_merge($descendants, $children);
+            $parents = $children;
+        }
+
+        return $descendants;
     }
 
     private function makeProperty(string $suffix, string $valueType, string $label, Db $db): DirectorProperty
@@ -348,6 +501,25 @@ class DirectorPropertyTest extends BaseTestCase
         $this->createdListNames[] = $listName;
 
         return DirectorDatalist::create(['list_name' => $listName, 'owner' => 'test'], $db);
+    }
+
+    /**
+     * Build the plain export shape of a datalist-strict property nested under $parentUuid,
+     * referencing a datalist by name (as DirectorProperty::export() would produce it).
+     */
+    private function datalistItemPlain(string $keyName, string $parentUuid, string $listName): object
+    {
+        return (object) [
+            'uuid'        => Uuid::uuid4()->toString(),
+            'key_name'    => $keyName,
+            'value_type'  => 'datalist-strict',
+            'label'       => null,
+            'parent_uuid' => $parentUuid,
+            'category'    => null,
+            'description' => null,
+            'datalist'    => $listName,
+            'items'       => [],
+        ];
     }
 
     /**
