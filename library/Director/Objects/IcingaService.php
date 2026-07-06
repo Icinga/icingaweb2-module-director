@@ -694,10 +694,16 @@ class IcingaService extends IcingaObject implements ExportInterface
             $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
 
             $propertyType = $this->fetchApplyForPropertyType($applyFor);
-            $isApplyFor = $propertyType === 'dynamic-dictionary';
+            $isApplyForDictionary = $propertyType === 'dynamic-dictionary';
             $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
-            if ($isApplyFor) {
+            if ($isApplyForDictionary) {
                 $whiteList[] = 'key';
+            } else {
+                // Legacy alias: before the loop variable was renamed, custom variable
+                // strings could reference the plain-array apply-for loop value as $config$.
+                // Those stored strings survive an upgrade unchanged, so keep resolving them
+                // to what is now called "value" instead of silently leaving them literal.
+                $whiteList['config'] = 'value';
             }
 
             foreach ($result as $row) {

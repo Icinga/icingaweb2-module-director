@@ -234,6 +234,32 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
+    public function testApplyForConfigMacroStaysBackwardCompatibleWithValue()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        // Before the plain-array apply-for loop variable was renamed from "config" to
+        // "value", existing installations may have stored custom variable strings that
+        // reference the old macro name (e.g. "/dev/$config$"). Those strings live untouched
+        // in the database across an upgrade, so the renderer must still resolve "$config$",
+        // to the same loop variable now named "value", instead of silently leaving it
+        // as literal, un-substituted text in the compiled Icinga 2 configuration.
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.test1';
+        $service->assign_filter = 'host.vars.env="test"';
+        $service->{'vars.legacy_macro'} = '/dev/$config$';
+
+        $this->assertStringContainsString(
+            'vars.legacy_macro = "/dev/" + value',
+            (string) $service
+        );
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(

@@ -396,7 +396,9 @@ class IcingaConfigHelper
             return $hasMacroPattern;
         }
 
-        if (in_array($name, $whiteList, true)) {
+        // A string key maps a legacy macro alias to the name it should be rendered as,
+        // e.g. ['config' => 'value'] keeps a pre-rename $config$ macro resolving correctly.
+        if (array_key_exists($name, $whiteList) || in_array($name, $whiteList, true)) {
             return true;
         }
 
@@ -441,7 +443,8 @@ class IcingaConfigHelper
                                 );
                             }
 
-                            $parts[] = $macroName;
+                            $alias = $whiteList[$macroName] ?? null;
+                            $parts[] = is_string($alias) ? $alias : $macroName;
                             $offset = $i + 1;
                         }
 
