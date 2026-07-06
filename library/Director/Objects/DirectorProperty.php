@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Authentication\Auth;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
@@ -257,6 +258,40 @@ class DirectorProperty extends DbObject
 
 
     /**
+     * Resolve a datalist referenced by name during basket import
+     *
+     * If no datalist with this name exists yet in the target database, a new one is created
+     * and persisted immediately, so that it has a uuid by the time onStore() links it to this
+     * property, and so that sibling properties referencing the same not-yet-existing list name
+     * resolve to the very same row instead of each creating their own duplicate.
+     *
+     * @param mixed $datalistName
+     * @param Db    $db
+     *
+     * @return ?DirectorDatalist
+     */
+    private static function resolveImportedDatalist($datalistName, Db $db): ?DirectorDatalist
+    {
+        $datalist = DirectorDatalist::loadOptional($datalistName, $db);
+        if (! $datalist && is_string($datalistName)) {
+            $datalist = DirectorDatalist::create([
+                'list_name' => $datalistName,
+                'owner'     => static::currentUsername(),
+            ], $db);
+            $datalist->store($db);
+        }
+
+        return $datalist;
+    }
+
+    private static function currentUsername(): string
+    {
+        $auth = Auth::getInstance();
+
+        return $auth->isAuthenticated() ? $auth->getUser()->getUsername() : '<unknown>';
+    }
+
+    /**
      * @throws NotFoundError
      */
     public static function import(stdClass $plain, Db $db): static
@@ -272,18 +307,22 @@ class DirectorProperty extends DbObject
         if ($uuid) {
             $uuid = Uuid::fromString($uuid);
             if (isset($plain->datalist)) {
-                $datalist = DirectorDatalist::loadOptional($plain->datalist, $db);
-                if (! $datalist && is_string($plain->datalist)) {
-                    $datalist = DirectorDatalist::create(['list_name' => $plain->datalist], $db);
-                }
-
+                $datalist = static::resolveImportedDatalist($plain->datalist, $db);
                 unset($plain->datalist);
             }
 
             $candidate = DirectorProperty::loadWithUniqueId($uuid, $db);
             if ($candidate) {
                 assert($candidate instanceof DirectorProperty);
+                if (isset($plain->parent_uuid)) {
+                    $plain->parent_uuid = Uuid::fromString($plain->parent_uuid)->getBytes();
+                }
+
                 $candidate->setProperties((array) $plain);
+                if ($datalist) {
+                    $candidate->datalist = $datalist;
+                }
+
                 $candidate->items = $candidate->importItems((array) $items, $db);
 
                 return $candidate;
@@ -414,11 +453,7 @@ class DirectorProperty extends DbObject
 
             $datalist = null;
             if (isset($value->datalist)) {
-                $datalist = DirectorDatalist::loadOptional($value->datalist, $db);
-                if (! $datalist && is_string($value->datalist)) {
-                    $datalist = DirectorDatalist::create(['list_name' => $value->datalist], $db);
-                }
-
+                $datalist = static::resolveImportedDatalist($value->datalist, $db);
                 unset($value->datalist);
             }
 
