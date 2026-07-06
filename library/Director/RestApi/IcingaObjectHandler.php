@@ -249,8 +249,8 @@ class IcingaObjectHandler extends RequestHandler
                 }
 
                 $objectVars = $object->vars();
-                if ($this->object->get('id') && $request->getMethod() === 'PUT') {
-                    $objectWhere = $db->getDbAdapter()->quoteInto("{$type}_id = ?", $this->object->get('id'));
+                if ($object->get('id') && $request->getMethod() === 'PUT') {
+                    $objectWhere = $db->getDbAdapter()->quoteInto("{$type}_id = ?", $object->get('id'));
                     $dbAdapter = $db->getDbAdapter();
                     $dbAdapter->beginTransaction();
                     $dbAdapter->delete(
@@ -259,7 +259,7 @@ class IcingaObjectHandler extends RequestHandler
                     );
 
                     $uuidExpr = DbUtil::quoteBinaryCompat(
-                        DbUtil::binaryResult($this->object->get('uuid')),
+                        DbUtil::binaryResult($object->get('uuid')),
                         $dbAdapter
                     );
                     $dbAdapter->delete(
