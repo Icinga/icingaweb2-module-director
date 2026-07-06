@@ -294,6 +294,7 @@ CREATE TABLE director_property_datalist (
      FOREIGN KEY property (property_uuid)
          REFERENCES director_property (uuid)
          ON DELETE CASCADE
+         ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
 CREATE TABLE icinga_zone (
