@@ -270,15 +270,13 @@ class CustomVariableForm extends CompatForm
             );
 
             if ($used) {
-                $this->getElement('item_type')
-                     ->setAttribute(
-                         'title',
-                         $this->translate(
-                             'This property is used in one or more templates'
-                             . ' and hence the item type cannot be changed.'
-                         )
-                     )
-                     ->setAttribute('disabled', true);
+                $this->getElement('item_type')->getAttributes()->set([
+                    'title' => $this->translate(
+                        'This property is used in one or more templates'
+                        . ' and hence the item type cannot be changed.'
+                    ),
+                    'disabled' => true,
+                ]);
             }
         }
 
