@@ -369,7 +369,7 @@ class IcingaService extends IcingaObject implements ExportInterface
 
             $propertyType = $this->fetchApplyForPropertyType($applyForVar);
             $isApplyFor = $propertyType === 'dynamic-dictionary';
-            $varName = '"' . $name . '"';
+            $varName = c::renderString($name);
 
             if (c::stringHasMacro($name)) {
                 $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
