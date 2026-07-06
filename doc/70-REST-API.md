@@ -231,11 +231,11 @@ director/host?name=pe2015.example.com&resolved
 JSON is pretty-printed per default, at least for PHP >= 5.4
 
 <a id="Custom-Variables"></a>Custom Variables
--------------------------------------------------
+---------------------------------------------
 
 Custom variable values on an existing object can also be updated
 directly, without having to submit the whole object, using a dedicated
-endpoint:
+endpoint.
 
     POST director/<objectType>/variables?<params>
     PUT  director/<objectType>/variables?<params>
@@ -246,14 +246,14 @@ all accepted, matching the types described in
 [Working with custom variables](12-Handling-custom-variables.md). The
 custom variable must already be configured under `Custom Variables`
 **and** already be attached to (or inherited from) the object you are
-updating. Sending a variable that isn't yet configured under `Custom
-Variables` at all always returns a `404 Not Found`, regardless of method
--- see [Error: variable not configured](#Custom-Variables-not-configured)
-below.
+updating. What happens when a variable isn't attached yet depends on the
+method and the object type. See [Attaching a variable to a template for
+the first time](#Custom-Variables-attach-template) and
+[Variable not configured](#Custom-Variables-not-configured) below.
 
 As with the general `POST`/`PUT` semantics described above, the two
 methods differ in how they treat variables you don't mention in the
-body:
+body.
 
 * `POST` **merges**: only the keys you send are touched, all other
   existing variables on the object are left untouched.
@@ -323,6 +323,11 @@ body:
 
 ##### Response
 
+Just like `GET` on the object's base endpoint, the response is the
+**full object**, not just the variables you sent; `vars` contains every
+custom variable currently set on `apitest`, including ones this call
+didn't touch.
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -330,11 +335,16 @@ Content-Type: application/json
 
 ```json
 {
-    "environment": "production",
-    "owner_teams": [
-        "networking",
-        "platform"
-    ]
+    "object_name": "apitest",
+    "object_type": "object",
+    "address": "127.0.0.1",
+    "vars": {
+        "environment": "production",
+        "owner_teams": [
+            "networking",
+            "platform"
+        ]
+    }
 }
 ```
 
@@ -351,14 +361,15 @@ before:
 { "environment": "production" }
 ```
 
-#### Attaching a variable to a template for the first time
+<a id="Custom-Variables-attach-template"></a>#### Attaching a variable to a template for the first time
+-------------------------------------------------------------------------------------------------------
 
 Both `POST` and `PUT` can update the value of a variable that is
 already attached to the object (or inherited from one of its imported
 templates). Only `PUT`, and only when the target object is itself a
 **template**, can additionally attach a variable that is configured
-under `Custom Variables` but not yet used on that template -- Director
-creates the attachment and then stores the value in the same call:
+under `Custom Variables` but not yet used on that template; Director
+creates the attachment and then stores the value in the same call.
 
     PUT director/host/variables?name=generic-host
 
@@ -368,7 +379,7 @@ creates the attachment and then stores the value in the same call:
 
 Sending the very same body with `POST` instead fails, because `POST` is
 not allowed to change which custom variables are attached to a
-template:
+template.
 
 ```
 HTTP/1.1 404 Not Found
@@ -382,9 +393,9 @@ Content-Type: application/json
 ```
 
 The same restriction applies to non-template objects (hosts, services,
-...) regardless of method: a variable must first be attached to one of
+...) regardless of method. A variable must first be attached to one of
 the object's imported templates before it can be set on the object
-itself:
+itself.
 
 ```
 HTTP/1.1 404 Not Found
@@ -397,10 +408,17 @@ Content-Type: application/json
 }
 ```
 
-<a id="Custom-Variables-not-configured"></a>#### Error: variable not configured
+<a id="Custom-Variables-not-configured"></a>#### Variable not configured
 
-Trying to set a variable that hasn't been configured under `Custom
-Variables` at all yet returns a `404`, for both `POST` and `PUT`:
+The message depends on how the variable is unknown.
+
+* On `POST`, or on `PUT` to a non-template object, a variable that isn't
+  yet attached to the object gets the same "should be first added..."
+  error shown above, whether or not it has been configured under `Custom
+  Variables` elsewhere.
+* Only `PUT` to a **template** distinguishes the case where the variable
+  has never been configured under `Custom Variables` at all, meaning
+  there is no matching top-level entry in `Custom Variables` to attach.
 
 ```
 HTTP/1.1 404 Not Found
@@ -409,21 +427,21 @@ Content-Type: application/json
 
 ```json
 {
-    "error": "No such custom variable: unknown_var"
+    "error": "'unknown_var' is not configured in Icinga Director as a custom variable"
 }
 ```
 
 #### GET
 
-`GET` is also accepted on this endpoint:
+`GET` is also accepted on this endpoint.
 
     GET director/host/variables?name=apitest
 
 It behaves exactly like `GET` on the object's base endpoint
 (`director/host?name=apitest`) and returns the full object, not just
-its custom variables -- there's no dedicated "variables only" response.
+its custom variables; there's no dedicated "variables only" response.
 Use the `properties` parameter if you only want the `vars` property
-back:
+back.
 
     GET director/host/variables?name=apitest&properties=vars
 
