@@ -257,10 +257,9 @@ body.
 
 * `POST` **merges**: only the keys you send are touched, all other
   existing variables on the object are left untouched.
-* `PUT` **replaces**: every custom variable set directly on the object
-  is removed first, then the ones from the body are (re-)applied. Values
-  inherited from templates are not affected either way, since they
-  aren't stored on the object itself.
+* `PUT` **replaces**: All the custom variables in the object are replaced with 
+  the ones in the body . Values inherited from templates are not affected either 
+  way, since they aren't stored on the object itself.
 
 #### Setting a `string` variable
 

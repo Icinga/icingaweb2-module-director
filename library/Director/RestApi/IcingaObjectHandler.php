@@ -7,18 +7,15 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
-use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Exporter;
-use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\OverrideHelper;
 use InvalidArgumentException;
-use PDO;
-use Ramsey\Uuid\Uuid;
 use RuntimeException;
+use stdClass;
 
 class IcingaObjectHandler extends RequestHandler
 {
@@ -73,12 +70,53 @@ class IcingaObjectHandler extends RequestHandler
             );
         }
 
+        static::assertJsonBodyIsObject($data);
+
         return $data;
     }
 
     protected function getType()
     {
         return $this->request->getControllerName();
+    }
+
+    /**
+     * Assert that DELETE is being used on the object endpoint itself
+     *
+     * DELETE is not defined for the variables sub resource, only for the
+     * whole object.
+     *
+     * @param string $actionName
+     *
+     * @throws NotFoundError
+     */
+    public static function assertDeleteAllowed(string $actionName): void
+    {
+        if ($actionName !== 'index') {
+            throw new NotFoundError('Not found');
+        }
+    }
+
+    /**
+     * Assert that a decoded JSON body is a JSON object
+     *
+     * The REST API always expects a map of property names to values at the
+     * top level, never a plain JSON array. This throws InvalidArgumentException,
+     * not IcingaException, so that processApiRequest() maps it to HTTP 422
+     * the same way it maps every other malformed override.
+     *
+     * @param mixed $decoded
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function assertJsonBodyIsObject(mixed $decoded): void
+    {
+        if (! $decoded instanceof stdClass) {
+            throw new InvalidArgumentException(sprintf(
+                'Invalid JSON body, expected a JSON object, got %s',
+                get_debug_type($decoded)
+            ));
+        }
     }
 
     protected function processApiRequest()
@@ -91,6 +129,9 @@ class IcingaObjectHandler extends RequestHandler
         } catch (DuplicateKeyException $e) {
             $this->sendJsonError($e, 422);
             return;
+        } catch (InvalidArgumentException $e) {
+            $this->sendJsonError($e, 422);
+            return;
         } catch (Exception $e) {
             $this->sendJsonError($e);
         }
@@ -98,49 +139,6 @@ class IcingaObjectHandler extends RequestHandler
         if ($this->request->getActionName() !== 'index' && $this->request->getActionName() !== 'variables') {
             throw new NotFoundError('Not found');
         }
-    }
-
-    /**
-     * Get the custom properties linked to the given object.
-     *
-     * @param IcingaObject $object
-     *
-     * @return array
-     */
-    public function getObjectCustomProperties(IcingaObject $object): array
-    {
-        if ($object->get('uuid') === null) {
-            return [];
-        }
-
-        $type = $object->getShortTableName();
-        $db = $object->getConnection();
-        $ids = $object->listAncestorIds();
-        $ids[] = $object->get('id');
-        $query = $db->getDbAdapter()
-                    ->select()
-                    ->from(
-                        ['dp' => 'director_property'],
-                        [
-                            'key_name' => 'dp.key_name',
-                            'uuid' => 'dp.uuid',
-                            'value_type' => 'dp.value_type',
-                            'label' => 'dp.label'
-                        ]
-                    )
-                    ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
-                    ->join(['io' => "icinga_$type"], 'io.uuid = iop.' . $type . '_uuid', [])
-                    ->where('io.id IN (?)', $ids)
-                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                    ->order('key_name');
-
-        $result = [];
-        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
-            $row = DbUtil::normalizeRow($row);
-            $result[$row['key_name']] = $row;
-        }
-
-        return $result;
     }
 
     protected function handleApiRequest()
@@ -165,6 +163,7 @@ class IcingaObjectHandler extends RequestHandler
 
         switch ($request->getMethod()) {
             case 'DELETE':
+                static::assertDeleteAllowed($this->request->getActionName());
                 $object = $this->requireObject();
                 $object->delete();
                 $this->sendJson($object->toPlainObject(false, true));
@@ -180,12 +179,14 @@ class IcingaObjectHandler extends RequestHandler
                 $actionName = $this->request->getActionName();
 
                 $overRiddenCustomVars = [];
+                $replaceAll = false;
                 if ($actionName === 'variables') {
                     $overRiddenCustomVars = $data;
                 } else {
                     // Extract custom vars from the data
                     if (isset($data['vars'])) {
                         $overRiddenCustomVars = (array) $data['vars'];
+                        $replaceAll = $request->getMethod() === 'POST';
 
                         unset($data['vars']);
                     }
@@ -242,96 +243,21 @@ class IcingaObjectHandler extends RequestHandler
                     }
                 }
 
-                if (empty($overRiddenCustomVars)) {
+                $isVariablesPut = $actionName === 'variables' && $request->getMethod() === 'PUT';
+                if (empty($overRiddenCustomVars) && ! $isVariablesPut && ! $replaceAll) {
                     $this->sendJson($object->toPlainObject(false, true));
 
                     break;
                 }
 
-                $objectVars = $object->vars();
-                if ($object->get('id') && $request->getMethod() === 'PUT') {
-                    $objectWhere = $db->getDbAdapter()->quoteInto("{$type}_id = ?", $object->get('id'));
-                    $dbAdapter = $db->getDbAdapter();
-                    $dbAdapter->beginTransaction();
-                    $dbAdapter->delete(
-                        'icinga_' . $type . '_var',
-                        $objectWhere
-                    );
+                (new CustomVariableValueApplier($db))->apply(
+                    $object,
+                    $overRiddenCustomVars,
+                    $actionName,
+                    $request->getMethod(),
+                    $replaceAll
+                );
 
-                    $uuidExpr = DbUtil::quoteBinaryCompat(
-                        DbUtil::binaryResult($object->get('uuid')),
-                        $dbAdapter
-                    );
-                    $dbAdapter->delete(
-                        'icinga_' . $type . '_property',
-                        $dbAdapter->quoteInto(
-                            "{$type}_uuid = ?",
-                            $uuidExpr
-                        )
-                    );
-
-                    $dbAdapter->commit();
-
-                    $objectVars = new CustomVariables();
-                }
-
-                $customProperties = $this->getObjectCustomProperties($object);
-
-                foreach ($overRiddenCustomVars as $key => $value) {
-                    $objectVars->set($key, $value);
-                    $objectVars->get($key)->setModified();
-                    if (isset($customProperties[$key])) {
-                        $objectVars->registerVarUuid($key, Uuid::fromBytes($customProperties[$key]['uuid']));
-
-                        continue;
-                    }
-
-                    if ($actionName !== 'variables') {
-                        continue;
-                    }
-
-                    if (! $object->isTemplate()) {
-                        throw new NotFoundError(sprintf(
-                            'The custom variable %s should be first added to one of the imported templates'
-                            . ' for this object',
-                            $key
-                        ));
-                    }
-
-                    if ($request->getMethod() === 'POST') {
-                        $errMsg = sprintf(
-                            'The custom variable %s should be first added to the template',
-                            $key
-                        );
-
-                        throw new NotFoundError($errMsg);
-                    }
-
-                    $query = $db->getDbAdapter()
-                                ->select()
-                                ->from(['dp' => 'director_property'], ['uuid'])
-                                ->where('dp.key_name = ? AND dp.parent_uuid IS NULL', $key);
-                    $customPropertyUuid = DbUtil::binaryResult($db->getDbAdapter()->fetchOne($query));
-
-                    if (! $customPropertyUuid) {
-                        throw new NotFoundError(sprintf(
-                            "'%s' is not configured in Icinga Director as a custom variable",
-                            $key
-                        ));
-                    }
-
-                    $db->getDbAdapter()->insert(
-                        'icinga_' . $type . '_property',
-                        [
-                            'property_uuid' => DbUtil::quoteBinaryCompat($customPropertyUuid, $db->getDbAdapter()),
-                            $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $db->getDbAdapter())
-                        ]
-                    );
-
-                    $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
-                }
-
-                $objectVars->storeToDb($object);
                 $object = IcingaObject::loadByType($type, $object->getObjectName(), $db);
                 $this->sendJson($object->toPlainObject(false, true));
 
