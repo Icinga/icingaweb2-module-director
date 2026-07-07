@@ -41,7 +41,7 @@ class DictionaryItem extends FieldsetElement
         parent::__construct($name, $attributes);
     }
 
-    private static function fetchItemType(UuidInterface $uuid): string
+    private static function fetchItemType(UuidInterface $uuid): ?string
     {
         $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
         $query = $db->select()
@@ -51,7 +51,9 @@ class DictionaryItem extends FieldsetElement
             )
             ->where('dp.parent_uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
-        return  $db->fetchOne($query);
+        $itemType = $db->fetchOne($query);
+
+        return $itemType === false ? null : $itemType;
     }
 
     /**
