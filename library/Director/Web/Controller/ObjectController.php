@@ -734,7 +734,7 @@ abstract class ObjectController extends ActionController
             Text::create(sprintf(
                 $this->translate(
                     'The values of selected host variable for apply-for-rule'
-                    . ' is accessible through %s and keys through %s.'
+                    . ' are accessible through %s and keys through %s.'
                 ),
                 '$value$',
                 '$key$'
@@ -850,8 +850,8 @@ abstract class ObjectController extends ActionController
                 Attributes::create(['class' => ['apply-for-header-content']]),
                 [
                     Text::create($this->translate(
-                        'Nested keys of selected host dictionary variable for apply-for-rule'
-                        . ' are accessible through value as shown in the table below:'
+                        'The value of each nested key of the selected host dictionary variable for '
+                        . 'apply-for-rule is accessible through $value$, as shown in the table below:'
                     )),
                     $configVariables
                 ]
