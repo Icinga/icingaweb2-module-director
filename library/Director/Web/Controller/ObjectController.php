@@ -792,13 +792,10 @@ abstract class ObjectController extends ActionController
                     $nestedConfig = $config . '.' . $nestedKeyAttributes['key_name'] . '$';
                 }
 
-                $nestedContent[] = new HtmlElement('div', null, Text::create($nestedConfig));
                 $nestedKeyName = $nestedKeyAttributes['key_name'];
                 $nestedLabel = $nestedKeyAttributes['label'] ?? $nestedKeyAttributes['key_name'];
-                $nestedContent = [
-                    $this->createKey($nestedKeyName, $nestedLabel),
-                    $this->createValue($nestedConfig)
-                ];
+                $nestedContent[] = $this->createKey($nestedKeyName, $nestedLabel);
+                $nestedContent[] = $this->createValue($nestedConfig);
             }
 
             if (preg_match('/[^a-zA-Z0-9_]/', $keyAttributes['key_name'])) {
