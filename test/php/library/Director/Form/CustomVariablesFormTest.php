@@ -42,6 +42,62 @@ class CustomVariablesFormTest extends BaseTestCase
         $this->addToAssertionCount(1);
     }
 
+    public function testIsValueUnsetTreatsZeroStringAsSet(): void
+    {
+        $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke(null, '0'));
+    }
+
+    public function testIsValueUnsetTreatsIntegerZeroAsSet(): void
+    {
+        $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke(null, 0));
+    }
+
+    public function testIsValueUnsetTreatsFloatZeroAsSet(): void
+    {
+        $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke(null, 0.0));
+    }
+
+    public function testIsValueUnsetTreatsFalseAsSet(): void
+    {
+        $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke(null, false));
+    }
+
+    public function testIsValueUnsetTreatsEmptyStringAsUnset(): void
+    {
+        $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke(null, ''));
+    }
+
+    public function testIsValueUnsetTreatsNullAsUnset(): void
+    {
+        $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke(null, null));
+    }
+
+    public function testIsValueUnsetTreatsEmptyArrayAsUnset(): void
+    {
+        $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke(null, []));
+    }
+
     public function testFiltersEmptyStrings(): void
     {
         $result = CustomVariablesForm::filterEmpty(['ssl_verify' => '', 'http_address' => 'monitor.example.com']);

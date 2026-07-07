@@ -312,6 +312,22 @@ class CustomVariablesForm extends CompatForm
         }
     }
 
+    /**
+     * Whether the given value should be treated as unset
+     *
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    private static function isValueUnset(mixed $value): bool
+    {
+        if (is_bool($value) || $value === 0 || $value === 0.0 || $value === '0') {
+            return false;
+        }
+
+        return empty($value);
+    }
+
     protected function onSuccess(): void
     {
         $vars = $this->object->vars();
@@ -372,7 +388,7 @@ class CustomVariablesForm extends CompatForm
                 );
             }
 
-            if (! is_bool($value) && empty($value)) {
+            if (self::isValueUnset($value)) {
                 $vars->set($key, null);
             } else {
                 $vars->set($key, $value);
