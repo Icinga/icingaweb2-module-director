@@ -8,6 +8,7 @@ namespace Tests\Icinga\Module\Director\Form;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Test\BaseTestCase;
 use ReflectionMethod;
 
@@ -96,6 +97,58 @@ class CustomVariablesFormTest extends BaseTestCase
         $method->setAccessible(true);
 
         $this->assertTrue($method->invoke(null, []));
+    }
+
+    public function testOverrideWithoutHostThrows(): void
+    {
+        $service = IcingaService::create([
+            'object_name' => 'ping',
+            'object_type' => 'template',
+        ]);
+        $form = new CustomVariablesForm($service);
+        $form->setApplyGenerated($service);
+
+        $method = new ReflectionMethod($form, 'assertOverrideHostIsSet');
+        $method->setAccessible(true);
+
+        $this->expectException(ProgrammingError::class);
+        $method->invoke($form);
+    }
+
+    public function testOverrideWithHostIsAllowed(): void
+    {
+        $service = IcingaService::create([
+            'object_name' => 'ping',
+            'object_type' => 'template',
+        ]);
+        $host = IcingaHost::create([
+            'object_name' => 'linux-server',
+            'object_type' => 'template',
+        ]);
+        $form = new CustomVariablesForm($service);
+        $form->setApplyGenerated($service);
+        $form->setHostForService($host);
+
+        $method = new ReflectionMethod($form, 'assertOverrideHostIsSet');
+        $method->setAccessible(true);
+
+        $method->invoke($form);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testNoOverrideRequestedDoesNotThrow(): void
+    {
+        $host = IcingaHost::create([
+            'object_name' => 'linux-server',
+            'object_type' => 'template',
+        ]);
+        $form = new CustomVariablesForm($host);
+
+        $method = new ReflectionMethod($form, 'assertOverrideHostIsSet');
+        $method->setAccessible(true);
+
+        $method->invoke($form);
+        $this->addToAssertionCount(1);
     }
 
     public function testFiltersEmptyStrings(): void

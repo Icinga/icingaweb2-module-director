@@ -204,6 +204,22 @@ class CustomVariablesForm extends CompatForm
             || ($this->host && $this->set);
     }
 
+    /**
+     * Assert that a host has been set whenever an override is requested
+     *
+     * @return void
+     *
+     * @throws ProgrammingError
+     */
+    private function assertOverrideHostIsSet(): void
+    {
+        if ($this->isOverrideServiceVars() && $this->host === null) {
+            throw new ProgrammingError(
+                'CustomVariablesForm needs setHostForService() to be called before overriding service variables'
+            );
+        }
+    }
+
     public function hasBeenSubmitted(): bool
     {
         $pressedButton = $this->getPressedSubmitElement();
@@ -330,6 +346,8 @@ class CustomVariablesForm extends CompatForm
 
     protected function onSuccess(): void
     {
+        $this->assertOverrideHostIsSet();
+
         $vars = $this->object->vars();
 
         /** @var Dictionary $propertiesElement */
