@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
@@ -29,6 +30,9 @@ class BasketSnapshotCustomVariableResolver
 
     /** @var DirectorProperty[]|null */
     protected $targetProperties;
+
+    /** @var bool */
+    protected $newPropertiesStored = false;
 
     public function __construct($objects, Db $targetDb)
     {
@@ -76,6 +80,8 @@ class BasketSnapshotCustomVariableResolver
                 )->toString();
             }
         }
+
+        $this->newPropertiesStored = true;
     }
 
     /**
@@ -91,6 +97,8 @@ class BasketSnapshotCustomVariableResolver
         if (! $new->supportsCustomProperties() || ! isset($object->customVariables)) {
             return;
         }
+
+        $this->assertPropertiesHaveBeenStored();
 
         $customPropertyMap = $this->getUuidMap();
         $db = $this->targetDb->getDbAdapter();
@@ -215,6 +223,25 @@ class BasketSnapshotCustomVariableResolver
         $this->requiredUuids = array_keys($uuids);
 
         return $this->requiredUuids;
+    }
+
+    /**
+     * Assert that new properties have already been persisted
+     *
+     * calculateUuidMap() assigns a placeholder uuid to a property that has
+     * not been stored yet. That placeholder is only corrected once
+     * storeNewProperties() runs and writes back the real uuid, so relinking
+     * before that point would write a link that points at nothing.
+     *
+     * @throws ProgrammingError
+     */
+    protected function assertPropertiesHaveBeenStored(): void
+    {
+        if (! $this->newPropertiesStored && ! empty($this->getObjectsByType('CustomVariable'))) {
+            throw new ProgrammingError(
+                'storeNewProperties() must run before custom properties can be relinked'
+            );
+        }
     }
 
     /**

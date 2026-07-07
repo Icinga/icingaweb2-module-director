@@ -5,9 +5,11 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotCustomVariableResolver;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -174,6 +176,52 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         );
 
         $this->assertEquals(1, (int) $propCount, 'Restoring twice must not create duplicate properties');
+    }
+
+    public function testRelinkBeforeStoreNewPropertiesThrows(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'resolver-order-host',
+            'object_type' => 'template',
+        ]);
+        $host->store($db);
+
+        $propertyUuid = Uuid::uuid4()->toString();
+        $resolver = new BasketSnapshotCustomVariableResolver(
+            [
+                'CustomVariable' => [
+                    $propertyUuid => (object) [
+                        'uuid'        => $propertyUuid,
+                        'key_name'    => self::PREFIX . 'resolver_order_prop',
+                        'value_type'  => 'string',
+                        'label'       => null,
+                        'parent_uuid' => null,
+                        'category'    => null,
+                        'description' => null,
+                        'items'       => [],
+                    ],
+                ],
+            ],
+            $db
+        );
+
+        $exportedObject = (object) [
+            'customVariables' => [
+                (object) ['property_uuid' => $propertyUuid],
+            ],
+        ];
+
+        try {
+            $this->expectException(ProgrammingError::class);
+            $resolver->relinkObjectCustomProperties($host, $exportedObject);
+        } finally {
+            $host->delete();
+        }
     }
 
     public function testBasketsWithoutCustomPropertiesStillWork(): void
