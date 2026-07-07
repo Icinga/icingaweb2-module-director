@@ -5,11 +5,43 @@
 
 namespace Tests\Icinga\Module\Director\Form;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
+use ReflectionMethod;
 
 class CustomVariablesFormTest extends BaseTestCase
 {
+    public function testAttachingNewPropertyToNonTemplateThrows(): void
+    {
+        $host = IcingaHost::create([
+            'object_name' => 'apitest',
+            'object_type' => 'object',
+        ]);
+        $form = new CustomVariablesForm($host);
+        $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
+        $method->setAccessible(true);
+
+        $this->expectException(ProgrammingError::class);
+        $method->invoke($form);
+    }
+
+    public function testAttachingNewPropertyToTemplateIsAllowed(): void
+    {
+        $host = IcingaHost::create([
+            'object_name' => 'linux-server',
+            'object_type' => 'template',
+        ]);
+
+        $form = new CustomVariablesForm($host);
+        $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
+        $method->setAccessible(true);
+
+        $method->invoke($form);
+        $this->addToAssertionCount(1);
+    }
+
     public function testFiltersEmptyStrings(): void
     {
         $result = CustomVariablesForm::filterEmpty(['ssl_verify' => '', 'http_address' => 'monitor.example.com']);

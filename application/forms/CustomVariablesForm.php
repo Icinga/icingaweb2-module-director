@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
@@ -291,6 +292,26 @@ class CustomVariablesForm extends CompatForm
         );
     }
 
+    /**
+     * Assert that a new custom variable may be attached to $this->object
+     *
+     * Custom variables are only meant to be attached directly to a
+     * template.
+     *
+     * @return void
+     *
+     * @throws ProgrammingError
+     */
+    private function assertCanAttachNewVariable(): void
+    {
+        if (! $this->object->isTemplate()) {
+            throw new ProgrammingError(
+                'Custom Variables can only be attached directly to a template, got %s',
+                $this->object->getObjectName()
+            );
+        }
+    }
+
     protected function onSuccess(): void
     {
         $vars = $this->object->vars();
@@ -340,6 +361,7 @@ class CustomVariablesForm extends CompatForm
             }
 
             if (isset($property['new'])) {
+                $this->assertCanAttachNewVariable();
                 $this->varsHasBeenModified = true;
                 $this->object->getConnection()->insert(
                     "icinga_$type" . '_property',
