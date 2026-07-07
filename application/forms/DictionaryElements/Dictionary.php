@@ -88,8 +88,6 @@ class Dictionary extends FieldsetElement
                         $clearedItemName = $removedValue['name'];
                         if (isset($this->items[$clearedItemName])) {
                             $removedItems[$clearedItemName] = true;
-                        } elseif (isset($this->items[$clearedItemName]['new'])) {
-                            unset($this->items[$clearedItemName]);
                         }
                     }
 

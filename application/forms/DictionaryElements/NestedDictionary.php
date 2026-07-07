@@ -89,22 +89,12 @@ class NestedDictionary extends FieldsetElement
 
             $this->registerElement($remove);
             if ($remove->hasBeenPressed()) {
-                $removedValue = $this->getPopulatedValue($count);
-                $clearedId = null;
-                if (isset($removedValue['id'])) {
-                    $clearedId = $removedValue['id'];
-                }
-
                 $this->clearPopulatedValue($remove->getName());
                 $this->clearPopulatedValue($count);
 
                 // Re-index populated values to ensure proper association with form data
                 foreach (range($count + 1, $expectedCount) as $i) {
-                    $newPopulatedValue = $this->getPopulatedValue($count);
-                    $newId = $newPopulatedValue['id'] ?? null;
-                    $newPopulatedValue['id'] = $clearedId;
                     $this->populate([$i - 1 => $this->getPopulatedValue($i) ?? []]);
-                    $clearedId = $newId;
                 }
             } else {
                 $newCount++;
