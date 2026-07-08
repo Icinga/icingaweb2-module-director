@@ -218,7 +218,7 @@ class DeleteCustomVariableForm extends CompatForm
 
         if (empty($path)) {
             unset($item[$key]);
-        } elseif (is_array($item[$key])) {
+        } elseif (isset($item[$key]) && is_array($item[$key])) {
             $this->removeDictionaryItem($item[$key], $path);
         }
 
@@ -412,6 +412,8 @@ class DeleteCustomVariableForm extends CompatForm
         }
 
         $db = $this->db->getDbAdapter();
+        $parentUuid = Uuid::fromBytes($parent['uuid']);
+        $rootUuid = null;
 
         if ($parent['parent_uuid'] !== null) {
             // Parent is itself a field — grandparent is the root property
@@ -419,7 +421,7 @@ class DeleteCustomVariableForm extends CompatForm
             $rootProp = $this->fetchProperty($rootUuid);
             $rootType = $rootProp['value_type'];
         } else {
-            $rootUuid = Uuid::fromBytes($parent['uuid']);
+            $rootUuid = $parentUuid;
             $rootType = $parent['value_type'];
         }
 
@@ -433,9 +435,7 @@ class DeleteCustomVariableForm extends CompatForm
         $isParentFixedArray = $parent['value_type'] === 'fixed-array';
         $isRootFixedArray = $rootType === 'fixed-array';
         if ($isParentFixedArray) {
-            $this->updateFixedArrayItems(Uuid::fromBytes($parent['uuid']));
-        } elseif ($isRootFixedArray) {
-            $this->updateFixedArrayItems($rootUuid);
+            $this->updateFixedArrayItems($parentUuid, $property['key_name']);
         }
 
         foreach (['host', 'service', 'notification', 'command', 'user'] as $objectType) {
@@ -458,13 +458,13 @@ class DeleteCustomVariableForm extends CompatForm
                     $this->removeDictionaryItem($varValue, $path);
                 } else {
                     foreach ($varValue as $entryKey => $entryValue) {
-                        if (! is_array($varValue[$entryKey])) {
+                        if (! is_array($entryValue)) {
                             continue;
                         }
 
-                        $this->removeDictionaryItem($varValue[$entryKey], $path);
+                        $this->removeDictionaryItem($entryValue, $path);
 
-                        if ($varValue[$entryKey] === []) {
+                        if ($entryValue === []) {
                             $varValue[$entryKey] = (object) [];
                         }
                     }
@@ -480,7 +480,7 @@ class DeleteCustomVariableForm extends CompatForm
                     continue;
                 }
 
-                if ($isParentFixedArray) {
+                if ($isParentFixedArray && $rootUuid->equals($parentUuid)) {
                     $varValue[$parent['key_name']] = array_values($varValue[$parent['key_name']]);
                 } elseif ($isRootFixedArray) {
                     $varValue = array_values($varValue);
@@ -496,10 +496,11 @@ class DeleteCustomVariableForm extends CompatForm
      * Update the items for the given fixed array
      *
      * @param UuidInterface $uuid
+     * @param string $propertyIndex
      *
      * @return void
      */
-    private function updateFixedArrayItems(UuidInterface $uuid): void
+    private function updateFixedArrayItems(UuidInterface $uuid, string $propertyIndex): void
     {
         $db = $this->db->getDbAdapter();
         $quotedUuid = DbUtil::quoteBinaryCompat($uuid->getBytes(), $db);
@@ -520,7 +521,9 @@ class DeleteCustomVariableForm extends CompatForm
                 'dpdl.property_uuid = dp.uuid',
                 ['list_uuid']
             )
-            ->where('dp.parent_uuid = ?', $quotedUuid);
+            ->where('dp.parent_uuid = ?', $quotedUuid)
+            ->where('dp.key_name != ?', $propertyIndex)
+            ->order('dp.key_name');
 
         $propItems = array_map([DbUtil::class, 'normalizeRow'], $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC));
 
