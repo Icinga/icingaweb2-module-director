@@ -481,7 +481,8 @@ class DeleteCustomVariableForm extends CompatForm
                 }
 
                 if ($isParentFixedArray && $rootUuid->equals($parentUuid)) {
-                    $varValue[$parent['key_name']] = array_values($varValue[$parent['key_name']]);
+                    // The fixed array is the root: the stored value is the bare list itself.
+                    $varValue = array_values($varValue);
                 } elseif ($isRootFixedArray) {
                     $varValue = array_values($varValue);
                 }
