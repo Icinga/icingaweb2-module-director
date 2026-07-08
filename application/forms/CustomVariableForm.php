@@ -182,6 +182,7 @@ class CustomVariableForm extends CompatForm
             'string' => 'String',
             'number' => 'Number',
             'bool' => 'Boolean',
+            'dynamic-array' => 'Dynamic Array',
             'datalist-strict' => 'Data List Strict',
             'datalist-non-strict' => 'Data List Non Strict',
         ];
@@ -189,7 +190,6 @@ class CustomVariableForm extends CompatForm
         if (! $this->isNestedField) {
             $types += [
                 'fixed-array' => 'Fixed Array',
-                'dynamic-array' => 'Dynamic Array',
                 'fixed-dictionary' => 'Fixed Dictionary'
             ];
 
