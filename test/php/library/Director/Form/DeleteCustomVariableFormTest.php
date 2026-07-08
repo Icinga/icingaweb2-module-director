@@ -713,6 +713,257 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testDeletingDynamicDictionaryFieldUpdatesEveryEntryInHostVar(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A host's per-datacenter settings: a dynamic dictionary keyed by datacenter name,
+        // each entry holding a contact_email and timezone. Deleting contact_email must
+        // strip it from every datacenter's entry, even when the entry doesn't become empty.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___multidc01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.40',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___datacenter_settings',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Datacenter Settings',
+        ], $db)->store();
+
+        $contactEmailUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $contactEmailUuid->getBytes(),
+            'key_name'    => 'contact_email',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___datacenter_settings',
+            'varvalue'      => json_encode([
+                'dc1' => ['contact_email' => 'dc1@example.com', 'timezone' => 'UTC'],
+                'dc2' => ['contact_email' => 'dc2@example.com', 'timezone' => 'PST'],
+            ]),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $contactEmailUuid->getBytes(),
+                'key_name'    => 'contact_email',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $rootUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $rootUuid->getBytes(),
+                'key_name'    => '___TEST___datacenter_settings',
+                'value_type'  => 'dynamic-dictionary',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___datacenter_settings')
+        );
+
+        $this->assertEquals(
+            [
+                'dc1' => ['timezone' => 'UTC'],
+                'dc2' => ['timezone' => 'PST'],
+            ],
+            json_decode($updatedValue, true),
+            'contact_email must be removed from every datacenter entry, not just entries'
+            . ' that become fully empty as a result'
+        );
+    }
+
+    public function testDeletingDynamicDictionaryFieldConvertsEmptiedEntryToEmptyObjectInHostVar(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // Same datacenter-settings dictionary, but dc2 has only the field being deleted --
+        // its entry must become an empty object (still a dictionary), not be dropped or
+        // turned into an empty list.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___multidc02',
+            'object_type' => 'object',
+            'address'     => '192.0.2.41',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___datacenter_settings_2',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Datacenter Settings 2',
+        ], $db)->store();
+
+        $contactEmailUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $contactEmailUuid->getBytes(),
+            'key_name'    => 'contact_email',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___datacenter_settings_2',
+            'varvalue'      => json_encode([
+                'dc1' => ['contact_email' => 'dc1@example.com', 'timezone' => 'UTC'],
+                'dc2' => ['contact_email' => 'dc2@example.com'],
+            ]),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $contactEmailUuid->getBytes(),
+                'key_name'    => 'contact_email',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $rootUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $rootUuid->getBytes(),
+                'key_name'    => '___TEST___datacenter_settings_2',
+                'value_type'  => 'dynamic-dictionary',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___datacenter_settings_2')
+        );
+
+        $this->assertEquals(
+            '{"dc1":{"timezone":"UTC"},"dc2":{}}',
+            $updatedValue,
+            'an entry emptied by the deletion must be encoded as an empty object, not dropped'
+            . ' or turned into an empty list'
+        );
+    }
+
+    public function testDeletingDynamicDictionaryFieldUpdatesEveryEntryInOverrideServiceVars(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // The same per-datacenter settings dictionary, but overridden for a specific service
+        // via _override_servicevars, with one datacenter entry fully emptied by the deletion.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___multidc03',
+            'object_type' => 'object',
+            'address'     => '192.0.2.42',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___datacenter_settings_3',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Datacenter Settings 3',
+        ], $db)->store();
+
+        $contactEmailUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $contactEmailUuid->getBytes(),
+            'key_name'    => 'contact_email',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => '_override_servicevars',
+            'varvalue' => json_encode([
+                'web_check' => [
+                    '___TEST___datacenter_settings_3' => [
+                        'dc1' => ['contact_email' => 'dc1@example.com', 'timezone' => 'UTC'],
+                        'dc2' => ['contact_email' => 'dc2@example.com'],
+                    ],
+                ],
+            ]),
+            'format'   => 'json',
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $contactEmailUuid->getBytes(),
+                'key_name'    => 'contact_email',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $rootUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $rootUuid->getBytes(),
+                'key_name'    => '___TEST___datacenter_settings_3',
+                'value_type'  => 'dynamic-dictionary',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '_override_servicevars')
+        );
+
+        $this->assertEquals(
+            [
+                'web_check' => [
+                    '___TEST___datacenter_settings_3' => [
+                        'dc1' => ['timezone' => 'UTC'],
+                    ],
+                ],
+            ],
+            json_decode($updatedValue, true),
+            'contact_email must be stripped from every datacenter entry, and an entry fully'
+            . ' emptied by the deletion must be dropped from the override'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -730,6 +981,9 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___maintenance01',
                 '___TEST___oncall01',
                 '___TEST___router01',
+                '___TEST___multidc01',
+                '___TEST___multidc02',
+                '___TEST___multidc03',
             ];
             foreach ($hostNames as $hostName) {
                 $dba->delete('icinga_host', ['object_name = ?' => $hostName]);
@@ -744,6 +998,9 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___maintenance_window',
                 '___TEST___notification_policy',
                 '___TEST___alert_routing',
+                '___TEST___datacenter_settings',
+                '___TEST___datacenter_settings_2',
+                '___TEST___datacenter_settings_3',
             ];
             foreach ($keyNames as $keyName) {
                 $rows = $dba->fetchAll(

@@ -253,6 +253,27 @@ class DeleteCustomVariableForm extends CompatForm
         }
     }
 
+    /**
+     * Strip the given path out of every entry in a dynamic dictionary, in place. Entries
+     * that aren't arrays are left alone, and it's up to the caller to decide what to do
+     * with an entry that ends up empty afterwards.
+     *
+     * @param array $dynamicDictionaryValue The dynamic dictionary's entries, modified in place
+     * @param string[] $path The path (relative to each entry) to strip
+     *
+     * @return void
+     */
+    private function removeDictionaryItemFromEveryEntry(array &$dynamicDictionaryValue, array $path): void
+    {
+        foreach ($dynamicDictionaryValue as $entryKey => $entryValue) {
+            if (! is_array($entryValue)) {
+                continue;
+            }
+
+            $this->removeDictionaryItem($dynamicDictionaryValue[$entryKey], $path);
+        }
+    }
+
     protected function onSuccess(): void
     {
         $uuid = $this->property['uuid'];
@@ -367,15 +388,12 @@ class DeleteCustomVariableForm extends CompatForm
                     // Root property deleted: remove its key from the service's override vars
                     unset($serviceVars[$rootKeyName]);
                 } elseif ($rootType === 'dynamic-dictionary') {
-                    // Dynamic dictionary: remove the path from every dynamic entry
+                    // Dynamic dictionary: remove the path from every dynamic entry, dropping
+                    // any entry that becomes empty as a result
                     if (is_array($serviceVars[$rootKeyName])) {
+                        $this->removeDictionaryItemFromEveryEntry($serviceVars[$rootKeyName], $pathWithinRootValue);
                         foreach ($serviceVars[$rootKeyName] as $entryKey => $entryValue) {
-                            if (! is_array($entryValue)) {
-                                continue;
-                            }
-
-                            $this->removeDictionaryItem($serviceVars[$rootKeyName][$entryKey], $pathWithinRootValue);
-                            if (empty($serviceVars[$rootKeyName][$entryKey])) {
+                            if ($entryValue === []) {
                                 unset($serviceVars[$rootKeyName][$entryKey]);
                             }
                         }
@@ -461,13 +479,8 @@ class DeleteCustomVariableForm extends CompatForm
                 if ($rootType !== 'dynamic-dictionary') {
                     $this->removeDictionaryItem($varValue, $path);
                 } else {
+                    $this->removeDictionaryItemFromEveryEntry($varValue, $path);
                     foreach ($varValue as $entryKey => $entryValue) {
-                        if (! is_array($entryValue)) {
-                            continue;
-                        }
-
-                        $this->removeDictionaryItem($entryValue, $path);
-
                         if ($entryValue === []) {
                             $varValue[$entryKey] = (object) [];
                         }
