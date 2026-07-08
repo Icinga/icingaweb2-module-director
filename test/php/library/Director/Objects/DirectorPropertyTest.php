@@ -191,6 +191,32 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals($listName, $exported->datalist);
     }
 
+    public function testReSavingDatalistPropertyLoadedFromDbDoesNotBreakLink(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $listName = self::PREFIX . 'resave_list';
+        $this->makeDatalist($listName, $db)->store();
+        $property = $this->importPropertyWithDatalist('env_resave', 'datalist-strict', 'Env Resave', $listName, $db);
+
+        // Load the way ordinary (non-import) code paths do, e.g. a plain edit or
+        // BasketSnapshotCustomVariableResolver::restoreCustomPropertyItems(). $datalist is NOT
+        // pre-populated on this instance, unlike objects returned by DirectorProperty::import().
+        $loaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $loaded->set('label', 'Env Resave Updated');
+        $loaded->store();
+
+        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $this->assertNotNull(
+            $reloaded->getDatalist(),
+            'Re-saving a datalist property loaded without import() must not drop its datalist link'
+        );
+        $this->assertEquals($listName, $reloaded->getDatalist()->get('list_name'));
+    }
+
     public function testDatalistImportRestoresDatalistLink(): void
     {
         if ($this->skipForMissingDb()) {

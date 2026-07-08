@@ -389,17 +389,19 @@ class DirectorProperty extends DbObject
     {
         $db = $this->db;
         $propertyUuid = Db\DbUtil::quoteBinaryCompat($this->get('uuid'), $db);
+        // Fetch the datalist before deleting the link row
+        $datalist = $this->getDatalist();
         $db->delete(
             'director_property_datalist',
             $db->quoteInto('property_uuid = ?', $propertyUuid)
         );
 
-        if ($this->getDatalist()) {
+        if ($datalist) {
             $db->insert(
                 'director_property_datalist',
                 [
                     'property_uuid' => $propertyUuid,
-                    'list_uuid'     => Db\DbUtil::quoteBinaryCompat($this->datalist->get('uuid'), $db),
+                    'list_uuid'     => Db\DbUtil::quoteBinaryCompat($datalist->get('uuid'), $db),
                 ]
             );
         }
