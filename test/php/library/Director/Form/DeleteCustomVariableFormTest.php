@@ -498,6 +498,221 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testDeletingThreeLevelsDeepFieldUpdatesHostVarWithoutCrashing(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A host's notification policy: a root dictionary containing "business_hours",
+        // which itself contains an "escalation" dictionary with a contact_email field --
+        // three levels of nesting below the custom variable's own icinga_host_var row.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___oncall01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.20',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___notification_policy',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Notification Policy',
+        ], $db)->store();
+
+        $businessHoursUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $businessHoursUuid->getBytes(),
+            'key_name'    => 'business_hours',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+            'label'       => 'Business Hours',
+        ], $db)->store();
+
+        $escalationUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $escalationUuid->getBytes(),
+            'key_name'    => 'escalation',
+            'parent_uuid' => $businessHoursUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+            'label'       => 'Escalation',
+        ], $db)->store();
+
+        $contactEmailUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $contactEmailUuid->getBytes(),
+            'key_name'    => 'contact_email',
+            'parent_uuid' => $escalationUuid->getBytes(),
+            'value_type'  => 'string',
+            'label'       => 'Contact Email',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___notification_policy',
+            'varvalue'      => json_encode([
+                'business_hours' => [
+                    'escalation' => [
+                        'contact_email' => 'ops@example.com',
+                        'phone'         => '+1-555-0100',
+                    ],
+                ],
+            ]),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $contactEmailUuid->getBytes(),
+                'key_name'    => 'contact_email',
+                'value_type'  => 'string',
+                'label'       => 'Contact Email',
+                'description' => null,
+                'parent_uuid' => $escalationUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $escalationUuid->getBytes(),
+                'key_name'    => 'escalation',
+                'value_type'  => 'fixed-dictionary',
+                'parent_uuid' => $businessHoursUuid->getBytes(),
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___notification_policy')
+        );
+
+        $this->assertEquals(
+            ['business_hours' => ['escalation' => ['phone' => '+1-555-0100']]],
+            json_decode($updatedValue, true),
+            'contact_email must be removed from the correct nested path even though the'
+            . ' root property is three levels above the deleted field'
+        );
+    }
+
+    public function testDeletingThreeLevelsDeepFieldUpdatesOverrideServiceVarsWithoutCrashing(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A host overrides a service's alert routing: root dictionary "alert_routing"
+        // containing "team", which contains "priority", which contains a pager_email field --
+        // three levels of nesting below the custom variable's own key in _override_servicevars.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___router01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.30',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___alert_routing',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Alert Routing',
+        ], $db)->store();
+
+        $teamUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $teamUuid->getBytes(),
+            'key_name'    => 'team',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+            'label'       => 'Team',
+        ], $db)->store();
+
+        $priorityUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $priorityUuid->getBytes(),
+            'key_name'    => 'priority',
+            'parent_uuid' => $teamUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+            'label'       => 'Priority',
+        ], $db)->store();
+
+        $pagerEmailUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $pagerEmailUuid->getBytes(),
+            'key_name'    => 'pager_email',
+            'parent_uuid' => $priorityUuid->getBytes(),
+            'value_type'  => 'string',
+            'label'       => 'Pager Email',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => '_override_servicevars',
+            'varvalue' => json_encode([
+                'web_check' => [
+                    '___TEST___alert_routing' => [
+                        'team' => [
+                            'priority' => [
+                                'pager_email' => 'oncall@example.com',
+                                'sms'         => '+1-555-0200',
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+            'format'   => 'json',
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $pagerEmailUuid->getBytes(),
+                'key_name'    => 'pager_email',
+                'value_type'  => 'string',
+                'label'       => 'Pager Email',
+                'description' => null,
+                'parent_uuid' => $priorityUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $priorityUuid->getBytes(),
+                'key_name'    => 'priority',
+                'value_type'  => 'fixed-dictionary',
+                'parent_uuid' => $teamUuid->getBytes(),
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '_override_servicevars')
+        );
+
+        $this->assertEquals(
+            [
+                'web_check' => [
+                    '___TEST___alert_routing' => [
+                        'team' => ['priority' => ['sms' => '+1-555-0200']],
+                    ],
+                ],
+            ],
+            json_decode($updatedValue, true),
+            'pager_email must be removed from the correct nested path even though the'
+            . ' root property is three levels above the deleted field'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -513,6 +728,8 @@ class DeleteCustomVariableFormTest extends BaseTestCase
             $hostNames = [
                 '___TEST___backup01',
                 '___TEST___maintenance01',
+                '___TEST___oncall01',
+                '___TEST___router01',
             ];
             foreach ($hostNames as $hostName) {
                 $dba->delete('icinga_host', ['object_name = ?' => $hostName]);
@@ -525,6 +742,8 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___backup_directories',
                 '___TEST___escalation_contacts',
                 '___TEST___maintenance_window',
+                '___TEST___notification_policy',
+                '___TEST___alert_routing',
             ];
             foreach ($keyNames as $keyName) {
                 $rows = $dba->fetchAll(
@@ -535,40 +754,7 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 foreach ($rows as $row) {
                     // Read the (possibly stream-backed, on PostgreSQL) uuid column exactly once —
                     // a PHP stream resource can only be consumed a single time.
-                    $rowUuid = DbUtil::binaryResult($row->uuid);
-                    $childUuids = array_map(
-                        [DbUtil::class, 'binaryResult'],
-                        $dba->fetchCol(
-                            $dba->select()->from('director_property', ['uuid'])->where(
-                                'parent_uuid = ?',
-                                DbUtil::quoteBinaryCompat($rowUuid, $dba)
-                            )
-                        )
-                    );
-                    foreach ($childUuids as $childUuid) {
-                        $dba->delete(
-                            'director_property_datalist',
-                            $dba->quoteInto(
-                                'property_uuid = ?',
-                                DbUtil::quoteBinaryCompat($childUuid, $dba)
-                            )
-                        );
-                    }
-                    $dba->delete(
-                        'director_property_datalist',
-                        $dba->quoteInto(
-                            'property_uuid = ?',
-                            DbUtil::quoteBinaryCompat($rowUuid, $dba)
-                        )
-                    );
-                    $dba->delete(
-                        'director_property',
-                        $dba->quoteInto(
-                            'parent_uuid = ?',
-                            DbUtil::quoteBinaryCompat($rowUuid, $dba)
-                        )
-                    );
-                    $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
+                    $this->deletePropertyTree($dba, DbUtil::binaryResult($row->uuid));
                 }
             }
 
@@ -578,5 +764,33 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         }
 
         parent::tearDown();
+    }
+
+    /**
+     * Delete a director_property row along with all of its descendants, however deep the
+     * nesting goes, cleaning up their director_property_datalist links as we go.
+     */
+    private function deletePropertyTree($dba, string $uuid): void
+    {
+        $childUuids = array_map(
+            [DbUtil::class, 'binaryResult'],
+            $dba->fetchCol(
+                $dba->select()->from('director_property', ['uuid'])->where(
+                    'parent_uuid = ?',
+                    DbUtil::quoteBinaryCompat($uuid, $dba)
+                )
+            )
+        );
+        foreach ($childUuids as $childUuid) {
+            $this->deletePropertyTree($dba, $childUuid);
+        }
+        $dba->delete(
+            'director_property_datalist',
+            $dba->quoteInto('property_uuid = ?', DbUtil::quoteBinaryCompat($uuid, $dba))
+        );
+        $dba->delete(
+            'director_property',
+            $dba->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($uuid, $dba))
+        );
     }
 }

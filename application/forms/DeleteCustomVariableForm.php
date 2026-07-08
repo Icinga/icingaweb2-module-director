@@ -201,6 +201,31 @@ class DeleteCustomVariableForm extends CompatForm
     }
 
     /**
+     * Find the root property by following parent_uuid up from $parent, collecting
+     * key_names along the way. Dictionaries can nest arbitrarily deep, so the root isn't
+     * always $parent's direct parent.
+     *
+     * @param array $property The property being deleted
+     * @param array $parent   The immediate parent of the property being deleted
+     *
+     * @return array{0: array<string, mixed>, 1: string[]} [$rootProperty, $pathWithinRootValue]
+     *         $pathWithinRootValue lists the key_names from directly under the root down to
+     *         (and including) $property['key_name'].
+     */
+    private function resolveRootProperty(array $property, array $parent): array
+    {
+        $path = [$property['key_name']];
+        $current = $parent;
+
+        while ($current['parent_uuid'] !== null) {
+            array_unshift($path, $current['key_name']);
+            $current = $this->fetchProperty(Uuid::fromBytes($current['parent_uuid']));
+        }
+
+        return [$current, $path];
+    }
+
+    /**
      * Remove dictionary item from the give data array
      *
      * @param array $item
@@ -311,17 +336,10 @@ class DeleteCustomVariableForm extends CompatForm
             $rootKeyName = $property['key_name'];
             $rootType = $property['value_type'];
             $pathWithinRootValue = null;
-        } elseif ($parent['parent_uuid'] === null) {
-            // Child field of a root property deleted
-            $rootKeyName = $parent['key_name'];
-            $rootType = $parent['value_type'];
-            $pathWithinRootValue = [$property['key_name']];
         } else {
-            // Nested child field deleted (grandparent is the root property)
-            $rootProp = $this->fetchProperty(Uuid::fromBytes($parent['parent_uuid']));
+            [$rootProp, $pathWithinRootValue] = $this->resolveRootProperty($property, $parent);
             $rootKeyName = $rootProp['key_name'];
             $rootType = $rootProp['value_type'];
-            $pathWithinRootValue = [$parent['key_name'], $property['key_name']];
         }
 
         // Fetch all hosts that have the _override_servicevars custom variable
@@ -411,23 +429,11 @@ class DeleteCustomVariableForm extends CompatForm
 
         $db = $this->db->getDbAdapter();
         $parentUuid = Uuid::fromBytes($parent['uuid']);
-        $rootUuid = null;
-
-        if ($parent['parent_uuid'] !== null) {
-            // Parent is itself a field — grandparent is the root property
-            $rootUuid = Uuid::fromBytes($parent['parent_uuid']);
-            $rootProp = $this->fetchProperty($rootUuid);
-            $rootType = $rootProp['value_type'];
-        } else {
-            $rootUuid = $parentUuid;
-            $rootType = $parent['value_type'];
-        }
 
         // Path within the stored JSON to the key being deleted — constant for all rows
-        $path = [$property['key_name']];
-        if ($parent['parent_uuid'] !== null) {
-            array_unshift($path, $parent['key_name']);
-        }
+        [$rootProp, $path] = $this->resolveRootProperty($property, $parent);
+        $rootUuid = Uuid::fromBytes($rootProp['uuid']);
+        $rootType = $rootProp['value_type'];
 
         // Re-index the fixed-array items in director_property once, before processing stored vars
         $isParentFixedArray = $parent['value_type'] === 'fixed-array';
