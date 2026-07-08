@@ -239,7 +239,10 @@ class DirectorProperty extends DbObject
                     'dpdl.property_uuid = ?',
                     Db\DbUtil::quoteBinaryCompat($this->get('uuid'), $this->db)
                 ));
-            $this->datalist = DirectorDatalist::load($this->db->fetchOne($query), $this->connection);
+            $listName = $this->db->fetchOne($query);
+            if ($listName) {
+                $this->datalist = DirectorDatalist::load($listName, $this->connection);
+            }
         }
 
         return $this->datalist;

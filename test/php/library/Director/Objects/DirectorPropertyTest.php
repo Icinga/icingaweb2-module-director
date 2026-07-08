@@ -44,6 +44,21 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals('Environment', $loaded->get('label'));
     }
 
+    public function testGetDatalistReturnsNullWithoutThrowingWhenNoLinkExistsYet(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        // Created directly via create()->store(), not import(): $datalist is never
+        // pre-populated, and no director_property_datalist row exists for this uuid yet.
+        $property = $this->makeProperty('unlinked_datalist', 'datalist-strict', 'Unlinked', $db);
+        $property->store();
+
+        $this->assertNull($property->getDatalist());
+    }
+
     public function testDynamicArrayPropertyWithChildItem(): void
     {
         if ($this->skipForMissingDb()) {
