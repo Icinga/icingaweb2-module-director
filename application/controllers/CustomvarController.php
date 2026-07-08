@@ -338,6 +338,10 @@ class CustomvarController extends CompatController
     {
         $uuid = $this->uuid;
         $property = $this->fetchProperty($uuid);
+        if (empty($property)) {
+            $this->redirectNow('__CLOSE__');
+        }
+
         $parent = [];
         if ($property['parent_uuid'] !== null) {
             $parent = $this->fetchProperty(Uuid::fromBytes($property['parent_uuid']));
