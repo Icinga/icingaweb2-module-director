@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Web\Widget\CustomVarObjectList;
 use Icinga\Web\Session;
@@ -33,7 +33,7 @@ class DeleteCustomVariableForm extends CompatForm
     private $isNestedField = false;
 
     public function __construct(
-        protected DbConnection $db,
+        protected Db $db,
         protected array $property,
         protected array $parent = []
     ) {
@@ -233,8 +233,6 @@ class DeleteCustomVariableForm extends CompatForm
         $uuid = $this->property['uuid'];
         $quotedUuid = DbUtil::quoteBinaryCompat($uuid, $this->db->getDbAdapter());
         $db = $this->db;
-
-        $db->getDbAdapter()->beginTransaction();
         $prop = $this->property;
 
         // A dictionary can be nested arbitrarily deep (dictionary -> dictionary -> ...),
@@ -244,19 +242,19 @@ class DeleteCustomVariableForm extends CompatForm
         $allUuids = array_merge([$uuid], $this->collectDescendantUuids($uuid));
         $quotedAllUuids = DbUtil::quoteBinaryCompat($allUuids, $this->db->getDbAdapter());
 
-        $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedAllUuids));
+        $db->runFailSafeTransaction(function () use ($db, $prop, $quotedUuid, $quotedAllUuids) {
+            $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedAllUuids));
 
-        $this->removeObjectCustomVars($prop, $this->parent);
-        $this->removeFromOverrideServiceVars($prop, $this->parent);
+            $this->removeObjectCustomVars($prop, $this->parent);
+            $this->removeFromOverrideServiceVars($prop, $this->parent);
 
-        $objects = ['host', 'service', 'notification', 'command', 'user', 'service_set'];
-        foreach ($objects as $object) {
-            $this->db->delete("icinga_{$object}_var", Filter::where('property_uuid', $quotedUuid));
-        }
+            $objects = ['host', 'service', 'notification', 'command', 'user', 'service_set'];
+            foreach ($objects as $object) {
+                $this->db->delete("icinga_{$object}_var", Filter::where('property_uuid', $quotedUuid));
+            }
 
-        $db->delete('director_property', Filter::where('uuid', $quotedAllUuids));
-
-        $db->getDbAdapter()->commit();
+            $db->delete('director_property', Filter::where('uuid', $quotedAllUuids));
+        });
     }
 
     /**

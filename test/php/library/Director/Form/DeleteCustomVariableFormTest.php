@@ -421,14 +421,98 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testOnSuccessRollsBackTransactionWhenAnExceptionIsThrown(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A host maintenance window dictionary with one field ("reason"); an unrelated failure
+        // partway through processing must not leave the transaction dangling.
+        $parentUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $parentUuid->getBytes(),
+            'key_name'   => '___TEST___maintenance_window',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Maintenance Window',
+        ], $db)->store();
+
+        $childUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $childUuid->getBytes(),
+            'key_name'    => 'reason',
+            'parent_uuid' => $parentUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___maintenance01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.12',
+        ], $db);
+        $host->store();
+
+        // A malformed stored value (JSON literal null, decoding to PHP null) makes
+        // removeDictionaryItem() receive null where an array is required, throwing a
+        // TypeError partway through onSuccess() -- simulating any unexpected mid-transaction
+        // failure.
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___maintenance_window',
+            'varvalue'      => 'null',
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($parentUuid->getBytes(), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $childUuid->getBytes(),
+                'key_name'    => 'reason',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $parentUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $parentUuid->getBytes(),
+                'key_name'    => '___TEST___maintenance_window',
+                'value_type'  => 'fixed-dictionary',
+                'parent_uuid' => null,
+            ]
+        );
+
+        try {
+            self::callMethod($form, 'onSuccess', []);
+            $this->fail('Expected an exception while processing the malformed stored value');
+        } catch (\Throwable $e) {
+            // expected
+        }
+
+        $this->assertFalse(
+            $dba->getConnection()->inTransaction(),
+            'onSuccess() must roll back its transaction when interrupted by an exception'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
             $dba = $this->getDb()->getDbAdapter();
+            // A test exercising the no-rollback bug can leave a transaction open if the fix
+            // under test regresses; clear it first so cleanup below (and later tests) aren't
+            // run inside a stale, never-committed transaction.
+            if ($dba->getConnection()->inTransaction()) {
+                $dba->getConnection()->rollBack();
+            }
             // Delete hosts (cascades to icinga_host_var) before director_property rows below —
             // icinga_host_var.property_uuid has no ON DELETE CASCADE to director_property.
             $hostNames = [
                 '___TEST___backup01',
+                '___TEST___maintenance01',
             ];
             foreach ($hostNames as $hostName) {
                 $dba->delete('icinga_host', ['object_name = ?' => $hostName]);
@@ -440,6 +524,7 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___fixed_array_parent',
                 '___TEST___backup_directories',
                 '___TEST___escalation_contacts',
+                '___TEST___maintenance_window',
             ];
             foreach ($keyNames as $keyName) {
                 $rows = $dba->fetchAll(
