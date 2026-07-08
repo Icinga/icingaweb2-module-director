@@ -964,6 +964,94 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testFixedArrayReindexPreservesRequiredFlagOnSurvivingItem(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A fixed array of on-call contact numbers, defined on a host template. The second
+        // contact has been marked "required" directly via icinga_host_property. Deleting the
+        // first contact forces this survivor to be renumbered from key_name '1' to '0' -- the
+        // renumbering must not lose the "required" binding along the way.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___oncall_template',
+            'object_type' => 'template',
+        ], $db);
+        $host->store();
+
+        $parentUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $parentUuid->getBytes(),
+            'key_name'   => '___TEST___contact_numbers',
+            'value_type' => 'fixed-array',
+            'label'      => 'Contact Numbers',
+        ], $db)->store();
+
+        $item0Uuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $item0Uuid->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $parentUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $item1Uuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $item1Uuid->getBytes(),
+            'key_name'    => '1',
+            'parent_uuid' => $parentUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_property', [
+            'host_uuid'     => DbUtil::quoteBinaryCompat($host->get('uuid'), $dba),
+            'property_uuid' => DbUtil::quoteBinaryCompat($item1Uuid->getBytes(), $dba),
+            'required'      => 'y',
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $item0Uuid->getBytes(),
+                'key_name'    => '0',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $parentUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $parentUuid->getBytes(),
+                'key_name'    => '___TEST___contact_numbers',
+                'value_type'  => 'fixed-array',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $survivor = $dba->fetchRow(
+            $dba->select()->from('director_property', ['uuid', 'key_name'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($parentUuid->getBytes(), $dba))
+        );
+        $this->assertNotFalse($survivor, 'the surviving item must still exist after the reindex');
+        $this->assertEquals('0', $survivor->key_name, 'the survivor must be renumbered to key_name 0');
+
+        $survivorUuid = DbUtil::binaryResult($survivor->uuid);
+        $requiredRow = $dba->fetchRow(
+            $dba->select()->from('icinga_host_property', ['required'])
+                ->where('property_uuid = ?', DbUtil::quoteBinaryCompat($survivorUuid, $dba))
+        );
+
+        $this->assertNotFalse(
+            $requiredRow,
+            'the required binding on the surviving item must not be lost by the reindex'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -984,6 +1072,7 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___multidc01',
                 '___TEST___multidc02',
                 '___TEST___multidc03',
+                '___TEST___oncall_template',
             ];
             foreach ($hostNames as $hostName) {
                 $dba->delete('icinga_host', ['object_name = ?' => $hostName]);
@@ -1001,6 +1090,7 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___datacenter_settings',
                 '___TEST___datacenter_settings_2',
                 '___TEST___datacenter_settings_3',
+                '___TEST___contact_numbers',
             ];
             foreach ($keyNames as $keyName) {
                 $rows = $dba->fetchAll(

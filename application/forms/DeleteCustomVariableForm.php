@@ -522,60 +522,47 @@ class DeleteCustomVariableForm extends CompatForm
     {
         $db = $this->db->getDbAdapter();
         $quotedUuid = DbUtil::quoteBinaryCompat($uuid->getBytes(), $db);
-        $query = $db
-            ->select()
-            ->from(['dp' => 'director_property'], [])
-            ->columns([
-                'key_name',
-                'uuid',
-                'parent_uuid',
-                'value_type',
-                'label',
-                'description',
-                'category_id'
-            ])
-            ->joinLeft(
-                ['dpdl' => 'director_property_datalist'],
-                'dpdl.property_uuid = dp.uuid',
-                ['list_uuid']
-            )
-            ->where('dp.parent_uuid = ?', $quotedUuid)
-            ->where('dp.key_name != ?', $propertyIndex);
 
-        $propItems = array_map([DbUtil::class, 'normalizeRow'], $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC));
+        // Delete the item being removed first, freeing up its key_name slot before any
+        // surviving sibling is renumbered into it — key_name is unique per parent_uuid.
+        $db->delete(
+            'director_property',
+            [
+                'parent_uuid = ?' => $quotedUuid,
+                'key_name = ?' => $propertyIndex,
+            ]
+        );
+
+        $propItems = array_map(
+            [DbUtil::class, 'normalizeRow'],
+            $db->fetchAll(
+                $db->select()
+                    ->from('director_property', ['uuid', 'key_name'])
+                    ->where('parent_uuid = ?', $quotedUuid),
+                [],
+                Zend_Db::FETCH_ASSOC
+            )
+        );
         // key_name is a varchar column; a fixed array's item indexes must be sorted numerically
         // here, not lexicographically (otherwise '10' would sort before '2').
         usort($propItems, fn($a, $b) => (int) $a['key_name'] <=> (int) $b['key_name']);
 
-        // Deleting director_property here cascades away any director_property_datalist link
-        // for these items (ON DELETE CASCADE on property_uuid) — list_uuid was captured above
-        // so each item's link can be reinserted below, after the uuid exists again.
-        $db->delete(
-            'director_property',
-            ['parent_uuid = ?' => $quotedUuid]
-        );
-
-        $count = 0;
-        foreach ($propItems as $propItem) {
-            $itemUuid = Uuid::fromBytes($propItem['uuid'])->getBytes();
-            $this->db->insert('director_property', [
-                'uuid' => DbUtil::quoteBinaryCompat($itemUuid, $db),
-                'parent_uuid' => $quotedUuid,
-                'key_name' => $count,
-                'label' => $propItem['label'],
-                'value_type' => $propItem['value_type'],
-                'description' => $propItem['description'],
-                'category_id' => $propItem['category_id']
-            ]);
-
-            if ($propItem['list_uuid'] !== null) {
-                $this->db->insert('director_property_datalist', [
-                    'property_uuid' => DbUtil::quoteBinaryCompat($itemUuid, $db),
-                    'list_uuid' => DbUtil::quoteBinaryCompat($propItem['list_uuid'], $db)
-                ]);
+        // Renumber survivors in place — everything else about each item's row (category,
+        // label, value_type, description, director_property_datalist link, and any other
+        // table referencing its uuid, such as icinga_host_property) is left untouched.
+        foreach ($propItems as $index => $propItem) {
+            if ($propItem['key_name'] === (string) $index) {
+                continue;
             }
 
-            $count++;
+            $db->update(
+                'director_property',
+                ['key_name' => $index],
+                $db->quoteInto(
+                    'uuid = ?',
+                    DbUtil::quoteBinaryCompat($propItem['uuid'], $db)
+                )
+            );
         }
     }
 }
