@@ -512,12 +512,21 @@ class DeleteCustomVariableForm extends CompatForm
                 'parent_uuid',
                 'value_type',
                 'label',
-                'description'
+                'description',
+                'category_id'
             ])
-            ->where('parent_uuid = ?', $quotedUuid);
+            ->joinLeft(
+                ['dpdl' => 'director_property_datalist'],
+                'dpdl.property_uuid = dp.uuid',
+                ['list_uuid']
+            )
+            ->where('dp.parent_uuid = ?', $quotedUuid);
 
         $propItems = array_map([DbUtil::class, 'normalizeRow'], $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC));
 
+        // Deleting director_property here cascades away any director_property_datalist link
+        // for these items (ON DELETE CASCADE on property_uuid) — list_uuid was captured above
+        // so each item's link can be reinserted below, after the uuid exists again.
         $db->delete(
             'director_property',
             ['parent_uuid = ?' => $quotedUuid]
@@ -525,14 +534,23 @@ class DeleteCustomVariableForm extends CompatForm
 
         $count = 0;
         foreach ($propItems as $propItem) {
+            $itemUuid = Uuid::fromBytes($propItem['uuid'])->getBytes();
             $this->db->insert('director_property', [
-                'uuid' => Uuid::fromBytes($propItem['uuid'])->getBytes(),
-                'parent_uuid' => $uuid->getBytes(),
+                'uuid' => DbUtil::quoteBinaryCompat($itemUuid, $db),
+                'parent_uuid' => $quotedUuid,
                 'key_name' => $count,
                 'label' => $propItem['label'],
                 'value_type' => $propItem['value_type'],
-                'description' => $propItem['description']
+                'description' => $propItem['description'],
+                'category_id' => $propItem['category_id']
             ]);
+
+            if ($propItem['list_uuid'] !== null) {
+                $this->db->insert('director_property_datalist', [
+                    'property_uuid' => DbUtil::quoteBinaryCompat($itemUuid, $db),
+                    'list_uuid' => DbUtil::quoteBinaryCompat($propItem['list_uuid'], $db)
+                ]);
+            }
 
             $count++;
         }

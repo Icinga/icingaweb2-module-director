@@ -7,6 +7,7 @@ namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DeleteCustomVariableForm;
+use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -156,22 +157,154 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         $this->assertFalse($propRow, 'director_property row should be deleted');
     }
 
+    public function testUpdateFixedArrayItemsPreservesCategoryAndDatalistLink(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $datalist = DirectorDatalist::create([
+            'list_name' => '___TEST___fixed_array_datalist',
+            'owner'     => 'test',
+        ], $db);
+        $datalist->store();
+
+        $category = DirectorDatafieldCategory::create([
+            'category_name' => '___TEST___fixed_array_category',
+        ], $db);
+        $category->store();
+
+        $parentUuid = Uuid::uuid4();
+        $parent = DirectorProperty::create([
+            'uuid'       => $parentUuid->getBytes(),
+            'key_name'   => '___TEST___fixed_array_parent',
+            'value_type' => 'fixed-array',
+            'label'      => 'Fixed Array Parent',
+        ], $db);
+        $parent->store();
+
+        // Item 0 will be deleted. Item 1 is an innocent sibling that must survive the
+        // reindex triggered by that deletion with its category and datalist link intact.
+        $item0Uuid = Uuid::uuid4();
+        $item0 = DirectorProperty::create([
+            'uuid'        => $item0Uuid->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $parentUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db);
+        $item0->store();
+
+        // Inserted directly (as the web forms do) rather than via DirectorProperty::store(),
+        // so this only exercises updateFixedArrayItems(), not property creation itself.
+        $item1Uuid = Uuid::uuid4();
+        $dba->insert('director_property', [
+            'uuid'        => DbUtil::quoteBinaryCompat($item1Uuid->getBytes(), $dba),
+            'parent_uuid' => DbUtil::quoteBinaryCompat($parentUuid->getBytes(), $dba),
+            'key_name'    => '1',
+            'value_type'  => 'datalist-strict',
+            'category_id' => $category->get('id'),
+            'label'       => null,
+            'description' => null,
+        ]);
+        $dba->insert('director_property_datalist', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($item1Uuid->getBytes(), $dba),
+            'list_uuid'     => DbUtil::quoteBinaryCompat($datalist->get('uuid'), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $item0Uuid->getBytes(),
+                'key_name'    => '0',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $parentUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $parentUuid->getBytes(),
+                'key_name'    => '___TEST___fixed_array_parent',
+                'value_type'  => 'fixed-array',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $survivor = $dba->fetchRow(
+            $dba->select()
+                ->from('director_property', ['uuid', 'category_id'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($parentUuid->getBytes(), $dba))
+        );
+        $this->assertNotFalse($survivor, 'surviving fixed-array item should still exist after the reindex');
+        $this->assertEquals(
+            $category->get('id'),
+            (int) $survivor->category_id,
+            'category_id must survive the fixed-array reindex'
+        );
+
+        $survivorUuid = DbUtil::binaryResult($survivor->uuid);
+        $linkRow = $dba->fetchRow(
+            $dba->select()
+                ->from('director_property_datalist', ['list_uuid'])
+                ->where('property_uuid = ?', DbUtil::quoteBinaryCompat($survivorUuid, $dba))
+        );
+        $this->assertNotFalse($linkRow, 'datalist link must survive the fixed-array reindex');
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
             $dba = $this->getDb()->getDbAdapter();
-            foreach (['___TEST___environment', '___TEST___snmp_v3', '___TEST___escalation_tier'] as $keyName) {
+            $keyNames = [
+                '___TEST___environment',
+                '___TEST___snmp_v3',
+                '___TEST___escalation_tier',
+                '___TEST___fixed_array_parent',
+            ];
+            foreach ($keyNames as $keyName) {
                 $rows = $dba->fetchAll(
                     $dba->select()
                         ->from('director_property', ['uuid'])
                         ->where('key_name = ?', $keyName)
                 );
                 foreach ($rows as $row) {
+                    // Read the (possibly stream-backed, on PostgreSQL) uuid column exactly once —
+                    // a PHP stream resource can only be consumed a single time.
+                    $rowUuid = DbUtil::binaryResult($row->uuid);
+                    $childUuids = array_map(
+                        [DbUtil::class, 'binaryResult'],
+                        $dba->fetchCol(
+                            $dba->select()->from('director_property', ['uuid'])->where(
+                                'parent_uuid = ?',
+                                DbUtil::quoteBinaryCompat($rowUuid, $dba)
+                            )
+                        )
+                    );
+                    foreach ($childUuids as $childUuid) {
+                        $dba->delete(
+                            'director_property_datalist',
+                            $dba->quoteInto(
+                                'property_uuid = ?',
+                                DbUtil::quoteBinaryCompat($childUuid, $dba)
+                            )
+                        );
+                    }
+                    $dba->delete(
+                        'director_property_datalist',
+                        $dba->quoteInto(
+                            'property_uuid = ?',
+                            DbUtil::quoteBinaryCompat($rowUuid, $dba)
+                        )
+                    );
                     $dba->delete(
                         'director_property',
                         $dba->quoteInto(
                             'parent_uuid = ?',
-                            DbUtil::quoteBinaryCompat(DbUtil::binaryResult($row->uuid), $dba)
+                            DbUtil::quoteBinaryCompat($rowUuid, $dba)
                         )
                     );
                     $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
@@ -179,6 +312,8 @@ class DeleteCustomVariableFormTest extends BaseTestCase
             }
 
             $dba->delete('director_datalist', ['list_name = ?' => '___TEST___severity_levels']);
+            $dba->delete('director_datalist', ['list_name = ?' => '___TEST___fixed_array_datalist']);
+            $dba->delete('director_datafield_category', ['category_name = ?' => '___TEST___fixed_array_category']);
         }
 
         parent::tearDown();
