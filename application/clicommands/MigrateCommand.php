@@ -11,6 +11,7 @@ use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -173,6 +174,13 @@ class MigrateCommand extends Command
                 $customProperty['item_type'] = $settings['data_type'] === 'array'
                     ? 'dynamic-array'
                     : 'string';
+
+                if (isset($settings['datalist_id'])) {
+                    $customProperty['datalist_uuid'] = DirectorDatalist::loadWithAutoIncId(
+                        $settings['datalist_id'],
+                        $db
+                    )->get('uuid');
+                }
             } else {
                 $customProperty['value_type'] = "unsupported-$dataType";
             }
@@ -213,6 +221,12 @@ class MigrateCommand extends Command
                 unset($customProperty['item_type']);
             }
 
+            $datalistUuidBytes = null;
+            if (isset($customProperty['datalist_uuid'])) {
+                $datalistUuidBytes = $customProperty['datalist_uuid'];
+                unset($customProperty['datalist_uuid']);
+            }
+
             $this->migratedDataFields[$customProperty['datafield_id']] = $varName;
             if (! $dryRun) {
                 $datafieldId = $customProperty['datafield_id'];
@@ -230,6 +244,13 @@ class MigrateCommand extends Command
                         'key_name' => 0,
                         'value_type' => $itemType,
                         'parent_uuid' => DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter)
+                    ]);
+                }
+
+                if ($datalistUuidBytes !== null) {
+                    $db->insert('director_property_datalist', [
+                        'property_uuid' => DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter),
+                        'list_uuid' => DbUtil::quoteBinaryCompat($datalistUuidBytes, $dbAdapter)
                     ]);
                 }
 

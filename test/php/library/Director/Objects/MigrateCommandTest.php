@@ -176,6 +176,74 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertEquals('datalist-non-strict', $row->value_type);
     }
 
+    public function testDatalistStrictMigrationLinksDatalist(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $property = $dba->fetchRow(
+            $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', self::VAR_ENV_CHOICES)
+        );
+        $this->assertNotFalse($property, 'env_choices property must be created');
+
+        $linkedListName = $dba->fetchOne(
+            $dba->select()->from(['dd' => 'director_datalist'], ['list_name'])
+                ->join(['dpdl' => 'director_property_datalist'], 'dpdl.list_uuid = dd.uuid', [])
+                ->where(
+                    'dpdl.property_uuid = ?',
+                    DbUtil::quoteBinaryCompat(DbUtil::binaryResult($property->uuid), $dba)
+                )
+        );
+
+        $this->assertEquals(
+            self::LIST_NAME,
+            $linkedListName,
+            'migrating a legacy datalist-strict datafield must link the new property to its datalist'
+        );
+    }
+
+    public function testDatalistNonStrictMigrationLinksDatalist(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $property = $dba->fetchRow(
+            $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', self::VAR_ENV_SUGGEST)
+        );
+        $this->assertNotFalse($property, 'env_suggest property must be created');
+
+        $linkedListName = $dba->fetchOne(
+            $dba->select()->from(['dd' => 'director_datalist'], ['list_name'])
+                ->join(['dpdl' => 'director_property_datalist'], 'dpdl.list_uuid = dd.uuid', [])
+                ->where(
+                    'dpdl.property_uuid = ?',
+                    DbUtil::quoteBinaryCompat(DbUtil::binaryResult($property->uuid), $dba)
+                )
+        );
+
+        $this->assertEquals(
+            self::LIST_NAME,
+            $linkedListName,
+            'migrating a legacy datalist-non-strict datafield must link the new property to its datalist'
+        );
+    }
+
     public function testDeleteOptionRemovesMigratedDatafields(): void
     {
         if ($this->skipForMissingDb()) {
