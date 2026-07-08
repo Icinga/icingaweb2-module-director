@@ -523,10 +523,12 @@ class DeleteCustomVariableForm extends CompatForm
                 ['list_uuid']
             )
             ->where('dp.parent_uuid = ?', $quotedUuid)
-            ->where('dp.key_name != ?', $propertyIndex)
-            ->order('dp.key_name');
+            ->where('dp.key_name != ?', $propertyIndex);
 
         $propItems = array_map([DbUtil::class, 'normalizeRow'], $db->fetchAll($query, [], Zend_Db::FETCH_ASSOC));
+        // key_name is a varchar column; a fixed array's item indexes must be sorted numerically
+        // here, not lexicographically (otherwise '10' would sort before '2').
+        usort($propItems, fn($a, $b) => (int) $a['key_name'] <=> (int) $b['key_name']);
 
         // Deleting director_property here cascades away any director_property_datalist link
         // for these items (ON DELETE CASCADE on property_uuid) — list_uuid was captured above

@@ -339,6 +339,88 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testUpdateFixedArrayItemsReindexesNumericallyNotLexicographically(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A fixed array of 11 on-call escalation contacts (indices '0'..'10'): with more than
+        // 10 items, a lexicographic sort of key_name puts '10' right after '1', before '2'.
+        $parentUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $parentUuid->getBytes(),
+            'key_name'   => '___TEST___escalation_contacts',
+            'value_type' => 'fixed-array',
+            'label'      => 'Escalation Contacts',
+        ], $db)->store();
+
+        for ($i = 0; $i <= 10; $i++) {
+            DirectorProperty::create([
+                'uuid'        => Uuid::uuid4()->getBytes(),
+                'key_name'    => (string) $i,
+                'parent_uuid' => $parentUuid->getBytes(),
+                'value_type'  => 'string',
+                'label'       => "Contact $i",
+            ], $db)->store();
+        }
+
+        // Delete contact '5'; the remaining 10 contacts must be reindexed to '0'..'9' in their
+        // original numeric order (Contact 0,1,2,3,4,6,7,8,9,10 -> key_name 0,1,2,3,4,5,6,7,8,9).
+        $deletedUuid = DbUtil::binaryResult($dba->fetchOne(
+            $dba->select()->from('director_property', ['uuid'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($parentUuid->getBytes(), $dba))
+                ->where('key_name = ?', '5')
+        ));
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $deletedUuid,
+                'key_name'    => '5',
+                'value_type'  => 'string',
+                'label'       => 'Contact 5',
+                'description' => null,
+                'parent_uuid' => $parentUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $parentUuid->getBytes(),
+                'key_name'    => '___TEST___escalation_contacts',
+                'value_type'  => 'fixed-array',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $rows = $dba->fetchAll(
+            $dba->select()->from('director_property', ['key_name', 'label'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($parentUuid->getBytes(), $dba))
+        );
+        $labelsByKeyName = [];
+        foreach ($rows as $row) {
+            $labelsByKeyName[$row->key_name] = $row->label;
+        }
+
+        // Numeric order (0,1,2,3,4,6,7,8,9,10 -> new keys 0..9) puts "Contact 2" at key_name '2'
+        // and "Contact 10" at key_name '9'. A lexicographic sort ('0','1','10','2',...) would
+        // instead put "Contact 10" at key_name '2' and "Contact 2" at key_name '3'.
+        $this->assertEquals(
+            'Contact 2',
+            $labelsByKeyName['2'] ?? null,
+            'key_name 2 must still refer to the item originally labeled "Contact 2"'
+        );
+        $this->assertEquals(
+            'Contact 10',
+            $labelsByKeyName['9'] ?? null,
+            'the item originally labeled "Contact 10" must end up last (key_name 9), not'
+            . ' misplaced by a lexicographic sort'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -357,6 +439,7 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___escalation_tier',
                 '___TEST___fixed_array_parent',
                 '___TEST___backup_directories',
+                '___TEST___escalation_contacts',
             ];
             foreach ($keyNames as $keyName) {
                 $rows = $dba->fetchAll(
