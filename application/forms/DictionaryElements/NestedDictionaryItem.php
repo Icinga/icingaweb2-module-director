@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
+use Icinga\Module\Director\Forms\CustomVariablesForm;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
@@ -101,7 +102,10 @@ class NestedDictionaryItem extends FieldsetElement
     {
         $nestedValues = [];
         foreach ($nestedItems as $nestedItem) {
-            if (isset($property[$nestedItem['key_name']]) && ! empty($property[$nestedItem['key_name']])) {
+            if (
+                isset($property[$nestedItem['key_name']])
+                && ! CustomVariablesForm::isValueUnset($property[$nestedItem['key_name']])
+            ) {
                 $nestedItem['value'] = $property[$nestedItem['key_name']];
             }
 
