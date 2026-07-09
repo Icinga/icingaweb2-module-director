@@ -254,7 +254,6 @@ CREATE TABLE director_property (
   parent_uuid varbinary(16) NULL DEFAULT NULL,
   key_name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   label varchar(255) COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
-  description text DEFAULT NULL,
   value_type enum(
     'string',
     'number',
@@ -267,6 +266,7 @@ CREATE TABLE director_property (
     'datalist-non-strict'
   ) COLLATE utf8mb4_unicode_ci NOT NULL,
   category_id INT(10) UNSIGNED DEFAULT NULL,
+  description text DEFAULT NULL,
   parent_uuid_v varbinary(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) STORED,
   PRIMARY KEY (uuid),
   UNIQUE INDEX unique_name_parent_uuid (key_name, parent_uuid_v),
