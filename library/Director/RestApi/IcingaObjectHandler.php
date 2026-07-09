@@ -181,6 +181,13 @@ class IcingaObjectHandler extends RequestHandler
                 $overRiddenCustomVars = [];
                 $replaceAll = false;
                 if ($actionName === 'variables') {
+                    if ($object === null) {
+                        throw new InvalidArgumentException(
+                            'Cannot set variables, no matching object was found. Please provide a valid '
+                            . '"name" (and "host" for services), "uuid" or "id" parameter.'
+                        );
+                    }
+
                     $overRiddenCustomVars = $data;
                 } else {
                     // Extract custom vars from the data
