@@ -399,6 +399,13 @@ class DictionaryItem extends FieldsetElement
             ->order('key_name');
 
         $propertyItems = $db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
+
+        if ($parentType === 'fixed-array') {
+            // For a fixed array, key_name is the item's position, not a field name, so order by
+            // it numerically instead of the lexicographic "children"/key_name order above
+            usort($propertyItems, fn($a, $b) => (int) $a['key_name'] <=> (int) $b['key_name']);
+        }
+
         foreach ($propertyItems as $key => $propertyItem) {
             $propertyItem['uuid'] = DbUtil::binaryResult($propertyItem['uuid']);
             $propertyItem['parent_uuid'] = DbUtil::binaryResult($propertyItem['parent_uuid']);
