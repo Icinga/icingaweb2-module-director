@@ -227,7 +227,6 @@ class MigrateCommand extends Command
                     unset($customProperty['datalist_uuid']);
                 }
 
-                $this->migratedDataFields[$customProperty['datafield_id']] = $varName;
                 if (! $dryRun) {
                     $datafieldId = $customProperty['datafield_id'];
                     unset($customProperty['datafield_id']);
