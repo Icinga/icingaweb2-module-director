@@ -164,7 +164,7 @@ class MigrateCommand extends Command
             } elseif ($dataType === 'datalist') {
                 $datalist = DirectorDatafield::load($row->id, $db);
                 $settings = $datalist->getSettings();
-                $behaviour = $settings['behavior'];
+                $behaviour = $settings['behavior'] ?? 'strict';
                 if ($behaviour === 'strict' || $behaviour === 'suggest_strict') {
                     $customProperty['value_type'] = 'datalist-strict';
                 } else {

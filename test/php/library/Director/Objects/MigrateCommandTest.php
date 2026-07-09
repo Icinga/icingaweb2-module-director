@@ -31,6 +31,8 @@ class MigrateCommandTest extends BaseTestCase
 
     private const VAR_ENV_SUGGEST    = self::PREFIX . 'env_suggest';
 
+    private const VAR_ENV_CHOICES_DEFAULT_BEHAVIOR = self::PREFIX . 'env_choices_default_behavior';
+
     // Non-migratable datafield varnames
     private const VAR_SQL_QUERY    = self::PREFIX . 'sql_query_field';
 
@@ -62,6 +64,7 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_CHECK_INTERVAL,
         self::VAR_ENV_CHOICES,
         self::VAR_ENV_SUGGEST,
+        self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR,
         self::VAR_SQL_QUERY,
         self::VAR_CATEGORIZED,
         self::VAR_HIDDEN,
@@ -198,6 +201,33 @@ class MigrateCommandTest extends BaseTestCase
 
         $this->assertNotFalse($row, 'env_suggest property must be created');
         $this->assertEquals('datalist-non-strict', $row->value_type);
+    }
+
+    public function testDatalistWithoutExplicitBehaviorDefaultsToStrict(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $row = $dba->fetchRow(
+            $dba->select()->from('director_property', ['value_type'])
+                ->where('key_name = ?', self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR)
+        );
+
+        $this->assertNotFalse($row, 'env_choices_default_behavior property must be created');
+        $this->assertEquals(
+            'datalist-strict',
+            $row->value_type,
+            'a datalist datafield with no explicit "behavior" setting must migrate as strict, '
+            . 'matching DataTypeDatalist\'s own default'
+        );
     }
 
     public function testDatalistStrictMigrationLinksDatalist(): void
@@ -663,6 +693,17 @@ class MigrateCommandTest extends BaseTestCase
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeDatalist',
         ], $db);
         $field->set('behavior', 'suggest');
+        $field->set('data_type', 'string');
+        $field->set('datalist_id', $datalistId);
+        $field->store();
+
+        // 5b. env_choices_default_behavior — datalist datafield with no explicit 'behavior'
+        // setting; must default to strict, matching DataTypeDatalist::getSetting('behavior', 'strict').
+        $field = DirectorDatafield::create([
+            'varname'  => self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR,
+            'caption'  => 'Environment Choices Default Behavior',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeDatalist',
+        ], $db);
         $field->set('data_type', 'string');
         $field->set('datalist_id', $datalistId);
         $field->store();
