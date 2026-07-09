@@ -7,7 +7,6 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterAnd;
 use Icinga\Data\Filter\FilterMatch;
 use Icinga\Module\Director\Cli\Command;
-use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -500,21 +499,20 @@ class MigrateCommand extends Command
     {
         $db = $this->db();
         $dbAdapter = $db->getDbAdapter();
+        $propertyUuidExpr = DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter);
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
         foreach ($objectTypes as $type) {
-            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['*'])
+            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid'])
                 ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", [])
                 ->where('iof.datafield_id = ?', $datafieldId);
 
-            $objectInstance = DbObjectTypeRegistry::classByType($type);
-            $objects = $objectInstance::loadAll($db, $query);
-            foreach ($objects as $object) {
+            foreach ($dbAdapter->fetchCol($query) as $objectUuid) {
                 $db->insert(
                     "icinga_{$type}_property",
                     [
-                        'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter),
+                        'property_uuid' => $propertyUuidExpr,
                         "{$type}_uuid"  => DbUtil::quoteBinaryCompat(
-                            DbUtil::binaryResult($object->get('uuid')),
+                            DbUtil::binaryResult($objectUuid),
                             $dbAdapter
                         )
                     ]
