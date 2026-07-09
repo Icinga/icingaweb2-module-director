@@ -12,6 +12,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -252,7 +253,7 @@ class MigrateCommand extends Command
                         ]);
                     }
 
-                    $this->migrateDatafieldObjectTemplateBinding($datafieldId, $propertyUuid);
+                    $this->migrateDatafieldObjectTemplateBinding($datafieldId, $propertyUuid, $varName);
                 }
 
                 if ($dryRun) {
@@ -495,26 +496,35 @@ class MigrateCommand extends Command
      *
      * @return void
      */
-    private function migrateDatafieldObjectTemplateBinding(int $datafieldId, UuidInterface $propertyUuid): void
-    {
+    private function migrateDatafieldObjectTemplateBinding(
+        int $datafieldId,
+        UuidInterface $propertyUuid,
+        string $varName
+    ): void {
         $db = $this->db();
         $dbAdapter = $db->getDbAdapter();
         $propertyUuidExpr = DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter);
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
         foreach ($objectTypes as $type) {
             $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid'])
-                ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", [])
+                ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['is_required', 'var_filter'])
                 ->where('iof.datafield_id = ?', $datafieldId);
 
-            foreach ($dbAdapter->fetchCol($query) as $objectUuid) {
+            foreach ($dbAdapter->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+                if (! empty($row['var_filter'])) {
+                    echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
+                        . "var_filter is not supported by the new property system and will not be migrated\n";
+                }
+
                 $db->insert(
                     "icinga_{$type}_property",
                     [
                         'property_uuid' => $propertyUuidExpr,
                         "{$type}_uuid"  => DbUtil::quoteBinaryCompat(
-                            DbUtil::binaryResult($objectUuid),
+                            DbUtil::binaryResult($row['uuid']),
                             $dbAdapter
-                        )
+                        ),
+                        'required' => $row['is_required'],
                     ]
                 );
             }

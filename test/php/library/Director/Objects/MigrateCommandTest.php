@@ -10,6 +10,8 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorDatalist;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaHostField;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Ramsey\Uuid\Uuid;
 use Tests\Icinga\Module\Director\Objects\Lib\TestableMigrateCommand;
@@ -43,6 +45,8 @@ class MigrateCommandTest extends BaseTestCase
     private const LIST_NAME = self::PREFIX . 'migrate_list';
 
     private const CAT_NAME  = self::PREFIX . 'migrate_category';
+
+    private const HOST_NAME = self::PREFIX . 'binding_host';
 
     private const MIGRATABLE = [
         self::VAR_ENV,
@@ -497,6 +501,86 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertEquals(1, (int) $count, 'Pre-existing custom property must not be duplicated by migration');
     }
 
+    public function testObjectTemplateBindingPreservesIsRequired(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $row = $dba->fetchRow(
+            $dba->select()->from(['ihp' => 'icinga_host_property'], ['required'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = ihp.property_uuid', [])
+                ->where('dp.key_name = ?', self::VAR_ENV)
+        );
+
+        $this->assertNotFalse($row, 'icinga_host_property row must be created for the bound host');
+        $this->assertEquals('y', $row->required, 'is_required must be carried over into the new required column');
+    }
+
+    public function testObjectTemplateBindingWarnsAboutUnmigratedVarFilter(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $output = $cmd->runDatafields();
+
+        $this->assertStringContainsString(
+            "Datafield '" . self::VAR_ENV . "' has a var_filter set for its icinga_host binding",
+            $output
+        );
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()->from(['ihp' => 'icinga_host_property'], ['cnt' => 'COUNT(*)'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = ihp.property_uuid', [])
+                ->where('dp.key_name = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(1, (int) $count, 'the binding must still be created even though its filter is dropped');
+    }
+
+    public function testObjectTemplateBindingWithoutFilterDoesNotWarn(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $output = $cmd->runDatafields();
+
+        $this->assertStringNotContainsString(
+            "Datafield '" . self::VAR_CHECK_INTERVAL . "' has a var_filter",
+            $output
+        );
+
+        $dba = $db->getDbAdapter();
+        $row = $dba->fetchRow(
+            $dba->select()->from(['ihp' => 'icinga_host_property'], ['required'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = ihp.property_uuid', [])
+                ->where('dp.key_name = ?', self::VAR_CHECK_INTERVAL)
+        );
+
+        $this->assertNotFalse($row, 'icinga_host_property row must be created for the bound host');
+        $this->assertEquals('n', $row->required);
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -505,6 +589,10 @@ class MigrateCommandTest extends BaseTestCase
             if ($dba->getConnection()->inTransaction()) {
                 $dba->getConnection()->rollBack();
             }
+
+            // Delete the host before the properties/datafields below — icinga_host cascades
+            // to icinga_host_field and icinga_host_property.
+            $dba->delete('icinga_host', ['object_name = ?' => self::HOST_NAME]);
 
             $this->deleteTestProperties($db);
             $this->deleteTestDatafields($db);
@@ -626,6 +714,37 @@ class MigrateCommandTest extends BaseTestCase
             'caption'  => 'Time Field',
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeTime',
         ], $db)->store();
+    }
+
+    private function createHostFieldBinding(Db $db): IcingaHost
+    {
+        $host = IcingaHost::create([
+            'object_name' => self::HOST_NAME,
+            'object_type' => 'template',
+        ], $db);
+        $host->store();
+
+        $dba = $db->getDbAdapter();
+        $envFieldId = $dba->fetchOne(
+            $dba->select()->from('director_datafield', ['id'])->where('varname = ?', self::VAR_ENV)
+        );
+        IcingaHostField::create([
+            'host_id'      => $host->get('id'),
+            'datafield_id' => $envFieldId,
+            'is_required'  => 'y',
+            'var_filter'   => 'host.vars.os=Linux',
+        ], $db)->store();
+
+        $checkIntervalFieldId = $dba->fetchOne(
+            $dba->select()->from('director_datafield', ['id'])->where('varname = ?', self::VAR_CHECK_INTERVAL)
+        );
+        IcingaHostField::create([
+            'host_id'      => $host->get('id'),
+            'datafield_id' => $checkIntervalFieldId,
+            'is_required'  => 'n',
+        ], $db)->store();
+
+        return $host;
     }
 
     private function deleteTestDatafields(Db $db): void
