@@ -354,9 +354,14 @@ class DirectorProperty extends DbObject
             $candidate = DirectorProperty::fromDbRow($dbRow, $db);
             $export = $candidate->export();
             if (isset($export->parent_uuid)) {
-                $export->parent = DirectorProperty::loadWithUniqueId(Uuid::fromString($export->parent_uuid), $db)
-                    ->get('key_name');
-                unset($export->parent_uuid);
+                $exportParent = DirectorProperty::loadWithUniqueId(Uuid::fromString($export->parent_uuid), $db);
+                if ($exportParent === null) {
+                    // Parent no longer exists (orphaned reference, no FK enforces this link);
+                    // leave parent_uuid in place instead of crashing on a null dereference.
+                } else {
+                    $export->parent = $exportParent->get('key_name');
+                    unset($export->parent_uuid);
+                }
             }
 
             CompareBasketObject::normalize($export);
@@ -364,8 +369,12 @@ class DirectorProperty extends DbObject
             if (isset($plain->parent_uuid)) {
                 $parent = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($plain->parent_uuid), $db);
                 if ($parent === null) {
+                    // $export's parent_uuid is already a UUID string at this point (see
+                    // export()); match that representation here too, or the equals() call
+                    // below tries to JSON-encode raw binary bytes and crashes. The raw bytes
+                    // form is restored a few lines down before create() needs it.
                     unset($plain->parent);
-                    $plain->parent_uuid = $plainParentUuid;
+                    $plain->parent_uuid = Uuid::fromBytes($plainParentUuid)->toString();
                 } else {
                     $plain->parent = $parent->get('key_name');
                     unset($plain->parent_uuid);

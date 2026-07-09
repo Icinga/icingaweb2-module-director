@@ -427,6 +427,49 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals(['crit', 'warn'], $childKeys);
     }
 
+    public function testImportWithOrphanedParentDoesNotCrash(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $parent = $this->makeProperty('orphan_parent', 'fixed-dictionary', 'Orphan Parent', $db);
+        $parent->store();
+        $parentUuid = $parent->get('uuid');
+
+        $childKeyName = self::PREFIX . 'orphan_child';
+        $this->createdKeyNames[] = $childKeyName;
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => $childKeyName,
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        // Simulate a dangling parent reference: director_property.parent_uuid has no FK
+        // enforcing this link (see schema/mysql.sql), so this state is reachable in practice.
+        $dba->delete(
+            'director_property',
+            $dba->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($parentUuid, $dba))
+        );
+
+        // This branch expects parent_uuid as raw bytes (matching how the equivalent
+        // lookup for $plain->parent_uuid is used at Uuid::fromBytes() a few lines down
+        // in import()), unlike the has-uuid branch's string-form convention.
+        $plain = (object) [
+            'key_name'    => $childKeyName,
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'string',
+        ];
+
+        $imported = DirectorProperty::import($plain, $db);
+
+        $this->assertInstanceOf(DirectorProperty::class, $imported);
+    }
+
     public function testImportIsIdempotent(): void
     {
         if ($this->skipForMissingDb()) {
