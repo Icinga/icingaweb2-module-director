@@ -166,9 +166,34 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             $service->store();
         }
 
-        foreach ($this->fetchServices() as $service) {
-            if (!isset($seen[$service->getUniqueId()->getBytes()])) {
-                $service->delete();
+        // Delete members that are no longer part of this set. Two deliberate choices:
+        //
+        // 1. Enumerate the raw member UUIDs (one entry per row) via fetchServiceUuids()
+        //    instead of fetchServices(), which keys its result by object_name. Two
+        //    same-named rows collapse into a single entry there, hiding a duplicated
+        //    or orphaned member from this loop and leaving it behind.
+        //
+        // 2. Build the query with an explicit null branch UUID (no branch view).
+        //    Baskets, the code path that triggers this reconcile, always restore
+        //    straight into the main Director DB: BasketSnapshot::restoreObjects()
+        //    calls $object->store() on the plain connection, never through the
+        //    branch-aware DbObjectStore. So there is no branch to honour here, and the
+        //    members we reconcile live in the main icinga_service table. That also
+        //    matches the delete itself: IcingaService::delete() is a physical delete
+        //    against icinga_service, so the read must target the same rows as the
+        //    write. (A branch view would additionally list branch-only rows that are
+        //    absent from icinga_service and hide rows the branch marks deleted.)
+        //    Conversely, a Service Set edited inside a branch goes through
+        //    DbObjectStore::store(), which returns early and never reaches
+        //    store() -> onStore() -> here, so this method only ever runs against the
+        //    main DB anyway.
+        $builder = new ServiceSetQueryBuilder($this->getConnection(), null);
+        foreach ($builder->fetchServiceUuids($builder->selectServicesForSet($this)) as $uuid) {
+            if (! isset($seen[$uuid])) {
+                IcingaService::loadWithUniqueId(
+                    Uuid::fromBytes($uuid),
+                    $this->getConnection()
+                )->delete();
             }
         }
     }
