@@ -642,6 +642,8 @@ CREATE TABLE icinga_command_property (
       ON UPDATE CASCADE
 );
 
+CREATE INDEX icinga_command_property_property_uuid ON icinga_command_property (property_uuid);
+
 CREATE TABLE icinga_command_var (
   command_id integer NOT NULL,
   checksum bytea DEFAULT NULL UNIQUE CHECK(LENGTH(checksum) = 20),
@@ -892,6 +894,8 @@ CREATE TABLE icinga_host_property (
       ON UPDATE CASCADE
 );
 
+CREATE INDEX icinga_host_property_property_uuid ON icinga_host_property (property_uuid);
+
 CREATE TABLE icinga_host_var (
   host_id integer NOT NULL,
   checksum bytea DEFAULT NULL UNIQUE CHECK(LENGTH(checksum) = 20),
@@ -1086,6 +1090,8 @@ CREATE TABLE icinga_service_property (
       ON UPDATE CASCADE
 );
 
+CREATE INDEX icinga_service_property_property_uuid ON icinga_service_property (property_uuid);
+
 
 CREATE TABLE icinga_service_var (
   service_id integer NOT NULL,
@@ -1220,6 +1226,8 @@ CREATE TABLE icinga_service_set_property (
       ON DELETE CASCADE
       ON UPDATE CASCADE
 );
+
+CREATE INDEX icinga_service_set_property_property_uuid ON icinga_service_set_property (property_uuid);
 
 
 CREATE TABLE icinga_service_set_var (
@@ -1565,6 +1573,8 @@ CREATE TABLE icinga_user_property (
       ON DELETE CASCADE
       ON UPDATE CASCADE
 );
+
+CREATE INDEX icinga_user_property_property_uuid ON icinga_user_property (property_uuid);
 
 
 CREATE TABLE icinga_usergroup (
@@ -2039,6 +2049,8 @@ CREATE TABLE icinga_notification_property (
       ON DELETE CASCADE
       ON UPDATE CASCADE
 );
+
+CREATE INDEX icinga_notification_property_property_uuid ON icinga_notification_property (property_uuid);
 
 
 CREATE TABLE icinga_notification_inheritance (

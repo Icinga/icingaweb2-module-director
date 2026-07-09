@@ -53,6 +53,8 @@ CREATE TABLE icinga_host_property (
       ON UPDATE CASCADE
 );
 
+CREATE INDEX icinga_host_property_property_uuid ON icinga_host_property (property_uuid);
+
 CREATE TABLE icinga_service_property (
   service_uuid bytea CHECK(LENGTH(service_uuid) = 16) NOT NULL,
   property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
@@ -69,6 +71,8 @@ CREATE TABLE icinga_service_property (
       ON DELETE CASCADE
       ON UPDATE CASCADE
 );
+
+CREATE INDEX icinga_service_property_property_uuid ON icinga_service_property (property_uuid);
 
 CREATE TABLE icinga_command_property (
   command_uuid bytea CHECK(LENGTH(command_uuid) = 16) NOT NULL,
@@ -87,6 +91,8 @@ CREATE TABLE icinga_command_property (
       ON UPDATE CASCADE
 );
 
+CREATE INDEX icinga_command_property_property_uuid ON icinga_command_property (property_uuid);
+
 CREATE TABLE icinga_notification_property (
   notification_uuid bytea CHECK(LENGTH(notification_uuid) = 16) NOT NULL,
   property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
@@ -103,6 +109,8 @@ CREATE TABLE icinga_notification_property (
       ON DELETE CASCADE
       ON UPDATE CASCADE
 );
+
+CREATE INDEX icinga_notification_property_property_uuid ON icinga_notification_property (property_uuid);
 
 CREATE TABLE icinga_service_set_property (
   service_set_uuid bytea CHECK(LENGTH(service_set_uuid) = 16) NOT NULL,
@@ -121,6 +129,8 @@ CREATE TABLE icinga_service_set_property (
       ON UPDATE CASCADE
 );
 
+CREATE INDEX icinga_service_set_property_property_uuid ON icinga_service_set_property (property_uuid);
+
 CREATE TABLE icinga_user_property (
   user_uuid bytea CHECK(LENGTH(user_uuid) = 16) NOT NULL,
   property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
@@ -137,6 +147,8 @@ CREATE TABLE icinga_user_property (
       ON DELETE CASCADE
       ON UPDATE CASCADE
 );
+
+CREATE INDEX icinga_user_property_property_uuid ON icinga_user_property (property_uuid);
 
 CREATE UNIQUE INDEX IF NOT EXISTS director_datalist_uuid_unique
   ON director_datalist (uuid);
