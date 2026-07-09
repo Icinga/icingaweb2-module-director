@@ -294,6 +294,21 @@ class CustomVariablesForm extends CompatForm
      */
     public static function filterEmpty(array $array): array
     {
+        // Lists (sequential int keys) are positional, e.g., a fixed-array's own value. So we
+        // never drop individual elements there, only decide to keep the list as-is or drop it
+        // entirely if everything in it is empty. Otherwise, element removal would shift later items
+        // into earlier slots. This holds at any nesting depth, not just the outermost array.
+        if (array_is_list($array)) {
+            foreach ($array as $item) {
+                $checkedItem = is_array($item) ? self::filterEmpty($item) : $item;
+                if (is_bool($checkedItem) || ! empty($checkedItem)) {
+                    return $array;
+                }
+            }
+
+            return [];
+        }
+
         return array_filter(
             array_map(function ($item) {
                 if (! is_array($item)) {
@@ -386,11 +401,7 @@ class CustomVariablesForm extends CompatForm
                         return empty($filtered) ? (object) [] : $filtered;
                     }, $value);
                 } else {
-                    $filteredValue = self::filterEmpty($value);
-                    // Store the fixed array as empty only if the filtered array is empty
-                    if ($property['value_type'] !== 'fixed-array' || empty($filteredValue)) {
-                        $value = $filteredValue;
-                    }
+                    $value = self::filterEmpty($value);
                 }
             }
 

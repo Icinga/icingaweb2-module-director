@@ -191,4 +191,34 @@ class CustomVariablesFormTest extends BaseTestCase
     {
         $this->assertSame([], CustomVariablesForm::filterEmpty([]));
     }
+
+    public function testFixedArrayKeepsEmptyMiddleSlotInPlace(): void
+    {
+        // A fixed array's items are positional -- dropping the empty middle one would shift
+        // the third item into its place.
+        $result = CustomVariablesForm::filterEmpty(['a', '', 'c']);
+        $this->assertSame(['a', '', 'c'], $result);
+    }
+
+    public function testFixedArrayWithAllEmptySlotsIsDropped(): void
+    {
+        $result = CustomVariablesForm::filterEmpty(['', '', '']);
+        $this->assertSame([], $result);
+    }
+
+    public function testFixedArrayNestedInsideDictionaryEntryKeepsItsSlots(): void
+    {
+        // e.g. a dynamic-dictionary entry ("dc1" => [...]) or a fixed-dictionary field that
+        // itself holds a fixed-array -- the nested fixed-array must not lose its positions.
+        $entry = ['label' => 'dc1', 'slots' => ['a', '', 'c']];
+        $result = CustomVariablesForm::filterEmpty($entry);
+        $this->assertSame(['label' => 'dc1', 'slots' => ['a', '', 'c']], $result);
+    }
+
+    public function testFixedArrayNestedInsideDictionaryEntryIsDroppedWhenFullyEmpty(): void
+    {
+        $entry = ['label' => 'dc1', 'slots' => ['', '', '']];
+        $result = CustomVariablesForm::filterEmpty($entry);
+        $this->assertSame(['label' => 'dc1'], $result);
+    }
 }
