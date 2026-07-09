@@ -207,10 +207,12 @@ class MigrateCommand extends Command
         }
 
         foreach ($customProperties as $varName => $customProperty) {
-            if ($this->isVerbose && str_starts_with($customProperty['value_type'], 'unsupported-')) {
-                echo "[-] Skipping migration of datafield '{$varName}' as it has an unsupported datatype '"
-                    . substr($customProperty['value_type'], strlen('unsupported-'))
-                    . "'\n";
+            if (str_starts_with($customProperty['value_type'], 'unsupported-')) {
+                if ($this->isVerbose) {
+                    echo "[-] Skipping migration of datafield '{$varName}' as it has an unsupported datatype '"
+                        . substr($customProperty['value_type'], strlen('unsupported-'))
+                        . "'\n";
+                }
 
                 continue;
             }

@@ -38,6 +38,8 @@ class MigrateCommandTest extends BaseTestCase
 
     private const VAR_DUP          = self::PREFIX . 'dup_field';
 
+    private const VAR_TIME_FIELD = self::PREFIX . 'time_field';
+
     private const LIST_NAME = self::PREFIX . 'migrate_list';
 
     private const CAT_NAME  = self::PREFIX . 'migrate_category';
@@ -60,6 +62,7 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_CATEGORIZED,
         self::VAR_HIDDEN,
         self::VAR_DUP,
+        self::VAR_TIME_FIELD,
     ];
 
     public function testDryRunPrintsWhatWouldMigrateWithoutWriting(): void
@@ -355,6 +358,27 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertEquals(0, (int) $count, 'SqlQuery datafield must not be migrated (unsupported type)');
     }
 
+    public function testUnsupportedTimeTypeIsSkippedEvenWithoutVerbose(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['cnt' => 'COUNT(*)'])
+                ->where('key_name = ?', self::VAR_TIME_FIELD)
+        );
+        $this->assertEquals(0, (int) $count);
+    }
+
     public function testDuplicateNamesAreSkipped(): void
     {
         if ($this->skipForMissingDb()) {
@@ -517,6 +541,13 @@ class MigrateCommandTest extends BaseTestCase
             'caption'  => 'Dup B',
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
         ]);
+
+        // 10. time_field — unsupported type
+        DirectorDatafield::create([
+            'varname'  => self::VAR_TIME_FIELD,
+            'caption'  => 'Time Field',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeTime',
+        ], $db)->store();
     }
 
     private function deleteTestDatafields(Db $db): void
