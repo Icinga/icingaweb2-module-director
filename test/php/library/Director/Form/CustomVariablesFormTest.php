@@ -169,10 +169,29 @@ class CustomVariablesFormTest extends BaseTestCase
         $this->assertSame(['check_command' => 'ping'], $result);
     }
 
-    public function testFiltersIntegerZero(): void
+    public function testKeepsIntegerZero(): void
     {
         $result = CustomVariablesForm::filterEmpty(['retry_count' => 0, 'max_check_attempts' => 3]);
-        $this->assertSame(['max_check_attempts' => 3], $result);
+        $this->assertSame(['retry_count' => 0, 'max_check_attempts' => 3], $result);
+    }
+
+    public function testKeepsStringZero(): void
+    {
+        $result = CustomVariablesForm::filterEmpty(['exit_code' => '0', 'label' => 'ok']);
+        $this->assertSame(['exit_code' => '0', 'label' => 'ok'], $result);
+    }
+
+    public function testKeepsFloatZero(): void
+    {
+        $result = CustomVariablesForm::filterEmpty(['load_offset' => 0.0, 'label' => 'ok']);
+        $this->assertSame(['load_offset' => 0.0, 'label' => 'ok'], $result);
+    }
+
+    public function testFixedArrayWithLegitimateZeroIsNotDropped(): void
+    {
+        // The list branch must also treat a real 0 as "this list has content", not as empty.
+        $result = CustomVariablesForm::filterEmpty([0, '', '']);
+        $this->assertSame([0, '', ''], $result);
     }
 
     public function testFiltersNestedEmptyArrays(): void

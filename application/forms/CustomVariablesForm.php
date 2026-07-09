@@ -301,7 +301,7 @@ class CustomVariablesForm extends CompatForm
         if (array_is_list($array)) {
             foreach ($array as $item) {
                 $checkedItem = is_array($item) ? self::filterEmpty($item) : $item;
-                if (is_bool($checkedItem) || ! empty($checkedItem)) {
+                if (! self::isValueUnset($checkedItem)) {
                     return $array;
                 }
             }
@@ -318,7 +318,7 @@ class CustomVariablesForm extends CompatForm
                 return self::filterEmpty($item);
             }, $array),
             function ($item) {
-                return is_bool($item) || ! empty($item);
+                return ! self::isValueUnset($item);
             }
         );
     }
@@ -350,7 +350,7 @@ class CustomVariablesForm extends CompatForm
      *
      * @return bool
      */
-    private static function isValueUnset(mixed $value): bool
+    public static function isValueUnset(mixed $value): bool
     {
         if (is_bool($value) || $value === 0 || $value === 0.0 || $value === '0') {
             return false;
