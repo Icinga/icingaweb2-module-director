@@ -18,6 +18,7 @@ use ipl\Web\Widget\Callout;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Throwable;
 use Zend_Db;
 use Zend_Db_Select_Exception;
 
@@ -445,10 +446,16 @@ class CustomVariableForm extends CompatForm
         }
 
         $this->db->getDbAdapter()->beginTransaction();
-        if ($this->uuid === null) {
-            $this->addNewProperty($values, $datalist, $itemType);
-        } else {
-            $this->updateExistingProperty($values, $datalist, $itemType);
+        try {
+            if ($this->uuid === null) {
+                $this->addNewProperty($values, $datalist, $itemType);
+            } else {
+                $this->updateExistingProperty($values, $datalist, $itemType);
+            }
+        } catch (Throwable $e) {
+            $this->db->getDbAdapter()->rollBack();
+
+            throw $e;
         }
 
         $this->db->getDbAdapter()->commit();

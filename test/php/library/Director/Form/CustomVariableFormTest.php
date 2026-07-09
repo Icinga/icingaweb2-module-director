@@ -129,6 +129,54 @@ class CustomVariableFormTest extends BaseTestCase
         $this->assertFalse($oldRow, 'original key_name should not exist after rename');
     }
 
+    public function testFailedCreateDoesNotLeaveTransactionOpen(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $form = new TestableCustomVariableForm($db);
+        $form->setTestValues([
+            'key_name'    => '___TEST___ssh_port',
+            'value_type'  => 'number',
+            'label'       => 'SSH Port',
+            'description' => 'TCP port the SSH daemon listens on',
+        ]);
+        $this->createdKeyNames[] = '___TEST___ssh_port';
+        self::callMethod($form, 'onSuccess', []);
+
+        // A second admin, unaware the property already exists, tries to create the same one.
+        $secondForm = new TestableCustomVariableForm($db);
+        $secondForm->setTestValues([
+            'key_name'    => '___TEST___ssh_port',
+            'value_type'  => 'number',
+            'label'       => 'SSH Port (custom)',
+            'description' => 'Port used for SSH health checks',
+        ]);
+
+        $thrown = false;
+        try {
+            self::callMethod($secondForm, 'onSuccess', []);
+        } catch (\Throwable $e) {
+            $thrown = true;
+        }
+        $this->assertTrue($thrown, 'creating a second property with the same key_name must raise an exception');
+
+        // The transaction opened by the failed onSuccess() call must not be left open. On
+        // PostgreSQL, an unhandled exception inside beginTransaction() without a matching
+        // rollBack() aborts the whole connection, so the very next query on it fails with
+        // "current transaction is aborted" instead of running normally.
+        $count = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['cnt' => 'COUNT(*)'])
+                ->where('key_name = ?', '___TEST___ssh_port')
+        );
+        $this->assertSame('1', (string) $count, 'exactly one row must exist, the failed insert must not linger');
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
