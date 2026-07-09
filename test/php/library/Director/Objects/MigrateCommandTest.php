@@ -63,6 +63,8 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_HIDDEN,
         self::VAR_DUP,
         self::VAR_TIME_FIELD,
+        self::PREFIX . 'rollback_first',
+        self::PREFIX . 'rollback_second',
     ];
 
     public function testDryRunPrintsWhatWouldMigrateWithoutWriting(): void
@@ -379,6 +381,62 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertEquals(0, (int) $count);
     }
 
+    public function testMigrateDatafieldsRollsBackOnMidLoopFailure(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $sharedUuid = Uuid::uuid4()->getBytes();
+        $customProperties = [
+            self::PREFIX . 'rollback_first' => [
+                'datafield_id' => 90001,
+                'uuid'         => $sharedUuid,
+                'key_name'     => self::PREFIX . 'rollback_first',
+                'label'        => null,
+                'description'  => null,
+                'category_id'  => null,
+                'value_type'   => 'string',
+            ],
+            self::PREFIX . 'rollback_second' => [
+                'datafield_id' => 90002,
+                'uuid'         => $sharedUuid,
+                'key_name'     => self::PREFIX . 'rollback_second',
+                'label'        => null,
+                'description'  => null,
+                'category_id'  => null,
+                'value_type'   => 'string',
+            ],
+        ];
+
+        $cmd = new TestableMigrateCommand($db);
+
+        try {
+            self::callMethod($cmd, 'migrateDatafields', [$customProperties, false]);
+            $this->fail('Expected an exception from the duplicate uuid on the second insert');
+        } catch (\Throwable $e) {
+            // expected
+        }
+
+        $this->assertFalse(
+            $dba->getConnection()->inTransaction(),
+            'migrateDatafields() must roll back its transaction when interrupted by an exception'
+        );
+
+        $count = $dba->fetchOne(
+            $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])
+                ->where('key_name = ?', self::PREFIX . 'rollback_first')
+        );
+        $this->assertEquals(
+            0,
+            (int) $count,
+            'the first insert must be rolled back along with the failing second one'
+        );
+    }
+
     public function testDuplicateNamesAreSkipped(): void
     {
         if ($this->skipForMissingDb()) {
@@ -428,6 +486,11 @@ class MigrateCommandTest extends BaseTestCase
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
+            $dba = $db->getDbAdapter();
+            if ($dba->getConnection()->inTransaction()) {
+                $dba->getConnection()->rollBack();
+            }
+
             $this->deleteTestProperties($db);
             $this->deleteTestDatafields($db);
             $this->deleteTestCategory($db);

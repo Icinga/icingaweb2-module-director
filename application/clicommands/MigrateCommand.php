@@ -201,73 +201,74 @@ class MigrateCommand extends Command
     private function migrateDatafields(array $customProperties, bool $dryRun): void
     {
         $db = $this->db();
-        $dbAdapter = $db->getDbAdapter();
-        if (! $dryRun) {
-            $dbAdapter->beginTransaction();
-        }
 
-        foreach ($customProperties as $varName => $customProperty) {
-            if (str_starts_with($customProperty['value_type'], 'unsupported-')) {
-                if ($this->isVerbose) {
-                    echo "[-] Skipping migration of datafield '{$varName}' as it has an unsupported datatype '"
-                        . substr($customProperty['value_type'], strlen('unsupported-'))
-                        . "'\n";
+        $migrate = function () use ($db, $customProperties, $dryRun) {
+            $dbAdapter = $db->getDbAdapter();
+            foreach ($customProperties as $varName => $customProperty) {
+                if (str_starts_with($customProperty['value_type'], 'unsupported-')) {
+                    if ($this->isVerbose) {
+                        echo "[-] Skipping migration of datafield '$varName' as it has an unsupported datatype '"
+                            . substr($customProperty['value_type'], strlen('unsupported-'))
+                            . "'\n";
+                    }
+
+                    continue;
                 }
 
-                continue;
-            }
-
-            $itemType = null;
-            if (isset($customProperty['item_type'])) {
-                $itemType = $customProperty['item_type'];
-                unset($customProperty['item_type']);
-            }
-
-            $datalistUuidBytes = null;
-            if (isset($customProperty['datalist_uuid'])) {
-                $datalistUuidBytes = $customProperty['datalist_uuid'];
-                unset($customProperty['datalist_uuid']);
-            }
-
-            $this->migratedDataFields[$customProperty['datafield_id']] = $varName;
-            if (! $dryRun) {
-                $datafieldId = $customProperty['datafield_id'];
-                unset($customProperty['datafield_id']);
-                $this->migratedDataFields[$datafieldId] = $varName;
-                $uuidBytes = $customProperty['uuid'];
-                $customProperty['uuid'] = DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter);
-                $db->insert('director_property', $customProperty);
-                $propertyUuid = Uuid::fromBytes($uuidBytes);
-
-                if ($itemType !== null) {
-                    $childUuidBytes = Uuid::uuid4()->getBytes();
-                    $db->insert('director_property', [
-                        'uuid' => DbUtil::quoteBinaryCompat($childUuidBytes, $dbAdapter),
-                        'key_name' => 0,
-                        'value_type' => $itemType,
-                        'parent_uuid' => DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter)
-                    ]);
+                $itemType = null;
+                if (isset($customProperty['item_type'])) {
+                    $itemType = $customProperty['item_type'];
+                    unset($customProperty['item_type']);
                 }
 
-                if ($datalistUuidBytes !== null) {
-                    $db->insert('director_property_datalist', [
-                        'property_uuid' => DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter),
-                        'list_uuid' => DbUtil::quoteBinaryCompat($datalistUuidBytes, $dbAdapter)
-                    ]);
+                $datalistUuidBytes = null;
+                if (isset($customProperty['datalist_uuid'])) {
+                    $datalistUuidBytes = $customProperty['datalist_uuid'];
+                    unset($customProperty['datalist_uuid']);
                 }
 
-                $this->migrateDatafieldObjectTemplateBinding($datafieldId, $propertyUuid);
-            }
+                $this->migratedDataFields[$customProperty['datafield_id']] = $varName;
+                if (! $dryRun) {
+                    $datafieldId = $customProperty['datafield_id'];
+                    unset($customProperty['datafield_id']);
+                    $this->migratedDataFields[$datafieldId] = $varName;
+                    $uuidBytes = $customProperty['uuid'];
+                    $customProperty['uuid'] = DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter);
+                    $db->insert('director_property', $customProperty);
+                    $propertyUuid = Uuid::fromBytes($uuidBytes);
 
-            if ($dryRun) {
-                echo "[*] Would migrate datafield '$varName'\n";
-            } elseif ($this->isVerbose) {
-                echo "[+] Datafield '$varName' successfully migrated\n";
-            }
-        }
+                    if ($itemType !== null) {
+                        $childUuidBytes = Uuid::uuid4()->getBytes();
+                        $db->insert('director_property', [
+                            'uuid' => DbUtil::quoteBinaryCompat($childUuidBytes, $dbAdapter),
+                            'key_name' => 0,
+                            'value_type' => $itemType,
+                            'parent_uuid' => DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter)
+                        ]);
+                    }
 
-        if (! $dryRun) {
-            $dbAdapter->commit();
+                    if ($datalistUuidBytes !== null) {
+                        $db->insert('director_property_datalist', [
+                            'property_uuid' => DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter),
+                            'list_uuid' => DbUtil::quoteBinaryCompat($datalistUuidBytes, $dbAdapter)
+                        ]);
+                    }
+
+                    $this->migrateDatafieldObjectTemplateBinding($datafieldId, $propertyUuid);
+                }
+
+                if ($dryRun) {
+                    echo "[*] Would migrate datafield '$varName'\n";
+                } elseif ($this->isVerbose) {
+                    echo "[+] Datafield '$varName' successfully migrated\n";
+                }
+            }
+        };
+
+        if ($dryRun) {
+            $migrate();
+        } else {
+            $db->runFailSafeTransaction($migrate);
         }
     }
 
