@@ -48,26 +48,34 @@ class DirectorProperty extends DbObject
 
     protected function setDbProperties($properties)
     {
-        $connection = $this->getConnection();
         if (! is_array($properties)) {
             $properties = (array) $properties;
         }
 
-        if ($connection && $connection->isMysql() && isset($properties['parent_uuid_v'])) {
-            unset($properties['parent_uuid_v']); // hack to ignore virtual column, need a better solution
-        }
-
-        return parent::setDbProperties($properties);
+        return parent::setDbProperties($this->stripVirtualParentUuidColumn($properties));
     }
 
     public function setProperties($props)
     {
+        return parent::setProperties($this->stripVirtualParentUuidColumn($props));
+    }
+
+    /**
+     * MySQL exposes parent_uuid_v as a virtual/generated column; strip it before it reaches
+     * the parent's property handling, which knows nothing about it. Needs a better solution.
+     *
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function stripVirtualParentUuidColumn(array $properties): array
+    {
         $connection = $this->getConnection();
-        if ($connection && $connection->isMysql() && isset($props['parent_uuid_v'])) {
-            unset($props['parent_uuid_v']);
+        if ($connection && $connection->isMysql() && isset($properties['parent_uuid_v'])) {
+            unset($properties['parent_uuid_v']);
         }
 
-        return parent::setProperties($props);
+        return $properties;
     }
 
     /**
