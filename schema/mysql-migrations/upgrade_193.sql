@@ -128,8 +128,22 @@ CREATE TABLE icinga_user_property (
      ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-ALTER TABLE director_datalist
-    ADD UNIQUE KEY (uuid);
+SET @stmt = (SELECT IF(
+    (SELECT EXISTS(
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = SCHEMA()
+              AND table_name = 'director_datalist'
+              AND index_name = 'uuid'
+    )),
+    'SELECT 1',
+    'ALTER TABLE director_datalist ADD UNIQUE KEY uuid (uuid)'
+));
+
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+SET @stmt = NULL;
 
 CREATE TABLE director_property_datalist (
  list_uuid varbinary(16) NOT NULL,

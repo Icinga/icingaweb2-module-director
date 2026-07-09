@@ -278,7 +278,7 @@ CREATE TABLE director_property (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 ALTER TABLE director_datalist
-    ADD UNIQUE KEY (uuid);
+    ADD UNIQUE KEY uuid (uuid);
 
 CREATE TABLE director_property_datalist (
  list_uuid varbinary(16) NOT NULL,
