@@ -441,7 +441,7 @@ class CustomVariablesForm extends CompatForm
                 $db
                     ->select()
                     ->from('icinga_' . $type . '_var')
-                    ->where('property_uuid IN (?)', DbUtil::quoteBinaryCompat($itemsToRemoveUuids, $db))
+                    ->where('property_uuid IN (?)', $itemsToRemoveUuids)
             );
 
             foreach ($propertyAsObjectVar as $propertyAsObjectVarRow) {
