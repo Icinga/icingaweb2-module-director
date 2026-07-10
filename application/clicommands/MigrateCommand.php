@@ -102,7 +102,13 @@ class MigrateCommand extends Command
 
         echo "Migration completed\n";
 
-        $totalMigrated = count($customPropertiesToMigrate);
+        $totalMigrated = 0;
+        foreach ($customPropertiesToMigrate as $customProperty) {
+            if (! str_starts_with($customProperty['value_type'], 'unsupported-')) {
+                $totalMigrated++;
+            }
+        }
+
         $totalSkipped = count(DirectorDatafield::loadAll($db)) - $totalMigrated;
         if ($delete) {
             if (! $dryRun) {

@@ -430,6 +430,30 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertEquals(0, (int) $count);
     }
 
+    public function testTotalMigratedCountExcludesUnsupportedTypes(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $output = $cmd->runDatafields();
+
+        // MIGRATABLE (5) + env_choices_default_behavior (added for the datalist default-
+        // behavior fix) = 6 datafields actually get a director_property row. VAR_TIME_FIELD
+        // is present in the fixture set but has an unsupported type and must not be counted
+        // as migrated.
+        $expectedMigrated = count(self::MIGRATABLE) + 1;
+        $this->assertStringContainsString(
+            "Total datafields migrated: $expectedMigrated\n",
+            $output,
+            'the migrated count must not include datafields with an unsupported type that were skipped'
+        );
+    }
+
     public function testMigrateDatafieldsRollsBackOnMidLoopFailure(): void
     {
         if ($this->skipForMissingDb()) {
