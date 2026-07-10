@@ -68,7 +68,10 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     {
         $ret = (object) array();
 
-        foreach ($this->value as $key => $var) {
+        $sortedValue = $this->value;
+        ksort($sortedValue);
+
+        foreach ($sortedValue as $key => $var) {
             $ret->$key = $var->getValue();
         }
 

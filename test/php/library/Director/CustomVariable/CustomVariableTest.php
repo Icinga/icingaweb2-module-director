@@ -292,6 +292,14 @@ class CustomVariableTest extends TestCase
         $this->assertTrue($a->equals($b));
     }
 
+    public function testGetDbValueSerializesKeysInSortedOrder(): void
+    {
+        $dict = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
+        assert($dict instanceof CustomVariableDictionary);
+
+        $this->assertSame('{"crit":"10%","warn":"20%"}', $dict->getDbValue());
+    }
+
     public function testDictionariesWithDifferentKeysAreNotEqual(): void
     {
         $a = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
