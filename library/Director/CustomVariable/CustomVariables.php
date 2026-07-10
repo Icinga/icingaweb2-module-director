@@ -61,7 +61,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $type = $object->getShortTableName();
-        $objectId = $object->get('id');
+        $objectId = (int) $object->get('id');
         $ids = $object->listAncestorIds();
         $ids[] = $objectId;
 
@@ -76,6 +76,16 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             ->where('io.id IN (?)', $ids);
 
         foreach ($object->getDb()->fetchAll($query) as $row) {
+            $existing = $this->cachedCustomVariableTypes[$row->key_name] ?? null;
+
+            // If a row for the exact object being rendered was already cached, keep it: the
+            // merge-vs-assign decision in renderSingleVar() only cares whether the CURRENT
+            // object defines this key directly, and an arbitrary later ancestor row must not
+            // overwrite that regardless of the order the database happens to return rows in.
+            if ($existing !== null && $existing['object_id'] === $objectId) {
+                continue;
+            }
+
             $this->cachedCustomVariableTypes[$row->key_name] = [
                 'value_type' => $row->value_type,
                 'object_id'  => (int) $row->object_id,
