@@ -8,6 +8,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\Validator\DatalistEntryValidator;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
+use Icinga\Module\Director\Web\Form\Element\SensitiveElement;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -137,6 +138,16 @@ class DictionaryItem extends FieldsetElement
                 new IplBoolean(
                     $valElementName,
                     ['label' => $label, 'placeholder' => $placeholder]
+                )
+            );
+        } elseif ($type === 'sensitive') {
+            $this->addElement(
+                new SensitiveElement(
+                    $valElementName,
+                    [
+                        'label' => $label . ' (Sensitive)',
+                        'autocomplete' => 'off'
+                    ]
                 )
             );
         } elseif ($type === 'dynamic-array') {
@@ -354,6 +365,13 @@ class DictionaryItem extends FieldsetElement
                 $values['var'] = $value;
                 $values['var-search'] = $value;
             }
+        } elseif ($property['value_type'] === 'sensitive') {
+            $values['var'] = $property['value'] ?? '';
+            // Never write the inherited secret itself into the 'inherited' hidden field's
+            // DOM value; only its presence is needed downstream (fixed-array default-value
+            // logic in getItem()), not its content.
+            $values['inherited'] = ($property['inherited'] ?? '') !== '' ? '1' : '';
+            $values['inherited_from'] = $property['inherited_from'] ?? '';
         } else {
             $values['var'] = $property['value'] ?? '';
             $values['inherited'] = $property['inherited'] ?? '';
@@ -471,21 +489,23 @@ class DictionaryItem extends FieldsetElement
         ) {
             $values['value'] = $this->getElement('var-search')->getValue();
         } else {
+            $type = $this->getElement('type')->getValue();
+
             if (! empty($this->getElement('inherited')->getValue())) {
                 $values['value'] = $itemValue->getValue();
             } else {
                 $defaultValue = null;
 
-                // Use the default value for fixed-array items only if the fixed array does not have an inherited value
+                // Use the default value for fixed-array items only if the fixed array does not have an
+                // inherited value.
                 if ($this->getElement('parent_type')->getValue() === 'fixed-array') {
-                    $type = $this->getElement('type')->getValue();
-                    $itemType = self::fetchItemType(Uuid::fromBytes($this->fields['uuid']));
                     match ($type) {
-                        'string' => $defaultValue = '',
+                        'string', 'sensitive' => $defaultValue = '',
                         'number' => $defaultValue = 0,
                         'bool' => $defaultValue = 'n',
                         'fixed-array', 'dynamic-array' => $defaultValue = [],
-                        'datalist-strict', 'datalist-non-strict' => $defaultValue = $itemType === 'string' ? '' : [],
+                        'datalist-strict', 'datalist-non-strict' => $defaultValue =
+                            self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string' ? '' : [],
                         default => $defaultValue = null
                     };
                 }
