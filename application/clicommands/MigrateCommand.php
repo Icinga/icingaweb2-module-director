@@ -49,7 +49,6 @@ class MigrateCommand extends Command
         // Dry run summary
         if ($dryRun) {
             $this->checkMigrateableDatafieldTypes();
-            $this->checkProtectedDatafields();
             $this->checkDatafieldsWithCategory();
             $this->checkUnmigrateableDatafieldTypes();
             $this->checkDatafieldsWithDuplicateNames();
@@ -81,10 +80,6 @@ class MigrateCommand extends Command
 
             foreach ($this->getDatafieldsWithCategory() as $varname) {
                 echo "[-] Skipping migrating datafield '$varname' as it belongs to a category\n";
-            }
-
-            foreach ($this->getDatafieldsWithProtectedValues() as $varname) {
-                echo "[-] Skipping migrating datafield '$varname' as it is protected\n";
             }
 
             foreach ($this->getDatafieldsWithDuplicateNames() as $varname => $count) {
@@ -165,8 +160,13 @@ class MigrateCommand extends Command
             if ($dataType === 'array') {
                 $customProperty['value_type'] = 'dynamic-array';
                 $customProperty['item_type'] = 'string';
-            } elseif ($dataType === 'boolean' || $dataType === 'number' || $dataType === 'string') {
+            } elseif ($dataType === 'boolean' || $dataType === 'number') {
                 $customProperty['value_type'] = $dataType === 'boolean' ? 'bool' : $dataType;
+            } elseif ($dataType === 'string') {
+                $settings = DirectorDatafield::load($row->id, $db)->getSettings();
+                $customProperty['value_type'] = ($settings['visibility'] ?? null) === 'hidden'
+                    ? 'sensitive'
+                    : 'string';
             } elseif ($dataType === 'datalist') {
                 $datalist = DirectorDatafield::load($row->id, $db);
                 $settings = $datalist->getSettings();
@@ -346,7 +346,6 @@ class MigrateCommand extends Command
         $skippedFields = array_merge(
             array_keys($this->getDatafieldsWithDuplicateNames()),
             array_keys($this->getDatafieldsWithUnsupportedValuetype()),
-            $this->getDatafieldsWithProtectedValues(),
             $this->getDatafieldsWithCategory()
         );
 
@@ -386,20 +385,6 @@ class MigrateCommand extends Command
         }
 
         printf("Total datafields that can not be migrated because of having duplicates: %d\n\n", $total);
-    }
-
-    /**
-     * Check what datafields can not be migrated because they are protected
-     *
-     * @return void
-     */
-    private function checkProtectedDatafields(): void
-    {
-        $count = count($this->getDatafieldsWithProtectedValues());
-
-        if ($count > 0) {
-            printf("The following number of datafields are protected and can not be migrated: %d\n\n", $count);
-        }
     }
 
     /**
@@ -455,29 +440,6 @@ class MigrateCommand extends Command
         $query->select()->having('COUNT(dd.varname) > 1');
 
         return $query->fetchPairs();
-    }
-
-    /**
-     * Get datafields with protected values
-     *
-     * @return array
-     */
-    private function getDatafieldsWithProtectedValues(): array
-    {
-        $query = $this->getDataFieldQuery();
-        $query->joinLeft(
-            ['dds' => 'director_datafield_setting'],
-            "dd.id = dds.datafield_id AND dds.setting_name = 'visibility'",
-            []
-        );
-        $query->addFilter(Filter::matchAll(
-            FilterMatch::where('dd.datatype', '*String'),
-            FilterMatch::where('dds.setting_value', 'hidden')
-        ))->addFilter(Filter::fromQueryString('category_id IS NULL'));
-
-        $query->columns(['varname']);
-
-        return $query->fetchColumn();
     }
 
     /**

@@ -38,7 +38,8 @@ class MigrateCommandTest extends BaseTestCase
 
     private const VAR_CATEGORIZED  = self::PREFIX . 'categorized_field';
 
-    private const VAR_HIDDEN       = self::PREFIX . 'hidden_field';
+    // Migratable as 'sensitive' (legacy hidden-visibility string)
+    private const VAR_HIDDEN       = self::PREFIX . 'snmp_community';
 
     private const VAR_DUP          = self::PREFIX . 'dup_field';
 
@@ -56,6 +57,7 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_CHECK_INTERVAL,
         self::VAR_ENV_CHOICES,
         self::VAR_ENV_SUGGEST,
+        self::VAR_HIDDEN,
     ];
 
     private const ALL_TEST_VARS = [
@@ -371,7 +373,7 @@ class MigrateCommandTest extends BaseTestCase
         );
         $this->assertEquals(0, (int) $count, 'Categorized datafield must not be migrated');
     }
-    public function testProtectedStringFieldIsSkipped(): void
+    public function testHiddenStringFieldMigratesAsSensitive(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -384,10 +386,16 @@ class MigrateCommandTest extends BaseTestCase
         $cmd->runDatafields();
 
         $dba = $db->getDbAdapter();
-        $count = $dba->fetchOne(
-            $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])->where('key_name = ?', self::VAR_HIDDEN)
+        $row = $dba->fetchRow(
+            $dba->select()->from('director_property', ['value_type'])->where('key_name = ?', self::VAR_HIDDEN)
         );
-        $this->assertEquals(0, (int) $count, 'Protected (hidden visibility) datafield must not be migrated');
+
+        $this->assertNotFalse($row, 'snmp_community property must be created');
+        $this->assertEquals(
+            'sensitive',
+            $row->value_type,
+            'a legacy string datafield with visibility=hidden must migrate as the sensitive value type'
+        );
     }
 
     public function testUnsupportedTypeIsSkipped(): void
@@ -442,10 +450,10 @@ class MigrateCommandTest extends BaseTestCase
         $cmd = new TestableMigrateCommand($db);
         $output = $cmd->runDatafields();
 
-        // MIGRATABLE (5) + env_choices_default_behavior (added for the datalist default-
-        // behavior fix) = 6 datafields actually get a director_property row. VAR_TIME_FIELD
-        // is present in the fixture set but has an unsupported type and must not be counted
-        // as migrated.
+        // MIGRATABLE (6, including the hidden-string field that now migrates as 'sensitive')
+        // + env_choices_default_behavior (added for the datalist default-behavior fix) = 7
+        // datafields actually get a director_property row. VAR_TIME_FIELD is present in the
+        // fixture set but has an unsupported type and must not be counted as migrated.
         $expectedMigrated = count(self::MIGRATABLE) + 1;
         $this->assertStringContainsString(
             "Total datafields migrated: $expectedMigrated\n",
@@ -748,10 +756,10 @@ class MigrateCommandTest extends BaseTestCase
         ], $db);
         $field->store();
 
-        // 8. hidden_field — protected string (visibility=hidden, skip)
+        // 8. snmp_community — string with visibility=hidden, migrates as 'sensitive'
         $field = DirectorDatafield::create([
             'varname'  => self::VAR_HIDDEN,
-            'caption'  => 'Hidden Field',
+            'caption'  => 'SNMP Community String',
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
         ], $db);
         $field->set('visibility', 'hidden');
