@@ -390,8 +390,11 @@ class DictionaryItem extends FieldsetElement
      *
      * @return array
      */
-    private static function fetchChildrenItems(UuidInterface $parentUuid, string $parentType, array $values = []): array
-    {
+    private static function fetchChildrenItems(
+        UuidInterface $parentUuid,
+        string $parentType,
+        array $values = []
+    ): array {
         $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
 
         $query = $db->select()
