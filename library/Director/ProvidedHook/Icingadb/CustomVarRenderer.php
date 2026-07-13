@@ -570,14 +570,14 @@ class CustomVarRenderer extends CustomVarRendererHook
 
                 $this->dictionaryLevel--;
             } elseif (is_array($val)) {
-                $this->renderArrayVal($key, $val, $key);
+                $this->renderArrayVal($k, $val, $k);
             } else {
                 $this->dictionaryBody->addHtml(
                     new HtmlElement(
                         'tr',
                         Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
-                        new HtmlElement('th', null, $this->renderCustomVarKey($key) ?? Html::wantHtml($key)),
-                        new HtmlElement('td', null, $this->renderCustomVarValue($key, $val) ?? Html::wantHtml($val))
+                        new HtmlElement('th', null, $this->renderCustomVarKey($k) ?? Html::wantHtml($k)),
+                        new HtmlElement('td', null, $this->renderCustomVarValue($k, $val) ?? Html::wantHtml($val))
                     )
                 );
             }
