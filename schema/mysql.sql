@@ -258,6 +258,7 @@ CREATE TABLE director_property (
     'string',
     'number',
     'bool',
+    'sensitive',
     'fixed-array',
     'dynamic-array',
     'fixed-dictionary',

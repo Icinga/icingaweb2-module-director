@@ -183,6 +183,7 @@ class CustomVariableForm extends CompatForm
             'string' => 'String',
             'number' => 'Number',
             'bool' => 'Boolean',
+            'sensitive' => 'Sensitive',
             'dynamic-array' => 'Dynamic Array',
             'datalist-strict' => 'Data List Strict',
             'datalist-non-strict' => 'Data List Non Strict',

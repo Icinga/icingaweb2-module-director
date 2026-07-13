@@ -2,6 +2,7 @@ CREATE TYPE enum_property_value_type AS ENUM(
   'string',
   'number',
   'bool',
+  'sensitive',
   'fixed-array',
   'dynamic-array',
   'fixed-dictionary',
