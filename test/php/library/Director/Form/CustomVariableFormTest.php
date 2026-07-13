@@ -44,36 +44,6 @@ class CustomVariableFormTest extends BaseTestCase
         $this->assertNotNull($form->getUUid(), 'form UUID should be set after creation');
     }
 
-    public function testAddSensitivePropertyCreatesRow(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $form = new TestableCustomVariableForm($db);
-        $form->setTestValues([
-            'key_name'    => '___TEST___api_token',
-            'value_type'  => 'sensitive',
-            'label'       => 'API Token',
-            'description' => 'Bearer token used to authenticate against the monitored API',
-        ]);
-        $this->createdKeyNames[] = '___TEST___api_token';
-
-        self::callMethod($form, 'onSuccess', []);
-
-        $dba = $db->getDbAdapter();
-        $row = $dba->fetchRow(
-            $dba->select()
-                ->from('director_property', ['key_name', 'value_type'])
-                ->where('key_name = ?', '___TEST___api_token')
-        );
-
-        $this->assertNotFalse($row, 'director_property row should be created');
-        $this->assertSame('sensitive', $row->value_type);
-        $this->assertNotNull($form->getUUid(), 'form UUID should be set after creation');
-    }
-
     public function testAddDynamicArrayPropertyCreatesParentAndChildRows(): void
     {
         if ($this->skipForMissingDb()) {

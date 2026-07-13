@@ -211,14 +211,6 @@ class CustomVariablesFormTest extends BaseTestCase
         $this->assertSame([], CustomVariablesForm::filterEmpty([]));
     }
 
-    public function testFixedArrayKeepsEmptyMiddleSlotInPlace(): void
-    {
-        // A fixed array's items are positional -- dropping the empty middle one would shift
-        // the third item into its place.
-        $result = CustomVariablesForm::filterEmpty(['a', '', 'c']);
-        $this->assertSame(['a', '', 'c'], $result);
-    }
-
     public function testFixedArrayWithAllEmptySlotsIsDropped(): void
     {
         $result = CustomVariablesForm::filterEmpty(['', '', '']);

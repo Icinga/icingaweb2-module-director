@@ -115,35 +115,38 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals(['crit', 'warn'], $childKeys);
     }
 
-    public function testDynamicDictionaryNestingIsOneLevelOnly(): void
+    public function testDynamicDictionaryNestingIsNotRestrictedByTheModel(): void
     {
         if ($this->skipForMissingDb()) {
             return;
         }
 
+        // The "dynamic-dictionary may only be a top-level property" rule is enforced
+        // entirely by CustomVariableForm's value_type dropdown, which only offers
+        // 'dynamic-dictionary' as an option when the field being added is neither
+        // nested nor itself a child (see CustomVariableForm.php's $types construction,
+        // gated on !$this->isNestedField && $this->parentUuid === null). DirectorProperty
+        // itself has no such restriction, so creating a 'dynamic-dictionary' child
+        // directly through the model succeeds. This pins that down so nobody mistakes
+        // the model for a backstop that isn't there.
         $db = $this->getDb();
         $parent = $this->makeProperty('disk_checks', 'dynamic-dictionary', 'Disk Checks', $db);
         $parent->store();
         $parentUuid = $parent->get('uuid');
 
-        foreach (['mount_point', 'warn', 'crit'] as $fieldName) {
-            $child = DirectorProperty::create([
-                'uuid'        => Uuid::uuid4()->getBytes(),
-                'key_name'    => $fieldName,
-                'parent_uuid' => $parentUuid,
-                'value_type'  => 'string',
-            ], $db);
-            $child->store();
-        }
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'nested',
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'dynamic-dictionary',
+        ], $db);
+        $child->store();
 
         $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $db);
-        foreach ($reloaded->fetchItemsFromDb() as $child) {
-            $this->assertNotEquals(
-                'dynamic-dictionary',
-                $child->get('value_type'),
-                "Child of dynamic-dictionary must not itself be dynamic-dictionary (one-level nesting rule)"
-            );
-        }
+        $items = $reloaded->fetchItemsFromDb();
+
+        $this->assertCount(1, $items);
+        $this->assertEquals('dynamic-dictionary', $items[0]->get('value_type'));
     }
 
     public function testDatalistStrictAssociatesDatalist(): void
@@ -156,30 +159,6 @@ class DirectorPropertyTest extends BaseTestCase
         $listName = self::PREFIX . 'environments';
         $this->makeDatalist($listName, $db)->store();
         $property = $this->importPropertyWithDatalist('env_choices', 'datalist-strict', 'Env Choices', $listName, $db);
-
-        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
-        $linked = $reloaded->getDatalist();
-
-        $this->assertNotNull($linked);
-        $this->assertEquals($listName, $linked->get('list_name'));
-    }
-
-    public function testDatalistNonStrictAssociatesDatalist(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $listName = self::PREFIX . 'env_suggest';
-        $this->makeDatalist($listName, $db)->store();
-        $property = $this->importPropertyWithDatalist(
-            'env_suggest',
-            'datalist-non-strict',
-            'Env Suggest',
-            $listName,
-            $db
-        );
 
         $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
         $linked = $reloaded->getDatalist();

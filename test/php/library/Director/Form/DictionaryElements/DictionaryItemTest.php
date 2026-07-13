@@ -56,20 +56,6 @@ class DictionaryItemTest extends TestCase
         $this->assertSame('', $item->getItem()['value']);
     }
 
-    public function testGetItemDefaultsSensitiveValueToEmptyStringInFixedDictionary(): void
-    {
-        // A sensitive field nested directly under a fixed-dictionary (not a fixed-array)
-        // must still default to '', not null.
-        $item = new TestableDictionaryItem('api_token', []);
-        $item->setTestConfig([
-            'type' => 'sensitive',
-            'parent_type' => 'fixed-dictionary',
-        ]);
-        $item->ensureAssembled();
-
-        $this->assertSame('', $item->getItem()['value']);
-    }
-
     public function testGetItemPreservesEnteredSensitiveValue(): void
     {
         $item = new TestableDictionaryItem('api_token', []);

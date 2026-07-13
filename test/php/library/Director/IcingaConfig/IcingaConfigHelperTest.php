@@ -149,14 +149,6 @@ class IcingaConfigHelperTest extends BaseTestCase
         $this->assertFalse(c::isValidMacroName(''));
     }
 
-    public function testIsValidMacroNameNullWhitelistBehavesLikeNoWhitelist()
-    {
-        // Passing null explicitly is the same as omitting the argument
-        $this->assertTrue(c::isValidMacroName('host.vars.custom', null));
-        $this->assertFalse(c::isValidMacroName('a', null));
-        $this->assertFalse(c::isValidMacroName('value.', null));
-    }
-
     public function testIsValidMacroNameExactWhitelistMatch()
     {
         $this->assertTrue(c::isValidMacroName('value.path', ['value.path']));

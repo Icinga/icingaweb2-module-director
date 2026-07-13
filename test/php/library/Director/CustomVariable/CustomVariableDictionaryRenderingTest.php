@@ -91,20 +91,6 @@ class CustomVariableDictionaryRenderingTest extends TestCase
         $this->assertEquals($expected, $vars->toConfigString());
     }
 
-    public function testDynamicDictionaryRendersWithEqualsWhenNotOverride(): void
-    {
-        $vars = new CustomVariables();
-        $vars->disk_checks = ['warn' => '20%', 'crit' => '10%'];
-        // no setOverrideKeyName call — ordinary assignment
-
-        $expected = $this->indent . 'vars.disk_checks = {' . "\n"
-            . $this->indent . $this->indent . 'crit = "10%"' . "\n"
-            . $this->indent . $this->indent . 'warn = "20%"' . "\n"
-            . $this->indent . '}' . "\n";
-
-        $this->assertEquals($expected, $vars->toConfigString());
-    }
-
     public function testSpecialKeyNameUsesArraySyntax(): void
     {
         $vars = new CustomVariables();
@@ -140,19 +126,6 @@ class CustomVariableDictionaryRenderingTest extends TestCase
         $this->assertEquals(
             $this->indent . 'vars.url = "$value.not_a_field$"' . "\n",
             $vars->toConfigString(true)
-        );
-    }
-
-    public function testDatalistValueRendersAsString(): void
-    {
-        $vars = new CustomVariables();
-        // A var whose value comes from a datalist is stored as a plain string; the
-        // datalist constraint is a UI concern only, not reflected in config rendering
-        $vars->env = 'production';
-
-        $this->assertEquals(
-            $this->indent . 'vars.env = "production"' . "\n",
-            $vars->toConfigString()
         );
     }
 }

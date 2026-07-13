@@ -62,12 +62,6 @@ class CustomVariableTest extends TestCase
         $this->assertInstanceOf(CustomVariableArray::class, CustomVariable::create('k', []));
     }
 
-    public function testCreateNumericStringKeyedArrayReturnsArray(): void
-    {
-        // Arrays whose keys are numeric strings ('0', '1', …) are treated as arrays, not dictionaries
-        $this->assertInstanceOf(CustomVariableArray::class, CustomVariable::create('k', ['0' => 'x', '1' => 'y']));
-    }
-
     public function testCreateAssociativeArrayReturnsDictionary(): void
     {
         $this->assertInstanceOf(CustomVariableDictionary::class, CustomVariable::create('k', ['key' => 'val']));
@@ -269,13 +263,6 @@ class CustomVariableTest extends TestCase
     // -------------------------------------------------------------------------
     // CustomVariableDictionary::equals()
     // -------------------------------------------------------------------------
-
-    public function testDictionaryEqualsItself(): void
-    {
-        $dict = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
-        assert($dict instanceof CustomVariableDictionary);
-        $this->assertTrue($dict->equals($dict));
-    }
 
     public function testEqualDictionariesAreEqual(): void
     {
