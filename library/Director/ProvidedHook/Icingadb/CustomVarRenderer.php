@@ -46,6 +46,14 @@ class CustomVarRenderer extends CustomVarRendererHook
     /** @var array Related dictionary field names */
     protected $customPropertyDictionaries = [];
 
+    /**
+     * Positions of sensitive items within fixed-/dynamic-array custom properties, keyed by
+     * the array's own key_name and then by item position, e.g. ['ssh_args' => ['3' => true]]
+     *
+     * @var array
+     */
+    protected $sensitiveArrayItems = [];
+
     protected $dictionaryLevel = 0;
 
     /** @var HtmlElement Table for dictionary fields */
@@ -264,6 +272,10 @@ class CustomVarRenderer extends CustomVarRendererHook
                     $this->customVariableConfig[$propertyName]['group'] = $customProperty['category'];
                 }
 
+                if ($customProperty['value_type'] === 'sensitive') {
+                    $this->customVariableConfig[$propertyName]['visibility'] = 'hidden';
+                }
+
                 if (str_starts_with($customProperty['value_type'], 'datalist-')) {
                     $customPropertiesWithDatalists[$customProperty['uuid']] = $customProperty;
                 } elseif (str_ends_with($customProperty['value_type'], '-dictionary')) {
@@ -291,10 +303,37 @@ class CustomVarRenderer extends CustomVarRendererHook
                     = $dictionaryItem->label;
                 if (is_string($propertyName)) {
                     $this->customVariableConfig[$propertyName] = ['label' => $dictionaryItem->label];
+                    if ($dictionaryItem->value_type === 'sensitive') {
+                        $this->customVariableConfig[$propertyName]['visibility'] = 'hidden';
+                    }
                 }
 
                 if (str_starts_with($dictionaryItem->value_type, 'datalist-')) {
                     $customPropertiesWithDatalists[$dictionaryItem->uuid] = $dictionaryItem;
+                }
+            }
+
+            // Unlike dynamic-array (one item_type for all elements) and datalist item types,
+            // fixed-array items are individually typed, so a single fixed-array can carry a
+            // 'sensitive' item at one position and plain strings/numbers at others. Track
+            // which positions are sensitive, scoped by the array's own key_name, so two
+            // different fixed-arrays sharing the same positional key_names (e.g. both having
+            // a "0", "1", ...) don't get mixed up.
+            $sensitiveArrayItems = $db->select()->from(
+                ['dpp' => 'director_property'],
+                []
+            )
+                ->join(['dpc' => 'director_property'], 'dpp.uuid = dpc.parent_uuid', [])
+                ->columns([
+                    'parent_name' => 'dpp.key_name',
+                    'key_name' => 'dpc.key_name',
+                ])
+                ->where('dpp.value_type', '*-array')
+                ->where('dpc.value_type', 'sensitive');
+
+            foreach ($sensitiveArrayItems as $sensitiveArrayItem) {
+                if (is_string($sensitiveArrayItem->parent_name)) {
+                    $this->sensitiveArrayItems[$sensitiveArrayItem->parent_name][$sensitiveArrayItem->key_name] = true;
                 }
             }
 
@@ -443,10 +482,16 @@ class CustomVarRenderer extends CustomVarRendererHook
                 return '***';
             }
 
+            if (($this->customVariableConfig[$key]['visibility'] ?? null) === 'hidden') {
+                return '***';
+            }
+
             if (is_array($value) && ! isset($this->customPropertyDictionaries[$key])) {
                 $renderedValue = [];
                 foreach ($value as $k => $v) {
-                    if (is_string($v) && isset($this->datalistMaps[$key][$v])) {
+                    if (isset($this->sensitiveArrayItems[$key][$k])) {
+                        $renderedValue[$k] = '***';
+                    } elseif (is_string($v) && isset($this->datalistMaps[$key][$v])) {
                         $renderedValue[$k] = new HtmlElement(
                             'span',
                             Attributes::create(['title' => $this->datalistMaps[$key][$v] . " [$v]"]),
@@ -526,6 +571,14 @@ class CustomVarRenderer extends CustomVarRendererHook
 
         foreach ($value as $k => $val) {
             if ($k !== null && is_array($val) || is_object($val)) {
+                // $val may be a genuine nested array (fixed-/dynamic-array), not a nested
+                // dictionary - mask any sensitive positions it holds using its own key ($k)
+                // before its items are iterated below by position/child key, since those
+                // per-item lookups have no way to recover the parent array's own key_name.
+                if (is_array($val) && ! isset($this->customPropertyDictionaries[$k])) {
+                    $val = $this->renderCustomVarValue($k, $val) ?? $val;
+                }
+
                 $val = (array) $val;
                 $numChildItems = count($val);
 
