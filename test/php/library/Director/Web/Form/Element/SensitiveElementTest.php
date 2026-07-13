@@ -24,4 +24,71 @@ class SensitiveElementTest extends TestCase
 
         $this->assertSame('s3cr3t-value', $element->getValue());
     }
+
+    public function testWasSubmittedUnchangedIsFalseWhenNothingWasEverEntered(): void
+    {
+        $element = new SensitiveElement('api_token');
+
+        $this->assertFalse($element->wasSubmittedUnchanged());
+    }
+
+    public function testWasSubmittedUnchangedIsFalseWhenExplicitlyEmptied(): void
+    {
+        $element = new SensitiveElement('api_token');
+        $element->setValue('');
+
+        $this->assertFalse($element->wasSubmittedUnchanged());
+    }
+
+    public function testWasSubmittedUnchangedIsFalseWhenGivenANewValue(): void
+    {
+        $element = new SensitiveElement('api_token');
+        $element->setValue('new-value');
+
+        $this->assertFalse($element->wasSubmittedUnchanged());
+    }
+
+    public function testWasSubmittedUnchangedIsTrueWhenTheDummyPasswordSentinelComesBack(): void
+    {
+        $element = new SensitiveElement('api_token');
+        $element->setValue(SensitiveElement::DUMMYPASSWORD);
+
+        $this->assertTrue($element->wasSubmittedUnchanged());
+    }
+
+    public function testRenderedValueAttributeMasksTheDummyPasswordSentinel(): void
+    {
+        // DictionaryItem::prepare() always sends DUMMYPASSWORD instead of the real
+        // secret, so this is what a fresh page load looks like, and also what a field
+        // left untouched on resubmit looks like. Both must show up masked.
+        $element = new SensitiveElement('api_token');
+        $element->setValue(SensitiveElement::DUMMYPASSWORD);
+
+        $html = (string) $element;
+
+        $this->assertStringContainsString(SensitiveElement::DUMMYPASSWORD, $html);
+    }
+
+    public function testRenderedValueAttributeShowsAFreshlyTypedValue(): void
+    {
+        // Any value other than the sentinel is something the user just typed, so we show
+        // it as-is. If we masked it too, saving again would look like "left unchanged"
+        // and quietly bring back the old secret.
+        $element = new SensitiveElement('api_token');
+        $element->setValue('freshly-typed-value');
+
+        $html = (string) $element;
+
+        $this->assertStringContainsString('value="freshly-typed-value"', $html);
+    }
+
+    public function testRenderedValueAttributeIsAbsentWhenExplicitlyEmptied(): void
+    {
+        $element = new SensitiveElement('api_token');
+        $element->setValue('');
+
+        $html = (string) $element;
+
+        $this->assertStringNotContainsString(SensitiveElement::DUMMYPASSWORD, $html);
+    }
 }

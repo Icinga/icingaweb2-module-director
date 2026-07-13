@@ -111,9 +111,13 @@ class DictionaryItem extends FieldsetElement
         }
 
         $uuid = Uuid::fromBytes($this->fields['uuid']);
+        // Pass down this item's own stored value, so each child gets its current value
+        // too. Without this, a nested sensitive field has nothing to fall back on when
+        // it comes back blank.
         $children = static::fetchChildrenItems(
             $uuid,
-            $this->fields['value_type'] ?? ''
+            $this->fields['value_type'] ?? '',
+            ['value' => $this->fields['value'] ?? []]
         );
         $inherited = $this->getElement('inherited')->getValue();
         $inheritedFrom = $this->getElement('inherited_from')->getValue();
@@ -249,8 +253,9 @@ class DictionaryItem extends FieldsetElement
             $this->addElement((new NestedDictionary(
                 $valElementName,
                 $children,
-                ['inherited_from' => $inheritedFrom, 'value' => $inherited]
-            ))->setUuid(Uuid::fromBytes($this->fields['uuid'])))->setLabel($label . ' (Dictionary)');
+                ['inherited_from' => $inheritedFrom, 'value' => $inherited],
+                $this->fields['value'] ?? []
+            ))->setLabel($label . ' (Dictionary)')->setUuid(Uuid::fromBytes($this->fields['uuid'])));
         } else {
             $this->addElement(
                 'text',
@@ -366,7 +371,10 @@ class DictionaryItem extends FieldsetElement
                 $values['var-search'] = $value;
             }
         } elseif ($property['value_type'] === 'sensitive') {
-            $values['var'] = $property['value'] ?? '';
+            // Send the DUMMYPASSWORD placeholder, not the real secret. The field itself
+            // can't tell a stored secret apart from a value the user just typed, so we
+            // mask it here, before it reaches the field.
+            $values['var'] = ($property['value'] ?? '') !== '' ? SensitiveElement::DUMMYPASSWORD : '';
             // Never write the inherited secret itself into the 'inherited' hidden field's
             // DOM value; only its presence is needed downstream (fixed-array default-value
             // logic in getItem()), not its content.
@@ -437,6 +445,24 @@ class DictionaryItem extends FieldsetElement
             return $propertyItems;
         }
 
+        return self::mergeChildValues($propertyItems, $parentType, $values);
+    }
+
+    /**
+     * Add values to a set of child item definitions that were already fetched
+     *
+     * Used by fetchChildrenItems() for a single parent, and by NestedDictionary, which
+     * reuses the same child definitions for every entry of a dynamic-dictionary and
+     * merges in each entry's own value.
+     *
+     * @param array $propertyItems Children item definitions, keyed by their position
+     * @param string $parentType
+     * @param array $values
+     *
+     * @return array Children item definitions keyed by key_name, each carrying its own value
+     */
+    public static function mergeChildValues(array $propertyItems, string $parentType, array $values): array
+    {
         $result = [];
         foreach ($propertyItems as $propertyItem) {
             $propertyItem['parent_type'] = $parentType;
@@ -514,6 +540,17 @@ class DictionaryItem extends FieldsetElement
                 }
 
                 $values['value'] = $itemValue->getValue() ?? $defaultValue;
+            }
+
+            // If a sensitive field still has the DUMMYPASSWORD placeholder, keep the old
+            // secret. An empty value means the user cleared it on purpose.
+            if (
+                $type === 'sensitive'
+                && $itemValue instanceof SensitiveElement
+                && $itemValue->wasSubmittedUnchanged()
+                && ! empty($this->fields['value'])
+            ) {
+                $values['value'] = $this->fields['value'];
             }
         }
 

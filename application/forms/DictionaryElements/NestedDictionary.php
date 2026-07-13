@@ -24,14 +24,19 @@ class NestedDictionary extends FieldsetElement
     /** @var array{inherited_from: string, value: array} Inherited value */
     protected array $inheritedValue;
 
+    /** @var array<string, array> Stored value of each entry, keyed by entry key */
+    private array $entryValues;
+
     public function __construct(
         string $name,
         array $nestedItems,
         array $inheritedValues,
+        array $entryValues = [],
         $attributes = null
     ) {
         $this->inheritedValue = $inheritedValues;
         $this->nestedItems = $nestedItems;
+        $this->entryValues = $entryValues;
 
         parent::__construct($name, $attributes);
     }
@@ -125,7 +130,18 @@ class NestedDictionary extends FieldsetElement
         }
 
         for ($i = 0; $i < $newCount; $i++) {
-            $nestedDictionaryProperty = new NestedDictionaryItem($i, $this->nestedItems);
+            // Find this row's stored value by its entry key. $nestedItems is shared by
+            // every row and holds no value of its own, so a sensitive field needs this
+            // to fall back on when it comes back as the DUMMYPASSWORD placeholder.
+            $populatedRow = $this->getPopulatedValue($i);
+            $entryKey = is_array($populatedRow) ? ($populatedRow['key'] ?? null) : null;
+            $entryValue = $entryKey !== null ? ($this->entryValues[$entryKey] ?? []) : [];
+
+            $items = empty($entryValue)
+                ? $this->nestedItems
+                : DictionaryItem::mergeChildValues($this->nestedItems, 'dynamic-dictionary', ['value' => $entryValue]);
+
+            $nestedDictionaryProperty = new NestedDictionaryItem($i, $items);
             $nestedDictionaryProperty->setRemoveButton($this->getElement('remove_' . $i));
             $this->addElement($nestedDictionaryProperty);
         }
