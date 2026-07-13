@@ -285,6 +285,19 @@ body.
 { "ssl_verify": true }
 ```
 
+#### Setting a `sensitive` variable
+
+    POST director/host/variables?name=apitest
+
+```json
+{ "snmp_community": "s3cr3t-community" }
+```
+
+A `sensitive` variable is masked in the web UI and in the Icinga DB read view, but that
+masking doesn't extend to the API. A `GET` on this object returns `snmp_community` with
+its real value, not `***`, since the API is meant to give you back exactly what's
+stored. Keep that in mind when logging requests or sharing API responses.
+
 #### Setting an array variable (`fixed-array`, `dynamic-array`, or a datalist array)
 
     POST director/host/variables?name=apitest

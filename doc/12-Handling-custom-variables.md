@@ -54,6 +54,7 @@ types:
 | `string`              | String                 | Plain text value                                                                                     |
 | `number`              | Number                 | Numeric value                                                                                        |
 | `bool`                | Boolean                | True/false value                                                                                     |
+| `sensitive`           | Sensitive              | Plain text value that is masked in the value input and in read views, such as a password or token    |
 | `fixed-array`         | Fixed Array            | Ordered list with a pre-defined structure; values assigned to preconfigured positions                |
 | `datalist-strict`     | Data List Strict       | Only values from the chosen datalist can be assigned; can be stored as a single value or an array    |
 | `datalist-non-strict` | Data List Non Strict   | Values outside the chosen datalist are also accepted; can be stored as a single value or an array    |
@@ -64,12 +65,16 @@ types:
 > Only one level of nesting is allowed. The item type of a `fixed-array`,
 > `dynamic-array` or `fixed-dictionary`, and the fields inside a
 > `dynamic-dictionary`'s sub-dictionary, may only be scalar (`string`,
-> `number`, `bool`) or datalist (`datalist-strict`, `datalist-non-strict`)
-> types. A nested field can itself be an array of datalist values, but it
-> can never be a `fixed-array`, `fixed-dictionary` or
-> `dynamic-array`/`dynamic-dictionary`. Also, `dynamic-dictionary` can
+> `number`, `bool`, `sensitive`) or datalist (`datalist-strict`,
+> `datalist-non-strict`) types. A nested field can itself be an array of
+> datalist values, but it can never be a `fixed-array`, `fixed-dictionary`
+> or `dynamic-array`/`dynamic-dictionary`. Also, `dynamic-dictionary` can
 > only be defined as a top-level property; it cannot be nested inside
 > another array or dictionary.
+>
+> `sensitive` is not offered as the item type of a `dynamic-array` or a
+> datalist. Both render their values as a plain visible list, and there
+> is no way to mask individual entries in that kind of list.
 >
 > For `fixed-array`, all positions must be supplied on the object. None
 > may be omitted.
@@ -116,6 +121,20 @@ vars.ssl_verify = true
 
 # On a command: whether to follow HTTP redirects
 vars.http_onredirect = true
+```
+
+##### `sensitive`
+A plain text value that gets masked wherever it's shown to a user, both in the value
+input and in read views. It's stored as plain text, the same way a plain
+`visibility = hidden` field was under the old `Data fields` concept, so it's not meant
+as a replacement for a secrets manager, just a way to keep a value off the screen.
+
+```
+# On a host, the SNMP community string used to poll this device
+vars.snmp_community = "s3cr3t-community"
+
+# On a command, an API token needed to reach a paging service
+vars.pagerduty_token = "u+abc123def456"
 ```
 
 ##### `fixed-array`
@@ -299,12 +318,11 @@ else is skipped and reported:
 * data type is one of `String`, `Number`, `Boolean`, `Array`, `Datalist`
 * the field has no category
 * there is no other field sharing the same variable name
-* the field is not marked as protected/hidden
 * no custom variable with the same key already exists
 
 | Data field type | Custom variable type |
 |------------------|-----------------------|
-| `DataTypeString` | `string` |
+| `DataTypeString` | `string`, or `sensitive` if the field's visibility was set to `hidden` |
 | `DataTypeNumber` | `number` |
 | `DataTypeBoolean` | `bool` |
 | `DataTypeArray` | `dynamic-array` (string items) |
