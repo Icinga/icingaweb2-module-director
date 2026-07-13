@@ -7,6 +7,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
+use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 use stdClass;
 
@@ -403,6 +404,27 @@ class DirectorProperty extends DbObject
         }
 
         return $property;
+    }
+
+    /** Value types that may never be used for a nested (non-top-level) property */
+    private const NON_NESTABLE_TYPES = ['dynamic-dictionary'];
+
+    /**
+     * @throws InvalidArgumentException if a nested property is being stored with a value_type
+     *                                   that may only be used at the top level
+     */
+    protected function beforeStore(): void
+    {
+        if (
+            $this->get('parent_uuid') !== null
+            && in_array($this->get('value_type'), self::NON_NESTABLE_TYPES, true)
+        ) {
+            throw new InvalidArgumentException(sprintf(
+                "'%s' can only be used as a top-level custom variable; it cannot be nested inside"
+                . " a fixed-array, fixed-dictionary, dynamic-array or another dynamic-dictionary",
+                $this->get('value_type')
+            ));
+        }
     }
 
     protected function onStore(): void

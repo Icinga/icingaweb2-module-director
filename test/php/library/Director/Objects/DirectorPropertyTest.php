@@ -10,6 +10,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Test\BaseTestCase;
+use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -115,20 +116,16 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals(['crit', 'warn'], $childKeys);
     }
 
-    public function testDynamicDictionaryNestingIsNotRestrictedByTheModel(): void
+    public function testDynamicDictionaryNestingIsRejectedByTheModel(): void
     {
         if ($this->skipForMissingDb()) {
             return;
         }
 
-        // The "dynamic-dictionary may only be a top-level property" rule is enforced
-        // entirely by CustomVariableForm's value_type dropdown, which only offers
-        // 'dynamic-dictionary' as an option when the field being added is neither
-        // nested nor itself a child (see CustomVariableForm.php's $types construction,
-        // gated on !$this->isNestedField && $this->parentUuid === null). DirectorProperty
-        // itself has no such restriction, so creating a 'dynamic-dictionary' child
-        // directly through the model succeeds. This pins that down so nobody mistakes
-        // the model for a backstop that isn't there.
+        // The "dynamic-dictionary may only be a top-level property" rule must hold
+        // regardless of entry point (form, REST API, CLI migration, basket restore),
+        // not just because CustomVariableForm's dropdown happens to never offer it as
+        // a nested option. DirectorProperty::beforeStore() enforces it directly.
         $db = $this->getDb();
         $parent = $this->makeProperty('disk_checks', 'dynamic-dictionary', 'Disk Checks', $db);
         $parent->store();
@@ -140,13 +137,9 @@ class DirectorPropertyTest extends BaseTestCase
             'parent_uuid' => $parentUuid,
             'value_type'  => 'dynamic-dictionary',
         ], $db);
+
+        $this->expectException(InvalidArgumentException::class);
         $child->store();
-
-        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $db);
-        $items = $reloaded->fetchItemsFromDb();
-
-        $this->assertCount(1, $items);
-        $this->assertEquals('dynamic-dictionary', $items[0]->get('value_type'));
     }
 
     public function testDatalistStrictAssociatesDatalist(): void
