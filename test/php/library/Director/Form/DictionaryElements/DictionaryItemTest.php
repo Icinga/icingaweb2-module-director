@@ -11,7 +11,7 @@ use Tests\Icinga\Module\Director\Form\DictionaryElements\Lib\TestableDictionaryI
 
 class DictionaryItemTest extends TestCase
 {
-    public function testPrepareScrubsInheritedSecretForSensitiveType(): void
+    public function testPrepareScrubsInheritedSecretButKeepsItsPresenceForSensitiveType(): void
     {
         $property = [
             'uuid' => '',
@@ -26,22 +26,6 @@ class DictionaryItemTest extends TestCase
         $result = DictionaryItem::prepare($property);
 
         $this->assertStringNotContainsString('s3cr3t-inherited-value', $result['inherited']);
-    }
-
-    public function testPreparePreservesInheritedPresenceForSensitiveType(): void
-    {
-        $property = [
-            'uuid' => '',
-            'key_name' => 'api_token',
-            'label' => 'API Token',
-            'value_type' => 'sensitive',
-            'value' => 's3cr3t-current-value',
-            'inherited' => 's3cr3t-inherited-value',
-            'inherited_from' => 'webserver-template',
-        ];
-
-        $result = DictionaryItem::prepare($property);
-
         $this->assertNotEmpty($result['inherited'], 'presence of an inherited value must still be signaled');
     }
 

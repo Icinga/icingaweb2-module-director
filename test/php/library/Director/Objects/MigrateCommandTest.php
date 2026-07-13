@@ -373,6 +373,7 @@ class MigrateCommandTest extends BaseTestCase
         );
         $this->assertEquals(0, (int) $count, 'Categorized datafield must not be migrated');
     }
+
     public function testHiddenStringFieldMigratesAsSensitive(): void
     {
         if ($this->skipForMissingDb()) {
