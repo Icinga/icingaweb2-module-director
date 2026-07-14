@@ -294,7 +294,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                     'label' => 'dpc.label',
                     'value_type' => 'dpc.value_type',
                     'uuid' => 'dpc.uuid'
-                ])->where('dpp.value_type', '*-dictionary');
+                ])->where('dpp.value_type', ['fixed-dictionary', 'dynamic-dictionary']);
 
             foreach ($dictionaryItems as $dictionaryItem) {
                 $propertyName = $dictionaryItem->key_name;
@@ -328,7 +328,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                     'parent_name' => 'dpp.key_name',
                     'key_name' => 'dpc.key_name',
                 ])
-                ->where('dpp.value_type', '*-array')
+                ->where('dpp.value_type', 'fixed-array')
                 ->where('dpc.value_type', 'sensitive');
 
             foreach ($sensitiveArrayItems as $sensitiveArrayItem) {
