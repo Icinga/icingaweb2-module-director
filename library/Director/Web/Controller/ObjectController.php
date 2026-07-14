@@ -545,7 +545,7 @@ abstract class ObjectController extends ActionController
 
         $propertyData = [
             'key_name'       => $row['key_name'],
-            'uuid'           => $row['uuid'],
+            'uuid'           => DbUtil::binaryResult($row['uuid']),
             'value_type'     => $row['value_type'],
             'label'          => $row['label'],
             'allow_removal'  => true,
