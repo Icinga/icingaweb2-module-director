@@ -18,6 +18,7 @@ use ipl\Web\Url;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Zend_Db_Adapter_Abstract;
 
 /**
  * @phpstan-type DictionaryItemDataType array{
@@ -42,9 +43,14 @@ class DictionaryItem extends FieldsetElement
         parent::__construct($name, $attributes);
     }
 
+    private static function getDb(): Zend_Db_Adapter_Abstract
+    {
+        return Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
+    }
+
     private static function fetchItemType(UuidInterface $uuid): ?string
     {
-        $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
+        $db = static::getDb();
         $query = $db->select()
             ->from(
                 ['dp' => 'director_property'],
@@ -66,7 +72,7 @@ class DictionaryItem extends FieldsetElement
      */
     private static function fetchDataListEntries(UuidInterface $uuid): array
     {
-        $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
+        $db = static::getDb();
         $query = $db->select()
             ->from(
                 ['dle' => 'director_datalist_entry'],
@@ -403,7 +409,7 @@ class DictionaryItem extends FieldsetElement
         string $parentType,
         array $values = []
     ): array {
-        $db = Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
+        $db = static::getDb();
 
         $query = $db->select()
             ->from(
