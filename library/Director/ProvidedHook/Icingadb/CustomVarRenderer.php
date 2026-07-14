@@ -390,9 +390,9 @@ class CustomVarRenderer extends CustomVarRendererHook
      *
      * @return array
      */
-    protected function getObjectCustomProperties(IcingaObject $object, bool $isOverrideVars = false): array
+    protected function getObjectCustomProperties(IcingaObject $object): array
     {
-        if ($object->uuid === null) {
+        if ($object->get('uuid') === null) {
             return [];
         }
 
