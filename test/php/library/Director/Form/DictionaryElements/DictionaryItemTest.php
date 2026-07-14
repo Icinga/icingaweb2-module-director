@@ -5,18 +5,13 @@
 
 namespace Tests\Icinga\Module\Director\Form\DictionaryElements;
 
-// icingaweb2's test autoloader only knows about Tests\Icinga\Module\Director\Lib
-// (test/php/Lib). It can't find this class, since it sits one folder deeper, next to
-// this test. So we load it by hand instead.
-require_once __DIR__ . '/Lib/TestableDictionaryItem.php';
-
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\DictionaryElements\DictionaryItem;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Module\Director\Web\Form\Element\SensitiveElement;
 use Ramsey\Uuid\Uuid;
-use Tests\Icinga\Module\Director\Form\DictionaryElements\Lib\TestableDictionaryItem;
+use Tests\Icinga\Module\Director\Form\Lib\TestableDictionaryItem;
 
 class DictionaryItemTest extends BaseTestCase
 {

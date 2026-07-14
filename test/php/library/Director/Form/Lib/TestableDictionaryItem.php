@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Tests\Icinga\Module\Director\Form\DictionaryElements\Lib;
+namespace Tests\Icinga\Module\Director\Form\Lib;
 
 use Icinga\Module\Director\Forms\DictionaryElements\DictionaryItem;
 use Icinga\Module\Director\Web\Form\Element\SensitiveElement;
