@@ -519,15 +519,16 @@ class DictionaryItem extends FieldsetElement
             $values['value'] = $this->getElement('var-search')->getValue();
         } else {
             $type = $this->getElement('type')->getValue();
+            $parentType = $this->getElement('parent_type')->getValue();
 
-            if (! empty($this->getElement('inherited')->getValue())) {
+            if (empty($parentType) && ! empty($this->getElement('inherited')->getValue())) {
                 $values['value'] = $itemValue->getValue();
             } else {
                 $defaultValue = null;
 
                 // Use the default value for fixed-array items only if the fixed array does not have an
                 // inherited value.
-                if ($this->getElement('parent_type')->getValue() === 'fixed-array') {
+                if ($parentType === 'fixed-array') {
                     match ($type) {
                         'string', 'sensitive' => $defaultValue = '',
                         'number' => $defaultValue = 0,
