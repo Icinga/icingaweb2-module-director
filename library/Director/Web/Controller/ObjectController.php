@@ -892,7 +892,7 @@ abstract class ObjectController extends ActionController
                 ['dp' => 'director_property'],
                 ['*']
             )
-            ->where('parent_uuid IS NULL AND key_name ', $varName);
+            ->where('parent_uuid IS NULL AND key_name', $varName);
 
         return $db->getDbAdapter()->fetchRow($query);
     }
