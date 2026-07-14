@@ -52,7 +52,7 @@ class HostsCommand extends ObjectsCommand
             return [];
         }
 
-        $type = $object->getShortTableName();
+        $objectType = $object->getShortTableName();
 
         $parents = $object->listAncestorIds();
 
@@ -64,7 +64,17 @@ class HostsCommand extends ObjectsCommand
         }
 
         $uuids[] = $object->get('uuid');
-        $types = ['string', 'number', 'bool', 'fixed-array', 'dynamic-array', 'fixed-dictionary', 'dynamic-dictionary'];
+        $types = [
+            'string',
+            'sensitive',
+            'number',
+            'bool',
+            'fixed-array',
+            'dynamic-array',
+            'fixed-dictionary',
+            'dynamic-dictionary'
+        ];
+
         if ($db->isPgsql()) {
             $cases = [];
             foreach ($types as $i => $type) {
@@ -83,15 +93,15 @@ class HostsCommand extends ObjectsCommand
                         [
                             'key_name' => 'dp.key_name',
                             'uuid' => 'dp.uuid',
-                            $type . '_uuid' => 'iop.' . $type . '_uuid',
+                            $objectType . '_uuid' => 'iop.' . $objectType . '_uuid',
                             'value_type' => 'dp.value_type',
                             'label' => 'dp.label',
                             'children' => 'COUNT(cdp.uuid)'
                         ]
                     )
-                    ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
+                    ->join(['iop' => "icinga_$objectType" . '_property'], 'dp.uuid = iop.property_uuid', [])
                     ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-                    ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+                    ->where('iop.' . $objectType . '_uuid IN (?)', $uuids)
                     ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
                     ->order($valueTypeOrder)
                     ->order('children')
