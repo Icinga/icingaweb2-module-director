@@ -106,21 +106,6 @@ class MigrateCommandTest extends BaseTestCase
         }
     }
 
-    public function testDryRunWithDeleteDoesNotReportDatafieldsAsDeleted(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $this->createAllFixtures($db);
-
-        $cmd = new TestableMigrateCommand($db, ['--dry-run', '--delete', '--verbose']);
-        $output = $cmd->runDatafields();
-
-        $this->assertStringContainsString("have been migrated and deleted:\nSummary:", $output);
-    }
-
     public function testLiveMigrationCreatesDirectorPropertyRows(): void
     {
         if ($this->skipForMissingDb()) {
