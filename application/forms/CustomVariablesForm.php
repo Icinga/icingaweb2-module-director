@@ -443,6 +443,7 @@ class CustomVariablesForm extends CompatForm
                 ! $isOverrideServiceVars
                 && $vars->get($key)
                 && $vars->get($key)->getUuid() === null
+                && $vars->hasBeenModified()
                 && isset($property['uuid'])
             ) {
                 $vars->registerVarUuid($key, $propertyUuid);
@@ -495,12 +496,17 @@ class CustomVariablesForm extends CompatForm
             $object = $this->host;
             $object->overrideServiceVars($this->object->getObjectName(), (object) $overrideVars);
             $this->varsHasBeenModified = $object->hasBeenModified();
-            DirectorActivityLog::logModification($object, $this->object->getConnection());
+            if ($object->hasBeenModified()) {
+                DirectorActivityLog::logModification($object, $this->object->getConnection());
+            }
 
             $object->store($this->object->getConnection());
         } else {
             $object = $this->object;
-            DirectorActivityLog::logModification($object, $this->object->getConnection());
+            if ($this->varsHasBeenModified) {
+                DirectorActivityLog::logModification($object, $this->object->getConnection());
+            }
+
             $vars->storeToDb($object);
         }
     }
