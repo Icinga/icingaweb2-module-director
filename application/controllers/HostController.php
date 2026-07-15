@@ -727,6 +727,8 @@ class HostController extends ObjectController
                             $this->translate('There is nothing to change.')
                         );
                     }
+
+                    $this->redirectNow(Url::fromRequest());
                 }
             );
     }
