@@ -335,10 +335,10 @@ class CustomVariablesForm extends CompatForm
     private function assertCanAttachNewVariable(): void
     {
         if (! $this->object->isTemplate()) {
-            throw new LogicException(
+            throw new LogicException(sprintf(
                 'Custom Variables can only be attached directly to a template, got %s',
                 $this->object->getObjectName()
-            );
+            ));
         }
     }
 
