@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
@@ -15,12 +14,12 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
-use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use LogicException;
 use Ramsey\Uuid\Uuid;
 
 class CustomVariablesForm extends CompatForm
@@ -209,12 +208,12 @@ class CustomVariablesForm extends CompatForm
      *
      * @return void
      *
-     * @throws ProgrammingError
+     * @throws LogicException
      */
     private function assertOverrideHostIsSet(): void
     {
         if ($this->isOverrideServiceVars() && $this->host === null) {
-            throw new ProgrammingError(
+            throw new LogicException(
                 'CustomVariablesForm needs setHostForService() to be called before overriding service variables'
             );
         }
@@ -331,12 +330,12 @@ class CustomVariablesForm extends CompatForm
      *
      * @return void
      *
-     * @throws ProgrammingError
+     * @throws LogicException
      */
     private function assertCanAttachNewVariable(): void
     {
         if (! $this->object->isTemplate()) {
-            throw new ProgrammingError(
+            throw new LogicException(
                 'Custom Variables can only be attached directly to a template, got %s',
                 $this->object->getObjectName()
             );

@@ -5,11 +5,11 @@
 
 namespace Tests\Icinga\Module\Director\Form;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Test\BaseTestCase;
+use LogicException;
 use ReflectionMethod;
 
 class CustomVariablesFormTest extends BaseTestCase
@@ -24,7 +24,7 @@ class CustomVariablesFormTest extends BaseTestCase
         $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
         $method->setAccessible(true);
 
-        $this->expectException(ProgrammingError::class);
+        $this->expectException(LogicException::class);
         $method->invoke($form);
     }
 
@@ -111,7 +111,7 @@ class CustomVariablesFormTest extends BaseTestCase
         $method = new ReflectionMethod($form, 'assertOverrideHostIsSet');
         $method->setAccessible(true);
 
-        $this->expectException(ProgrammingError::class);
+        $this->expectException(LogicException::class);
         $method->invoke($form);
     }
 
