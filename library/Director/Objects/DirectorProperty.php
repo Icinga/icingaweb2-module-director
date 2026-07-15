@@ -13,6 +13,9 @@ use stdClass;
 
 class DirectorProperty extends DbObject
 {
+    /** Value types that may never be used for a nested (non-top-level) property */
+    private const NON_NESTABLE_TYPES = ['dynamic-dictionary'];
+
     protected $table = 'director_property';
 
     protected $keyName = 'key_name';
@@ -405,9 +408,6 @@ class DirectorProperty extends DbObject
 
         return $property;
     }
-
-    /** Value types that may never be used for a nested (non-top-level) property */
-    private const NON_NESTABLE_TYPES = ['dynamic-dictionary'];
 
     /**
      * @throws InvalidArgumentException if a nested property is being stored with a value_type
