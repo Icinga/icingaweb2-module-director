@@ -58,6 +58,7 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_ENV_CHOICES,
         self::VAR_ENV_SUGGEST,
         self::VAR_HIDDEN,
+        self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR,
     ];
 
     private const ALL_TEST_VARS = [
@@ -402,11 +403,7 @@ class MigrateCommandTest extends BaseTestCase
         $cmd = new TestableMigrateCommand($db);
         $output = $cmd->runDatafields();
 
-        // MIGRATABLE (6, including the hidden-string field that now migrates as 'sensitive')
-        // + env_choices_default_behavior (added for the datalist default-behavior fix) = 7
-        // datafields actually get a director_property row. VAR_TIME_FIELD is present in the
-        // fixture set but has an unsupported type and must not be counted as migrated.
-        $expectedMigrated = count(self::MIGRATABLE) + 1;
+        $expectedMigrated = count(self::MIGRATABLE);
         $this->assertStringContainsString(
             "Total number of datafields migrated: $expectedMigrated\n",
             $output,
