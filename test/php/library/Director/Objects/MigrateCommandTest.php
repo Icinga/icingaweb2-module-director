@@ -408,7 +408,7 @@ class MigrateCommandTest extends BaseTestCase
         // fixture set but has an unsupported type and must not be counted as migrated.
         $expectedMigrated = count(self::MIGRATABLE) + 1;
         $this->assertStringContainsString(
-            "Total datafields migrated: $expectedMigrated\n",
+            "Total number of datafields migrated: $expectedMigrated\n",
             $output,
             'the migrated count must not include datafields with an unsupported type that were skipped'
         );

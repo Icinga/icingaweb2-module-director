@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Data\Db\DbQuery;
 use Icinga\Data\Filter\Filter;
-use Icinga\Data\Filter\FilterAnd;
 use Icinga\Data\Filter\FilterMatch;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Db\DbSelectParenthesis;
@@ -24,6 +23,12 @@ use Ramsey\Uuid\UuidInterface;
  */
 class MigrateCommand extends Command
 {
+    /**
+     * Datatype suffixes (after 'Icinga\Module\Director\DataType\DataType') that are supported
+     * for migration.
+     */
+    private const SUPPORTED_DATATYPES = ['Array', 'Boolean', 'Number', 'String', 'Datalist'];
+
     private $existingCustomProperties = [];
 
     /** @var array Migrated Datafields ['id' => 'datafield_name'] */
@@ -39,15 +44,7 @@ class MigrateCommand extends Command
     public function summaryAction()
     {
         $customPropertiesToMigrate = $this->prepareCustomProperties();
-        $this->checkMigrateableDatafieldTypes();
-        $this->checkDatafieldsWithCategory();
-        $this->checkUnmigrateableDatafieldTypes();
-        $this->checkDatafieldsWithDuplicateNames();
-        printf(
-            "Number of datafields that can not be migrated as the custom properties with the same name already"
-            . " exists: %d\n",
-            count($this->existingCustomProperties)
-        );
+        $this->printMigrationDetails($customPropertiesToMigrate);
 
         $totalMigrated = 0;
         foreach ($customPropertiesToMigrate as $customProperty) {
@@ -59,8 +56,8 @@ class MigrateCommand extends Command
         $totalSkipped = count(DirectorDatafield::loadAll($this->db())) - $totalMigrated;
 
         echo "Summary:\n";
-        printf("Total datafields that could be migrated: %d\n", $totalMigrated);
-        printf("Total datafields skipped: %d\n", $totalSkipped);
+        printf("Total number of datafields that will be migrated: %d\n", $totalMigrated);
+        printf("Total number of datafields that will be skipped: %d\n", $totalSkipped);
     }
 
     /**
@@ -86,15 +83,7 @@ class MigrateCommand extends Command
         $delete = $this->params->shift('delete') ?? false;
         // Dry run summary
         if ($dryRun) {
-            $this->checkMigrateableDatafieldTypes();
-            $this->checkDatafieldsWithCategory();
-            $this->checkUnmigrateableDatafieldTypes();
-            $this->checkDatafieldsWithDuplicateNames();
-            printf(
-                "Number of datafields that can not be migrated as the custom properties with the same name already"
-                . " exists: %d\n",
-                count($this->existingCustomProperties)
-            );
+            $this->printMigrationDetails($customPropertiesToMigrate);
         }
 
         echo "Migrating Data fields\n";
@@ -157,8 +146,33 @@ class MigrateCommand extends Command
         }
 
         echo "Summary:\n";
-        printf("Total datafields migrated: %d\n", $totalMigrated);
-        printf("Total datafields skipped: %d\n", $totalSkipped);
+        printf("Total number of datafields migrated: %d\n", $totalMigrated);
+        printf("Total number of datafields skipped: %d\n", $totalSkipped);
+    }
+
+    /**
+     * Print the datatype/category/duplicate breakdown, and reconcile it against
+     * datafields that are skipped because a custom property with the same name
+     * already exists, so the final migrated/skipped totals aren't a mystery.
+     *
+     * @param array $customPropertiesToMigrate
+     *
+     * @return void
+     */
+    private function printMigrationDetails(array $customPropertiesToMigrate): void
+    {
+        $this->checkMigrateableDatafieldTypes();
+        $this->checkDatafieldsWithCategory();
+        $this->checkUnmigrateableDatafieldTypes();
+        $this->checkDatafieldsWithDuplicateNames();
+
+        $supportedDatatypeCount = count($customPropertiesToMigrate) + count($this->existingCustomProperties);
+        printf(
+            "Of the %d datafields with a supported datatype, %d already have a matching new custom variable"
+            . " and will be skipped\n\n",
+            $supportedDatatypeCount,
+            count($this->existingCustomProperties)
+        );
     }
 
     /**
@@ -316,14 +330,20 @@ class MigrateCommand extends Command
     }
 
     /**
-     * Check what datafield types can be migrated
+     * Check which datafield types are supported by the new custom variable support
+     *
+     * This does not yet account for datafields that are skipped because a custom
+     * property with the same name already exists
      *
      * @return void
      */
     private function checkMigrateableDatafieldTypes(): void
     {
         $db = $this->db();
-        printf("The following datafield types and the corresponding number of datafields can be migrated:\n");
+        printf(
+            "The following datafield types and the corresponding number of datafields"
+            . " have a supported datatype:\n"
+        );
         $total = 0;
         $query = $this->getDataFieldsMigrationQuery();
         $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
@@ -341,7 +361,7 @@ class MigrateCommand extends Command
             $total += $row->count_q;
         }
 
-        printf("Total datafields that can be migrated: %d\n\n", $total);
+        printf("Total datafields with a supported datatype: %d\n\n", $total);
     }
 
     /**
@@ -449,17 +469,21 @@ class MigrateCommand extends Command
     /**
      * Get datafields with unsupported value type in new custom variable support
      *
+     * A datafield is unsupported unless its datatype is handled explicitly by
+     * prepareCustomProperties(); keep self::SUPPORTED_DATATYPES in sync with the
+     * types handled there so migrateable/unmigrateable counts never drift apart.
+     *
      * @return array
      */
     private function getDatafieldsWithUnsupportedValuetype()
     {
         $query = $this->getDataFieldQuery();
-        $query->addFilter(FilterAnd::matchAny(
-            FilterMatch::where('datatype', '*SqlQuery'),
-            FilterMatch::where('datatype', '*DirectorObject'),
-            FilterMatch::where('datatype', '*Dictionary')
-        ));
+        $supportedFilters = [];
+        foreach (self::SUPPORTED_DATATYPES as $suffix) {
+            $supportedFilters[] = FilterMatch::where('datatype', "*$suffix");
+        }
 
+        $query->addFilter(Filter::not(Filter::matchAny($supportedFilters)));
         $query->columns(['varname', 'datatype']);
 
         return $query->fetchPairs();
