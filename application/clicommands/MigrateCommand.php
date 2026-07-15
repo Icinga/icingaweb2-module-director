@@ -30,15 +30,53 @@ class MigrateCommand extends Command
     private $migratedDataFields = [];
 
     /**
-     * Run any pending migrations
+     * Show what would be migrated, without making any changes
+     *
+     * USAGE
+     *
+     * icingacli director migrate summary
+     */
+    public function summaryAction()
+    {
+        $customPropertiesToMigrate = $this->prepareCustomProperties();
+        $this->checkMigrateableDatafieldTypes();
+        $this->checkDatafieldsWithCategory();
+        $this->checkUnmigrateableDatafieldTypes();
+        $this->checkDatafieldsWithDuplicateNames();
+        printf(
+            "Number of datafields that can not be migrated as the custom properties with the same name already"
+            . " exists: %d\n",
+            count($this->existingCustomProperties)
+        );
+
+        $totalMigrated = 0;
+        foreach ($customPropertiesToMigrate as $customProperty) {
+            if (! str_starts_with($customProperty['value_type'], 'unsupported-')) {
+                $totalMigrated++;
+            }
+        }
+
+        $totalSkipped = count(DirectorDatafield::loadAll($this->db())) - $totalMigrated;
+
+        echo "Summary:\n";
+        printf("Total datafields that could be migrated: %d\n", $totalMigrated);
+        printf("Total datafields skipped: %d\n", $totalSkipped);
+    }
+
+    /**
+     * Run datafield migration
+     *
+     * USAGE
      *
      * icingacli director migrate datafields --dry-run --delete --verbose
      *
-     * - --dry-run: Preview what would be migrated without writing to the database
+     * OPTIONS
      *
-     * - --delete: Remove original datafield records and their bindings after migration (skipped with --dry-run)
+     *  --dry-run    Preview what would be migrated without writing to the database
      *
-     * - --verbose: Show detailed migration results
+     *  --delete     Remove original datafield records and their bindings after migration (skipped with --dry-run)
+     *
+     *  --verbose    Show detailed migration results
      */
     public function datafieldsAction()
     {
