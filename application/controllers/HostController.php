@@ -4,11 +4,15 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Forms\CustomVariableForm;
+use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\HostServiceBlacklistForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
+use Icinga\Web\Notification;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -476,6 +480,7 @@ class HostController extends ObjectController
         } else {
             $this->controls()->prepend($deactivateForm);
             $form = $this->prepareCustomPropertiesForm($parent, $host);
+            $this->customVarFormOnSubmit($form, $host);
             $form->setApplyGenerated($parent);
             $form->setHostForService($host);
             $this->content()->add($form->handleRequest($this->getServerRequest()));
@@ -603,6 +608,7 @@ class HostController extends ObjectController
         } else {
             $this->controls()->prepend($deactivateForm);
             $form = $this->prepareCustomPropertiesForm($parent, $host);
+            $this->customVarFormOnSubmit($form, $host);
             $form->setInheritedServiceFrom($from->getObjectName());
             $form->setHostForService($host);
 
@@ -686,6 +692,7 @@ class HostController extends ObjectController
         } else {
             $this->controls()->prepend($deactivateForm);
             $form = $this->prepareCustomPropertiesForm($originalService, $host);
+            $this->customVarFormOnSubmit($form, $host);
             $form->setServiceSet($setTemplate);
             $form->setHostForService($host);
 
@@ -696,6 +703,32 @@ class HostController extends ObjectController
         }
 
         $this->commonForServices();
+    }
+
+    private function customVarFormOnSubmit(CustomVariablesForm $form, IcingaObject $host): void
+    {
+        $form
+            ->on(
+                CustomVariablesForm::ON_SUBMIT,
+                function (CustomVariablesForm $form) use ($host) {
+                    if ($form->varsHasBeenModified()) {
+                        Notification::success(
+                            sprintf(
+                                $this->translate(
+                                    "Custom variables have been successfully overriden"
+                                    . " for service '%s' on host '%s'"
+                                ),
+                                $form->object->getObjectName(),
+                                $host->getObjectName()
+                            )
+                        );
+                    } else {
+                        Notification::success(
+                            $this->translate('There is nothing to change.')
+                        );
+                    }
+                }
+            );
     }
 
     /**
