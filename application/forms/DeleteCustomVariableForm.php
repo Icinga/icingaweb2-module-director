@@ -325,11 +325,11 @@ class DeleteCustomVariableForm extends CompatForm
             );
             $children = array_map([DbUtil::class, 'binaryResult'], $children);
 
-            $descendants = array_merge($descendants, $children);
+            $descendants[] = $children;
             $parents = $children;
         }
 
-        return $descendants;
+        return array_merge(...$descendants);
     }
 
     /**
