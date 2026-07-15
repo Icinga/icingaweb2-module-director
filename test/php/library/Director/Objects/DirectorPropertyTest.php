@@ -235,10 +235,10 @@ class DirectorPropertyTest extends BaseTestCase
     }
 
     /**
-     * Regression test: restoring a dynamic-dictionary property whose CHILD references a
-     * datalist that does not exist yet in the target database must not fail with
-     * "SQLSTATE[23000]: ..." error (a brand-new DirectorDatalist
-     * created during import() must be persisted before onStore() reads its uuid).
+     * Restoring a dynamic-dictionary property whose CHILD references a datalist that does
+     * not exist yet in the target database must not fail with "SQLSTATE[23000]: ..." error
+     * (a brand-new DirectorDatalist created during import() must be persisted before
+     * onStore() reads its uuid).
      */
     public function testDatalistChildOfDynamicDictionaryIsPersistedWhenListDoesNotExistYet(): void
     {
@@ -288,7 +288,7 @@ class DirectorPropertyTest extends BaseTestCase
     }
 
     /**
-     * Same regression as above, one level deeper: the not-yet-existing datalist is referenced
+     * Same as above, one level deeper: the not-yet-existing datalist is referenced
      * by a GRANDCHILD (dynamic-dictionary -> fixed-dictionary -> datalist-strict).
      */
     public function testDatalistGrandchildOfDynamicDictionaryIsPersistedWhenListDoesNotExistYet(): void
