@@ -371,6 +371,12 @@ class CustomVariablesForm extends CompatForm
         $type = $this->object->getShortTableName();
         $db = $this->object->getDb();
         $itemsToRemoveUuids = [];
+        $overrideVars = [] ;
+        $isOverrideServiceVars = $this->isOverrideServiceVars();
+        if ($isOverrideServiceVars) {
+            $overrideVars = (array) $this->host->getOverriddenServiceVars($this->object->getObjectName());
+        }
+
         foreach ($this->objectProperties as $key => $property) {
             $propertyUuid = Uuid::fromBytes($property['uuid']);
             if (isset($property['removed'])) {
@@ -417,12 +423,28 @@ class CustomVariablesForm extends CompatForm
             }
 
             if (self::isValueUnset($value)) {
-                $vars->set($key, null);
+                if ($isOverrideServiceVars) {
+                    if (isset($overrideVars[$key])) {
+                        unset($overrideVars[$key]);
+                        $this->varsHasBeenModified = true;
+                    }
+                } else {
+                    $vars->set($key, null);
+                }
             } else {
-                $vars->set($key, $value);
+                if ($isOverrideServiceVars) {
+                    $overrideVars[$key] = $value;
+                } else {
+                    $vars->set($key, $value);
+                }
             }
 
-            if ($vars->get($key) && $vars->get($key)->getUuid() === null && isset($property['uuid'])) {
+            if (
+                ! $isOverrideServiceVars
+                && $vars->get($key)
+                && $vars->get($key)->getUuid() === null
+                && isset($property['uuid'])
+            ) {
                 $vars->registerVarUuid($key, $propertyUuid);
             }
 
@@ -471,14 +493,8 @@ class CustomVariablesForm extends CompatForm
 
         if ($this->isOverrideServiceVars()) {
             $object = $this->host;
-            $overrideVars = (array) $this->host->getOverriddenServiceVars($this->object->getObjectName());
-            foreach ($vars as $varName => $var) {
-                if ($var->hasBeenModified()) {
-                    $overrideVars[$varName] = $var->getValue();
-                }
-            }
-
             $object->overrideServiceVars($this->object->getObjectName(), (object) $overrideVars);
+            $this->varsHasBeenModified = $object->hasBeenModified();
             DirectorActivityLog::logModification($object, $this->object->getConnection());
 
             $object->store($this->object->getConnection());
