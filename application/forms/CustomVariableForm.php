@@ -245,7 +245,7 @@ class CustomVariableForm extends CompatForm
                 'select',
                 'list',
                 [
-                    'label'             => $this->translate('List name'),
+                    'label'             => $this->translate('List name *'),
                     'class'             => 'autosubmit',
                     'disabledOptions'   => [''],
                     'value'             => '',
