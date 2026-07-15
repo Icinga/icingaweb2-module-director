@@ -676,7 +676,7 @@ abstract class ObjectController extends ActionController
                 $row['value'] = $vars[$row['key_name']];
             }
 
-            if (isset($inheritedVars[$row['key_name']])) {
+            if (isset($inheritedVars[$row['key_name']]) && ! $isOverrideVars) {
                 $row['inherited'] = $inheritedVars[$row['key_name']];
                 $row['inherited_from'] = $origins->{$row['key_name']};
             }
