@@ -164,6 +164,8 @@ class IcingaServiceApplyForTest extends BaseTestCase
         }
 
         $db = $this->getDb();
+        $host = $this->hostTemplate();
+        $host->store($db);
 
         // Create disk_checks (dynamic-dictionary) with child mount_point
         $parent = DirectorProperty::create([
@@ -182,6 +184,12 @@ class IcingaServiceApplyForTest extends BaseTestCase
             'value_type'  => 'string',
         ], $db);
         $child->store();
+
+        $dba = $db->getDbAdapter();
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($parent->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat(DbUtil::binaryResult($host->get('uuid')), $dba),
+        ]);
 
         $service = $this->applyService(
             'disk-macro-check',
