@@ -5,7 +5,9 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -97,6 +99,62 @@ class IcingaServiceApplyForTest extends BaseTestCase
             $rendered,
             'Apply-for with no matching director_property must fall back to (value in ...)'
         );
+    }
+
+    public function testApplyForPrefersLegacyDatafieldOverUnrelatedSameNamedProperty(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A Data field (deprecated), attached to the host template used by this test,
+        // predating Custom Variables. Its "Apply For" rule must keep rendering as a
+        // plain array iteration after the merge.
+        $host = $this->hostTemplate();
+        $host->store($db);
+
+        $keyName = self::PREFIX . 'shared_name';
+        $datafield = DirectorDatafield::create([
+            'varname'  => $keyName,
+            'caption'  => 'Shared name',
+            'datatype' => DataTypeArray::class,
+        ], $db);
+        $datafield->store();
+
+        $dba->insert('icinga_host_field', [
+            'host_id'      => $host->get('id'),
+            'datafield_id' => $datafield->get('id'),
+            'is_required'  => 'n',
+        ]);
+
+        // An unrelated Custom Variable, attached to a completely different host
+        // template, which merely happens to share the same key_name.
+        $otherHost = IcingaHost::create([
+            'object_name' => self::PREFIX . 'host_apply_for_other',
+            'object_type' => 'template',
+        ]);
+        $otherHost->store($db);
+        $this->makeAndLinkProperty('shared_name', 'dynamic-dictionary', $otherHost, $db);
+
+        $applyFor = 'host.vars.' . $keyName;
+        $service = $this->applyService('shared-name-check', $applyFor);
+        $service->setConnection($db);
+
+        $rendered = (string) $service;
+
+        $this->assertStringContainsString(
+            'for (value in ' . $applyFor . ')',
+            $rendered,
+            'A Data field must keep winning over an unrelated same-named Custom Variable'
+        );
+        $this->assertStringNotContainsString('key => value', $rendered);
+        $this->assertStringNotContainsString('vars.overriddenVar', $rendered);
+
+        $otherHost->delete();
+        $datafield->delete();
     }
 
     public function testValueFieldMacroAllowedInVars(): void

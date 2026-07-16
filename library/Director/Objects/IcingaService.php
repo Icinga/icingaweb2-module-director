@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\PropertiesFilter;
+use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -414,17 +415,55 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
     }
 
+    /**
+     * Fetch property type of the custom variable used in apply for rule
+     *
+     * @param string $applyFor
+     *
+     * @return ?string
+     */
     protected function fetchApplyForPropertyType(string $applyFor): ?string
     {
+        // Data field names and Custom Variable names are independent namespaces.
+        // An Apply For rule created long before Custom Variables existed may use a
+        // Data field name that a wholly unrelated Custom Variable now happens to
+        // share, on some unrelated host template. The Data field must keep winning,
+        // or an existing, already-deployed Apply For rule would silently start
+        // rendering as a dictionary iteration it was never meant to be.
+        if ($this->hasLegacyArrayDatafield($applyFor)) {
+            return null;
+        }
+
         $query = $this->db
             ->select()
             ->from(['dp' => 'director_property'], ['value_type' => 'dp.value_type'])
             ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
+            ->where('dp.parent_uuid IS NULL')
             ->where('dp.key_name = ?', $applyFor);
 
         $result = $this->db->fetchOne($query);
 
         return $result === false ? null : $result;
+    }
+
+    /**
+     * Whether a deprecated Data field of an array-like type with this name is
+     * already attached to some host template
+     *
+     * @param string $varName
+     *
+     * @return bool
+     */
+    protected function hasLegacyArrayDatafield(string $varName): bool
+    {
+        $query = $this->db
+            ->select()
+            ->from(['df' => 'director_datafield'], ['varname' => 'df.varname'])
+            ->join(['ihf' => 'icinga_host_field'], 'df.id = ihf.datafield_id', [])
+            ->where('df.varname = ?', $varName)
+            ->where('df.datatype = ?', DataTypeArray::class);
+
+        return (bool) $this->db->fetchOne($query);
     }
 
     protected function rendersConditionalTemplate(): bool
@@ -679,22 +718,15 @@ class IcingaService extends IcingaObject implements ExportInterface
         if ($this->applyForWhiteList === null) {
             $query = $this->db
                 ->select()
-                ->from(
-                    ['dp' => 'director_property'],
-                    [
-                        'key_name' => 'dp.key_name',
-                        'uuid' => 'dp.uuid',
-                        'value_type' => 'dp.value_type'
-                    ]
-                )
+                ->from(['dp' => 'director_property'], ['key_name' => 'dp.key_name'])
                 ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
+                ->where('parent_dp.parent_uuid IS NULL')
                 ->where("parent_dp.value_type = 'dynamic-dictionary'")
                 ->where("parent_dp.key_name = ?", $applyFor);
 
             $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
 
-            $propertyType = $this->fetchApplyForPropertyType($applyFor);
-            $isApplyForDictionary = $propertyType === 'dynamic-dictionary';
+            $isApplyForDictionary = $this->fetchApplyForPropertyType($applyFor) === 'dynamic-dictionary';
             $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
             if ($isApplyForDictionary) {
                 $whiteList[] = 'key';
@@ -711,18 +743,7 @@ class IcingaService extends IcingaObject implements ExportInterface
                     continue;
                 }
 
-                $variable = sprintf('value.%s', $row['key_name']);
-                if ($row['value_type'] === 'dynamic-dictionary') {
-                    foreach ($this->fetchItemsForDictionary($row['uuid']) as $value) {
-                        if (str_contains($value['key_name'], ' ')) {
-                            continue;
-                        }
-
-                        $whiteList[] = sprintf('%s.%s', $variable, $value['key_name']);
-                    }
-                }
-
-                $whiteList[] = $variable;
+                $whiteList[] = sprintf('value.%s', $row['key_name']);
             }
 
             $this->applyForWhiteList = $whiteList;
@@ -732,28 +753,6 @@ class IcingaService extends IcingaObject implements ExportInterface
 
         return $vars;
     }
-
-    protected function fetchItemsForDictionary(string $uuid): array
-    {
-        $query = $this->db
-            ->select()
-            ->from(
-                ['dp' => 'director_property'],
-                [
-                    'key_name' => 'dp.key_name',
-                    'uuid' => 'dp.uuid',
-                    'value_type' => 'dp.value_type',
-                ]
-            )
-            ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
-            ->where(
-                'dp.parent_uuid = ?',
-                Db\DbUtil::quoteBinaryCompat(Db\DbUtil::binaryResult($uuid), $this->db)
-            );
-
-        return $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
-    }
-
 
     /**
      * TODO: Duplicate code, clean this up, split it into multiple methods
