@@ -183,7 +183,10 @@ class IcingaServiceApplyForTest extends BaseTestCase
         ], $db);
         $child->store();
 
-        $service = $this->applyService('disk-macro-check', 'host.vars.' . self::PREFIX . 'disk_checks_macro');
+        $service = $this->applyService(
+            'disk-macro-check',
+            'host.vars.' . self::PREFIX . 'disk_checks_macro'
+        );
         $service->setConnection($db);
         $service->{'vars.mount'} = '$value.mount_point$';
 
@@ -196,34 +199,79 @@ class IcingaServiceApplyForTest extends BaseTestCase
         );
     }
 
-    public function testUnknownValueFieldStrippedFromVars(): void
+    public function testQuotedDictionaryKeyMacroAllowedInVars(): void
     {
         if ($this->skipForMissingDb()) {
             return;
         }
 
         $db = $this->getDb();
+        $host = $this->hostTemplate();
+        $host->store($db);
 
-        // Create disk_checks (dynamic-dictionary) with NO children — so value.not_a_real_field won't be whitelisted
-        $parent = DirectorProperty::create([
-            'uuid'       => Uuid::uuid4()->getBytes(),
-            'key_name'   => self::PREFIX . 'disk_checks_strip',
-            'value_type' => 'dynamic-dictionary',
-            'label'      => 'Disk Checks Strip',
-        ], $db);
-        $parent->store();
-        $this->createdPropertyKeys[] = self::PREFIX . 'disk_checks_strip';
+        $this->makeAndLinkProperty('oncall_contacts', 'dynamic-dictionary', $host, $db);
 
-        $service = $this->applyService('disk-strip-check', 'host.vars.' . self::PREFIX . 'disk_checks_strip');
+        $service = $this->applyService('oncall-check', 'host.vars.' . self::PREFIX . 'oncall_contacts');
         $service->setConnection($db);
-        $service->{'vars.secret'} = '$value.not_a_real_field$';
+        $service->{'vars.oncall'} = '$value["on call"]$';
 
         $rendered = (string) $service;
 
         $this->assertStringContainsString(
-            'vars.secret = "$value.not_a_real_field$"',
+            'vars.oncall = value["on call"]',
             $rendered,
-            'Non-whitelisted macro must render as quoted string'
+            'A quoted dictionary key with a space must render as an unquoted expression'
+        );
+    }
+
+    public function testUnrelatedMacroStrippedFromVars(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->hostTemplate();
+        $host->store($db);
+
+        $this->makeAndLinkProperty('disk_checks_strip', 'dynamic-dictionary', $host, $db);
+
+        $service = $this->applyService('disk-strip-check', 'host.vars.' . self::PREFIX . 'disk_checks_strip');
+        $service->setConnection($db);
+        $service->{'vars.secret'} = '$totally_unrelated_macro$';
+
+        $rendered = (string) $service;
+
+        $this->assertStringContainsString(
+            'vars.secret = "$totally_unrelated_macro$"',
+            $rendered,
+            'A macro unrelated to the apply-for loop must render as a quoted string'
+        );
+    }
+
+    public function testDotAccessRejectedForArrayApplyFor(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->hostTemplate();
+        $host->store($db);
+
+        $this->makeAndLinkProperty('http_vhosts_strip', 'dynamic-array', $host, $db);
+
+        $service = $this->applyService('http-strip-check', 'host.vars.' . self::PREFIX . 'http_vhosts_strip');
+        $service->setConnection($db);
+        $service->{'vars.mount'} = '$value.mount_point$';
+
+        $rendered = (string) $service;
+
+        $this->assertStringContainsString(
+            'vars.mount = "$value.mount_point$"',
+            $rendered,
+            'value.* dot access only makes sense for a dynamic-dictionary apply-for'
+            .' and must stay quoted for a plain array'
         );
     }
 
