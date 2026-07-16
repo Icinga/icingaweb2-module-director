@@ -550,12 +550,15 @@ class DictionaryItem extends FieldsetElement
             }
 
             // If a sensitive field still has the DUMMYPASSWORD placeholder, keep the old
-            // secret. An empty value means the user cleared it on purpose.
+            // secret. A stored value of "0" is still a real, previously-set secret, not
+            // an absent one - only null/'' (never actually set, or explicitly cleared)
+            // skip the restore.
             if (
                 $type === 'sensitive'
                 && $itemValue instanceof SensitiveElement
                 && $itemValue->wasSubmittedUnchanged()
-                && ! empty($this->fields['value'])
+                && $this->fields['value'] !== null
+                && $this->fields['value'] !== ''
             ) {
                 $values['value'] = $this->fields['value'];
             }

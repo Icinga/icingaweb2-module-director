@@ -223,6 +223,22 @@ class DictionaryItemTest extends BaseTestCase
         $this->assertSame('', $item->getItem()['value']);
     }
 
+    public function testGetItemPreservesExistingSensitiveValueOfZeroWhenLeftUnchanged(): void
+    {
+        // PHP's empty() treats the string "0" as empty, but a sensitive value of "0"
+        // (e.g. a numeric PIN or token) is still a real, previously-set secret that an
+        // unchanged submission must not silently erase.
+        $item = new TestableDictionaryItem('api_token', ['value' => '0']);
+        $item->setTestConfig([
+            'type' => 'sensitive',
+            'parent_type' => 'fixed-dictionary',
+            'var' => SensitiveElement::DUMMYPASSWORD,
+        ]);
+        $item->ensureAssembled();
+
+        $this->assertSame('0', $item->getItem()['value']);
+    }
+
     public function testMergeChildValuesAttachesMatchingValueByKeyName(): void
     {
         $propertyItems = [
