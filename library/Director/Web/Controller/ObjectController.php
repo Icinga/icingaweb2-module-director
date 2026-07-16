@@ -753,10 +753,6 @@ abstract class ObjectController extends ActionController
         $content = [];
         $configVariables = new HtmlElement('table', Attributes::create(['class' => 'key-value-table']));
         foreach ($dictionaryKeys as $keyAttributes) {
-            if (str_contains($keyAttributes['key_name'], ' ')) {
-                continue;
-            }
-
             if (preg_match('/[^a-zA-Z0-9_]/', $keyAttributes['key_name'])) {
                 $config = '$value["' . $keyAttributes['key_name'] . '"]';
             } else {
@@ -782,10 +778,6 @@ abstract class ObjectController extends ActionController
 
             $nestedContent = [];
             foreach ($this->fetchNestedDictionaryKeys($keyAttributes['uuid']) as $nestedKeyAttributes) {
-                if (str_contains($nestedKeyAttributes['key_name'], ' ')) {
-                    continue;
-                }
-
                 if (preg_match('/[^a-zA-Z0-9_]/', $nestedKeyAttributes['key_name'])) {
                     $nestedConfig = $config . '["' . $nestedKeyAttributes['key_name'] . '"]$';
                 } else {
