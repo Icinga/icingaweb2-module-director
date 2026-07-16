@@ -47,6 +47,17 @@ class CustomVarRenderer extends CustomVarRendererHook
     protected $customPropertyDictionaries = [];
 
     /**
+     * Dictionary child configuration, keyed by parent property key_name and then by
+     * child key_name. Child key_names are only unique within their own parent
+     * dictionary, so this must never be flattened into $customVariableConfig - two
+     * different dictionaries may each have an identically-named child with different
+     * sensitivity.
+     *
+     * @var array
+     */
+    protected $dictionaryChildConfig = [];
+
+    /**
      * Positions of sensitive items within fixed-/dynamic-array custom properties, keyed by
      * the array's own key_name and then by item position, e.g. ['ssh_args' => ['3' => true]]
      *
@@ -302,10 +313,17 @@ class CustomVarRenderer extends CustomVarRendererHook
                 $this->customPropertyDictionaries[$dictionaryItem->parent_name][$propertyName]
                     = $dictionaryItem->label;
                 if (is_string($propertyName)) {
-                    $this->customVariableConfig[$propertyName] = ['label' => $dictionaryItem->label];
+                    // Scoped by parent dictionary: two different dictionaries may have a
+                    // child with the same key_name (e.g. both a "password"), and only one
+                    // of them may be sensitive. Keying this globally by the bare child
+                    // name would let a later, non-sensitive dictionary's child silently
+                    // unmask an earlier sensitive one.
+                    $childConfig = ['label' => $dictionaryItem->label];
                     if ($dictionaryItem->value_type === 'sensitive') {
-                        $this->customVariableConfig[$propertyName]['visibility'] = 'hidden';
+                        $childConfig['visibility'] = 'hidden';
                     }
+
+                    $this->dictionaryChildConfig[$dictionaryItem->parent_name][$propertyName] = $childConfig;
                 }
 
                 if (str_starts_with($dictionaryItem->value_type, 'datalist-')) {
@@ -456,10 +474,29 @@ class CustomVarRenderer extends CustomVarRendererHook
         return $result;
     }
 
-    public function renderCustomVarKey(string $key)
+    /**
+     * Look up dictionary-child-scoped configuration for $key under its immediate
+     * parent dictionary/array $parentKey, if any
+     *
+     * @param string $key
+     * @param ?string $parentKey
+     *
+     * @return ?array
+     */
+    private function dictionaryChildConfigFor(string $key, ?string $parentKey): ?array
+    {
+        if ($parentKey !== null && isset($this->dictionaryChildConfig[$parentKey][$key])) {
+            return $this->dictionaryChildConfig[$parentKey][$key];
+        }
+
+        return null;
+    }
+
+    public function renderCustomVarKey(string $key, ?string $parentKey = null)
     {
         try {
             $label = $this->fieldConfig[$key]['label']
+                ?? $this->dictionaryChildConfigFor($key, $parentKey)['label']
                 ?? $this->customVariableConfig[$key]['label']
                 ?? null;
             if ($label === null) {
@@ -478,9 +515,11 @@ class CustomVarRenderer extends CustomVarRendererHook
         return null;
     }
 
-    public function renderCustomVarValue(string $key, $value)
+    public function renderCustomVarValue(string $key, $value, ?string $parentKey = null)
     {
-        if (! (isset($this->fieldConfig[$key]) || isset($this->customVariableConfig[$key]))) {
+        $childConfig = $this->dictionaryChildConfigFor($key, $parentKey);
+
+        if (! (isset($this->fieldConfig[$key]) || $childConfig !== null || isset($this->customVariableConfig[$key]))) {
             return null;
         }
 
@@ -489,7 +528,8 @@ class CustomVarRenderer extends CustomVarRendererHook
                 return '***';
             }
 
-            if (($this->customVariableConfig[$key]['visibility'] ?? null) === 'hidden') {
+            $visibility = $childConfig['visibility'] ?? $this->customVariableConfig[$key]['visibility'] ?? null;
+            if ($visibility === 'hidden') {
                 return '***';
             }
 
@@ -583,7 +623,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                 // before its items are iterated below by position/child key, since those
                 // per-item lookups have no way to recover the parent array's own key_name.
                 if (is_array($val) && ! isset($this->customPropertyDictionaries[$k])) {
-                    $val = $this->renderCustomVarValue($k, $val) ?? $val;
+                    $val = $this->renderCustomVarValue($k, $val, $key) ?? $val;
                 }
 
                 $val = (array) $val;
@@ -604,8 +644,8 @@ class CustomVarRenderer extends CustomVarRendererHook
 
                 $this->dictionaryLevel++;
                 foreach ($val as $childKey => $childVal) {
-                    $childVal = $this->renderCustomVarValue($childKey, $childVal) ?? $childVal;
-                    $label = $this->renderCustomVarKey($childKey) ?? $childKey;
+                    $childVal = $this->renderCustomVarValue($childKey, $childVal, $k) ?? $childVal;
+                    $label = $this->renderCustomVarKey($childKey, $k) ?? $childKey;
                     if (
                         ! in_array($childKey, $this->dictionaryNames)
                         && ! array_key_exists($childKey, $this->customPropertyDictionaries)
@@ -636,8 +676,12 @@ class CustomVarRenderer extends CustomVarRendererHook
                     new HtmlElement(
                         'tr',
                         Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
-                        new HtmlElement('th', null, $this->renderCustomVarKey($k) ?? Html::wantHtml($k)),
-                        new HtmlElement('td', null, $this->renderCustomVarValue($k, $val) ?? Html::wantHtml($val))
+                        new HtmlElement('th', null, $this->renderCustomVarKey($k, $key) ?? Html::wantHtml($k)),
+                        new HtmlElement(
+                            'td',
+                            null,
+                            $this->renderCustomVarValue($k, $val, $key) ?? Html::wantHtml($val)
+                        )
                     )
                 );
             }
