@@ -311,7 +311,6 @@ class CustomvarController extends CompatController
     {
         $uuid = $this->uuid;
         $this->addTitleTab($this->translate('Create Field'));
-        $uuid = Uuid::fromString($uuid);
 
         $parent = $this->fetchProperty($uuid);
         $propertyForm = (new CustomVariableForm($this->db, null, true, $uuid))
