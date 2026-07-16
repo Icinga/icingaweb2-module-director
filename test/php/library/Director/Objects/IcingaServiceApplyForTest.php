@@ -279,7 +279,7 @@ class IcingaServiceApplyForTest extends BaseTestCase
             'vars.mount = "$value.mount_point$"',
             $rendered,
             'value.* dot access only makes sense for a dynamic-dictionary apply-for'
-            .' and must stay quoted for a plain array'
+            . ' and must stay quoted for a plain array'
         );
     }
 
