@@ -53,10 +53,10 @@ class IcingaConfigHelperTest extends BaseTestCase
     public function testWhetherDictionaryRendersCorrectly()
     {
         $dict = (object) [
-            'key1'     => 'bla',
-            'include'  => 'reserved',
-            'spe cial' => 'value',
-            '0'        => 'numeric',
+            'address' => '192.0.2.10',
+            'include' => 'reserved',
+            'on call' => 'contact',
+            '0'       => 'numeric',
         ];
         $this->assertEquals(
             c::renderDictionary($dict),
@@ -71,9 +71,9 @@ class IcingaConfigHelperTest extends BaseTestCase
 
     public function testRenderStringIsCorrectlyRendered()
     {
-        $this->assertEquals(c::renderString('val1\\\val2'), '"val1\\\\\\\\val2"');
-        $this->assertEquals(c::renderString('"val1"'), '"\"val1\""');
-        $this->assertEquals(c::renderString('\$val\$'), '"\\\\$val\\\\$"');
+        $this->assertEquals(c::renderString('C:\Program Files\NSClient++'), '"C:\\\\Program Files\\\\NSClient++"');
+        $this->assertEquals(c::renderString('"check_disk"'), '"\"check_disk\""');
+        $this->assertEquals(c::renderString('\$ORACLE_SID\$'), '"\\\\$ORACLE_SID\\\\$"');
         $this->assertEquals(c::renderString('\t'), '"\\\\t"');
         $this->assertEquals(c::renderString('\r'), '"\\\\r"');
         $this->assertEquals(c::renderString('\n'), '"\\\\n"');
@@ -85,45 +85,45 @@ class IcingaConfigHelperTest extends BaseTestCase
         $this->assertFalse(c::stringHasMacro('$$vars$'));
         $this->assertFalse(c::stringHasMacro('$$'));
         $this->assertTrue(c::stringHasMacro('$vars$$'));
-        $this->assertTrue(c::stringHasMacro('$multiple$$vars.nested.name$$vars$ is here'));
+        $this->assertTrue(c::stringHasMacro('$address$$vars.nested.name$$vars$ is here'));
         $this->assertTrue(c::stringHasMacro('some $vars.nested.name$ is here'));
         $this->assertTrue(c::stringHasMacro('some $vars.nested.name$$vars.even.more$'));
-        $this->assertTrue(c::stringHasMacro('$vars.nested.name$$a$$$$not$'));
+        $this->assertTrue(c::stringHasMacro('$vars.nested.name$$ip$$$$sid$'));
         $this->assertTrue(c::stringHasMacro('MSSQL$$$config$'));
         $this->assertTrue(c::stringHasMacro('MSSQL$$$config$', 'config'));
-        $this->assertTrue(c::stringHasMacro('MSSQL$$$nix$ and $config$', 'config'));
-        $this->assertFalse(c::stringHasMacro('MSSQL$$$nix$config$ and $$', 'config'));
-        $this->assertFalse(c::stringHasMacro('MSSQL$$$nix$ and $$config$', 'config'));
+        $this->assertTrue(c::stringHasMacro('MSSQL$$$linux$ and $config$', 'config'));
+        $this->assertFalse(c::stringHasMacro('MSSQL$$$linux$config$ and $$', 'config'));
+        $this->assertFalse(c::stringHasMacro('MSSQL$$$linux$ and $$config$', 'config'));
         $this->assertFalse(c::stringHasMacro('MSSQL$$$config$', 'conf'));
     }
 
     public function testRenderStringWithVariables()
     {
-        $this->assertEquals('"Before " + var', c::renderStringWithVariables('Before $var$'));
-        $this->assertEquals(c::renderStringWithVariables('$var$ After'), 'var + " After"');
-        $this->assertEquals(c::renderStringWithVariables('$var$'), 'var');
-        $this->assertEquals(c::renderStringWithVariables('$$var$$'), '"$$var$$"');
-        $this->assertEquals(c::renderStringWithVariables('Before $$var$$ After'), '"Before $$var$$ After"');
+        $this->assertEquals('"Before " + address', c::renderStringWithVariables('Before $address$'));
+        $this->assertEquals(c::renderStringWithVariables('$address$ After'), 'address + " After"');
+        $this->assertEquals(c::renderStringWithVariables('$address$'), 'address');
+        $this->assertEquals(c::renderStringWithVariables('$$address$$'), '"$$address$$"');
+        $this->assertEquals(c::renderStringWithVariables('Before $$address$$ After'), '"Before $$address$$ After"');
         $this->assertEquals(
-            '"Before " + name1 + " " + name2 + " After"',
-            c::renderStringWithVariables('Before $name1$ $name2$ After')
+            '"Before " + display_name + " " + check_command + " After"',
+            c::renderStringWithVariables('Before $display_name$ $check_command$ After')
         );
     }
 
     public function testRenderStringWithVariablesX()
     {
         $this->assertEquals(
-            '"Before " + var1 + " " + var2 + " After"',
-            c::renderStringWithVariables('Before $var1$ $var2$ After')
+            '"Before " + address + " " + port + " After"',
+            c::renderStringWithVariables('Before $address$ $port$ After')
         );
         $this->assertEquals(
             'host.vars.custom',
             c::renderStringWithVariables('$host.vars.custom$')
         );
-        $this->assertEquals('"$var\"$"', c::renderStringWithVariables('$var"$'));
+        $this->assertEquals('"$address\"$"', c::renderStringWithVariables('$address"$'));
         $this->assertEquals(
-            '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"',
-            c::renderStringWithVariables('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$')
+            '"\\\\tCPU load\\\\ris\\\\nabove\\\\fwarning on " + address + " \"threshold\" " + display_name + "\\\\$"',
+            c::renderStringWithVariables('\tCPU load\ris\nabove\fwarning on $address$ "threshold" $display_name$\$')
         );
     }
 
@@ -159,14 +159,14 @@ class IcingaConfigHelperTest extends BaseTestCase
     {
         $this->assertTrue(c::isValidMacroName('value.mount_point', ['value.*']));
         $this->assertTrue(c::isValidMacroName('value.warn', ['value.*']));
-        $this->assertTrue(c::isValidMacroName('host.custom', ['host.*', 'value.*']));
+        $this->assertTrue(c::isValidMacroName('host.address', ['host.*', 'value.*']));
     }
 
     public function testIsValidMacroNameWhitelistNoMatch()
     {
         // Name not in whitelist and not matching any wildcard returns false
         $this->assertFalse(c::isValidMacroName('host.vars.custom', ['value.*']));
-        $this->assertFalse(c::isValidMacroName('host.vars.custom', ['other.field']));
+        $this->assertFalse(c::isValidMacroName('host.vars.custom', ['check_command']));
     }
 
     public function testIsValidMacroNameEmptyWhitelistReturnsFalse()
