@@ -426,7 +426,14 @@ class CustomVarRenderer extends CustomVarRendererHook
             ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
             ->joinLeft(['cpc' => 'director_datafield_category'], 'dp.category_id = cpc.id', [])
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
+            ->group([
+                'dp.uuid',
+                'dp.key_name',
+                'dp.value_type',
+                'dp.label',
+                'cpc.category_name',
+                'iop.' . $type . '_uuid'
+            ])
             ->order($this->valueTypeOrderExpr($db, [
                 'string',
                 'number',
