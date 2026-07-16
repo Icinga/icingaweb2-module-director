@@ -50,25 +50,38 @@ class CustomVariableValueApplier
         $dbAdapter = $this->db->getDbAdapter();
         $type = $object->getShortTableName();
         $objectVars = $object->vars();
-        $wipeInDb = $method === 'PUT' && $object->get('id');
+        $wipeValuesInDb = $method === 'PUT' && $object->get('id');
+        // Full replacement of the attachment/required link is documented and tested
+        // behavior only for the dedicated "variables" endpoint; a PUT on the base
+        // object endpoint must still fully replace values but must not detach
+        // properties that were not part of this request.
+        $wipePropertyAttachmentsInDb = $wipeValuesInDb && $actionName === 'variables';
 
-        if ($wipeInDb) {
+        // If a caller already opened a transaction (e.g. IcingaObjectHandler wrapping
+        // object persistence and this call together), let it own the commit/rollback.
+        // A nested beginTransaction() call on the same PDO connection throws
+        // "There is already an active transaction" instead of nesting.
+        $manageTransaction = $wipeValuesInDb && ! $dbAdapter->getConnection()->inTransaction();
+
+        if ($manageTransaction) {
             $dbAdapter->beginTransaction();
         }
 
         try {
-            if ($wipeInDb) {
+            if ($wipeValuesInDb) {
                 $objectWhere = $dbAdapter->quoteInto("{$type}_id = ?", $object->get('id'));
                 $dbAdapter->delete('icinga_' . $type . '_var', $objectWhere);
 
-                $uuidExpr = DbUtil::quoteBinaryCompat(
-                    DbUtil::binaryResult($object->get('uuid')),
-                    $dbAdapter
-                );
-                $dbAdapter->delete(
-                    'icinga_' . $type . '_property',
-                    $dbAdapter->quoteInto("{$type}_uuid = ?", $uuidExpr)
-                );
+                if ($wipePropertyAttachmentsInDb) {
+                    $uuidExpr = DbUtil::quoteBinaryCompat(
+                        DbUtil::binaryResult($object->get('uuid')),
+                        $dbAdapter
+                    );
+                    $dbAdapter->delete(
+                        'icinga_' . $type . '_property',
+                        $dbAdapter->quoteInto("{$type}_uuid = ?", $uuidExpr)
+                    );
+                }
 
                 $objectVars = new CustomVariables();
             } elseif ($replaceAll) {
@@ -101,14 +114,14 @@ class CustomVariableValueApplier
 
             $objectVars->storeToDb($object);
         } catch (Throwable $e) {
-            if ($wipeInDb) {
+            if ($manageTransaction) {
                 $dbAdapter->rollBack();
             }
 
             throw $e;
         }
 
-        if ($wipeInDb) {
+        if ($manageTransaction) {
             $dbAdapter->commit();
         }
     }

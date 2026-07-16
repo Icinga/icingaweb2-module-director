@@ -9,6 +9,7 @@ use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
+use Throwable;
 
 class CustomVariableValueApplierTest extends BaseTestCase
 {
@@ -150,6 +151,100 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $this->assertNull(
             $host->vars()->get(self::ENV_KEY),
             'An explicit empty vars dictionary must clear existing variables, not no op'
+        );
+    }
+
+    public function testApplyDoesNotCommitOrRollBackWhenAlreadyInsideATransaction(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createTemplate($db);
+        $this->attachProperties($host, $db);
+
+        $dbAdapter = $db->getDbAdapter();
+        $dbAdapter->beginTransaction();
+
+        try {
+            (new CustomVariableValueApplier($db))->apply(
+                $host,
+                [self::ENV_KEY => 'production'],
+                'variables',
+                'PUT',
+                false
+            );
+        } catch (Throwable $e) {
+            $dbAdapter->rollBack();
+            $this->fail(
+                'apply() must not manage its own transaction when the caller already opened one: '
+                . get_class($e) . ': ' . $e->getMessage()
+            );
+        }
+
+        // The write must be visible within the still-open outer transaction (same
+        // connection, so this is a read of its own uncommitted write) - this proves
+        // apply() actually performed the write rather than silently no-op'ing.
+        $reloadedWithinTransaction = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            'production',
+            $reloadedWithinTransaction->vars()->get(self::ENV_KEY)->getValue(),
+            'apply() must still perform its writes even when it does not own the transaction'
+        );
+
+        // Simulate a caller (e.g. IcingaObjectHandler) that persists other changes in the
+        // same outer transaction and fails afterward - the whole thing must roll back together.
+        $dbAdapter->rollBack();
+
+        $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertNull(
+            $host->vars()->get(self::ENV_KEY),
+            'apply() must not commit its own writes when called inside an existing transaction, '
+            . 'so a failure later in the same caller-owned transaction can still undo everything'
+        );
+    }
+
+    public function testBaseObjectPutKeepsPropertyAttachmentsIntact(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createTemplate($db);
+        // Attaches both ENV_KEY and MYSQL_KEY directly, without going through a
+        // "variables" PUT first: that endpoint's own full-replace semantics would
+        // otherwise already drop the attachment this test wants to see preserved.
+        $this->attachProperties($host, $db);
+
+        // A PUT on the base object endpoint (actionName 'index', not 'variables') that
+        // happens to carry a partial vars map must replace values, not drop the
+        // property attachments set up above.
+        (new CustomVariableValueApplier($db))->apply(
+            $host,
+            [self::ENV_KEY => 'staging'],
+            'index',
+            'PUT',
+            false
+        );
+
+        $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals('staging', $host->vars()->get(self::ENV_KEY)->getValue());
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_property', ['COUNT(*)'])
+                ->where(
+                    'host_uuid = ?',
+                    DbUtil::quoteBinaryCompat($host->get('uuid'), $dba)
+                )
+        );
+        $this->assertEquals(
+            2,
+            (int) $count,
+            'A base-object PUT must not remove the property attachments set up before it'
         );
     }
 
