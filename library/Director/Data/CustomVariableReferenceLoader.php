@@ -37,6 +37,7 @@ class CustomVariableReferenceLoader
         $res = $db->fetchAll(
             $db->select()->from(['f' => "icinga_{$type}_property"], [
                 'f.property_uuid',
+                'f.required',
             ])->join(['df' => 'director_property'], 'df.uuid = f.property_uuid', [])
                 ->where("{$type}_uuid = ?", $uuid)
                 ->order('key_name ASC')
