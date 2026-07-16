@@ -253,7 +253,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             'v.format'
         ];
 
-        $columns[] = 'property_uuid';
+        $columns[] = 'v.property_uuid';
         $query = $db->select()->from(
             ['v' => $object->getVarsTableName()],
             $columns
