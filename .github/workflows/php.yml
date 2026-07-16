@@ -104,6 +104,13 @@ jobs:
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
 
+      - name: Setup Icingadb
+        run: |
+          git clone --depth 1 https://github.com/Icinga/icingadb-web.git _icingaweb2/modules/icingadb
+          mkdir -p test/config/enabledModules
+          cd _icingaweb2/modules/icingadb
+          ln -s `pwd` ../../../test/config/enabledModules/icingadb
+
       - name: Setup Incubator
         run: |
           git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator _icingaweb2/modules/incubator
