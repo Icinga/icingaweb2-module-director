@@ -15,7 +15,6 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
-use PDO;
 use RuntimeException;
 
 class IcingaService extends IcingaObject implements ExportInterface
@@ -716,34 +715,19 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
 
         if ($this->applyForWhiteList === null) {
-            $query = $this->db
-                ->select()
-                ->from(['dp' => 'director_property'], ['key_name' => 'dp.key_name'])
-                ->join(['parent_dp' => 'director_property'], 'dp.parent_uuid = parent_dp.uuid', [])
-                ->where('parent_dp.parent_uuid IS NULL')
-                ->where("parent_dp.value_type = 'dynamic-dictionary'")
-                ->where("parent_dp.key_name = ?", $applyFor);
-
-            $result = $this->db->fetchAll($query, fetchMode: PDO::FETCH_ASSOC);
-
             $isApplyForDictionary = $this->fetchApplyForPropertyType($applyFor) === 'dynamic-dictionary';
-            $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
+            $whiteList = ['value', 'host.*'];
             if ($isApplyForDictionary) {
                 $whiteList[] = 'key';
+                $whiteList[] = 'value[*]';
+                $whiteList[] = 'value[*].*';
+                $whiteList[] = 'value.*';
             } else {
                 // Legacy alias: before the loop variable was renamed, custom variable
                 // strings could reference the plain-array apply-for loop value as $config$.
                 // Those stored strings survive an upgrade unchanged, so keep resolving them
                 // to what is now called "value" instead of silently leaving them literal.
                 $whiteList['config'] = 'value';
-            }
-
-            foreach ($result as $row) {
-                if (str_contains($row['key_name'], ' ')) {
-                    continue;
-                }
-
-                $whiteList[] = sprintf('value.%s', $row['key_name']);
             }
 
             $this->applyForWhiteList = $whiteList;

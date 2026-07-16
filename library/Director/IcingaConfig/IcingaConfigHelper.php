@@ -408,13 +408,10 @@ class IcingaConfigHelper
             }
 
             $regexBody = preg_quote($pattern, '/');
-            // A wildcard enclosed in literal brackets stands for an array index:
-            // digits only, e.g. value[*] must only ever match value[0], value[12], ...
-            $regexBody = str_replace('\[\*\]', '\[\d+\]', $regexBody);
-            // Any other wildcard stands for exactly one safe macro-name segment: the
-            // same character class the base macro pattern allows, never arbitrary
-            // text. This is what keeps a value like `host.name) { throw "injected"`
-            // from matching `host.*`.
+            // value[*] matches a numeric index or a quoted key, e.g. value["on call contact"].
+            // Both '"' and '\' are excluded from the quoted key so it can't be escaped early.
+            $regexBody = str_replace('\[\*\]', '\[(?:\d+|"[^"\\\\]*")\]', $regexBody);
+            // Any other wildcard matches exactly one macro-name segment, not arbitrary text.
             $regexBody = str_replace('\*', '[A-Za-z_.\d]+', $regexBody);
 
             if (preg_match('/^' . $regexBody . '$/', $name)) {

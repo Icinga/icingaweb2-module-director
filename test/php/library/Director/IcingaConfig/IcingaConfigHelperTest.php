@@ -187,20 +187,14 @@ class IcingaConfigHelperTest extends BaseTestCase
 
     public function testIsValidMacroNameWildcardDoesNotBypassSyntaxCheck(): void
     {
-        // A wildcard entry must only match a single safe macro-name segment (or, inside
-        // brackets, a numeric index). It must not let a non-macro token (e.g. an
-        // attempted DSL injection payload) through just because it superficially starts
-        // with the wildcard's literal prefix.
         $this->assertFalse(c::isValidMacroName('host.name) { throw "injected"', ['host.*']));
         $this->assertFalse(c::isValidMacroName('value[0 OR 1=1]', ['value[*]']));
         $this->assertFalse(c::isValidMacroName('value[0].sub) { evil', ['value[*].*']));
+        $this->assertFalse(c::isValidMacroName('value["on call\\") { evil', ['value[*]']));
     }
 
     public function testIsValidMacroNameWildcardStillMatchesArrayIndexAndDictionaryForms(): void
     {
-        // These are the actual production whitelist entries built in
-        // IcingaService::vars() for array/dictionary apply-for rendering. A wildcard
-        // fix must not regress legitimate use of any of them.
         $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
 
         $this->assertTrue(c::isValidMacroName('host.vars.custom', $whiteList));
@@ -209,5 +203,14 @@ class IcingaConfigHelperTest extends BaseTestCase
         $this->assertTrue(c::isValidMacroName('value[0].sub_key', $whiteList));
         $this->assertFalse(c::isValidMacroName('value[]', $whiteList));
         $this->assertFalse(c::isValidMacroName('value[abc]', $whiteList));
+    }
+
+    public function testIsValidMacroNameWildcardMatchesQuotedDictionaryKeyWithSpace(): void
+    {
+        $whiteList = ['value', 'host.*', 'value[*]', 'value[*].*'];
+
+        $this->assertTrue(c::isValidMacroName('value["on call contact"]', $whiteList));
+        $this->assertTrue(c::isValidMacroName('value["on call contact"].email', $whiteList));
+        $this->assertFalse(c::isValidMacroName('value["on call contact]', $whiteList));
     }
 }
