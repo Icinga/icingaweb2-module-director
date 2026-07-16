@@ -27,35 +27,25 @@ class CustomVariableValueApplier
      *
      * When the method is PUT, every custom variable currently set directly on
      * the object is removed first and only the given overrides survive.
-     * When $replaceAll is set for a non PUT request, the same end result
+     * When replaceAll is set for a non PUT request, the same end result
      * is reached without touching rows that are not affected, which is
      * used for a POST carrying a full "vars" dictionary at the base
      * object endpoint.
      *
-     * @param IcingaObject $object
-     * @param array $overRiddenCustomVars 2-dimensional array of key => value
-     * @param string $actionName Endpoint name
-     * @param string $method POST or PUT
-     * @param bool $replaceAll
-     *
      * @throws NotFoundError
      */
-    public function apply(
-        IcingaObject $object,
-        array $overRiddenCustomVars,
-        string $actionName,
-        string $method,
-        bool $replaceAll
-    ): void {
+    public function apply(CustomVarApplyRequest $request): void
+    {
+        $object = $request->object;
         $dbAdapter = $this->db->getDbAdapter();
         $type = $object->getShortTableName();
         $objectVars = $object->vars();
-        $wipeValuesInDb = $method === 'PUT' && $object->get('id');
+        $wipeValuesInDb = $request->method === 'PUT' && $object->get('id');
         // Full replacement of the attachment/required link is documented and tested
         // behavior only for the dedicated "variables" endpoint; a PUT on the base
         // object endpoint must still fully replace values but must not detach
         // properties that were not part of this request.
-        $wipePropertyAttachmentsInDb = $wipeValuesInDb && $actionName === 'variables';
+        $wipePropertyAttachmentsInDb = $wipeValuesInDb && $request->actionName === 'variables';
 
         // If a caller already opened a transaction (e.g. IcingaObjectHandler wrapping
         // object persistence and this call together), let it own the commit/rollback.
@@ -84,10 +74,10 @@ class CustomVariableValueApplier
                 }
 
                 $objectVars = new CustomVariables();
-            } elseif ($replaceAll) {
+            } elseif ($request->replaceAll) {
                 $obsoleteKeys = [];
                 foreach ($objectVars as $key => $var) {
-                    if (! array_key_exists($key, $overRiddenCustomVars)) {
+                    if (! array_key_exists($key, $request->overRiddenCustomVars)) {
                         $obsoleteKeys[] = $key;
                     }
                 }
@@ -99,17 +89,8 @@ class CustomVariableValueApplier
 
             $customProperties = $this->getObjectCustomProperties($object);
 
-            foreach ($overRiddenCustomVars as $key => $value) {
-                $this->applySingleVar(
-                    $object,
-                    $objectVars,
-                    $customProperties,
-                    $key,
-                    $value,
-                    $actionName,
-                    $method,
-                    $type
-                );
+            foreach ($request->overRiddenCustomVars as $key => $value) {
+                $this->applySingleVar($request, $objectVars, $customProperties, $key, $value);
             }
 
             $objectVars->storeToDb($object);
@@ -130,20 +111,16 @@ class CustomVariableValueApplier
      * Apply a single key value override, attaching the underlying
      * director_property to a template on the fly when needed
      *
-     * @return void
-     *
      * @throws NotFoundError
      */
     private function applySingleVar(
-        IcingaObject $object,
+        CustomVarApplyRequest $request,
         CustomVariables $objectVars,
         array $customProperties,
         string $key,
-        mixed $value,
-        string $actionName,
-        string $method,
-        string $type
+        mixed $value
     ): void {
+        $object = $request->object;
         $objectVars->set($key, $value);
         $var = $objectVars->get($key);
         if ($var === null) {
@@ -169,7 +146,7 @@ class CustomVariableValueApplier
             return;
         }
 
-        if ($actionName !== 'variables') {
+        if ($request->actionName !== 'variables') {
             return;
         }
 
@@ -180,7 +157,7 @@ class CustomVariableValueApplier
             ));
         }
 
-        if ($method === 'POST') {
+        if ($request->method === 'POST') {
             throw new NotFoundError(sprintf(
                 'The custom variable %s should be first added to the template',
                 $key
@@ -213,6 +190,7 @@ class CustomVariableValueApplier
             );
         }
 
+        $type = $object->getShortTableName();
         $dbAdapter->insert('icinga_' . $type . '_property', [
             'property_uuid' => DbUtil::quoteBinaryCompat($customPropertyUuid, $dbAdapter),
             $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter)

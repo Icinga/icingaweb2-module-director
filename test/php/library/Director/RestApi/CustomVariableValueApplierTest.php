@@ -5,6 +5,7 @@ namespace Tests\Icinga\Module\Director\RestApi;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
 use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
 use InvalidArgumentException;
@@ -27,13 +28,13 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $db = $this->getDb();
         $host = $this->createTemplate($db);
 
-        (new CustomVariableValueApplier($db))->apply(
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::PREFIX . 'never_set' => null],
             'variables',
             'POST',
             false
-        );
+        ));
 
         $reloaded = IcingaHost::load(self::TEMPLATE_NAME, $db);
         $this->assertNull($reloaded->vars()->get(self::PREFIX . 'never_set'));
@@ -49,25 +50,25 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $host = $this->createTemplate($db);
         $this->attachProperties($host, $db);
 
-        (new CustomVariableValueApplier($db))->apply(
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::ENV_KEY => 'production'],
             'variables',
             'PUT',
             false
-        );
+        ));
 
         $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
         $this->assertEquals('production', $host->vars()->get(self::ENV_KEY)->getValue());
 
         try {
-            (new CustomVariableValueApplier($db))->apply(
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
                 $host,
                 [self::MYSQL_KEY => ['not', 'a', 'dictionary']],
                 'variables',
                 'PUT',
                 false
-            );
+            ));
             $this->fail('Expected an InvalidArgumentException for a mismatched value shape');
         } catch (InvalidArgumentException $e) {
             // expected, checked below via a fresh load
@@ -91,23 +92,23 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $host = $this->createTemplate($db);
         $this->attachProperties($host, $db);
 
-        (new CustomVariableValueApplier($db))->apply(
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::ENV_KEY => 'production'],
             'variables',
             'PUT',
             false
-        );
+        ));
 
         $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
 
-        (new CustomVariableValueApplier($db))->apply(
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::MYSQL_KEY => (object) ['host' => 'db-primary']],
             'index',
             'POST',
             true
-        );
+        ));
 
         $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
         $this->assertNull(
@@ -127,25 +128,25 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $host = $this->createTemplate($db);
         $this->attachProperties($host, $db);
 
-        (new CustomVariableValueApplier($db))->apply(
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::ENV_KEY => 'production'],
             'variables',
             'PUT',
             false
-        );
+        ));
 
         $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
 
         // This is the base endpoint equivalent of a POST body of {"vars": {}},
         // an explicit but empty full vars dictionary must still clear everything.
-        (new CustomVariableValueApplier($db))->apply(
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [],
             'index',
             'POST',
             true
-        );
+        ));
 
         $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
         $this->assertNull(
@@ -168,13 +169,13 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $dbAdapter->beginTransaction();
 
         try {
-            (new CustomVariableValueApplier($db))->apply(
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
                 $host,
                 [self::ENV_KEY => 'production'],
                 'variables',
                 'PUT',
                 false
-            );
+            ));
         } catch (Throwable $e) {
             $dbAdapter->rollBack();
             $this->fail(
@@ -221,13 +222,13 @@ class CustomVariableValueApplierTest extends BaseTestCase
         // A PUT on the base object endpoint (actionName 'index', not 'variables') that
         // happens to carry a partial vars map must replace values, not drop the
         // property attachments set up above.
-        (new CustomVariableValueApplier($db))->apply(
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::ENV_KEY => 'staging'],
             'index',
             'PUT',
             false
-        );
+        ));
 
         $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
         $this->assertEquals('staging', $host->vars()->get(self::ENV_KEY)->getValue());

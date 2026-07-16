@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\RestApi\IcingaObjectHandler;
+use Icinga\Module\Director\RestApi\IcingaObjectWriteRequest;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
@@ -59,24 +60,25 @@ class IcingaObjectHandlerTest extends BaseTestCase
         $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
         $method->setAccessible(true);
 
+        $writeRequest = new IcingaObjectWriteRequest(
+            $host,
+            ['display_name' => 'changed-by-request'],
+            'host',
+            'index',
+            'PUT',
+            false,
+            // A fixed-dictionary custom variable given a plain (non-associative)
+            // array is a type mismatch, mirroring CustomVariableValueApplierTest's
+            // own testFailedValidationRollsBackFullReplace scenario.
+            [self::DB_CONNECTION_KEY => ['not', 'a', 'dictionary']],
+            false,
+            new UrlParams()
+        );
+
         $threw = false;
         try {
-            $db->runFailSafeTransaction(function () use ($method, $handler, $host) {
-                $method->invoke(
-                    $handler,
-                    $host,
-                    ['display_name' => 'changed-by-request'],
-                    'host',
-                    'index',
-                    'PUT',
-                    false,
-                    // A fixed-dictionary custom variable given a plain (non-associative)
-                    // array is a type mismatch, mirroring CustomVariableValueApplierTest's
-                    // own testFailedValidationRollsBackFullReplace scenario.
-                    [self::DB_CONNECTION_KEY => ['not', 'a', 'dictionary']],
-                    false,
-                    new UrlParams()
-                );
+            $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest) {
+                $method->invoke($handler, $writeRequest);
             });
         } catch (Throwable $e) {
             $threw = true;

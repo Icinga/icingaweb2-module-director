@@ -13,7 +13,6 @@ use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\OverrideHelper;
-use Icinga\Web\UrlParams;
 use InvalidArgumentException;
 use RuntimeException;
 use stdClass;
@@ -209,15 +208,7 @@ class IcingaObjectHandler extends RequestHandler
                     }
                 }
 
-                // Object persistence and custom-variable validation/application must
-                // succeed or fail together: without this, a request with an invalid
-                // custom variable could still leave unrelated object changes committed.
-                // persistObjectAndApplyVars() returns null once it has already sent its
-                // own response (the service-override branch), or the object to respond
-                // with otherwise.
-                $responseObject = null;
-                $db->runFailSafeTransaction(function () use (
-                    &$responseObject,
+                $writeRequest = new IcingaObjectWriteRequest(
                     $object,
                     $data,
                     $type,
@@ -227,18 +218,17 @@ class IcingaObjectHandler extends RequestHandler
                     $overRiddenCustomVars,
                     $allowsOverrides,
                     $params
-                ) {
-                    $responseObject = $this->persistObjectAndApplyVars(
-                        $object,
-                        $data,
-                        $type,
-                        $actionName,
-                        $method,
-                        $replaceAll,
-                        $overRiddenCustomVars,
-                        $allowsOverrides,
-                        $params
-                    );
+                );
+
+                // Object persistence and custom-variable validation/application must
+                // succeed or fail together: without this, a request with an invalid
+                // custom variable could still leave unrelated object changes committed.
+                // persistObjectAndApplyVars() returns null once it has already sent its
+                // own response (the service-override branch), or the object to respond
+                // with otherwise.
+                $responseObject = null;
+                $db->runFailSafeTransaction(function () use (&$responseObject, $writeRequest) {
+                    $responseObject = $this->persistObjectAndApplyVars($writeRequest);
                 });
 
                 if ($responseObject !== null) {
@@ -267,36 +257,17 @@ class IcingaObjectHandler extends RequestHandler
      * custom-variable step must not leave the object's own property changes
      * committed on their own.
      *
-     * @param ?IcingaObject $object The object loaded/matched for this request, or
-     *                              null when none was found and $type/$data must be
-     *                              used to create one
-     * @param array $data Remaining request body, with any vars/vars.* keys already
-     *                    extracted into $overRiddenCustomVars
-     * @param string $type Short table name of the object type, e.g. "host"
-     * @param string $actionName The dispatched action, e.g. "index" or "variables"
-     * @param string $method HTTP method, "POST" or "PUT"
-     * @param bool $replaceAll Whether a POST body's "vars" is a full replacement
-     * @param array $overRiddenCustomVars 2-dimensional array of key => value
-     * @param bool $allowsOverrides Whether the "allowOverrides" request param was set
-     * @param UrlParams $params The request's URL parameters
-     *
      * @return ?IcingaObject The object to respond with, or null if a response has
      *                       already been sent (the service-override branch)
      */
-    protected function persistObjectAndApplyVars(
-        ?IcingaObject $object,
-        array $data,
-        string $type,
-        string $actionName,
-        string $method,
-        bool $replaceAll,
-        array $overRiddenCustomVars,
-        bool $allowsOverrides,
-        UrlParams $params
-    ): ?IcingaObject {
+    protected function persistObjectAndApplyVars(IcingaObjectWriteRequest $request): ?IcingaObject
+    {
         $db = $this->db;
+        $object = $request->object;
+        $data = $request->data;
+        $type = $request->type;
 
-        if ($actionName !== 'variables') {
+        if ($request->actionName !== 'variables') {
             if ($object) {
                 // Avoid cyclic imports for hosts and commands
                 if (in_array($object->getShortTableName(), ['host', 'command'], true)) {
@@ -315,7 +286,7 @@ class IcingaObjectHandler extends RequestHandler
                     }
                 }
 
-                if ($method === 'POST') {
+                if ($request->method === 'POST') {
                     $object->setProperties($data);
                 } else {
                     $data = array_merge([
@@ -326,13 +297,17 @@ class IcingaObjectHandler extends RequestHandler
                 }
 
                 $this->persistChanges($object);
-            } elseif ($allowsOverrides && $type === 'service') {
-                if ($method === 'PUT') {
+            } elseif ($request->allowsOverrides && $type === 'service') {
+                if ($request->method === 'PUT') {
                     throw new InvalidArgumentException('Overrides are not (yet) available for HTTP PUT');
                 }
 
-                $data['vars'] = $overRiddenCustomVars;
-                $this->setServiceProperties($params->getRequired('host'), $params->getRequired('name'), $data);
+                $data['vars'] = $request->overRiddenCustomVars;
+                $this->setServiceProperties(
+                    $request->params->getRequired('host'),
+                    $request->params->getRequired('name'),
+                    $data
+                );
 
                 return null;
             } else {
@@ -341,12 +316,18 @@ class IcingaObjectHandler extends RequestHandler
             }
         }
 
-        $isVariablesPut = $actionName === 'variables' && $method === 'PUT';
-        if (empty($overRiddenCustomVars) && ! $isVariablesPut && ! $replaceAll) {
+        $isVariablesPut = $request->actionName === 'variables' && $request->method === 'PUT';
+        if (empty($request->overRiddenCustomVars) && ! $isVariablesPut && ! $request->replaceAll) {
             return $object;
         }
 
-        (new CustomVariableValueApplier($db))->apply($object, $overRiddenCustomVars, $actionName, $method, $replaceAll);
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $object,
+            $request->overRiddenCustomVars,
+            $request->actionName,
+            $request->method,
+            $request->replaceAll
+        ));
 
         return IcingaObject::loadByType($type, $object->getObjectName(), $db);
     }
