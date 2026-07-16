@@ -10,6 +10,7 @@ use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -426,7 +427,8 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
 
         $uuids[] = $object->get('uuid');
-        $query = $db->getDbAdapter()
+        $dbAdapter = $db->getDbAdapter();
+        $query = $dbAdapter
             ->select()
             ->from(
                 ['dp' => 'director_property'],
@@ -443,7 +445,7 @@ class CustomVarRenderer extends CustomVarRendererHook
             ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
             ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
             ->joinLeft(['cpc' => 'director_datafield_category'], 'dp.category_id = cpc.id', [])
-            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
+            ->where('iop.' . $type . '_uuid IN (?)', DbUtil::quoteBinaryCompat($uuids, $dbAdapter))
             ->group([
                 'dp.uuid',
                 'dp.key_name',
