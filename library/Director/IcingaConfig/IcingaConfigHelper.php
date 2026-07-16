@@ -403,15 +403,22 @@ class IcingaConfigHelper
         }
 
         foreach ($whiteList as $pattern) {
-            if (str_contains($pattern, '*')) {
-                if (
-                    preg_match(
-                        '/^' . str_replace('\*', '.*', preg_quote($pattern, '/')) . '$/',
-                        $name
-                    )
-                ) {
-                    return true;
-                }
+            if (! is_string($pattern) || ! str_contains($pattern, '*')) {
+                continue;
+            }
+
+            $regexBody = preg_quote($pattern, '/');
+            // A wildcard enclosed in literal brackets stands for an array index:
+            // digits only, e.g. value[*] must only ever match value[0], value[12], ...
+            $regexBody = str_replace('\[\*\]', '\[\d+\]', $regexBody);
+            // Any other wildcard stands for exactly one safe macro-name segment: the
+            // same character class the base macro pattern allows, never arbitrary
+            // text. This is what keeps a value like `host.name) { throw "injected"`
+            // from matching `host.*`.
+            $regexBody = str_replace('\*', '[A-Za-z_.\d]+', $regexBody);
+
+            if (preg_match('/^' . $regexBody . '$/', $name)) {
+                return true;
             }
         }
 
