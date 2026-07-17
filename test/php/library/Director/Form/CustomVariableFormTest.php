@@ -251,6 +251,103 @@ class CustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testUpdateDatalistPropertyChangesItemType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $list = DirectorDatalist::create([
+            'list_name' => '___TEST___regions',
+            'owner'     => 'test',
+        ], $db);
+        $list->store();
+        $this->createdDatalistNames[] = '___TEST___regions';
+
+        $createForm = new TestableCustomVariableForm($db);
+        $createForm->setTestValues([
+            'key_name'    => '___TEST___allowed_regions',
+            'value_type'  => 'datalist-non-strict',
+            'item_type'   => 'string',
+            'list'        => $list->get('id'),
+            'label'       => 'Allowed Regions',
+            'description' => 'Regions this host is permitted to be deployed in',
+        ]);
+        $this->createdKeyNames[] = '___TEST___allowed_regions';
+        self::callMethod($createForm, 'onSuccess', []);
+        $uuid = $createForm->getUUid();
+
+        $updateForm = new TestableCustomVariableForm($db, $uuid);
+        $updateForm->setTestValues([
+            'key_name'    => '___TEST___allowed_regions',
+            'value_type'  => 'datalist-non-strict',
+            'item_type'   => 'dynamic-array',
+            'list'        => $list->get('id'),
+            'label'       => 'Allowed Regions',
+            'description' => 'Regions this host is permitted to be deployed in',
+        ]);
+        self::callMethod($updateForm, 'onSuccess', []);
+
+        $childValueType = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['value_type'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($uuid->getBytes(), $dba))
+                ->where('key_name = ?', '0')
+        );
+        $this->assertSame(
+            'dynamic-array',
+            $childValueType,
+            'item type must be updated even though the datalist property type itself did not change'
+        );
+    }
+
+    public function testUpdateDynamicArrayPropertyChangesItemType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $createForm = new TestableCustomVariableForm($db);
+        $createForm->setTestValues([
+            'key_name'    => '___TEST___backup_ports',
+            'value_type'  => 'dynamic-array',
+            'item_type'   => 'string',
+            'label'       => 'Backup Ports',
+            'description' => 'TCP ports used by the backup agent',
+        ]);
+        $this->createdKeyNames[] = '___TEST___backup_ports';
+        self::callMethod($createForm, 'onSuccess', []);
+        $uuid = $createForm->getUUid();
+
+        $updateForm = new TestableCustomVariableForm($db, $uuid);
+        $updateForm->setTestValues([
+            'key_name'    => '___TEST___backup_ports',
+            'value_type'  => 'dynamic-array',
+            'item_type'   => 'number',
+            'label'       => 'Backup Ports',
+            'description' => 'TCP ports used by the backup agent',
+        ]);
+        self::callMethod($updateForm, 'onSuccess', []);
+
+        $childValueType = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['value_type'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($uuid->getBytes(), $dba))
+                ->where('key_name = ?', '0')
+        );
+        $this->assertSame(
+            'number',
+            $childValueType,
+            'item type must be updated even though the dynamic-array property type itself did not change'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {

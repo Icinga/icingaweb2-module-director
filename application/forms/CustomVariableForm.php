@@ -596,8 +596,14 @@ class CustomVariableForm extends CompatForm
                         ]);
                     }
                 }
-            } elseif (str_starts_with($valueType, 'datalist-') && ! empty($datalist)) {
-                $this->relinkDatalist($this->uuid->getBytes(), $datalist);
+            } else {
+                if (str_starts_with($valueType, 'datalist-') && ! empty($datalist)) {
+                    $this->relinkDatalist($this->uuid->getBytes(), $datalist);
+                }
+
+                if ($itemType !== '' && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
+                    $this->updateItemType($this->uuid->getBytes(), $itemType);
+                }
             }
         } else {
             $storedKeyName = $this->db->fetchOne(
@@ -654,6 +660,28 @@ class CustomVariableForm extends CompatForm
             'property_uuid' => $quotedPropertyUuid,
             'list_uuid' => Db\DbUtil::quoteBinaryCompat($newListUuid, $db),
         ]);
+    }
+
+    /**
+     * Update the value type of the item type child property for the given parent property
+     *
+     * @param string $parentUuid Raw binary UUID of the parent property
+     * @param string $itemType   New item value type
+     *
+     * @return void
+     */
+    private function updateItemType(string $parentUuid, string $itemType): void
+    {
+        $db = $this->db->getDbAdapter();
+
+        $this->db->update(
+            'director_property',
+            ['value_type' => $itemType],
+            Filter::matchAll(
+                Filter::where('parent_uuid', Db\DbUtil::quoteBinaryCompat($parentUuid, $db)),
+                Filter::where('key_name', '0')
+            )
+        );
     }
 
     /**
