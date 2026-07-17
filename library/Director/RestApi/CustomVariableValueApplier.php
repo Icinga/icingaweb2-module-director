@@ -32,6 +32,8 @@ class CustomVariableValueApplier
      * used for a POST carrying a full "vars" dictionary at the base
      * object endpoint.
      *
+     * @return void
+     *
      * @throws NotFoundError
      */
     public function apply(CustomVarApplyRequest $request): void
@@ -41,9 +43,7 @@ class CustomVariableValueApplier
         $type = $object->getShortTableName();
         $objectVars = $object->vars();
         $wipeValuesInDb = $request->method === 'PUT' && $object->get('id');
-        // Full replacement of the attachment/required link is documented and tested
-        // behavior only for the dedicated "variables" endpoint; a PUT on the base
-        // object endpoint must still fully replace values but must not detach
+        // A PUT on the base object endpoint must still fully replace values but must not detach
         // properties that were not part of this request.
         $wipePropertyAttachmentsInDb = $wipeValuesInDb && $request->actionName === 'variables';
 
@@ -110,6 +110,8 @@ class CustomVariableValueApplier
     /**
      * Apply a single key value override, attaching the underlying
      * director_property to a template on the fly when needed
+     *
+     * @return void
      *
      * @throws NotFoundError
      */
