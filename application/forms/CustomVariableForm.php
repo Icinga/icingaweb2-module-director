@@ -596,6 +596,8 @@ class CustomVariableForm extends CompatForm
                         ]);
                     }
                 }
+            } elseif (str_starts_with($valueType, 'datalist-') && ! empty($datalist)) {
+                $this->relinkDatalist($this->uuid->getBytes(), $datalist);
             }
         } else {
             $storedKeyName = $this->db->fetchOne(
@@ -617,6 +619,41 @@ class CustomVariableForm extends CompatForm
             $values,
             Filter::where('uuid', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()))
         );
+    }
+
+    /**
+     * Point the given property at the given datalist, replacing any existing link
+     *
+     * @param string $propertyUuid Raw binary UUID of the property
+     * @param array  $datalist     Datalist row, as returned by fetchDatalist()
+     *
+     * @return void
+     */
+    private function relinkDatalist(string $propertyUuid, array $datalist): void
+    {
+        $db = $this->db->getDbAdapter();
+        $quotedPropertyUuid = Db\DbUtil::quoteBinaryCompat($propertyUuid, $db);
+        $newListUuid = Db\DbUtil::binaryResult($datalist['uuid']);
+
+        $linkedListUuid = Db\DbUtil::binaryResult($this->db->fetchOne(
+            $this->db->select()
+                ->from('director_property_datalist', ['list_uuid'])
+                ->where('property_uuid', $quotedPropertyUuid)
+        ));
+
+        if ($linkedListUuid === $newListUuid) {
+            return;
+        }
+
+        $this->db->delete(
+            'director_property_datalist',
+            Filter::where('property_uuid', $quotedPropertyUuid)
+        );
+
+        $this->db->insert('director_property_datalist', [
+            'property_uuid' => $quotedPropertyUuid,
+            'list_uuid' => Db\DbUtil::quoteBinaryCompat($newListUuid, $db),
+        ]);
     }
 
     /**

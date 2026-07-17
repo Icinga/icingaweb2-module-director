@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Tests\Icinga\Module\Director\Form\Lib\TestableCustomVariableForm;
 
@@ -13,6 +14,9 @@ class CustomVariableFormTest extends BaseTestCase
 {
     /** @var string[] Key names created during tests, for tearDown cleanup */
     private array $createdKeyNames = [];
+
+    /** @var string[] Datalist names created during tests, for tearDown cleanup */
+    private array $createdDatalistNames = [];
 
     public function testAddStringPropertyCreatesRow(): void
     {
@@ -177,10 +181,81 @@ class CustomVariableFormTest extends BaseTestCase
         $this->assertSame('1', (string) $count, 'exactly one row must exist, the failed insert must not linger');
     }
 
+    public function testUpdateDatalistPropertyRelinksToNewlySelectedDatalist(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $listA = DirectorDatalist::create([
+            'list_name' => '___TEST___tier_a',
+            'owner'     => 'test',
+        ], $db);
+        $listA->store();
+        $this->createdDatalistNames[] = '___TEST___tier_a';
+
+        $listB = DirectorDatalist::create([
+            'list_name' => '___TEST___tier_b',
+            'owner'     => 'test',
+        ], $db);
+        $listB->store();
+        $this->createdDatalistNames[] = '___TEST___tier_b';
+
+        $createForm = new TestableCustomVariableForm($db);
+        $createForm->setTestValues([
+            'key_name'    => '___TEST___escalation_tier',
+            'value_type'  => 'datalist-strict',
+            'item_type'   => '',
+            'list'        => $listA->get('id'),
+            'label'       => 'Escalation Tier',
+            'description' => 'Severity tier used to page the on-call rotation',
+        ]);
+        $this->createdKeyNames[] = '___TEST___escalation_tier';
+        self::callMethod($createForm, 'onSuccess', []);
+        $uuid = $createForm->getUUid();
+
+        $linkedListUuid = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property_datalist', ['list_uuid'])
+                ->where('property_uuid = ?', DbUtil::quoteBinaryCompat($uuid->getBytes(), $dba))
+        );
+        $this->assertSame(
+            DbUtil::binaryResult($listA->get('uuid')),
+            DbUtil::binaryResult($linkedListUuid),
+            'property should initially be linked to the datalist selected on creation'
+        );
+
+        $updateForm = new TestableCustomVariableForm($db, $uuid);
+        $updateForm->setTestValues([
+            'key_name'    => '___TEST___escalation_tier',
+            'value_type'  => 'datalist-strict',
+            'item_type'   => '',
+            'list'        => $listB->get('id'),
+            'label'       => 'Escalation Tier',
+            'description' => 'Severity tier used to page the on-call rotation',
+        ]);
+        self::callMethod($updateForm, 'onSuccess', []);
+
+        $relinkedListUuid = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property_datalist', ['list_uuid'])
+                ->where('property_uuid = ?', DbUtil::quoteBinaryCompat($uuid->getBytes(), $dba))
+        );
+        $this->assertSame(
+            DbUtil::binaryResult($listB->get('uuid')),
+            DbUtil::binaryResult($relinkedListUuid),
+            'property must be relinked to the newly selected datalist even though value_type did not change'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
-            $dba = $this->getDb()->getDbAdapter();
+            $db = $this->getDb();
+            $dba = $db->getDbAdapter();
             foreach ($this->createdKeyNames as $keyName) {
                 $rows = $dba->fetchAll(
                     $dba->select()
@@ -196,6 +271,12 @@ class CustomVariableFormTest extends BaseTestCase
                         )
                     );
                     $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
+                }
+            }
+
+            foreach ($this->createdDatalistNames as $listName) {
+                if (DirectorDatalist::exists($listName, $db)) {
+                    DirectorDatalist::load($listName, $db)->delete();
                 }
             }
         }
