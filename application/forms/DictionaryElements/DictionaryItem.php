@@ -296,7 +296,7 @@ class DictionaryItem extends FieldsetElement
             }
         }
 
-        parent::populate($values);
+        return parent::populate($values);
     }
 
     /**
