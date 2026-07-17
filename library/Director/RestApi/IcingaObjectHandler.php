@@ -173,7 +173,7 @@ class IcingaObjectHandler extends RequestHandler
             case 'PUT':
                 $data = (array) $this->requireJsonBody();
                 $params = $this->request->getUrl()->getParams();
-                $allowsOverrides = $params->get('allowOverrides');
+                $allowsOverrides = $params->get('allowOverrides', false);
                 $type = $this->getType();
                 $object = $this->loadOptionalObject();
                 $actionName = $this->request->getActionName();
