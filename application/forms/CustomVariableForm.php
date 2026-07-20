@@ -125,7 +125,7 @@ class CustomVariableForm extends CompatForm
 
     protected function assemble(): void
     {
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
         $this->addElement('hidden', 'used_count', ['ignore' => true]);
         $used = (int) $this->getValue('used_count') > 0;
         $pendingRename = $this->isPendingRenameConfirmation();

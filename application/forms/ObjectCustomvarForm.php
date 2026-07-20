@@ -40,7 +40,7 @@ class ObjectCustomvarForm extends CompatForm
 
     protected function assemble(): void
     {
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
         $propertyElement = $this->createElement(
             'select',
             'property',

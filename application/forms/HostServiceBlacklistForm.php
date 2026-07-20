@@ -43,7 +43,7 @@ class HostServiceBlacklistForm extends CompatForm
 
     protected function assemble(): void
     {
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
         $blacklisted = $this->hasBeenBlacklisted();
         $this->addElement('submit', 'submit', [
             'label' => $blacklisted

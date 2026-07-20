@@ -166,7 +166,7 @@ class DeleteCustomVariableForm extends CompatForm
 
         $this->addHtml($usageList);
 
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
         $this->addElement('submit', 'submit', [
             'label' => $this->translate('Delete'),
             'class' => 'btn-remove'
