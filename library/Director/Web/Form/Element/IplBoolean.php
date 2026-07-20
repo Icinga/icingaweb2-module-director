@@ -22,7 +22,7 @@ class IplBoolean extends SelectElement
         ];
         if (! $this->isRequired()) {
             $options = [
-                    null => $this->translate('- Please choose -'),
+                    '' => $this->translate('- Please choose -'),
                 ] + $options;
         }
 
