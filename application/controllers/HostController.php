@@ -467,7 +467,7 @@ class HostController extends ObjectController
         );
 
         $deactivateForm = (new HostServiceBlacklistForm($db, $host, $parent))
-            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+            ->on(HostServiceBlacklistForm::ON_SUBMIT, function () {
                 $this->redirectNow(Url::fromRequest());
             })
             ->handleRequest($this->getServerRequest());
@@ -586,7 +586,7 @@ class HostController extends ObjectController
             'host_id' => $from->get('id'),
         ], $db);
         $deactivateForm = (new HostServiceBlacklistForm($db, $host, $parent))
-            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+            ->on(HostServiceBlacklistForm::ON_SUBMIT, function () {
                 $this->redirectNow(Url::fromRequest());
             })
             ->handleRequest($this->getServerRequest());
@@ -681,7 +681,7 @@ class HostController extends ObjectController
         );
 
         $deactivateForm = (new HostServiceBlacklistForm($db, $host, $originalService))
-            ->on(HostServiceBlacklistForm::ON_SUCCESS, function () {
+            ->on(HostServiceBlacklistForm::ON_SUBMIT, function () {
                 $this->redirectNow(Url::fromRequest());
             })
             ->handleRequest($this->getServerRequest());
