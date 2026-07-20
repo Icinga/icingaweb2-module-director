@@ -372,7 +372,11 @@ class IcingaService extends IcingaObject implements ExportInterface
             $varName = c::renderString($name);
 
             if (c::stringHasMacro($name)) {
-                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
+                $this->vars(); // populates $applyForWhiteList, needed for the legacy $config$ alias
+                $extraName = c::renderKeyValue(
+                    'name',
+                    c::renderStringWithVariables($name, $this->applyForWhiteList)
+                );
                 $name = '';
             } elseif ($name !== '') {
                 $name = ' ' . c::renderString($name);

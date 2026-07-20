@@ -260,6 +260,28 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
+    public function testApplyForNameMacroSupportsLegacyConfigAlias()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.disks';
+        $service->assign_filter = 'host.vars.env="test"';
+        // legacy $config$ alias in object names, should resolve to "value" just like
+        // it already does for values stored in custom variables
+        $service->object_name = 'Disk check $config$';
+
+        $this->assertStringContainsString(
+            'name = "Disk check " + value',
+            (string) $service
+        );
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(
