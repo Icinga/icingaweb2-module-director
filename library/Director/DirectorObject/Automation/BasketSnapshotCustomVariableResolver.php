@@ -128,11 +128,20 @@ class BasketSnapshotCustomVariableResolver
             $uuid = $customPropertyMap[$propertyUuid];
 
             if (isset($existingCustomProperties[$uuid])) {
+                $db->update(
+                    $table,
+                    ['required' => $property->required ?? 'n'],
+                    $db->quoteInto(
+                        "$objectKey = $objectUuid AND property_uuid = ?",
+                        DbUtil::quoteBinaryCompat(Uuid::fromString($uuid)->getBytes(), $db)
+                    )
+                );
                 unset($existingCustomProperties[$uuid]);
             } else {
                 $db->insert($table, [
                     $objectKey      => DbUtil::quoteBinaryCompat($new->get('uuid'), $db),
-                    'property_uuid' => DbUtil::quoteBinaryCompat(Uuid::fromString($uuid)->getBytes(), $db)
+                    'property_uuid' => DbUtil::quoteBinaryCompat(Uuid::fromString($uuid)->getBytes(), $db),
+                    'required' => $property->required ?? 'n',
                 ]);
             }
         }

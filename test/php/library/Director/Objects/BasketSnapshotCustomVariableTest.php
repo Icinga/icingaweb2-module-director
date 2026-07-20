@@ -105,6 +105,54 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         $this->assertEquals(1, (int) $count, 'icinga_host_property binding must be restored');
     }
 
+    public function testRestoreUpdatesRequiredFlagOnExistingAttachment(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        $exporter = new Exporter($db);
+        $exportedHost = $exporter->export($host);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+        foreach ($exportedHost->customVariables as $customVariable) {
+            if ($customVariable->property_uuid === $propertyUuidString) {
+                // createTemplateWithProperty() attaches this property without setting
+                // 'required', so it defaults to 'n' - the snapshot below says it must
+                // now be required.
+                $customVariable->required = 'y';
+            }
+        }
+
+        $json = json_encode([
+            'HostTemplate' => [self::TEMPLATE_NAME => $exportedHost],
+            'CustomVariable' => [$propertyUuidString => $property->export()],
+        ]);
+
+        // Restoring over the still-existing attachment (no wipe here) must update
+        // 'required' in place, not skip it just because the link row already exists.
+        BasketSnapshot::restoreJson($json, $db);
+
+        $dba = $db->getDbAdapter();
+        $required = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_property', ['required'])
+                ->where('host_uuid = ?', DbUtil::quoteBinaryCompat(DbUtil::binaryResult($host->get('uuid')), $dba))
+                ->where(
+                    'property_uuid = ?',
+                    DbUtil::quoteBinaryCompat(DbUtil::binaryResult($property->get('uuid')), $dba)
+                )
+        );
+
+        $this->assertEquals(
+            'y',
+            $required,
+            'An existing attachment must have its required flag updated on restore, not left stale'
+        );
+    }
+
     public function testRestoreChildItemsForDictionary(): void
     {
         if ($this->skipForMissingDb()) {
