@@ -45,6 +45,37 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals('Environment', $loaded->get('label'));
     }
 
+    public function testKeyNameUniquenessIsCaseInsensitiveOnBothDatabases(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $lower = $this->makeProperty('case_check', 'string', 'Case Check', $db);
+        $lower->store();
+
+        $upper = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::PREFIX . 'CASE_CHECK',
+            'value_type' => 'string',
+        ], $db);
+
+        try {
+            $upper->store();
+            $this->fail('Storing a key_name differing only by case must violate the unique constraint');
+        } catch (\RuntimeException $e) {
+            $msg = $e->getMessage();
+            $matchMysql = strpos($msg, 'Duplicate entry') !== false;
+            $matchPostgres = strpos($msg, 'Unique violation') !== false;
+
+            $this->assertTrue(
+                $matchMysql || $matchPostgres,
+                'Exception message does not tell about unique constraint violation: ' . $msg
+            );
+        }
+    }
+
     public function testGetDatalistReturnsNullWithoutThrowingWhenNoLinkExistsYet(): void
     {
         if ($this->skipForMissingDb()) {

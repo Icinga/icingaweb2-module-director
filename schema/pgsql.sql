@@ -334,7 +334,7 @@ CREATE INDEX director_datafield_datafield ON director_datafield_setting (datafie
 CREATE TABLE director_property (
   uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
   parent_uuid bytea CHECK(LENGTH(parent_uuid) = 16) DEFAULT NULL,
-  key_name character varying(255) NOT NULL,
+  key_name citext NOT NULL,
   label character varying(255) DEFAULT NULL,
   description text DEFAULT NULL,
   value_type enum_property_value_type NOT NULL,

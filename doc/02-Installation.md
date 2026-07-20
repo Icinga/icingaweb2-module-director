@@ -59,7 +59,8 @@ mysql -e "CREATE DATABASE director CHARACTER SET 'utf8';
 psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8';"
 psql director -q -c "CREATE USER director WITH PASSWORD 'CHANGEME';
 GRANT ALL PRIVILEGES ON DATABASE director TO director;
-CREATE EXTENSION pgcrypto;"
+CREATE EXTENSION pgcrypto;
+CREATE EXTENSION citext;"
 ```
 
 ## Configuring Icinga Director
