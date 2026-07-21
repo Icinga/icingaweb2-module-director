@@ -125,15 +125,17 @@ class NestedDictionaryItem extends FieldsetElement
     /**
      * Get the nested dictionary item value
      *
+     * @param bool $applyUnchangedDefaults See DictionaryItem::getItem()
+     *
      * @return NestedDictionaryItemDataType
      */
-    public function getItem(): array
+    public function getItem(bool $applyUnchangedDefaults = true): array
     {
         $this->ensureAssembled();
         $key = $this->getElement('key')->getValue();
         $values = [];
         $values['key'] = $key;
-        $values['value'] = $this->getElement('var')->getDictionary();
+        $values['value'] = $this->getElement('var')->getDictionary($applyUnchangedDefaults);
 
         return $values;
     }

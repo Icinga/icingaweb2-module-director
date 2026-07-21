@@ -204,15 +204,17 @@ class NestedDictionary extends FieldsetElement
     /**
      * Get the nested dictionary value
      *
+     * @param bool $applyUnchangedDefaults See DictionaryItem::getItem()
+     *
      * @return array<string, array>
      */
-    public function getDictionary(): array
+    public function getDictionary(bool $applyUnchangedDefaults = true): array
     {
         $values = [];
         $count = 0;
         foreach ($this->ensureAssembled()->getElements() as $element) {
             if ($element instanceof NestedDictionaryItem) {
-                $property = $element->getItem();
+                $property = $element->getItem($applyUnchangedDefaults);
                 if (! empty($property['key']) && array_key_exists('value', $property)) {
                     $values[$property['key']] = $property['value'];
                 } else {

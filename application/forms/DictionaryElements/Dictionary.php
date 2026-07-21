@@ -248,16 +248,18 @@ class Dictionary extends FieldsetElement
     /**
      * Get the dictionary value
      *
+     * @param bool $applyUnchangedDefaults Apply the untouched-child type defaults, see DictionaryItem::getItem()
+     *
      * @return array
      */
-    public function getDictionary(): array
+    public function getDictionary(bool $applyUnchangedDefaults = true): array
     {
         $items = [];
 
         /** @var DictionaryItem $element */
         foreach ($this->ensureAssembled()->getElements() as $element) {
             if ($element instanceof DictionaryItem) {
-                $item = $element->ensureAssembled()->getItem();
+                $item = $element->ensureAssembled()->getItem($applyUnchangedDefaults);
                 if (isset($item['name']) && array_key_exists('value', $item)) {
                     $items[$item['name']] = $item['value'];
                 }
@@ -265,6 +267,25 @@ class Dictionary extends FieldsetElement
         }
 
         return $items;
+    }
+
+    /**
+     * Whether any child is inherited from an ancestor
+     *
+     * Fixed-array/fixed-dictionary inherit as a whole, so one inherited child
+     * means the whole thing came from a parent.
+     *
+     * @return bool
+     */
+    public function hasInheritedValue(): bool
+    {
+        foreach ($this->ensureAssembled()->getElements() as $element) {
+            if ($element instanceof DictionaryItem && $element->hasInheritedValue()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

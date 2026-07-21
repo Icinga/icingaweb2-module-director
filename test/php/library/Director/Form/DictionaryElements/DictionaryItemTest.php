@@ -161,6 +161,20 @@ class DictionaryItemTest extends BaseTestCase
         $this->assertSame(0, $item->getItem()['value']);
     }
 
+    public function testGetItemSuppressesNumberDefaultWhenDefaultsAreDisabled(): void
+    {
+        // Storage wants the type default here, a required check doesn't, or the
+        // defaulted 0 would read as a real value.
+        $item = new TestableDictionaryItem('1', []);
+        $item->setTestConfig([
+            'type' => 'number',
+            'parent_type' => 'fixed-array',
+        ]);
+        $item->ensureAssembled();
+
+        $this->assertNull($item->getItem(false)['value']);
+    }
+
     public function testGetItemPreservesExistingSensitiveValueWhenLeftUnchanged(): void
     {
         // Left untouched means the browser sends back the DUMMYPASSWORD placeholder,
@@ -504,6 +518,71 @@ class DictionaryItemTest extends BaseTestCase
         $item = $this->buildRequiredRegionSettingsDictionaryItem();
         $item->ensureAssembled();
         $this->findNestedItem($item, 'region')->getElement('var')->setValue('us-east');
+
+        $this->assertTrue($item->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredScalarIsNotMarkedRequiredWhenInherited(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildRequiredScalarDictionaryItemWithInheritedValue();
+
+        $this->assertFalse($item->getElement('var')->isRequired());
+    }
+
+    public function testRequiredScalarPassesValidationWhenLeftBlankButInherited(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // A parent template already provides this value, so leaving it blank must
+        // not fail required, it still resolves to something real.
+        $item = $this->buildRequiredScalarDictionaryItemWithInheritedValue();
+        $item->getElement('var')->setValue('');
+
+        $this->assertTrue($item->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredFixedArrayPassesValidationWhenFullyInherited(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Nothing local was ever set, it's all inherited from a parent template.
+        // That value only ever lands on the children, never the property itself.
+        $dictionaryItem = $this->buildDiskMirrorsDictionaryItem(required: true);
+
+        $this->assertTrue($dictionaryItem->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredFixedArrayFailsValidationWhenEveryChildIsBlank(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Nothing inherited, nothing filled in. A blank number/bool child falls back
+        // to a storage default (0, 'n') that must not read as a real value here.
+        $item = $this->buildRequiredServerSettingsDictionaryItem();
+        $item->ensureAssembled();
+
+        $this->assertFalse($item->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredFixedArrayPassesValidationWhenTheNumberChildIsFilled(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildRequiredServerSettingsDictionaryItem();
+        $item->ensureAssembled();
+        $this->findNestedItem($item, '1')->getElement('var')->setValue('8080');
 
         $this->assertTrue($item->getElement('var')->validate()->isValid());
     }
@@ -1020,12 +1099,84 @@ class DictionaryItemTest extends BaseTestCase
     }
 
     /**
+     * Build a required 'timezone' string DictionaryItem that already has an inherited
+     * value ("Europe/Vienna" from "base-template"), backed by a real director_property
+     * row with no children.
+     */
+    private function buildRequiredScalarDictionaryItemWithInheritedValue(): DictionaryItem
+    {
+        $db = $this->getDb();
+        $uuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'timezone';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $uuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'string',
+            'label' => 'Timezone',
+        ], $db)->store();
+
+        $property = [
+            'uuid' => $uuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'string',
+            'label' => 'Timezone',
+            'required' => true,
+            'inherited' => 'Europe/Vienna',
+            'inherited_from' => 'base-template',
+        ];
+
+        $item = new DictionaryItem('0', $property);
+        $item->populate(DictionaryItem::prepare($property));
+        $item->ensureAssembled();
+
+        return $item;
+    }
+
+    /**
+     * Build a required fixed-array DictionaryItem ("server_settings") with a string, a
+     * number and a bool slot, none of them populated, nothing inherited either.
+     */
+    private function buildRequiredServerSettingsDictionaryItem(): DictionaryItem
+    {
+        $db = $this->getDb();
+        $parentUuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'server_settings';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Server Settings',
+        ], $db)->store();
+
+        foreach (['0' => 'string', '1' => 'number', '2' => 'bool'] as $position => $valueType) {
+            DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => $position,
+                'parent_uuid' => $parentUuidBytes,
+                'value_type' => $valueType,
+            ], $db)->store();
+        }
+
+        return new DictionaryItem('0', [
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Server Settings',
+            'required' => true,
+        ]);
+    }
+
+    /**
      * Build a fixed-array DictionaryItem ("disk_mirrors") with 3 string slots
      *
      * With no $localValue it is purely inherited. With $localValue given it already
      * has its own local override, a sparse array fills only some of its slots.
      */
-    private function buildDiskMirrorsDictionaryItem(?array $localValue = null): DictionaryItem
+    private function buildDiskMirrorsDictionaryItem(?array $localValue = null, bool $required = false): DictionaryItem
     {
         $db = $this->getDb();
         $parentUuidBytes = Uuid::uuid4()->getBytes();
@@ -1053,6 +1204,7 @@ class DictionaryItemTest extends BaseTestCase
             'key_name' => $keyName,
             'value_type' => 'fixed-array',
             'label' => 'Disk Mirrors',
+            'required' => $required,
         ];
 
         if ($localValue !== null) {

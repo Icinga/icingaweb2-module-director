@@ -281,7 +281,17 @@ class DictionaryItem extends FieldsetElement
         }
 
         if ($this->fields['required'] ?? false) {
-            $this->markValueRequired($this->getElement($valElementName));
+            $valueElement = $this->getElement($valElementName);
+
+            // fixed-array/fixed-dictionary push 'inherited' onto their children
+            // instead of carrying it themselves, so check there.
+            $isInherited = ($type === 'fixed-array' || $type === 'fixed-dictionary')
+                ? ($valueElement instanceof Dictionary && $valueElement->hasInheritedValue())
+                : ! empty($inherited);
+
+            if (! $isInherited) {
+                $this->markValueRequired($valueElement);
+            }
         }
     }
 
@@ -306,7 +316,10 @@ class DictionaryItem extends FieldsetElement
 
         $element->addValidators([
             new CallbackValidator(function ($value, CallbackValidator $validator) use ($element) {
-                if (! CustomVariablesForm::isValueUnset(CustomVariablesForm::filterEmpty($element->getDictionary()))) {
+                // Ignore the untouched-child type defaults (0, 'n', ...), or a
+                // blank fixed-array would read as filled in.
+                $realValue = CustomVariablesForm::filterEmpty($element->getDictionary(false));
+                if (! CustomVariablesForm::isValueUnset($realValue)) {
                     return true;
                 }
 
@@ -315,6 +328,16 @@ class DictionaryItem extends FieldsetElement
                 return false;
             })
         ]);
+    }
+
+    /**
+     * Whether this item's own value is inherited from an ancestor
+     *
+     * @return bool
+     */
+    public function hasInheritedValue(): bool
+    {
+        return ! empty($this->ensureAssembled()->getElement('inherited')->getValue());
     }
 
     public function populate($values)
@@ -580,9 +603,12 @@ class DictionaryItem extends FieldsetElement
     /**
      * Get the dictionary item value
      *
+     * @param bool $applyUnchangedDefaults Apply the untouched-child type default (0, 'n', ...).
+     *                                     Storage needs it, a required check does not.
+     *
      * @return DictionaryItemDataType
      */
-    public function getItem(): array
+    public function getItem(bool $applyUnchangedDefaults = true): array
     {
         $values = ['name' => $this->getElement('name')->getValue()];
         $itemValue = $this->getElement('var');
@@ -597,7 +623,7 @@ class DictionaryItem extends FieldsetElement
                 && $itemValue->allChildrenUnchanged();
 
             if (! $isUntouched) {
-                $values['value'] = $itemValue->getDictionary();
+                $values['value'] = $itemValue->getDictionary($applyUnchangedDefaults);
 
                 if ($this->getElement('type')->getValue() === 'fixed-array') {
                     $value = $values['value'];
@@ -621,7 +647,11 @@ class DictionaryItem extends FieldsetElement
 
                 // Only fall back to the type default if this item was never touched.
                 // A field cleared on purpose must stay cleared, not bounce back to it.
-                if (($parentType === 'fixed-array' || $parentType === 'fixed-dictionary') && $this->isUnchanged()) {
+                if (
+                    $applyUnchangedDefaults
+                    && ($parentType === 'fixed-array' || $parentType === 'fixed-dictionary')
+                    && $this->isUnchanged()
+                ) {
                     match ($type) {
                         'string', 'sensitive' => $defaultValue = '',
                         'number' => $defaultValue = 0,
