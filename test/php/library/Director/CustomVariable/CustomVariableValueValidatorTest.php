@@ -49,6 +49,24 @@ class CustomVariableValueValidatorTest extends BaseTestCase
         $this->addToAssertionCount(1);
     }
 
+    public function testDatalistTypeAcceptsScalarValue(): void
+    {
+        CustomVariableValueValidator::assertMatchesType('env_choice', 'prod', 'datalist-strict');
+        $this->addToAssertionCount(1);
+    }
+
+    public function testDatalistTypeAcceptsArrayOfScalars(): void
+    {
+        CustomVariableValueValidator::assertMatchesType('env_choices', ['prod', 'dev'], 'datalist-non-strict');
+        $this->addToAssertionCount(1);
+    }
+
+    public function testDatalistTypeRejectsDictionary(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        CustomVariableValueValidator::assertMatchesType('env_choice', (object) ['a' => 'b'], 'datalist-strict');
+    }
+
     public function testDatalistStrictRejectsUnknownValue(): void
     {
         if ($this->skipForMissingDb()) {
@@ -93,6 +111,52 @@ class CustomVariableValueValidatorTest extends BaseTestCase
             $db
         );
         $this->addToAssertionCount(1);
+    }
+
+    public function testDatalistStrictAcceptsArrayOfKnownValues(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeDatalistStrictProperty(
+            $db,
+            'validator_env_choices_array',
+            'validator_env_array',
+            ['prod', 'dev']
+        );
+
+        CustomVariableValueValidator::assertDatalistValueAllowed(
+            'validator_env_choices_array',
+            ['prod', 'dev'],
+            Uuid::fromBytes($property->get('uuid')),
+            $db
+        );
+        $this->addToAssertionCount(1);
+    }
+
+    public function testDatalistStrictRejectsArrayContainingAnUnknownValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeDatalistStrictProperty(
+            $db,
+            'validator_env_choices_bad_array',
+            'validator_env_bad_array',
+            ['prod', 'dev']
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        CustomVariableValueValidator::assertDatalistValueAllowed(
+            'validator_env_choices_bad_array',
+            ['prod', 'staging'],
+            Uuid::fromBytes($property->get('uuid')),
+            $db
+        );
     }
 
     /**

@@ -53,6 +53,19 @@ class CustomVariableValueValidator
                 }
 
                 break;
+            case 'datalist-strict':
+            case 'datalist-non-strict':
+                // A datalist can be a single value or, when its item type is
+                // 'dynamic-array', a list of values.
+                if (($value instanceof stdClass) || (is_array($value) && ! array_is_list($value))) {
+                    throw new InvalidArgumentException(sprintf(
+                        "The custom variable '%s' expects a single value or a list of values, got %s",
+                        $key,
+                        get_debug_type($value)
+                    ));
+                }
+
+                break;
             default:
                 if (is_array($value) || $value instanceof stdClass) {
                     throw new InvalidArgumentException(sprintf(
@@ -93,16 +106,19 @@ class CustomVariableValueValidator
             return;
         }
 
+        $allowedNames = [];
         foreach ($datalist->getEntries() as $entry) {
-            if ($entry->get('entry_name') === $value) {
-                return;
-            }
+            $allowedNames[] = $entry->get('entry_name');
         }
 
-        throw new InvalidArgumentException(sprintf(
-            "'%s' is not a valid value for the custom variable '%s'",
-            (string) $value,
-            $key
-        ));
+        foreach ((array) $value as $singleValue) {
+            if (! in_array($singleValue, $allowedNames, true)) {
+                throw new InvalidArgumentException(sprintf(
+                    "'%s' is not a valid value for the custom variable '%s'",
+                    (string) $singleValue,
+                    $key
+                ));
+            }
+        }
     }
 }
