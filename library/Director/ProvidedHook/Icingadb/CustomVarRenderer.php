@@ -49,19 +49,18 @@ class CustomVarRenderer extends CustomVarRendererHook
     protected $customPropertyDictionaries = [];
 
     /**
-     * Dictionary child configuration, keyed by parent property key_name and then by
-     * child key_name. Child key_names are only unique within their own parent
-     * dictionary, so this must never be flattened into $customVariableConfig - two
-     * different dictionaries may each have an identically-named child with different
-     * sensitivity.
+     * Dictionary child configuration, keyed by full ancestor scope (see scopeKey())
+     * then by child key_name. Two unrelated dictionaries can share a child name with
+     * different sensitivity, so never key or look this up by name alone.
      *
      * @var array
      */
     protected $dictionaryChildConfig = [];
 
     /**
-     * Positions of sensitive items within fixed-/dynamic-array custom properties, keyed by
-     * the array's own key_name and then by item position, e.g. ['ssh_args' => ['3' => true]]
+     * Sensitive item positions within fixed-array properties, keyed by ancestor
+     * scope (see scopeKey()) then position, e.g. ['ssh_args' => ['3' => true]].
+     * Same scoping as $dictionaryChildConfig, same reason.
      *
      * @var array
      */
@@ -303,7 +302,6 @@ class CustomVarRenderer extends CustomVarRendererHook
                 return true;
             }
 
-            $customPropertiesWithDatalists = [];
             foreach ($customProperties as $customProperty) {
                 $propertyName = $customProperty['key_name'];
                 $this->customVariableConfig[$propertyName] = ['label' => $customProperty['label']];
@@ -315,73 +313,12 @@ class CustomVarRenderer extends CustomVarRendererHook
                     $this->customVariableConfig[$propertyName]['visibility'] = 'hidden';
                 }
 
-                if (str_starts_with($customProperty['value_type'], 'datalist-')) {
-                    $customPropertiesWithDatalists[$customProperty['uuid']] = $customProperty;
-                } elseif (str_ends_with($customProperty['value_type'], '-dictionary')) {
-                    $this->dictionaryNames[] = $customProperty['key_name'];
+                if (str_ends_with($customProperty['value_type'], '-dictionary')) {
+                    $this->dictionaryNames[] = $propertyName;
                 }
             }
 
-            $dictionaryItems = $db->select()->from(
-                ['dpp' => 'director_property'],
-                []
-            )
-                ->join(['dpc' => 'director_property'], 'dpp.uuid = dpc.parent_uuid', [])
-                ->columns([
-                    'parent_name' => 'dpp.key_name',
-                    'key_name' => 'dpc.key_name',
-                    'label' => 'dpc.label',
-                    'value_type' => 'dpc.value_type',
-                    'uuid' => 'dpc.uuid'
-                ])->where('dpp.value_type', ['fixed-dictionary', 'dynamic-dictionary']);
-
-            foreach ($dictionaryItems as $dictionaryItem) {
-                $propertyName = $dictionaryItem->key_name;
-
-                $this->customPropertyDictionaries[$dictionaryItem->parent_name][$propertyName]
-                    = $dictionaryItem->label;
-                if (is_string($propertyName)) {
-                    // Scoped by parent dictionary: two different dictionaries may have a
-                    // child with the same key_name (e.g. both a "password"), and only one
-                    // of them may be sensitive. Keying this globally by the bare child
-                    // name would let a later, non-sensitive dictionary's child silently
-                    // unmask an earlier sensitive one.
-                    $childConfig = ['label' => $dictionaryItem->label];
-                    if ($dictionaryItem->value_type === 'sensitive') {
-                        $childConfig['visibility'] = 'hidden';
-                    }
-
-                    $this->dictionaryChildConfig[$dictionaryItem->parent_name][$propertyName] = $childConfig;
-                }
-
-                if (str_starts_with($dictionaryItem->value_type, 'datalist-')) {
-                    $customPropertiesWithDatalists[$dictionaryItem->uuid] = $dictionaryItem;
-                }
-            }
-
-            // Unlike dynamic-array (one item_type for all elements) and datalist item types,
-            // fixed-array items are individually typed, so a single fixed-array can carry a
-            // 'sensitive' item at one position and plain strings/numbers at others. Track
-            // which positions are sensitive, scoped by the array's own key_name, so two
-            // different fixed-arrays sharing the same positional key_names (e.g. both having
-            // a "0", "1", ...) don't get mixed up.
-            $sensitiveArrayItems = $db->select()->from(
-                ['dpp' => 'director_property'],
-                []
-            )
-                ->join(['dpc' => 'director_property'], 'dpp.uuid = dpc.parent_uuid', [])
-                ->columns([
-                    'parent_name' => 'dpp.key_name',
-                    'key_name' => 'dpc.key_name',
-                ])
-                ->where('dpp.value_type', 'fixed-array')
-                ->where('dpc.value_type', 'sensitive');
-
-            foreach ($sensitiveArrayItems as $sensitiveArrayItem) {
-                if (is_string($sensitiveArrayItem->parent_name)) {
-                    $this->sensitiveArrayItems[$sensitiveArrayItem->parent_name][$sensitiveArrayItem->key_name] = true;
-                }
-            }
+            $this->loadNestedPropertyConfig($db, $customProperties);
 
             $dataListEntries = $db->select()->from(
                 ['dpd' => 'director_property_datalist'],
@@ -504,28 +441,112 @@ class CustomVarRenderer extends CustomVarRendererHook
     }
 
     /**
-     * Look up dictionary-child-scoped configuration for $key under its immediate
-     * parent dictionary/array $parentKey, if any
+     * Build the scope key a property's metadata is stored and looked up under
+     *
+     * Chains every ancestor into the key instead of just the immediate parent, so
+     * two properties can only collide if they share their entire ancestor path.
+     *
+     * @param ?string $outerScope
+     * @param string $key
+     *
+     * @return string
+     */
+    protected function scopeKey(?string $outerScope, string $key): string
+    {
+        return $outerScope === null ? $key : $outerScope . "\0" . $key;
+    }
+
+    /**
+     * Load dictionary child and sensitive-array metadata scoped to the object's own
+     * property tree
+     *
+     * Custom properties nest at most one level deep, so this only walks 2 generations
+     * below the object's top level properties, never the whole director_property table.
+     *
+     * @param Db $db
+     * @param array $customProperties Top level custom properties of the rendered
+     *                                 object, as returned by getObjectCustomProperties()
+     *
+     * @return void
+     */
+    private function loadNestedPropertyConfig(Db $db, array $customProperties): void
+    {
+        $dbAdapter = $db->getDbAdapter();
+
+        // uuid (raw binary) => ['key_name' => ..., 'value_type' => ..., 'scope' => ?string]
+        $frontier = [];
+        foreach ($customProperties as $property) {
+            $frontier[DbUtil::binaryResult($property['uuid'])] = [
+                'key_name'   => $property['key_name'],
+                'value_type' => $property['value_type'],
+                'scope'      => null,
+            ];
+        }
+
+        for ($depth = 0; $depth < 2 && ! empty($frontier); $depth++) {
+            $query = $dbAdapter->select()
+                ->from('director_property', ['uuid', 'parent_uuid', 'key_name', 'label', 'value_type'])
+                ->where('parent_uuid IN (?)', DbUtil::quoteBinaryCompat(array_keys($frontier), $dbAdapter));
+
+            $children = [];
+            foreach ($dbAdapter->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+                $row = DbUtil::normalizeRow($row);
+                $parent = $frontier[$row['parent_uuid']] ?? null;
+                if ($parent === null) {
+                    continue;
+                }
+
+                $scope = $this->scopeKey($parent['scope'], $parent['key_name']);
+
+                if ($parent['value_type'] === 'fixed-array' && $row['value_type'] === 'sensitive') {
+                    $this->sensitiveArrayItems[$scope][$row['key_name']] = true;
+                }
+
+                if (in_array($parent['value_type'], ['fixed-dictionary', 'dynamic-dictionary'], true)) {
+                    $this->customPropertyDictionaries[$parent['key_name']][$row['key_name']] = $row['label'];
+
+                    $childConfig = ['label' => $row['label']];
+                    if ($row['value_type'] === 'sensitive') {
+                        $childConfig['visibility'] = 'hidden';
+                    }
+
+                    $this->dictionaryChildConfig[$scope][$row['key_name']] = $childConfig;
+                }
+
+                $children[$row['uuid']] = [
+                    'key_name'   => $row['key_name'],
+                    'value_type' => $row['value_type'],
+                    'scope'      => $scope,
+                ];
+            }
+
+            $frontier = $children;
+        }
+    }
+
+    /**
+     * Look up dictionary-child config for $key under parent $parentKey, if any
      *
      * @param string $key
      * @param ?string $parentKey
+     * @param ?string $grandparentKey Set when $parentKey is itself nested one level deep
      *
      * @return ?array
      */
-    private function dictionaryChildConfigFor(string $key, ?string $parentKey): ?array
+    private function dictionaryChildConfigFor(string $key, ?string $parentKey, ?string $grandparentKey = null): ?array
     {
-        if ($parentKey !== null && isset($this->dictionaryChildConfig[$parentKey][$key])) {
-            return $this->dictionaryChildConfig[$parentKey][$key];
+        if ($parentKey === null) {
+            return null;
         }
 
-        return null;
+        return $this->dictionaryChildConfig[$this->scopeKey($grandparentKey, $parentKey)][$key] ?? null;
     }
 
-    public function renderCustomVarKey(string $key, ?string $parentKey = null)
+    public function renderCustomVarKey(string $key, ?string $parentKey = null, ?string $grandparentKey = null)
     {
         try {
             $label = $this->fieldConfig[$key]['label']
-                ?? $this->dictionaryChildConfigFor($key, $parentKey)['label']
+                ?? $this->dictionaryChildConfigFor($key, $parentKey, $grandparentKey)['label']
                 ?? $this->customVariableConfig[$key]['label']
                 ?? null;
             if ($label === null) {
@@ -544,9 +565,12 @@ class CustomVarRenderer extends CustomVarRendererHook
         return null;
     }
 
-    public function renderCustomVarValue(string $key, $value, ?string $parentKey = null)
-    {
-        $childConfig = $this->dictionaryChildConfigFor($key, $parentKey);
+    public function renderCustomVarValue(
+        string $key, $value,
+        ?string $parentKey = null,
+        ?string $grandparentKey = null
+    ): mixed {
+        $childConfig = $this->dictionaryChildConfigFor($key, $parentKey, $grandparentKey);
 
         if (! (isset($this->fieldConfig[$key]) || $childConfig !== null || isset($this->customVariableConfig[$key]))) {
             return null;
@@ -564,8 +588,9 @@ class CustomVarRenderer extends CustomVarRendererHook
 
             if (is_array($value) && ! isset($this->customPropertyDictionaries[$key])) {
                 $renderedValue = [];
+                $arrayScope = $this->scopeKey($parentKey, $key);
                 foreach ($value as $k => $v) {
-                    if (isset($this->sensitiveArrayItems[$key][$k])) {
+                    if (isset($this->sensitiveArrayItems[$arrayScope][$k])) {
                         $renderedValue[$k] = '***';
                     } elseif (is_string($v) && isset($this->datalistMaps[$key][$v])) {
                         $renderedValue[$k] = new HtmlElement(
@@ -673,8 +698,8 @@ class CustomVarRenderer extends CustomVarRendererHook
 
                 $this->dictionaryLevel++;
                 foreach ($val as $childKey => $childVal) {
-                    $childVal = $this->renderCustomVarValue($childKey, $childVal, $k) ?? $childVal;
-                    $label = $this->renderCustomVarKey($childKey, $k) ?? $childKey;
+                    $childVal = $this->renderCustomVarValue($childKey, $childVal, $k, $key) ?? $childVal;
+                    $label = $this->renderCustomVarKey($childKey, $k, $key) ?? $childKey;
                     if (
                         ! in_array($childKey, $this->dictionaryNames)
                         && ! array_key_exists($childKey, $this->customPropertyDictionaries)

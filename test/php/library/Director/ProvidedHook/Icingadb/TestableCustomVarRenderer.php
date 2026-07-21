@@ -10,9 +10,18 @@ use Icinga\Module\Director\ProvidedHook\Icingadb\CustomVarRenderer;
  */
 class TestableCustomVarRenderer extends CustomVarRenderer
 {
-    public function seedDictionaryChild(string $parentKey, string $childKey, array $config): void
+    public function seedDictionaryChild(
+        string $parentKey,
+        string $childKey,
+        array $config,
+        ?string $grandparentKey = null
+    ): void {
+        $this->dictionaryChildConfig[$this->scopeKey($grandparentKey, $parentKey)][$childKey] = $config;
+    }
+
+    public function seedSensitiveArrayItem(string $parentKey, string $childKey, ?string $grandparentKey = null): void
     {
-        $this->dictionaryChildConfig[$parentKey][$childKey] = $config;
+        $this->sensitiveArrayItems[$this->scopeKey($grandparentKey, $parentKey)][$childKey] = true;
     }
 
     public function seedDictionaryName(string $key): void

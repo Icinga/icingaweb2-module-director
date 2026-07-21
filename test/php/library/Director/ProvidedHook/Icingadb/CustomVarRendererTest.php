@@ -118,6 +118,52 @@ class CustomVarRendererTest extends BaseTestCase
         );
     }
 
+    public function testSameNamedNestedDictionariesUnderDifferentRootsDoNotShareVisibility(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // Two top level dictionaries each nest a "credentials" dictionary with a
+        // password child. Only server_a's is sensitive, server_b's must stay in the clear.
+        $renderer->seedDictionaryChild('credentials', 'password', [
+            'label' => 'Database password',
+            'visibility' => 'hidden',
+        ], 'server_a');
+        $renderer->seedDictionaryChild('credentials', 'password', [
+            'label' => 'API token',
+        ], 'server_b');
+
+        $sensitiveRendered = $renderer->renderCustomVarValue('password', 's3cr3t', 'credentials', 'server_a');
+        $plainRendered = $renderer->renderCustomVarValue('password', 'plain-token', 'credentials', 'server_b');
+
+        $this->assertEquals('***', $sensitiveRendered);
+        $this->assertNotEquals(
+            '***',
+            $plainRendered,
+            'A non-sensitive child must not be masked by a same-named sensitive child under an unrelated root'
+        );
+    }
+
+    public function testSameNamedArrayItemsUnderDifferentDictionariesDoNotShareMasking(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // Two dictionaries each nest a fixed-array named "targets". Only network_a's
+        // second item is sensitive, network_b's matching position must stay in the clear.
+        $renderer->seedDictionaryChild('network_a', 'targets', ['label' => 'Targets']);
+        $renderer->seedDictionaryChild('network_b', 'targets', ['label' => 'Targets']);
+        $renderer->seedSensitiveArrayItem('targets', '1', 'network_a');
+
+        $maskedValue = $renderer->renderCustomVarValue('targets', ['host1', 'secret-host2'], 'network_a');
+        $plainValue = $renderer->renderCustomVarValue('targets', ['host1', 'host2'], 'network_b');
+
+        $this->assertEquals('***', $maskedValue[1]);
+        $this->assertNotEquals(
+            '***',
+            $plainValue[1],
+            'An array item must not be masked by a same-named sensitive item in an unrelated dictionary'
+        );
+    }
+
     public function testAppliedForArrayUsesItsValuesAsNameSuffix(): void
     {
         $renderer = new CustomVarRenderer();
