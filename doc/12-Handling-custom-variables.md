@@ -137,6 +137,12 @@ vars.snmp_community = "s3cr3t-community"
 vars.pagerduty_token = "u+abc123def456"
 ```
 
+A `sensitive` field nested inside a `fixed-array` or `fixed-dictionary` is masked the
+same way. Masking is scoped to that field's exact position in its own property
+definition, so two unrelated properties can each have a nested field with the same
+name (e.g. both defining a `credentials.password`) without one accidentally unmasking
+the other.
+
 ##### `fixed-array`
 An ordered list with a predefined structure. Each position has a fixed meaning configured in the property schema. The Icinga 2 config stores this as an array without keys.
 
@@ -279,10 +285,10 @@ add the nested items: fixed positions for `fixed-array`, fixed keys for
 ### Attaching custom variables to objects and templates
 
 Every object type that supports custom variables (host, service, command,
-user, notification, and service sets) exposes a `Custom Variables` tab on
-its object and template detail pages, next to the `Fields (Deprecated)`
-tab. Use `Add Custom Variable` there to attach a configured property and
-fill in its value:
+user and notification) exposes a `Custom Variables` tab on its object and
+template detail pages, next to the `Fields (Deprecated)` tab. Service sets
+do not expose this tab yet. Use `Add Custom Variable` there to attach a
+configured property and fill in its value:
 
 * Custom variables inherited from imported templates are shown and can
   be overridden on the object itself.
@@ -290,6 +296,28 @@ fill in its value:
   chain rather than overwritten. The rendered config uses `+=`, so a
   child template or the object itself can add further entries without
   losing the ones defined on parent templates.
+
+<a id="Required-custom-variables"></a>### Marking a custom variable as required
+
+Besides attaching a property and giving it a value, an attachment can be
+marked `Required`. Toggle this on the `Custom Variables` tab of the
+**template** where the variable was directly attached; there's no need to
+remove and re-add the variable just to change its requiredness.
+
+The flag never blocks saving the template itself, templates describe the
+schema, they don't have to fill it in. It takes effect once the variable
+reaches an actual host, service, command, user or notification object,
+whether attached there directly or inherited.
+
+* Saving that object's `Custom Variables` tab fails if a required
+  variable has no value, whether the value comes from the object itself
+  or is inherited from one of its imported templates.
+* An inherited value already satisfies the check, you don't need to
+  repeat it on the object.
+* For `fixed-array` and `fixed-dictionary` properties, an attachment
+  whose children are all empty/default (e.g. a blank fixed array) is
+  treated as having no value, so the required check still triggers
+  instead of silently passing.
 
 Apply For rules
 ---------------
@@ -333,6 +361,11 @@ Existing template assignments are carried over automatically, so
 migrated variables show up already attached to the same host, service,
 command, user and notification templates that used the original field.
 
+> If a property created by a migration is later renamed or removed,
+> values that were already migrated under it are not automatically
+> relinked to the change. Treat a freshly migrated property's key name
+> and lifetime with a bit of extra care until this is automated.
+
 Configuration Baskets
 ---------------------
 
@@ -340,6 +373,11 @@ Configuration baskets capture custom variable definitions (and their
 nested items) together with the templates that use them, so restoring a
 basket snapshot restores both the template and the custom variable
 schema it depends on.
+
+> For a `datalist-strict` or `datalist-non-strict` property, only the
+> datalist's name travels with the basket, not its entries. Restoring
+> such a snapshot onto a target that doesn't already have a matching
+> datalist creates it empty; populate the datalist there separately.
 
 Custom variable values on an existing object can also be updated
 directly through the REST API, without having to submit the whole

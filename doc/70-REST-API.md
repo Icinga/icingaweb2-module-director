@@ -257,9 +257,16 @@ body.
 
 * `POST` **merges**: only the keys you send are touched, all other
   existing variables on the object are left untouched.
-* `PUT` **replaces**: All the custom variables in the object are replaced with 
-  the ones in the body . Values inherited from templates are not affected either 
+* `PUT` **replaces**: All the custom variables in the object are replaced with
+  the ones in the body. Values inherited from templates are not affected either
   way, since they aren't stored on the object itself.
+
+`PUT` replaces variables by detaching and reattaching them behind the scenes.
+The `required` flag configured for an attachment (see
+[Marking a custom variable as required](12-Handling-custom-variables.md#Required-custom-variables))
+is preserved across that relink; this endpoint only reads and writes values,
+there's no way to set or query the `required` flag through it. Changing it
+still requires the `Custom Variables` tab of the template it was attached on.
 
 #### Setting a `string` variable
 
@@ -321,6 +328,11 @@ stored. Keep that in mind when logging requests or sharing API responses.
     }
 }
 ```
+
+Only the outer shape is currently checked here, the value must be a JSON
+object. The individual keys inside it are not yet validated against the
+property's configured keys and per-key types, so a request using the wrong
+keys can still be accepted.
 
 #### Setting several variables at once
 
