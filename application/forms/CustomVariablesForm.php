@@ -362,6 +362,21 @@ class CustomVariablesForm extends CompatForm
     {
         $this->assertOverrideHostIsSet();
 
+        // The property (re)attachments below, the vars removal and the final
+        // store() are multiple separate writes that only make sense together;
+        // a failure partway through must not leave them half-applied.
+        $this->object->getConnection()->runFailSafeTransaction(function () {
+            $this->persistPropertyChanges();
+        });
+    }
+
+    /**
+     * Apply the submitted property values and attachments and persist them
+     *
+     * @return void
+     */
+    private function persistPropertyChanges(): void
+    {
         $vars = $this->object->vars();
 
         /** @var Dictionary $propertiesElement */
