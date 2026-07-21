@@ -119,7 +119,7 @@ class MigrateCommand extends Command
         }
 
         if (! empty($customPropertiesToMigrate)) {
-            $this->migrateDatafields($customPropertiesToMigrate, $dryRun);
+            $this->migrateDatafields($customPropertiesToMigrate, $dryRun, $delete && ! $dryRun);
         }
 
         echo "Migration completed\n";
@@ -133,10 +133,6 @@ class MigrateCommand extends Command
 
         $totalSkipped = count(DirectorDatafield::loadAll($db)) - $totalMigrated;
         if ($delete) {
-            if (! $dryRun) {
-                $this->deleteMigratedDataFields();
-            }
-
             echo "The following datafields have been migrated and deleted:\n";
             if ($this->isVerbose) {
                 foreach ($this->migratedDataFields as $dataField) {
@@ -252,11 +248,16 @@ class MigrateCommand extends Command
     /**
      * Migrate given prepared custom properties
      *
+     * When $delete is set, the legacy datafield bindings and definitions are removed
+     * as part of the very same transaction as the migration, so a failure on either
+     * side rolls back both instead of leaving migrated properties next to a partially
+     * deleted legacy datafield.
+     *
      * @param array $customProperties
      *
      * @return void
      */
-    private function migrateDatafields(array $customProperties, bool $dryRun): void
+    private function migrateDatafields(array $customProperties, bool $dryRun, bool $delete = false): void
     {
         $db = $this->db();
 
@@ -324,6 +325,15 @@ class MigrateCommand extends Command
 
         if ($dryRun) {
             $migrate();
+
+            return;
+        }
+
+        if ($delete) {
+            $db->runFailSafeTransaction(function () use ($migrate) {
+                $migrate();
+                $this->deleteMigratedDataFields();
+            });
         } else {
             $db->runFailSafeTransaction($migrate);
         }
@@ -563,6 +573,10 @@ class MigrateCommand extends Command
 
     /**
      * Delete the migrated datafields
+     *
+     * Must be called from within a transaction, it performs multiple deletes that
+     * are only consistent with each other and with the migration when committed
+     * or rolled back together.
      *
      * @return void
      */
