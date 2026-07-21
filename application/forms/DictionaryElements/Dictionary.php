@@ -230,6 +230,22 @@ class Dictionary extends FieldsetElement
     }
 
     /**
+     * Whether every child item is unchanged from what it started with
+     *
+     * @return bool
+     */
+    public function allChildrenUnchanged(): bool
+    {
+        foreach ($this->ensureAssembled()->getElements() as $element) {
+            if ($element instanceof DictionaryItem && ! $element->isUnchanged()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Get the dictionary value
      *
      * @return array

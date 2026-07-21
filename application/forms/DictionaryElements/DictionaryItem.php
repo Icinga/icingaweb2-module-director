@@ -502,6 +502,39 @@ class DictionaryItem extends FieldsetElement
     }
 
     /**
+     * Whether this item's own value is unchanged from what it started with
+     *
+     * Lets a parent fixed-array/fixed-dictionary tell an untouched child from an
+     * edited one. Resubmitting an already stored value must never count as a touch.
+     *
+     * @return bool
+     */
+    public function isUnchanged(): bool
+    {
+        $itemValue = $this->getElement('var');
+
+        if ($itemValue instanceof Dictionary) {
+            return $itemValue->allChildrenUnchanged();
+        }
+
+        if ($itemValue instanceof SensitiveElement && $itemValue->wasSubmittedUnchanged()) {
+            return true;
+        }
+
+        $submitted = $itemValue->getValue();
+        if ($submitted === '') {
+            $submitted = null;
+        }
+
+        $stored = $this->fields['value'] ?? null;
+        if ($stored === '') {
+            $stored = null;
+        }
+
+        return $submitted === $stored;
+    }
+
+    /**
      * Get the dictionary item value
      *
      * @return DictionaryItemDataType
@@ -511,12 +544,23 @@ class DictionaryItem extends FieldsetElement
         $values = ['name' => $this->getElement('name')->getValue()];
         $itemValue = $this->getElement('var');
         if ($itemValue instanceof NestedDictionary or $itemValue instanceof Dictionary) {
-            $values['value'] = $itemValue->getDictionary();
+            // Fixed-array/fixed-dictionary is all or nothing, one edited child rewrites
+            // the whole thing. A top level property with nothing touched has nothing
+            // to save, so leave it alone. A nested one must still report its value
+            // since its own parent needs it to build its value.
+            $isTopLevelProperty = empty($this->getElement('parent_type')->getValue());
+            $isUntouched = $isTopLevelProperty
+                && $itemValue instanceof Dictionary
+                && $itemValue->allChildrenUnchanged();
 
-            if ($this->getElement('type')->getValue() === 'fixed-array') {
-                $value = $values['value'];
-                ksort($value);
-                $values['value'] = array_values($value);
+            if (! $isUntouched) {
+                $values['value'] = $itemValue->getDictionary();
+
+                if ($this->getElement('type')->getValue() === 'fixed-array') {
+                    $value = $values['value'];
+                    ksort($value);
+                    $values['value'] = array_values($value);
+                }
             }
         } elseif (
             $this->getElement('type')->getValue() === 'datalist-non-strict'
@@ -532,9 +576,9 @@ class DictionaryItem extends FieldsetElement
             } else {
                 $defaultValue = null;
 
-                // Use the default value for fixed-array items only if the fixed array does not have an
-                // inherited value.
-                if ($parentType === 'fixed-array') {
+                // Only fall back to the type default if this item was never touched.
+                // A field cleared on purpose must stay cleared, not bounce back to it.
+                if (($parentType === 'fixed-array' || $parentType === 'fixed-dictionary') && $this->isUnchanged()) {
                     match ($type) {
                         'string', 'sensitive' => $defaultValue = '',
                         'number' => $defaultValue = 0,

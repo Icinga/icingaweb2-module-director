@@ -391,7 +391,8 @@ class CustomVariablesForm extends CompatForm
                 continue;
             }
 
-            $value = $values[$key] ?? null;
+            $hasSubmittedValue = array_key_exists($key, $values);
+            $value = $hasSubmittedValue ? $values[$key] : null;
 
             if (is_array($value) && ! empty($value)) {
                 if ($property['value_type'] === 'dynamic-dictionary') {
@@ -420,6 +421,11 @@ class CustomVariablesForm extends CompatForm
                         'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $db)
                     ]
                 );
+            }
+
+            if (! $hasSubmittedValue) {
+                // Fully inherited and untouched, leave the object's own vars alone.
+                continue;
             }
 
             if (self::isValueUnset($value)) {

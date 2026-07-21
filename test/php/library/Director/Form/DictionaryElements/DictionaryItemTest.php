@@ -239,6 +239,201 @@ class DictionaryItemTest extends BaseTestCase
         $this->assertSame('0', $item->getItem()['value']);
     }
 
+    public function testFullyInheritedFixedArrayStaysInheritedWhenNothingIsTouched(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Inherited from a base template and never touched, must not turn into a
+        // locally defaulted copy on save.
+        $dictionaryItem = $this->buildDiskMirrorsDictionaryItem();
+
+        $result = $dictionaryItem->getItem();
+
+        $this->assertArrayNotHasKey('value', $result);
+    }
+
+    public function testFixedArrayMaterializesAsLocalValueWhenOneChildIsChanged(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $dictionaryItem = $this->buildDiskMirrorsDictionaryItem();
+        $this->findNestedItem($dictionaryItem, '1')->getElement('var')->setValue('mirror2-standby.example.com');
+
+        $result = $dictionaryItem->getItem();
+
+        $this->assertSame(['', 'mirror2-standby.example.com', ''], $result['value']);
+    }
+
+    public function testFixedArrayWithExistingLocalValueStaysUntouchedWhenNothingIsEdited(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Already has its own local override, nothing here got edited either.
+        $dictionaryItem = $this->buildDiskMirrorsDictionaryItem([
+            'mirror1.example.com',
+            'mirror2.example.com',
+            'mirror3.example.com',
+        ]);
+
+        $result = $dictionaryItem->getItem();
+
+        $this->assertArrayNotHasKey('value', $result);
+    }
+
+    public function testFixedArrayWithExistingLocalValueMaterializesWhenOneChildIsChanged(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $dictionaryItem = $this->buildDiskMirrorsDictionaryItem([
+            'mirror1.example.com',
+            'mirror2.example.com',
+            'mirror3.example.com',
+        ]);
+        $this->findNestedItem($dictionaryItem, '1')->getElement('var')->setValue('mirror2-standby.example.com');
+
+        $result = $dictionaryItem->getItem();
+
+        $this->assertSame(
+            ['mirror1.example.com', 'mirror2-standby.example.com', 'mirror3.example.com'],
+            $result['value']
+        );
+    }
+
+    public function testFixedArrayWithOneStoredSlotStaysUntouchedWhenNothingIsEdited(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Only one slot was ever filled in, the rest must stay empty rather than
+        // getting a type default just because a sibling holds a real value.
+        $dictionaryItem = $this->buildDiskMirrorsDictionaryItem([1 => 'mirror2.example.com']);
+
+        $result = $dictionaryItem->getItem();
+
+        $this->assertArrayNotHasKey('value', $result);
+    }
+
+    public function testClearingAPreviouslyStoredNumberDoesNotBounceBackToItsTypeDefault(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Clearing the primary host and the retry count must give back null for the
+        // count, not bounce back to 0 just because it is blank now too.
+        $db = $this->getDb();
+        $parentUuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'backup_targets';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Backup Targets',
+        ], $db)->store();
+
+        foreach (['0' => 'string', '1' => 'string', '2' => 'number', '3' => 'string'] as $position => $valueType) {
+            DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => $position,
+                'parent_uuid' => $parentUuidBytes,
+                'value_type' => $valueType,
+            ], $db)->store();
+        }
+
+        $property = [
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Backup Targets',
+            'value' => ['backup1.example.com', '', 3, ''],
+        ];
+
+        $dictionaryItem = new DictionaryItem('0', $property);
+        $dictionaryItem->populate(DictionaryItem::prepare($property));
+        $dictionaryItem->ensureAssembled();
+
+        $this->findNestedItem($dictionaryItem, '0')->getElement('var')->setValue('');
+        $this->findNestedItem($dictionaryItem, '2')->getElement('var')->setValue('');
+
+        $result = $dictionaryItem->getItem();
+
+        $this->assertSame([null, '', null, ''], $result['value']);
+    }
+
+    public function testNestedFixedArrayInsideFixedArrayKeepsItsOwnValueWhenASiblingChanges(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // A fixed array can hold another fixed array as one of its slots. Changing an
+        // unrelated sibling still saves the whole outer array, so the untouched nested
+        // array must contribute its own value instead of vanishing from it.
+        $db = $this->getDb();
+        $outerUuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'monitoring_targets';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $outerUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Monitoring Targets',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => '0',
+            'parent_uuid' => $outerUuidBytes,
+            'value_type' => 'string',
+        ], $db)->store();
+
+        $nestedUuidBytes = Uuid::uuid4()->getBytes();
+        DirectorProperty::create([
+            'uuid' => $nestedUuidBytes,
+            'key_name' => '1',
+            'parent_uuid' => $outerUuidBytes,
+            'value_type' => 'fixed-array',
+        ], $db)->store();
+
+        foreach (['0', '1'] as $nestedPosition) {
+            DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => $nestedPosition,
+                'parent_uuid' => $nestedUuidBytes,
+                'value_type' => 'string',
+            ], $db)->store();
+        }
+
+        $property = [
+            'uuid' => $outerUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Monitoring Targets',
+        ];
+
+        $dictionaryItem = new DictionaryItem('0', $property);
+        $dictionaryItem->populate(DictionaryItem::prepare($property));
+        $dictionaryItem->ensureAssembled();
+
+        $this->findNestedItem($dictionaryItem, '0')->getElement('var')->setValue('primary.example.com');
+
+        $result = $dictionaryItem->getItem();
+
+        $this->assertSame(['primary.example.com', ['', '']], $result['value']);
+    }
+
     public function testMergeChildValuesAttachesMatchingValueByKeyName(): void
     {
         $propertyItems = [
@@ -587,6 +782,62 @@ class DictionaryItemTest extends BaseTestCase
                 'auth_password' => 's3cr3t-auth-pass',
             ],
         ]);
+        $dictionaryItem->ensureAssembled();
+
+        return $dictionaryItem;
+    }
+
+    /**
+     * Build a fixed-array DictionaryItem ("disk_mirrors") with 3 string slots
+     *
+     * With no $localValue it is purely inherited. With $localValue given it already
+     * has its own local override, a sparse array fills only some of its slots.
+     */
+    private function buildDiskMirrorsDictionaryItem(?array $localValue = null): DictionaryItem
+    {
+        $db = $this->getDb();
+        $parentUuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'disk_mirrors';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Disk Mirrors',
+        ], $db)->store();
+
+        foreach (['0', '1', '2'] as $position) {
+            DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => $position,
+                'parent_uuid' => $parentUuidBytes,
+                'value_type' => 'string',
+            ], $db)->store();
+        }
+
+        $property = [
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-array',
+            'label' => 'Disk Mirrors',
+        ];
+
+        if ($localValue !== null) {
+            $property['value'] = $localValue;
+        } else {
+            $property['inherited'] = [
+                '0' => 'mirror1.example.com',
+                '1' => 'mirror2.example.com',
+                '2' => 'mirror3.example.com',
+            ];
+            $property['inherited_from'] = 'storage-template';
+        }
+
+        $preparedValues = DictionaryItem::prepare($property);
+
+        $dictionaryItem = new DictionaryItem('0', $property);
+        $dictionaryItem->populate($preparedValues);
         $dictionaryItem->ensureAssembled();
 
         return $dictionaryItem;
