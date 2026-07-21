@@ -45,6 +45,9 @@ class CustomVariablesForm extends CompatForm
     /** @var array UUIDs of custom variables that have been added */
     private array $addedVarUuids = [];
 
+    /** @var array UUIDs of custom variables that have been marked required */
+    private array $requiredVarUuids = [];
+
     public function __construct(
         public readonly IcingaObject $object,
         protected array $objectProperties = []
@@ -76,12 +79,39 @@ class CustomVariablesForm extends CompatForm
         return $this;
     }
 
+    /**
+     * Set the custom variable Uuid strings that were marked required this session
+     *
+     * @param array $uuids
+     *
+     * @return $this
+     */
+    public function setRequiredVarUuids(array $uuids): static
+    {
+        $this->requiredVarUuids = $uuids;
+
+        return $this;
+    }
+
     protected function assemble(): void
     {
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
+
+        $properties = $this->objectProperties;
+        if ($this->object->isTemplate()) {
+            // Templates define the schema, they don't fill it in, so required never applies here.
+            // required_current keeps the real flag around so the row can still show it as a toggle.
+            foreach ($properties as &$property) {
+                $property['required_current'] = $property['required'] ?? false;
+                $property['required'] = false;
+            }
+
+            unset($property);
+        }
+
         $dictionary = (new Dictionary(
             'properties',
-            $this->objectProperties,
+            $properties,
             ['class' => 'no-border']
         ))->setAllowItemRemoval($this->object->isTemplate());
 
@@ -107,6 +137,22 @@ class CustomVariablesForm extends CompatForm
         $this->registerElement($addedUuidsElement);
         $addedUuidsContainer->addHtml($addedUuidsElement);
 
+        $requiredUuidsContainer = new HtmlElement(
+            'div',
+            Attributes::create(['id' => 'required-var-uuids', 'class' => 'required-var-uuids', 'tabindex' => -1])
+        );
+
+        $requiredUuidsElement = $this->createElement(
+            'hidden',
+            'requiredVarUuids',
+            [
+                'value' => implode(',', $this->requiredVarUuids)
+            ]
+        );
+
+        $this->registerElement($requiredUuidsElement);
+        $requiredUuidsContainer->addHtml($requiredUuidsElement);
+
         $this->addElement($this->duplicateSubmitButton($saveButton));
         $this->addElement($dictionary);
         if ($this->hasBeenSent()) {
@@ -114,6 +160,7 @@ class CustomVariablesForm extends CompatForm
         }
 
         $this->addHtml($addedUuidsContainer);
+        $this->addHtml($requiredUuidsContainer);
         $this->registerElement($saveButton);
 
         $removedItems = $dictionary->getItemsToRemove();
@@ -258,6 +305,12 @@ class CustomVariablesForm extends CompatForm
         /** @var Dictionary $dictionary */
         $dictionary = $this->getElement('properties');
 
+        if ($this->object->isTemplate()) {
+            // Only reachable from a template's own tab, which never enforces required.
+            $propertyData['required_current'] = $propertyData['required'] ?? false;
+            $propertyData['required'] = false;
+        }
+
         if ($propertyData['allow_removal']) {
             $removeButton = $dictionary->createElement('submitButton', 'remove_' . $index, [
                 'label' => 'Remove Item',
@@ -343,6 +396,26 @@ class CustomVariablesForm extends CompatForm
     }
 
     /**
+     * Assert that the required flag of a property attachment may be changed on $this->object
+     *
+     * The required toggle is only ever rendered for a template's own directly
+     * attached properties, this is a defensive backstop for that same rule.
+     *
+     * @return void
+     *
+     * @throws LogicException
+     */
+    private function assertCanEditRequiredFlag(): void
+    {
+        if (! $this->object->isTemplate()) {
+            throw new LogicException(sprintf(
+                'The required flag can only be changed on the template it was set on, got %s',
+                $this->object->getObjectName()
+            ));
+        }
+    }
+
+    /**
      * Whether the given value should be treated as unset
      *
      * @param mixed $value
@@ -382,6 +455,7 @@ class CustomVariablesForm extends CompatForm
         /** @var Dictionary $propertiesElement */
         $propertiesElement = $this->getElement('properties');
         $values = $propertiesElement->getDictionary();
+        $requiredFlags = $propertiesElement->getRequiredFlags();
         $itemsToRemove = $propertiesElement->getItemsToRemove();
         $type = $this->object->getShortTableName();
         $db = $this->object->getDb();
@@ -433,9 +507,29 @@ class CustomVariablesForm extends CompatForm
                     "icinga_$type" . '_property',
                     [
                         $type . '_uuid' => DbUtil::quoteBinaryCompat($this->object->uuid, $db),
-                        'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $db)
+                        'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $db),
+                        'required' => ($requiredFlags[$key] ?? ($property['required'] ?? false)) ? 'y' : 'n'
                     ]
                 );
+            } elseif (
+                array_key_exists($key, $requiredFlags)
+                && $requiredFlags[$key] !== (bool) ($property['required'] ?? false)
+            ) {
+                $this->assertCanEditRequiredFlag();
+                $objectWhere = $db->quoteInto(
+                    $type . '_uuid = ?',
+                    DbUtil::quoteBinaryCompat($this->object->uuid, $db)
+                );
+                $propertyWhere = $db->quoteInto(
+                    'property_uuid = ?',
+                    DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $db)
+                );
+                $db->update(
+                    "icinga_$type" . '_property',
+                    ['required' => $requiredFlags[$key] ? 'y' : 'n'],
+                    $objectWhere . ' AND ' . $propertyWhere
+                );
+                $this->varsHasBeenModified = true;
             }
 
             if (! $hasSubmittedValue) {

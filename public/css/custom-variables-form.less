@@ -11,7 +11,7 @@
     border-color: transparent;
   }
 
-  .added-var-uuids:focus {
+  .added-var-uuids:focus, .required-var-uuids:focus {
     outline: none;
   }
 
@@ -76,6 +76,11 @@
   .buttons {
     display: flex;
     justify-content: space-between;
+  }
+
+  .control-group:has(.item-required-checkbox) {
+    justify-content: end;
+    margin: 1em 0.5em 0 0;
   }
 
   // TODO: Use this in JS to position the footer at the bottom of the page

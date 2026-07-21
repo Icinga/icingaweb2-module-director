@@ -266,4 +266,29 @@ class Dictionary extends FieldsetElement
 
         return $items;
     }
+
+    /**
+     * Get the submitted required flags, keyed by property name
+     *
+     * Only carries an entry for items that actually render the required toggle,
+     * i.e. properties directly attached to the object being edited.
+     *
+     * @return bool[]
+     */
+    public function getRequiredFlags(): array
+    {
+        $flags = [];
+
+        /** @var DictionaryItem $element */
+        foreach ($this->ensureAssembled()->getElements() as $element) {
+            if ($element instanceof DictionaryItem) {
+                $item = $element->ensureAssembled()->getItem();
+                if (isset($item['name']) && array_key_exists('required', $item)) {
+                    $flags[$item['name']] = $item['required'];
+                }
+            }
+        }
+
+        return $flags;
+    }
 }

@@ -38,6 +38,16 @@ class ObjectCustomvarForm extends CompatForm
         return '';
     }
 
+    /**
+     * Whether the "Required" checkbox was ticked
+     *
+     * @return bool
+     */
+    public function isRequired(): bool
+    {
+        return $this->getValue('required') === 'y';
+    }
+
     protected function assemble(): void
     {
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
@@ -58,6 +68,13 @@ class ObjectCustomvarForm extends CompatForm
         );
 
         $this->addElement($propertyElement);
+
+        $this->addElement('checkbox', 'required', [
+            'label'       => $this->translate('Required'),
+            'description' => $this->translate(
+                'Whether objects using this template must provide a value for this variable'
+            )
+        ]);
 
         $this->addElement('submit', 'submit', [
             'label' => $this->translate('Add')

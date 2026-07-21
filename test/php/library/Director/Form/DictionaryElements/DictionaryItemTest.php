@@ -434,6 +434,238 @@ class DictionaryItemTest extends BaseTestCase
         $this->assertSame(['primary.example.com', ['', '']], $result['value']);
     }
 
+    public function testRequiredScalarFieldIsMarkedRequiredOnTheElement(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItem(required: true);
+
+        $this->assertTrue($item->getElement('var')->isRequired());
+    }
+
+    public function testNonRequiredScalarFieldIsNotMarkedRequired(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItem(required: false);
+
+        $this->assertFalse($item->getElement('var')->isRequired());
+    }
+
+    public function testRequiredScalarFieldFailsValidationWhenLeftBlank(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItem(required: true);
+        $item->getElement('var')->setValue('');
+
+        $this->assertFalse($item->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredScalarFieldPassesValidationWhenFilled(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItem(required: true);
+        $item->getElement('var')->setValue('production');
+
+        $this->assertTrue($item->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredFixedDictionaryFailsValidationWhenEveryChildIsBlank(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // The nested Dictionary always carries a value thanks to its own hidden
+        // bookkeeping fields (item-count, items_removed...), so this only proves
+        // anything if the required check looks past those and into the real children.
+        $item = $this->buildRequiredRegionSettingsDictionaryItem();
+        $item->ensureAssembled();
+
+        $this->assertFalse($item->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredFixedDictionaryPassesValidationWhenOneChildIsFilled(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildRequiredRegionSettingsDictionaryItem();
+        $item->ensureAssembled();
+        $this->findNestedItem($item, 'region')->getElement('var')->setValue('us-east');
+
+        $this->assertTrue($item->getElement('var')->validate()->isValid());
+    }
+
+    public function testRequiredToggleIsRenderedNextToTheRemoveButton(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItemWithRemoveButton(requiredCurrent: true);
+
+        $this->assertTrue($item->hasElement('item_required'));
+    }
+
+    public function testRequiredToggleIsSeededFromTheStoredRequiredFlag(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItemWithRemoveButton(requiredCurrent: true);
+
+        $this->assertSame('y', $item->getElement('item_required')->getValue());
+    }
+
+    public function testRequiredToggleIsNotRenderedWithoutARemoveButton(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // No remove button, e.g. rendering for a non-template object or an inherited row.
+        $item = $this->buildScalarDictionaryItem(required: false);
+
+        $this->assertFalse($item->hasElement('item_required'));
+    }
+
+    public function testGetItemReportsTheToggledRequiredFlag(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItemWithRemoveButton(requiredCurrent: true);
+        $item->getElement('item_required')->setValue('n');
+
+        $this->assertFalse($item->getItem()['required']);
+    }
+
+    public function testGetItemOmitsRequiredFlagWhenThereIsNoToggle(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $item = $this->buildScalarDictionaryItem(required: false);
+
+        $this->assertArrayNotHasKey('required', $item->getItem());
+    }
+
+    /**
+     * Build a required or optional 'environment' string DictionaryItem, backed by a
+     * real director_property row with no children, so assemble()'s unconditional
+     * fetchChildrenItems() call has something to query against.
+     */
+    private function buildScalarDictionaryItem(bool $required): DictionaryItem
+    {
+        $db = $this->getDb();
+        $uuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'environment';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $uuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'string',
+            'label' => 'Environment',
+        ], $db)->store();
+
+        $item = new DictionaryItem('0', [
+            'uuid' => $uuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'string',
+            'label' => 'Environment',
+            'required' => $required,
+        ]);
+        $item->ensureAssembled();
+
+        return $item;
+    }
+
+    /**
+     * Same as buildScalarDictionaryItem(), but with a remove button set beforehand, the
+     * same way Dictionary::assemble() wires one up for a directly-attached property on
+     * a template's own tab. That's what makes the required toggle appear.
+     */
+    private function buildScalarDictionaryItemWithRemoveButton(bool $requiredCurrent): DictionaryItem
+    {
+        $db = $this->getDb();
+        $uuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'environment';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $uuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'string',
+            'label' => 'Environment',
+        ], $db)->store();
+
+        $item = new DictionaryItem('0', [
+            'uuid' => $uuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'string',
+            'label' => 'Environment',
+            'required_current' => $requiredCurrent,
+        ]);
+
+        $removeButton = $item->createElement('submitButton', 'remove_0', ['label' => 'Remove Item']);
+        $item->setRemoveButton($removeButton);
+        $item->ensureAssembled();
+
+        return $item;
+    }
+
+    /**
+     * Build a required fixed-dictionary DictionaryItem ("region_settings") with two
+     * string children ("region", "zone"), neither of them populated.
+     */
+    private function buildRequiredRegionSettingsDictionaryItem(): DictionaryItem
+    {
+        $db = $this->getDb();
+        $parentUuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'region_settings';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-dictionary',
+            'label' => 'Region Settings',
+        ], $db)->store();
+
+        foreach (['region', 'zone'] as $childKeyName) {
+            DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => $childKeyName,
+                'parent_uuid' => $parentUuidBytes,
+                'value_type' => 'string',
+            ], $db)->store();
+        }
+
+        return new DictionaryItem('0', [
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'fixed-dictionary',
+            'label' => 'Region Settings',
+            'required' => true,
+        ]);
+    }
+
     public function testMergeChildValuesAttachesMatchingValueByKeyName(): void
     {
         $propertyItems = [

@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Forms\DictionaryElements;
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\Validator\DatalistEntryValidator;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
@@ -13,6 +14,7 @@ use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\HtmlElement;
+use ipl\Validator\CallbackValidator;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
 use PDO;
@@ -105,6 +107,11 @@ class DictionaryItem extends FieldsetElement
 
         if ($this->removeButton !== null) {
             $this->addAttributes(['class' => ['removable']]);
+            $this->addElement('checkbox', 'item_required', [
+                'label' => $this->translate('Required'),
+                'class' => 'item-required-checkbox',
+                'value' => ($this->fields['required_current'] ?? false) ? 'y' : 'n'
+            ]);
             $this->addHtml(new HtmlElement(
                 'div',
                 null,
@@ -272,6 +279,42 @@ class DictionaryItem extends FieldsetElement
                 ]
             );
         }
+
+        if ($this->fields['required'] ?? false) {
+            $this->markValueRequired($this->getElement($valElementName));
+        }
+    }
+
+    /**
+     * Mark the given value element required
+     *
+     * A Dictionary/NestedDictionary always has a value thanks to its own hidden
+     * bookkeeping fields, so a plain setRequired() would never trigger for one.
+     * Its real content is checked separately, through a validator.
+     *
+     * @param FormElement $element
+     *
+     * @return void
+     */
+    private function markValueRequired(FormElement $element): void
+    {
+        $element->setRequired(true);
+
+        if (! ($element instanceof Dictionary || $element instanceof NestedDictionary)) {
+            return;
+        }
+
+        $element->addValidators([
+            new CallbackValidator(function ($value, CallbackValidator $validator) use ($element) {
+                if (! CustomVariablesForm::isValueUnset(CustomVariablesForm::filterEmpty($element->getDictionary()))) {
+                    return true;
+                }
+
+                $validator->addMessage($this->translate('This field is required.'));
+
+                return false;
+            })
+        ]);
     }
 
     public function populate($values)
@@ -611,6 +654,10 @@ class DictionaryItem extends FieldsetElement
         $markForRemovalElement = 'delete-' . $this->getName();
         if ($this->hasElement($markForRemovalElement)) {
             $values['delete'] = $this->getElement($markForRemovalElement)->getValue();
+        }
+
+        if ($this->hasElement('item_required')) {
+            $values['required'] = $this->getElement('item_required')->getValue() === 'y';
         }
 
         return $values;

@@ -352,6 +352,7 @@ abstract class ObjectController extends ActionController
         $this->view->title = sprintf($this->translate('Add Custom Variable: %s'), $this->object->getObjectName());
 
         $addedVarUuids = $this->params->getValues('addedVarUuids');
+        $requiredVarUuids = $this->params->getValues('requiredVarUuids');
         $nextSlotIndex = (int) $this->params->shift('nextSlotIndex');
 
         $form = (new ObjectCustomvarForm($this->db(), $object, $addedVarUuids))
@@ -359,11 +360,16 @@ abstract class ObjectController extends ActionController
             ->on(ObjectCustomvarForm::ON_SUBMIT, function (ObjectCustomvarForm $form) use (
                 $object,
                 $addedVarUuids,
+                $requiredVarUuids,
                 $nextSlotIndex
             ) {
                 $newUuid = $form->getValue('property');
                 if (! in_array($newUuid, $addedVarUuids, true)) {
                     $addedVarUuids[] = $newUuid;
+                }
+
+                if ($form->isRequired() && ! in_array($newUuid, $requiredVarUuids, true)) {
+                    $requiredVarUuids[] = $newUuid;
                 }
 
                 $redirectUrl = Url::fromPath(
@@ -375,6 +381,7 @@ abstract class ObjectController extends ActionController
                     ]
                 );
                 $redirectUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
+                $redirectUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
 
                 $this->redirectNow($redirectUrl);
             })
@@ -422,7 +429,12 @@ abstract class ObjectController extends ActionController
             array_filter(explode(',', $this->getRequest()->getPost('addedVarUuids', '')))
         ));
 
-        $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids);
+        $requiredVarUuids = array_unique(array_merge(
+            $this->params->getValues('requiredVarUuids'),
+            array_filter(explode(',', $this->getRequest()->getPost('requiredVarUuids', '')))
+        ));
+
+        $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids, $requiredVarUuids);
 
         $form
             ->on(
@@ -439,7 +451,9 @@ abstract class ObjectController extends ActionController
                         Notification::success($this->translate('There is nothing to change.'));
                     }
 
-                    $this->redirectNow(Url::fromRequest()->without(['addedVarUuids', 'newVarUuid', 'nextSlotIndex']));
+                    $this->redirectNow(Url::fromRequest()->without(
+                        ['addedVarUuids', 'requiredVarUuids', 'newVarUuid', 'nextSlotIndex']
+                    ));
                 }
             )->on(
                 CustomVariablesForm::ON_REQUEST,
@@ -450,14 +464,23 @@ abstract class ObjectController extends ActionController
                     $object,
                     $newVarUuid,
                     $nextSlotIndex,
-                    $addedVarUuids
+                    $addedVarUuids,
+                    $requiredVarUuids
                 ) {
                     if ($newVarUuid === null) {
                         return;
                     }
 
-                    $this->sendNewVarMultipartUpdate($object, $form, $newVarUuid, $nextSlotIndex, $addedVarUuids);
+                    $this->sendNewVarMultipartUpdate(
+                        $object,
+                        $form,
+                        $newVarUuid,
+                        $nextSlotIndex,
+                        $addedVarUuids,
+                        $requiredVarUuids
+                    );
                     $this->params->remove('addedVarUuids');
+                    $this->params->remove('requiredVarUuids');
                     $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
                 }
             )->handleRequest($this->getServerRequest());
@@ -476,6 +499,7 @@ abstract class ObjectController extends ActionController
                 ['uuid' => $this->getUuidFromUrl(), 'nextSlotIndex' => $slotIndex]
             );
             $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
+            $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
 
             $this->actions()->add(
                 Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
@@ -512,6 +536,7 @@ abstract class ObjectController extends ActionController
      * @param string              $newVarUuid
      * @param int                 $nextSlotIndex
      * @param array               $addedVarUuids
+     * @param array               $requiredVarUuids
      *
      * @return void
      */
@@ -520,7 +545,8 @@ abstract class ObjectController extends ActionController
         CustomVariablesForm $form,
         string $newVarUuid,
         int $nextSlotIndex,
-        array $addedVarUuids
+        array $addedVarUuids,
+        array $requiredVarUuids = []
     ): void {
         $type = $object->getShortTableName();
         $db = $this->db()->getDbAdapter();
@@ -550,6 +576,7 @@ abstract class ObjectController extends ActionController
             'label'          => $row['label'],
             'allow_removal'  => true,
             'new'            => true,
+            'required'       => in_array($newVarUuid, $requiredVarUuids, true),
             $type . '_uuid'  => $object->get('uuid')
         ];
 
@@ -611,6 +638,7 @@ abstract class ObjectController extends ActionController
         );
 
         $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
+        $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
 
         $this->addPart(
             (new ButtonLink(
@@ -622,7 +650,7 @@ abstract class ObjectController extends ActionController
             'add-custom-var-button'
         );
 
-        // Update hidden addedVarUuids inputs so POST form submission carries them
+        // Update hidden addedVarUuids/requiredVarUuids inputs so POST form submission carries them
         $addedUuidsContainer = new HtmlDocument();
         $addedUuidsElement = $form->createElement(
             'hidden',
@@ -634,6 +662,18 @@ abstract class ObjectController extends ActionController
 
         $addedUuidsContainer->addHtml($addedUuidsElement);
         $this->addPart($addedUuidsContainer, 'added-var-uuids');
+
+        $requiredUuidsContainer = new HtmlDocument();
+        $requiredUuidsElement = $form->createElement(
+            'hidden',
+            'requiredVarUuids',
+            [
+                'value' => implode(',', $requiredVarUuids)
+            ]
+        );
+
+        $requiredUuidsContainer->addHtml($requiredUuidsElement);
+        $this->addPart($requiredUuidsContainer, 'required-var-uuids');
     }
 
     /**
@@ -641,14 +681,16 @@ abstract class ObjectController extends ActionController
      *
      * @param IcingaObject    $object
      * @param IcingaHost|null $host
-     * @param string[]        $addedVarUuids UUID strings of properties added this session
+     * @param string[]        $addedVarUuids    UUID strings of properties added this session
+     * @param string[]        $requiredVarUuids UUID strings of properties marked required this session
      *
      * @return ?CustomVariablesForm
      */
     public function prepareCustomPropertiesForm(
         IcingaObject $object,
         ?IcingaHost $host = null,
-        array $addedVarUuids = []
+        array $addedVarUuids = [],
+        array $requiredVarUuids = []
     ): ?CustomVariablesForm {
         $isOverrideVars = $host !== null;
         if ($isOverrideVars) {
@@ -662,10 +704,16 @@ abstract class ObjectController extends ActionController
         $inheritedVars = json_decode(json_encode($object->getInheritedVars()), JSON_OBJECT_AS_ARRAY);
         $origins = $object->getOriginsVars();
 
-        $objectProperties = $this->getObjectCustomProperties($object, $isOverrideVars, $addedVarUuids);
+        $objectProperties = $this->getObjectCustomProperties(
+            $object,
+            $isOverrideVars,
+            $addedVarUuids,
+            $requiredVarUuids
+        );
         $form = (new CustomVariablesForm($object, $objectProperties))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->setAddedVarUuids($addedVarUuids);
+            ->setAddedVarUuids($addedVarUuids)
+            ->setRequiredVarUuids($requiredVarUuids);
         if (empty($objectProperties)) {
             return $form;
         }
@@ -913,14 +961,16 @@ abstract class ObjectController extends ActionController
     /**
      * Get custom properties for the object, including session-added ones.
      *
-     * @param string[] $addedVarUuids UUID strings of properties added this session
+     * @param string[] $addedVarUuids    UUID strings of properties added this session
+     * @param string[] $requiredVarUuids UUID strings of properties marked required this session
      *
      * @return array
      */
     protected function getObjectCustomProperties(
         IcingaObject $object,
         bool $isOverrideVars = false,
-        array $addedVarUuids = []
+        array $addedVarUuids = [],
+        array $requiredVarUuids = []
     ): array {
         if ($object->uuid === null) {
             return [];
@@ -950,6 +1000,7 @@ abstract class ObjectController extends ActionController
                     $type . '_uuid'     => 'iop.' . $type . '_uuid',
                     'value_type'        => 'dp.value_type',
                     'label'             => 'dp.label',
+                    'required'          => 'iop.required',
                     'children'          => 'COUNT(cdp.uuid)'
                 ]
             )
@@ -964,7 +1015,7 @@ abstract class ObjectController extends ActionController
                 []
             )
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', $type . '_uuid'])
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', $type . '_uuid', 'iop.required'])
             ->order($this->valueTypeOrderExpr($db, [
                 'string',
                 'number',
@@ -995,6 +1046,7 @@ abstract class ObjectController extends ActionController
             $row['uuid'] = DbUtil::binaryResult($row['uuid']);
             $row[$type . '_uuid'] = DbUtil::binaryResult($row[$type . '_uuid']);
             $row['allow_removal'] = $objectUuid === $row[$type . '_uuid'];
+            $row['required'] = ($row['required'] ?? 'n') === 'y';
 
             if (isset($vars[$row['key_name']])) {
                 $row['value'] = $vars[$row['key_name']];
@@ -1042,6 +1094,8 @@ abstract class ObjectController extends ActionController
                 if (! isset($result[$row['key_name']])) {
                     $row['new'] = true;
                 }
+
+                $row['required'] = in_array(Uuid::fromBytes($row['uuid'])->toString(), $requiredVarUuids, true);
 
                 if (isset($vars[$row['key_name']])) {
                     $row['value'] = $vars[$row['key_name']];
