@@ -566,7 +566,8 @@ class CustomVarRenderer extends CustomVarRendererHook
     }
 
     public function renderCustomVarValue(
-        string $key, $value,
+        string $key,
+        $value,
         ?string $parentKey = null,
         ?string $grandparentKey = null
     ): mixed {
