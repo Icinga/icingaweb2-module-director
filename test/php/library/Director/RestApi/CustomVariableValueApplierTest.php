@@ -249,6 +249,45 @@ class CustomVariableValueApplierTest extends BaseTestCase
         );
     }
 
+    public function testVariablesPutPreservesRequiredFlagOnReattachment(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createTemplate($db);
+        $this->attachProperties($host, $db, [self::ENV_KEY]);
+
+        $this->assertEquals(
+            'y',
+            $this->fetchRequiredFlag($host, $db, self::ENV_KEY),
+            'attachProperties() must have set up the required flag this test relies on'
+        );
+
+        // A PUT on the "variables" endpoint wipes and recreates every direct property
+        // attachment; a still-present property must not lose its required flag.
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => 'production', self::MYSQL_KEY => (object) ['host' => 'db-primary']],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            'y',
+            $this->fetchRequiredFlag($host, $db, self::ENV_KEY),
+            'A PUT that replaces values must not clear the required flag of a still-present property'
+        );
+        $this->assertEquals(
+            'n',
+            $this->fetchRequiredFlag($host, $db, self::MYSQL_KEY),
+            'A property that was never required must not become required as a side effect'
+        );
+    }
+
     private function createTemplate($db): IcingaHost
     {
         if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
@@ -264,7 +303,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
         return $host;
     }
 
-    private function attachProperties(IcingaHost $host, $db): void
+    private function attachProperties(IcingaHost $host, $db, array $requiredKeys = []): void
     {
         $dba = $db->getDbAdapter();
 
@@ -284,12 +323,29 @@ class CustomVariableValueApplierTest extends BaseTestCase
         ], $db);
         $dictProperty->store();
 
-        foreach ([$stringProperty, $dictProperty] as $property) {
+        foreach ([self::ENV_KEY => $stringProperty, self::MYSQL_KEY => $dictProperty] as $key => $property) {
             $dba->insert('icinga_host_property', [
                 'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
                 'host_uuid'     => DbUtil::quoteBinaryCompat($host->get('uuid'), $dba),
+                'required'      => in_array($key, $requiredKeys, true) ? 'y' : 'n',
             ]);
         }
+    }
+
+    private function fetchRequiredFlag(IcingaHost $host, $db, string $key): string
+    {
+        $dba = $db->getDbAdapter();
+
+        return $dba->fetchOne(
+            $dba->select()
+                ->from(['iop' => 'icinga_host_property'], ['required'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = iop.property_uuid', [])
+                ->where('dp.key_name = ?', $key)
+                ->where(
+                    'iop.host_uuid = ?',
+                    DbUtil::quoteBinaryCompat($host->get('uuid'), $dba)
+                )
+        );
     }
 
     protected function tearDown(): void

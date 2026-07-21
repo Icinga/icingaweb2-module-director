@@ -57,12 +57,19 @@ class CustomVariableValueApplier
             $dbAdapter->beginTransaction();
         }
 
+        $preservedRequiredFlags = [];
+
         try {
             if ($wipeValuesInDb) {
                 $objectWhere = $dbAdapter->quoteInto("{$type}_id = ?", $object->get('id'));
                 $dbAdapter->delete('icinga_' . $type . '_var', $objectWhere);
 
                 if ($wipePropertyAttachmentsInDb) {
+                    // The attachment row is about to be deleted and re-created further down,
+                    // remember its required flag so that a values-only PUT cannot silently
+                    // turn a required property into an optional one.
+                    $preservedRequiredFlags = $this->getDirectPropertyRequiredFlags($object);
+
                     $uuidExpr = DbUtil::quoteBinaryCompat(
                         DbUtil::binaryResult($object->get('uuid')),
                         $dbAdapter
@@ -90,7 +97,14 @@ class CustomVariableValueApplier
             $customProperties = $this->getObjectCustomProperties($object);
 
             foreach ($request->overRiddenCustomVars as $key => $value) {
-                $this->applySingleVar($request, $objectVars, $customProperties, $key, $value);
+                $this->applySingleVar(
+                    $request,
+                    $objectVars,
+                    $customProperties,
+                    $key,
+                    $value,
+                    $preservedRequiredFlags
+                );
             }
 
             $objectVars->storeToDb($object);
@@ -120,7 +134,8 @@ class CustomVariableValueApplier
         CustomVariables $objectVars,
         array $customProperties,
         string $key,
-        mixed $value
+        mixed $value,
+        array $preservedRequiredFlags = []
     ): void {
         $object = $request->object;
         $objectVars->set($key, $value);
@@ -195,10 +210,42 @@ class CustomVariableValueApplier
         $type = $object->getShortTableName();
         $dbAdapter->insert('icinga_' . $type . '_property', [
             'property_uuid' => DbUtil::quoteBinaryCompat($customPropertyUuid, $dbAdapter),
-            $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter)
+            $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
+            'required' => $preservedRequiredFlags[$key] ?? 'n'
         ]);
 
         $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
+    }
+
+    /**
+     * Get the required flags of the properties currently attached directly
+     * to the given object, keyed by the property's key_name
+     *
+     * @return array<string, string>
+     */
+    private function getDirectPropertyRequiredFlags(IcingaObject $object): array
+    {
+        if ($object->get('uuid') === null) {
+            return [];
+        }
+
+        $type = $object->getShortTableName();
+        $dbAdapter = $this->db->getDbAdapter();
+        $uuidExpr = DbUtil::quoteBinaryCompat(
+            DbUtil::binaryResult($object->get('uuid')),
+            $dbAdapter
+        );
+        $query = $dbAdapter->select()
+            ->from(['iop' => 'icinga_' . $type . '_property'], ['required' => 'iop.required'])
+            ->join(['dp' => 'director_property'], 'dp.uuid = iop.property_uuid', ['key_name' => 'dp.key_name'])
+            ->where($dbAdapter->quoteInto("iop.{$type}_uuid = ?", $uuidExpr));
+
+        $result = [];
+        foreach ($dbAdapter->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+            $result[$row['key_name']] = $row['required'];
+        }
+
+        return $result;
     }
 
     /**
