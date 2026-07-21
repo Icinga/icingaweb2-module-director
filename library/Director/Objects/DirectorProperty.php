@@ -436,19 +436,33 @@ class DirectorProperty extends DbObject
 
     /**
      * @throws InvalidArgumentException if a nested property is being stored with a value_type
-     *                                   that may only be used at the top level
+     *                                  that may only be used at the top level, or a 'sensitive'
+     *                                  item type is used under a dynamic-array
      */
     protected function beforeStore(): void
     {
-        if (
-            $this->get('parent_uuid') !== null
-            && in_array($this->get('value_type'), self::NON_NESTABLE_TYPES, true)
-        ) {
+        $parentUuid = $this->get('parent_uuid');
+        if ($parentUuid === null) {
+            return;
+        }
+
+        $valueType = $this->get('value_type');
+
+        if (in_array($valueType, self::NON_NESTABLE_TYPES, true)) {
             throw new InvalidArgumentException(sprintf(
                 "'%s' can only be used as a top-level custom variable; it cannot be nested inside"
                 . " a fixed-array, fixed-dictionary, dynamic-array or another dynamic-dictionary",
-                $this->get('value_type')
+                $valueType
             ));
+        }
+
+        // A dynamic-array shows every entry in the clear, so a sensitive item here
+        // could never actually be hidden.
+        if ($valueType === 'sensitive') {
+            $parent = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $this->connection);
+            if ($parent !== null && $parent->get('value_type') === 'dynamic-array') {
+                throw new InvalidArgumentException("'sensitive' cannot be used as the item type of a dynamic-array");
+            }
         }
     }
 

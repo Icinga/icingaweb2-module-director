@@ -173,6 +173,29 @@ class DirectorPropertyTest extends BaseTestCase
         $child->store();
     }
 
+    public function testSensitiveCannotBeNestedInsideADynamicArray(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // A dynamic-array renders every entry in the clear, so a sensitive item
+        // would never actually stay hidden.
+        $db = $this->getDb();
+        $parent = $this->makeProperty('community_strings', 'dynamic-array', 'Community Strings', $db);
+        $parent->store();
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'item',
+            'parent_uuid' => $parent->get('uuid'),
+            'value_type'  => 'sensitive',
+        ], $db);
+
+        $this->expectException(InvalidArgumentException::class);
+        $child->store();
+    }
+
     public function testDatalistStrictAssociatesDatalist(): void
     {
         if ($this->skipForMissingDb()) {
