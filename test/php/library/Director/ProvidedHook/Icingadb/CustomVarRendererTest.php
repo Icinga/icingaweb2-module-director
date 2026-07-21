@@ -3,6 +3,7 @@
 namespace Tests\Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Icinga\Application\Config;
+use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -115,6 +116,35 @@ class CustomVarRendererTest extends BaseTestCase
             'A non-sensitive dictionary child must not be masked due to a same-named '
             . 'sensitive child in a different dictionary'
         );
+    }
+
+    public function testAppliedForArrayUsesItsValuesAsNameSuffix(): void
+    {
+        $renderer = new CustomVarRenderer();
+        $method = new ReflectionMethod($renderer, 'isGeneratedApplyForServiceName');
+        $method->setAccessible(true);
+
+        $hostVar = CustomVariable::create('datacenters', ['fra', 'ams']);
+
+        $this->assertTrue($method->invoke($renderer, $hostVar, 'vhost-', 'vhost-fra'));
+        $this->assertFalse($method->invoke($renderer, $hostVar, 'vhost-', 'vhost-lhr'));
+    }
+
+    public function testAppliedForDictionaryUsesItsKeysNotValuesAsNameSuffix(): void
+    {
+        $renderer = new CustomVarRenderer();
+        $method = new ReflectionMethod($renderer, 'isGeneratedApplyForServiceName');
+        $method->setAccessible(true);
+
+        // Each value is itself an array, which broke the old by-value lookup since
+        // it tried to concatenate an array into a string key.
+        $hostVar = CustomVariable::create('vhosts', [
+            'shop.example.com' => ['port' => 443, 'tls' => true],
+            'blog.example.com' => ['port' => 80, 'tls' => false],
+        ]);
+
+        $this->assertTrue($method->invoke($renderer, $hostVar, 'vhost-', 'vhost-shop.example.com'));
+        $this->assertFalse($method->invoke($renderer, $hostVar, 'vhost-', 'vhost-status.example.com'));
     }
 
     protected function tearDown(): void
