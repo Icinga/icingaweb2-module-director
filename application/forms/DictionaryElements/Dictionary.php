@@ -237,7 +237,7 @@ class Dictionary extends FieldsetElement
     public function allChildrenUnchanged(): bool
     {
         foreach ($this->ensureAssembled()->getElements() as $element) {
-            if ($element instanceof DictionaryItem && ! $element->isUnchanged()) {
+            if ($element instanceof DictionaryItem && ! $element->ensureAssembled()->isUnchanged()) {
                 return false;
             }
         }
