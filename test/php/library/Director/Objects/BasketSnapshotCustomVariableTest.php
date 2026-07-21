@@ -201,6 +201,49 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         );
     }
 
+    public function testRestoreRemovesChildItemsNotInSnapshot(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        foreach (['mount_point', 'warn'] as $field) {
+            DirectorProperty::create([
+                'uuid'        => Uuid::uuid4()->getBytes(),
+                'key_name'    => $field,
+                'parent_uuid' => $property->get('uuid'),
+                'value_type'  => 'string',
+            ], $db)->store();
+        }
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+
+        // A field added on the target after the snapshot was taken must be removed
+        // again on restore, not left sitting alongside the snapshot's own children.
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'crit',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        BasketSnapshot::restoreJson($json, $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $childKeys = array_map(fn($c) => $c->get('key_name'), $restored->fetchItemsFromDb());
+        sort($childKeys);
+
+        $this->assertEquals(
+            ['mount_point', 'warn'],
+            $childKeys,
+            'A child that only exists on the target, not in the snapshot, must be removed on restore'
+        );
+    }
+
     public function testRestoreIsIdempotent(): void
     {
         if ($this->skipForMissingDb()) {

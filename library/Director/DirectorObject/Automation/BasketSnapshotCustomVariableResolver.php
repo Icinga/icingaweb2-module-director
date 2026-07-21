@@ -325,13 +325,27 @@ class BasketSnapshotCustomVariableResolver
     private function restoreCustomPropertyItems(DirectorProperty $property): bool
     {
         $modified = false;
+        $keep = [];
+
         foreach ($property->fetchItemsFromDb() as $item) {
+            $itemUuid = $item->get('uuid');
+            if ($itemUuid !== null) {
+                $keep[$itemUuid] = true;
+            }
+
             if ($item->hasBeenModified()) {
                 $item->store();
                 $modified = true;
             }
 
             if ($this->restoreCustomPropertyItems($item)) {
+                $modified = true;
+            }
+        }
+
+        foreach ($property->fetchExistingChildrenFromDb() as $existingChild) {
+            if (! isset($keep[$existingChild->get('uuid')])) {
+                $existingChild->delete();
                 $modified = true;
             }
         }

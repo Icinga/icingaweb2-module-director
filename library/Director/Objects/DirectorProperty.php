@@ -238,6 +238,31 @@ class DirectorProperty extends DbObject
         return $this->items;
     }
 
+    /**
+     * Re-query this property's children directly from the database, bypassing the
+     * $items cache fetchItemsFromDb() may already hold with just a snapshot's own
+     * children, as a basket import leaves it
+     *
+     * @return DirectorProperty[]
+     */
+    public function fetchExistingChildrenFromDb(): array
+    {
+        $uuid = $this->get('uuid');
+        if ($uuid === null) {
+            return [];
+        }
+
+        $uuid = Uuid::fromBytes($uuid);
+        $query = $this->db->select()
+            ->from('director_property')
+            ->where(
+                'parent_uuid = ?',
+                Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $this->db)
+            );
+
+        return DirectorProperty::loadAll($this->connection, $query);
+    }
+
     public function getDatalist(): ?DirectorDatalist
     {
         if ($this->datalist) {
