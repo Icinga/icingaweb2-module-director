@@ -683,10 +683,11 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         );
 
         $this->assertEquals(
-            ['hostname' => 'sw01-mgmt', 'management_interface' => (object) []],
+            ['hostname' => 'sw01-mgmt'],
             json_decode($updatedValue, true),
             'vlan_id must be removed from the stored value even though property_uuid was'
-            . ' never linked on that row'
+            . ' never linked on that row, and management_interface must collapse away'
+            . ' since vlan_id was its only key'
         );
     }
 
