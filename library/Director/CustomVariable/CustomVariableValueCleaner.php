@@ -52,7 +52,7 @@ class CustomVariableValueCleaner
      *
      * @return array{0: array<string, mixed>, 1: string[]}
      */
-    private function resolveRootProperty(array $property, array $parent): array
+    public function resolveRootProperty(array $property, array $parent): array
     {
         $path = [$property['key_name']];
         $current = $parent;

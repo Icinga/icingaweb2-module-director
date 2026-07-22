@@ -738,17 +738,19 @@ class CustomVariableForm extends CompatForm
     private function updateUsedCustomVarNames(string $storedKeyName, mixed $keyName): void
     {
         $db = $this->db->getDbAdapter();
-        $parent = [];
+        $cleaner = new CustomVariableValueCleaner($this->db);
+
         if (! $this->parentUuid) {
-            $rootUuid = $this->uuid;
-        } elseif ($this->isNestedField) {
-            $parent = $this->fetchProperty($this->parentUuid);
-            $rootUuid = Uuid::fromBytes(Db\DbUtil::binaryResult($parent['parent_uuid']));
+            $root = $this->fetchProperty($this->uuid);
+            $oldPath = null;
+            $newPath = null;
         } else {
-            $rootUuid = $this->parentUuid;
+            $parent = $this->fetchProperty($this->parentUuid);
+            [$root, $oldPath] = $cleaner->resolveRootProperty(['key_name' => $storedKeyName], $parent);
+            $newPath = array_slice($oldPath, 0, -1);
+            $newPath[] = $keyName;
         }
 
-        $root = $this->fetchProperty($rootUuid);
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
 
         foreach ($objectTypes as $objectType) {
@@ -785,18 +787,11 @@ class CustomVariableForm extends CompatForm
             foreach ($objectCustomVars as $objectCustomVar) {
                 $varValue = json_decode($objectCustomVar['varvalue'], true);
                 if ($root['value_type'] !== 'dynamic-dictionary') {
-                    $this->updateObjectCustomVars([$storedKeyName], [$keyName], $varValue);
+                    $this->updateObjectCustomVars($oldPath, $newPath, $varValue);
                 } else {
                     foreach ($varValue as $key => $value) {
-                        if (! $this->isNestedField) {
-                            $this->updateObjectCustomVars([$storedKeyName], [$keyName], $value);
-                        } else {
-                            $parenKey = $parent['key_name'];
-                            $this->updateObjectCustomVars(
-                                [$parenKey, $storedKeyName],
-                                [$parenKey, $keyName],
-                                $value
-                            );
+                        if (is_array($value)) {
+                            $this->updateObjectCustomVars($oldPath, $newPath, $value);
                         }
 
                         $varValue[$key] = $value;

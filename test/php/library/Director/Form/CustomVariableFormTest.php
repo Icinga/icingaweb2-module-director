@@ -718,6 +718,148 @@ class CustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testRenamingUsedGrandchildFieldUpdatesNestedPathInHostVar(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // Renaming a grandchild, two levels below the root, must reach the correct nested
+        // path in the stored value rather than looking for the field name at the top level.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___switch05',
+            'object_type' => 'object',
+            'address'     => '192.0.2.64',
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = '___TEST___switch05';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___router_config',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Router Config',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___router_config';
+
+        $interfaceUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $interfaceUuid->getBytes(),
+            'key_name'    => 'wan_interface',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+        ], $db)->store();
+
+        $mtuUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $mtuUuid->getBytes(),
+            'key_name'    => 'mtu',
+            'parent_uuid' => $interfaceUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___router_config',
+            'varvalue'      => json_encode(['wan_interface' => ['mtu' => '1500', 'speed' => '1000']]),
+            'format'        => 'json',
+            'property_uuid' => null,
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $mtuUuid, true, $interfaceUuid);
+        $form->setIsNestedField(true);
+        self::callMethod($form, 'updateUsedCustomVarNames', ['mtu', 'mtu_size']);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___router_config')
+        );
+        $this->assertEquals(
+            ['wan_interface' => ['mtu_size' => '1500', 'speed' => '1000']],
+            json_decode($updatedValue, true),
+            'mtu must be renamed to mtu_size at its nested path even though it is two levels'
+            . ' below the root property'
+        );
+    }
+
+    public function testRenamingUsedGrandchildFieldUpdatesEveryDynamicDictionaryEntry(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___switch06',
+            'object_type' => 'object',
+            'address'     => '192.0.2.65',
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = '___TEST___switch06';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___datacenter_metrics',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Datacenter Metrics',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___datacenter_metrics';
+
+        $cpuUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $cpuUuid->getBytes(),
+            'key_name'    => 'cpu',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+        ], $db)->store();
+
+        $usageUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $usageUuid->getBytes(),
+            'key_name'    => 'usage_pct',
+            'parent_uuid' => $cpuUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___datacenter_metrics',
+            'varvalue'      => json_encode([
+                'dc1' => ['cpu' => ['usage_pct' => '42', 'temp' => '55']],
+                'dc2' => ['cpu' => ['usage_pct' => '10']],
+            ]),
+            'format'        => 'json',
+            'property_uuid' => null,
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $usageUuid, true, $cpuUuid);
+        $form->setIsNestedField(true);
+        self::callMethod($form, 'updateUsedCustomVarNames', ['usage_pct', 'usage_percent']);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___datacenter_metrics')
+        );
+        $this->assertEquals(
+            [
+                'dc1' => ['cpu' => ['usage_percent' => '42', 'temp' => '55']],
+                'dc2' => ['cpu' => ['usage_percent' => '10']],
+            ],
+            json_decode($updatedValue, true),
+            'usage_pct must be renamed to usage_percent inside every datacenter entry, at its'
+            . ' correct nested path under cpu'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -733,14 +875,7 @@ class CustomVariableFormTest extends BaseTestCase
                         ->where('key_name = ?', $keyName)
                 );
                 foreach ($rows as $row) {
-                    $dba->delete(
-                        'director_property',
-                        $dba->quoteInto(
-                            'parent_uuid = ?',
-                            DbUtil::quoteBinaryCompat(DbUtil::binaryResult($row->uuid), $dba)
-                        )
-                    );
-                    $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
+                    $this->deletePropertyTree($dba, DbUtil::binaryResult($row->uuid));
                 }
             }
 
@@ -752,5 +887,35 @@ class CustomVariableFormTest extends BaseTestCase
         }
 
         parent::tearDown();
+    }
+
+    /**
+     * Delete a director_property row along with all of its descendants, however deep the
+     * nesting goes.
+     *
+     * @return void
+     */
+    private function deletePropertyTree($dba, string $uuid): void
+    {
+        $childUuids = array_map(
+            [DbUtil::class, 'binaryResult'],
+            $dba->fetchCol(
+                $dba->select()->from('director_property', ['uuid'])->where(
+                    'parent_uuid = ?',
+                    DbUtil::quoteBinaryCompat($uuid, $dba)
+                )
+            )
+        );
+        foreach ($childUuids as $childUuid) {
+            $this->deletePropertyTree($dba, $childUuid);
+        }
+        $dba->delete(
+            'director_property_datalist',
+            $dba->quoteInto('property_uuid = ?', DbUtil::quoteBinaryCompat($uuid, $dba))
+        );
+        $dba->delete(
+            'director_property',
+            $dba->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($uuid, $dba))
+        );
     }
 }
