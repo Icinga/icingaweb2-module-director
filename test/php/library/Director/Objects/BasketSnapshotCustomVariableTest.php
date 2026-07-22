@@ -244,6 +244,48 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         );
     }
 
+    public function testRestoreStampsPropertyUuidOnVarTable(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        $host->vars()->set(self::PROP_KEY_NAME, (object) ['mount_point' => '/', 'warn' => 80]);
+        $host->store();
+
+        $json = $this->buildSnapshotJson($host, $property, $db);
+
+        $this->wipeTemplateAndProperty($host, $property, $db);
+
+        BasketSnapshot::restoreJson($json, $db);
+
+        $restoredHost = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $restoredProp = DirectorProperty::loadWithUniqueId(
+            Uuid::fromBytes($property->get('uuid')),
+            $db
+        );
+
+        $dba = $db->getDbAdapter();
+        $storedUuid = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_var', ['property_uuid'])
+                ->where(
+                    'host_id = ?',
+                    $restoredHost->get('id')
+                )
+                ->where('varname = ?', self::PROP_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            DbUtil::binaryResult($restoredProp->get('uuid')),
+            DbUtil::binaryResult($storedUuid),
+            'icinga_host_var.property_uuid must be stamped with the restored property uuid'
+        );
+    }
+
     public function testRestoreIsIdempotent(): void
     {
         if ($this->skipForMissingDb()) {

@@ -117,6 +117,7 @@ class BasketSnapshotCustomVariableResolver
             $existingCustomProperties[Uuid::fromBytes($propertyUuid)->toString()] = $mapping;
         }
 
+        $targetProperties = $this->getTargetProperties();
         foreach ($object->customVariables as $property) {
             $propertyUuid = DbUtil::binaryResult($property->property_uuid);
             if (! isset($customPropertyMap[$propertyUuid])) {
@@ -144,7 +145,17 @@ class BasketSnapshotCustomVariableResolver
                     'required' => $property->required ?? 'n',
                 ]);
             }
+
+            if (! isset($targetProperties[$propertyUuid])) {
+                throw new InvalidArgumentException(
+                    'Basket Snapshot contains invalid custom variable reference: ' . $propertyUuid
+                );
+            }
+
+            $new->vars()->registerVarUuid($targetProperties[$propertyUuid]->get('key_name'), Uuid::fromString($uuid));
         }
+
+        $new->vars()->storeToDb($new);
 
         if (! empty($existingCustomProperties)) {
             $existingCustomPropertyUuids = array_map(
