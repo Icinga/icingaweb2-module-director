@@ -180,6 +180,14 @@ class Exporter
 
                 $props['services'] = $services;
             }
+        } elseif ($object instanceof DirectorProperty) {
+            // export() walks the child properties recursively, something exportDbObject()
+            // has no notion of since items aren't a plain DB column.
+            $bespokeExport = $object->export();
+            $props['items'] = $bespokeExport->items;
+            if (isset($bespokeExport->datalist)) {
+                $props['datalist'] = $bespokeExport->datalist;
+            }
         }
     }
 

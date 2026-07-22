@@ -96,6 +96,8 @@ class BasketDiff
         $object = $this->getBasketObject($type, $key);
         $fields = $object->fields ?? null;
         $customVariables = $object->customVariables ?? null;
+        $items = $object->items ?? null;
+        $datalist = $object->datalist ?? null;
         $reExport = $this->exporter->export(
             $this->importer->import(BasketSnapshot::getClassForType($type), $object)
         );
@@ -109,6 +111,21 @@ class BasketDiff
             unset($reExport->customVariables);
         } else {
             $reExport->customVariables = $customVariables;
+        }
+
+        // A CustomVariable's items/datalist must reflect what the snapshot actually recorded,
+        // not the live DB row importer/exporter above just re-read, otherwise a child added
+        // or removed since the snapshot was taken would never show up in the diff.
+        if ($items === null) {
+            unset($reExport->items);
+        } else {
+            $reExport->items = $items;
+        }
+
+        if ($datalist === null) {
+            unset($reExport->datalist);
+        } else {
+            $reExport->datalist = $datalist;
         }
 
         CompareBasketObject::normalize($reExport);
