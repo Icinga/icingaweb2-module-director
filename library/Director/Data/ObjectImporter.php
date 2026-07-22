@@ -93,6 +93,7 @@ class ObjectImporter
         if ($implementation === IcingaServiceSet::class) {
             foreach ($plain->services as $service) {
                 unset($service->fields);
+                unset($service->customVariables);
             }
             // Hint: legacy baskets are carrying service names as object keys, new baskets have arrays
             $plain->services = array_values((array) $plain->services);
