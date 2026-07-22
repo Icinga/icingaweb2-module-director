@@ -595,7 +595,7 @@ class DictionaryItemTest extends BaseTestCase
 
         $item = $this->buildScalarDictionaryItemWithRemoveButton(requiredCurrent: true);
 
-        $this->assertTrue($item->hasElement('item_required'));
+        $this->assertTrue($item->hasElement('item_required_' . $item->getName()));
     }
 
     public function testRequiredToggleIsSeededFromTheStoredRequiredFlag(): void
@@ -606,7 +606,7 @@ class DictionaryItemTest extends BaseTestCase
 
         $item = $this->buildScalarDictionaryItemWithRemoveButton(requiredCurrent: true);
 
-        $this->assertSame('y', $item->getElement('item_required')->getValue());
+        $this->assertSame('y', $item->getElement('item_required_' . $item->getName())->getValue());
     }
 
     public function testRequiredToggleIsNotRenderedWithoutARemoveButton(): void
@@ -618,7 +618,7 @@ class DictionaryItemTest extends BaseTestCase
         // No remove button, e.g. rendering for a non-template object or an inherited row.
         $item = $this->buildScalarDictionaryItem(required: false);
 
-        $this->assertFalse($item->hasElement('item_required'));
+        $this->assertFalse($item->hasElement('item_required_' . $item->getName()));
     }
 
     public function testGetItemReportsTheToggledRequiredFlag(): void
@@ -628,7 +628,7 @@ class DictionaryItemTest extends BaseTestCase
         }
 
         $item = $this->buildScalarDictionaryItemWithRemoveButton(requiredCurrent: true);
-        $item->getElement('item_required')->setValue('n');
+        $item->getElement('item_required_' . $item->getName())->setValue('n');
 
         $this->assertFalse($item->getItem()['required']);
     }

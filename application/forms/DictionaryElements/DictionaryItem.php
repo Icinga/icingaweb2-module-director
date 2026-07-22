@@ -107,7 +107,7 @@ class DictionaryItem extends FieldsetElement
 
         if ($this->removeButton !== null) {
             $this->addAttributes(['class' => ['removable']]);
-            $this->addElement('checkbox', 'item_required', [
+            $this->addElement('checkbox', 'item_required_' . $this->getName(), [
                 'label' => $this->translate('Required in inheriting objects'),
                 'class' => 'item-required-checkbox',
                 'value' => ($this->fields['required_current'] ?? false) ? 'y' : 'n'
@@ -681,13 +681,14 @@ class DictionaryItem extends FieldsetElement
             }
         }
 
-        $markForRemovalElement = 'delete-' . $this->getName();
+        $itemName = $this->getName();
+        $markForRemovalElement = 'delete-' . $itemName;
         if ($this->hasElement($markForRemovalElement)) {
             $values['delete'] = $this->getElement($markForRemovalElement)->getValue();
         }
 
-        if ($this->hasElement('item_required')) {
-            $values['required'] = $this->getElement('item_required')->getValue() === 'y';
+        if ($this->hasElement('item_required_' . $itemName)) {
+            $values['required'] = $this->getElement('item_required_' . $itemName)->getValue() === 'y';
         }
 
         return $values;
