@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterException;
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Session;
@@ -545,6 +546,19 @@ class CustomVariableForm extends CompatForm
             $dbProperty = $this->fetchProperty($this->uuid);
             if ($dbProperty['value_type'] !== $valueType) {
                 $db = $this->db->getDbAdapter();
+
+                // The old value type is going away, so whatever this property already holds in
+                // host/service/etc. custom variables no longer matches the new schema and has
+                // to be cleared, the same way deleting the property outright would clear it.
+                $cleaner = new CustomVariableValueCleaner($this->db);
+                if ($this->parentUuid === null) {
+                    $cleaner->deleteStoredValues($dbProperty['key_name']);
+                } else {
+                    $parentProperty = $this->fetchProperty($this->parentUuid);
+                    $cleaner->removeObjectCustomVars($dbProperty, $parentProperty, true);
+                    $cleaner->removeFromOverrideServiceVars($dbProperty, $parentProperty, true);
+                }
+
                 // A dictionary can be nested arbitrarily deep (dictionary -> dictionary -> ...),
                 // and any level of that nesting might itself be a datalist-backed field. Hence,
                 // any links between datalists and children or grandchildren in the hierarchy must

@@ -7,7 +7,10 @@ namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatalist;
+use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
+use Ramsey\Uuid\Uuid;
 use Tests\Icinga\Module\Director\Form\Lib\TestableCustomVariableForm;
 
 class CustomVariableFormTest extends BaseTestCase
@@ -17,6 +20,9 @@ class CustomVariableFormTest extends BaseTestCase
 
     /** @var string[] Datalist names created during tests, for tearDown cleanup */
     private array $createdDatalistNames = [];
+
+    /** @var string[] Host names created during tests, for tearDown cleanup */
+    private array $createdHostNames = [];
 
     public function testAddStringPropertyCreatesRow(): void
     {
@@ -348,11 +354,270 @@ class CustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testChangingRootPropertyTypeRemovesStaleHostVarEntirely(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A host has "___TEST___network" set directly (not via a template Field, so
+        // used_count stays 0), a fixed-dictionary with a nested "interfaces" dictionary
+        // holding a "vlan" grandchild.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___lb01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.50',
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = '___TEST___lb01';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___network',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Network',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___network';
+
+        $interfacesUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $interfacesUuid->getBytes(),
+            'key_name'    => 'interfaces',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'vlan',
+            'parent_uuid' => $interfacesUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___network',
+            'varvalue'      => json_encode(['interfaces' => ['vlan' => '10']]),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $rootUuid);
+        $form->setTestValues([
+            'key_name'    => '___TEST___network',
+            'value_type'  => 'string',
+            'label'       => 'Network',
+            'description' => null,
+        ]);
+        self::callMethod($form, 'onSuccess', []);
+
+        $remainingChildren = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['cnt' => 'COUNT(*)'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba))
+        );
+        $this->assertSame('0', (string) $remainingChildren, 'interfaces and vlan must be dropped from the schema');
+
+        $hostVarRow = $dba->fetchRow(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___network')
+        );
+        $this->assertFalse(
+            $hostVarRow,
+            'the stale dictionary value must not survive retyping the root property to a string'
+        );
+    }
+
+    public function testChangingNestedPropertyTypeStripsOnlyItsOwnKeyFromHostVar(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // "interfaces" is retyped away from a fixed-dictionary, discarding its "vlan"
+        // grandchild. The sibling key "region" next to "interfaces" must survive untouched.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___lb02',
+            'object_type' => 'object',
+            'address'     => '192.0.2.51',
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = '___TEST___lb02';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___network2',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Network',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___network2';
+
+        $interfacesUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $interfacesUuid->getBytes(),
+            'key_name'    => 'interfaces',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'vlan',
+            'parent_uuid' => $interfacesUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___network2',
+            'varvalue'      => json_encode([
+                'interfaces' => ['vlan' => '10'],
+                'region'     => 'us-east',
+            ]),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $interfacesUuid, true, $rootUuid);
+        $form->setTestValues([
+            'key_name'    => 'interfaces',
+            'value_type'  => 'string',
+            'label'       => null,
+            'description' => null,
+        ]);
+        self::callMethod($form, 'onSuccess', []);
+
+        $vlanRow = $dba->fetchRow(
+            $dba->select()->from('director_property', ['uuid'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($interfacesUuid->getBytes(), $dba))
+        );
+        $this->assertFalse($vlanRow, 'vlan must be dropped from the schema');
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___network2')
+        );
+        $this->assertEquals(
+            ['region' => 'us-east'],
+            json_decode($updatedValue, true),
+            'interfaces must be dropped from the stored value while its sibling key region survives'
+        );
+    }
+
+    public function testChangingFixedArrayItemTypeClearsSlotWithoutShiftingSiblings(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A fixed array of contacts, item 0 is a dictionary with an "ext" grandchild, item 1
+        // is a plain string. Retyping item 0 to a string must clear its own slot in place
+        // without renumbering or otherwise touching item 1.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___lb03',
+            'object_type' => 'object',
+            'address'     => '192.0.2.52',
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = '___TEST___lb03';
+
+        $arrayUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $arrayUuid->getBytes(),
+            'key_name'   => '___TEST___contacts',
+            'value_type' => 'fixed-array',
+            'label'      => 'Contacts',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___contacts';
+
+        $item0Uuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $item0Uuid->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $arrayUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'ext',
+            'parent_uuid' => $item0Uuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => '1',
+            'parent_uuid' => $arrayUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___contacts',
+            'varvalue'      => json_encode([['ext' => '123'], '555-1234']),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($arrayUuid->getBytes(), $dba),
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $item0Uuid, true, $arrayUuid);
+        $form->setTestValues([
+            'key_name'    => '0',
+            'value_type'  => 'string',
+            'label'       => null,
+            'description' => null,
+        ]);
+        self::callMethod($form, 'onSuccess', []);
+
+        $item0Row = $dba->fetchRow(
+            $dba->select()->from('director_property', ['key_name', 'value_type'])
+                ->where('uuid = ?', DbUtil::quoteBinaryCompat($item0Uuid->getBytes(), $dba))
+        );
+        $this->assertNotFalse($item0Row, 'item 0 itself must survive, only its children are dropped');
+        $this->assertSame('0', (string) $item0Row->key_name, 'item 0 must keep its own key_name');
+        $this->assertSame('string', $item0Row->value_type, 'item 0 must carry the new value_type');
+
+        $item1Row = $dba->fetchRow(
+            $dba->select()->from('director_property', ['key_name'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($arrayUuid->getBytes(), $dba))
+                ->where('key_name = ?', '1')
+        );
+        $this->assertNotFalse($item1Row, 'item 1 must not be renumbered or removed');
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___contacts')
+        );
+        $this->assertEquals(
+            [null, '555-1234'],
+            json_decode($updatedValue, true),
+            'item 0 must be nulled out in place, item 1 must be untouched, and the value must'
+            . ' stay a JSON array rather than turn into an object'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
             $dba = $db->getDbAdapter();
+            foreach ($this->createdHostNames as $hostName) {
+                $dba->delete('icinga_host', ['object_name = ?' => $hostName]);
+            }
             foreach ($this->createdKeyNames as $keyName) {
                 $rows = $dba->fetchAll(
                     $dba->select()

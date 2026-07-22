@@ -601,6 +601,146 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testDeletingFieldUpdatesHostVarEvenWithoutAPropertyUuidLink(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // property_uuid on icinga_host_var is an optional hint, not every stored row has it
+        // set (e.g. values entered directly through a host's own custom variables editor,
+        // rather than via a template's Fields tab). Deleting a field must still find and
+        // clean up such a row by varname.
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___switch01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.60',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___network_config',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Network Config',
+        ], $db)->store();
+
+        $interfaceUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $interfaceUuid->getBytes(),
+            'key_name'    => 'management_interface',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'fixed-dictionary',
+        ], $db)->store();
+
+        $vlanUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $vlanUuid->getBytes(),
+            'key_name'    => 'vlan_id',
+            'parent_uuid' => $interfaceUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___network_config',
+            'varvalue'      => json_encode([
+                'hostname'             => 'sw01-mgmt',
+                'management_interface' => ['vlan_id' => '100'],
+            ]),
+            'format'        => 'json',
+            'property_uuid' => null,
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $vlanUuid->getBytes(),
+                'key_name'    => 'vlan_id',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $interfaceUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $interfaceUuid->getBytes(),
+                'key_name'    => 'management_interface',
+                'value_type'  => 'fixed-dictionary',
+                'parent_uuid' => $rootUuid->getBytes(),
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___network_config')
+        );
+
+        $this->assertEquals(
+            ['hostname' => 'sw01-mgmt', 'management_interface' => (object) []],
+            json_decode($updatedValue, true),
+            'vlan_id must be removed from the stored value even though property_uuid was'
+            . ' never linked on that row'
+        );
+    }
+
+    public function testDeletingRootPropertyRemovesHostVarEvenWithoutAPropertyUuidLink(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___switch02',
+            'object_type' => 'object',
+            'address'     => '192.0.2.61',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___snmp_community',
+            'value_type' => 'string',
+            'label'      => 'SNMP Community',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___snmp_community',
+            'varvalue'      => json_encode('public'),
+            'format'        => 'json',
+            'property_uuid' => null,
+        ]);
+
+        $form = new DeleteCustomVariableForm($db, [
+            'uuid'        => $rootUuid->getBytes(),
+            'key_name'    => '___TEST___snmp_community',
+            'value_type'  => 'string',
+            'label'       => 'SNMP Community',
+            'description' => null,
+            'parent_uuid' => null,
+        ]);
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $row = $dba->fetchRow(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___snmp_community')
+        );
+        $this->assertFalse($row, 'the host_var row must be dropped by varname even without a property_uuid link');
+    }
+
     public function testDeletingThreeLevelsDeepFieldUpdatesOverrideServiceVarsWithoutCrashing(): void
     {
         if ($this->skipForMissingDb()) {
@@ -1073,6 +1213,8 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___multidc02',
                 '___TEST___multidc03',
                 '___TEST___oncall_template',
+                '___TEST___switch01',
+                '___TEST___switch02',
             ];
             foreach ($hostNames as $hostName) {
                 $dba->delete('icinga_host', ['object_name = ?' => $hostName]);
@@ -1091,6 +1233,8 @@ class DeleteCustomVariableFormTest extends BaseTestCase
                 '___TEST___datacenter_settings_2',
                 '___TEST___datacenter_settings_3',
                 '___TEST___contact_numbers',
+                '___TEST___network_config',
+                '___TEST___snmp_community',
             ];
             foreach ($keyNames as $keyName) {
                 $rows = $dba->fetchAll(
