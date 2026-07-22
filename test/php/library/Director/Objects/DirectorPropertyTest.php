@@ -164,7 +164,7 @@ class DirectorPropertyTest extends BaseTestCase
 
         $child = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => 'nested',
+            'key_name'    => 'thresholds',
             'parent_uuid' => $parentUuid,
             'value_type'  => 'dynamic-dictionary',
         ], $db);
@@ -187,7 +187,7 @@ class DirectorPropertyTest extends BaseTestCase
 
         $child = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => 'item',
+            'key_name'    => '0',
             'parent_uuid' => $parent->get('uuid'),
             'value_type'  => 'sensitive',
         ], $db);
@@ -318,7 +318,7 @@ class DirectorPropertyTest extends BaseTestCase
             'category'    => null,
             'description' => null,
             'items'       => [
-                'choice' => $this->datalistItemPlain('choice', $parentUuid, $listName),
+                'severity' => $this->datalistItemPlain('severity', $parentUuid, $listName),
             ],
         ];
 
@@ -360,7 +360,7 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertFalse(DirectorDatalist::exists($listName, $db), 'Precondition: datalist must not exist yet');
 
         $parentUuid = Uuid::uuid4()->toString();
-        $groupUuid = Uuid::uuid4()->toString();
+        $teamUuid = Uuid::uuid4()->toString();
         $plain = (object) [
             'uuid'        => $parentUuid,
             'key_name'    => $parentKeyName,
@@ -370,16 +370,16 @@ class DirectorPropertyTest extends BaseTestCase
             'category'    => null,
             'description' => null,
             'items'       => [
-                'group' => (object) [
-                    'uuid'        => $groupUuid,
-                    'key_name'    => 'group',
+                'team' => (object) [
+                    'uuid'        => $teamUuid,
+                    'key_name'    => 'team',
                     'value_type'  => 'fixed-dictionary',
                     'label'       => null,
                     'parent_uuid' => $parentUuid,
                     'category'    => null,
                     'description' => null,
                     'items'       => [
-                        'choice' => $this->datalistItemPlain('choice', $groupUuid, $listName),
+                        'severity' => $this->datalistItemPlain('severity', $teamUuid, $listName),
                     ],
                 ],
             ],
@@ -394,7 +394,7 @@ class DirectorPropertyTest extends BaseTestCase
             }
         }
 
-        $reloadedGroup = DirectorProperty::loadWithUniqueId(Uuid::fromString($groupUuid), $db);
+        $reloadedGroup = DirectorProperty::loadWithUniqueId(Uuid::fromString($teamUuid), $db);
         $grandchildren = $reloadedGroup->fetchItemsFromDb();
         $this->assertCount(1, $grandchildren);
 

@@ -38,7 +38,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
         $host = IcingaHost::create([
             'object_name'  => self::TEMPLATE_NAME,
             'object_type'  => 'template',
-            'display_name' => 'original-name',
+            'display_name' => 'Webserver Template',
         ]);
         $host->store($db);
 
@@ -62,7 +62,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
         $writeRequest = new IcingaObjectWriteRequest(
             $host,
-            ['display_name' => 'changed-by-request'],
+            ['display_name' => 'Webserver Template (renamed)'],
             'host',
             'index',
             'PUT',
@@ -89,7 +89,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
         $reloaded = IcingaHost::load(self::TEMPLATE_NAME, $db);
         $this->assertEquals(
-            'original-name',
+            'Webserver Template',
             $reloaded->get('display_name'),
             'The object property change must not survive a custom-variable validation '
             . 'failure that happens in the same request'

@@ -250,7 +250,7 @@ class IcingaServiceTest extends BaseTestCase
         // as literal, un-substituted text in the compiled Icinga 2 configuration.
         $service = $this->service()->setConnection($db);
         $service->object_type = 'apply';
-        $service->apply_for = 'host.vars.test1';
+        $service->apply_for = 'host.vars.disks';
         $service->assign_filter = 'host.vars.env="test"';
         $service->{'vars.legacy_macro'} = '/dev/$config$';
 

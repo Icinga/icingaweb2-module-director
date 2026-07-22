@@ -16,7 +16,7 @@ class CustomVariableValueValidatorTest extends BaseTestCase
     public function testStringValueRejectsArray(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        CustomVariableValueValidator::assertMatchesType('env', ['a', 'b'], 'string');
+        CustomVariableValueValidator::assertMatchesType('env', ['staging', 'production'], 'string');
     }
 
     public function testStringValueAcceptsNumericString(): void
@@ -28,24 +28,32 @@ class CustomVariableValueValidatorTest extends BaseTestCase
     public function testArrayValueRejectsDictionary(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        CustomVariableValueValidator::assertMatchesType('ssh_args', (object) ['a' => 'b'], 'dynamic-array');
+        CustomVariableValueValidator::assertMatchesType(
+            'ssh_args',
+            (object) ['StrictHostKeyChecking' => 'no'],
+            'dynamic-array'
+        );
     }
 
     public function testArrayValueAcceptsList(): void
     {
-        CustomVariableValueValidator::assertMatchesType('ssh_args', ['a', 'b'], 'fixed-array');
+        CustomVariableValueValidator::assertMatchesType('ssh_args', ['-4', '-C'], 'fixed-array');
         $this->addToAssertionCount(1);
     }
 
     public function testDictionaryValueRejectsList(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        CustomVariableValueValidator::assertMatchesType('mysql', ['a', 'b'], 'dynamic-dictionary');
+        CustomVariableValueValidator::assertMatchesType('mysql', ['3306', 'root'], 'dynamic-dictionary');
     }
 
     public function testDictionaryValueAcceptsObject(): void
     {
-        CustomVariableValueValidator::assertMatchesType('mysql', (object) ['host' => 'db'], 'fixed-dictionary');
+        CustomVariableValueValidator::assertMatchesType(
+            'mysql',
+            (object) ['host' => 'db01.example.com'],
+            'fixed-dictionary'
+        );
         $this->addToAssertionCount(1);
     }
 

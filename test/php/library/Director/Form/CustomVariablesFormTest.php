@@ -17,7 +17,7 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testAttachingNewPropertyToNonTemplateThrows(): void
     {
         $host = IcingaHost::create([
-            'object_name' => 'apitest',
+            'object_name' => 'app-server-01',
             'object_type' => 'object',
         ]);
         $form = new CustomVariablesForm($host);
@@ -221,9 +221,9 @@ class CustomVariablesFormTest extends BaseTestCase
     {
         // e.g. a dynamic-dictionary entry ("dc1" => [...]) or a fixed-dictionary field that
         // itself holds a fixed-array -- the nested fixed-array must not lose its positions.
-        $entry = ['label' => 'dc1', 'slots' => ['a', '', 'c']];
+        $entry = ['label' => 'dc1', 'slots' => ['eth0', '', 'eth2']];
         $result = CustomVariablesForm::filterEmpty($entry);
-        $this->assertSame(['label' => 'dc1', 'slots' => ['a', '', 'c']], $result);
+        $this->assertSame(['label' => 'dc1', 'slots' => ['eth0', '', 'eth2']], $result);
     }
 
     public function testFixedArrayNestedInsideDictionaryEntryIsDroppedWhenFullyEmpty(): void

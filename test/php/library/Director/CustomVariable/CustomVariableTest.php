@@ -24,47 +24,59 @@ class CustomVariableTest extends TestCase
 
     public function testCreateNullReturnsNull(): void
     {
-        $this->assertInstanceOf(CustomVariableNull::class, CustomVariable::create('k', null));
+        $this->assertInstanceOf(CustomVariableNull::class, CustomVariable::create('notes', null));
     }
 
     public function testCreateBoolTrueReturnsBoolean(): void
     {
-        $this->assertInstanceOf(CustomVariableBoolean::class, CustomVariable::create('k', true));
+        $this->assertInstanceOf(
+            CustomVariableBoolean::class,
+            CustomVariable::create('notifications_enabled', true)
+        );
     }
 
     public function testCreateBoolFalseReturnsBoolean(): void
     {
-        $this->assertInstanceOf(CustomVariableBoolean::class, CustomVariable::create('k', false));
+        $this->assertInstanceOf(
+            CustomVariableBoolean::class,
+            CustomVariable::create('notifications_enabled', false)
+        );
     }
 
     public function testCreateIntegerReturnsNumber(): void
     {
-        $this->assertInstanceOf(CustomVariableNumber::class, CustomVariable::create('k', 42));
+        $this->assertInstanceOf(CustomVariableNumber::class, CustomVariable::create('max_check_attempts', 3));
     }
 
     public function testCreateFloatReturnsNumber(): void
     {
-        $this->assertInstanceOf(CustomVariableNumber::class, CustomVariable::create('k', 3.14));
+        $this->assertInstanceOf(CustomVariableNumber::class, CustomVariable::create('load_threshold', 3.14));
     }
 
     public function testCreateStringReturnsString(): void
     {
-        $this->assertInstanceOf(CustomVariableString::class, CustomVariable::create('k', 'hello'));
+        $this->assertInstanceOf(CustomVariableString::class, CustomVariable::create('env', 'production'));
     }
 
     public function testCreateIndexedArrayReturnsArray(): void
     {
-        $this->assertInstanceOf(CustomVariableArray::class, CustomVariable::create('k', ['a', 'b', 'c']));
+        $this->assertInstanceOf(
+            CustomVariableArray::class,
+            CustomVariable::create('dns_servers', ['8.8.8.8', '8.8.4.4', '1.1.1.1'])
+        );
     }
 
     public function testCreateEmptyArrayReturnsArray(): void
     {
-        $this->assertInstanceOf(CustomVariableArray::class, CustomVariable::create('k', []));
+        $this->assertInstanceOf(CustomVariableArray::class, CustomVariable::create('excluded_checks', []));
     }
 
     public function testCreateAssociativeArrayReturnsDictionary(): void
     {
-        $this->assertInstanceOf(CustomVariableDictionary::class, CustomVariable::create('k', ['key' => 'val']));
+        $this->assertInstanceOf(
+            CustomVariableDictionary::class,
+            CustomVariable::create('disk_thresholds', ['warn' => '20%'])
+        );
     }
 
     public function testCreateMixedKeyArrayReturnsDictionary(): void
@@ -72,26 +84,26 @@ class CustomVariableTest extends TestCase
         // Mixed numeric and string keys → dictionary because at least one key is non-integer
         $this->assertInstanceOf(
             CustomVariableDictionary::class,
-            CustomVariable::create('k', [0 => 'a', 'label' => 'b'])
+            CustomVariable::create('interfaces', [0 => 'eth0', 'label' => 'Primary Interface'])
         );
     }
 
     public function testCreateObjectReturnsDictionary(): void
     {
         $obj = (object) ['warn' => '20%', 'crit' => '10%'];
-        $this->assertInstanceOf(CustomVariableDictionary::class, CustomVariable::create('k', $obj));
+        $this->assertInstanceOf(CustomVariableDictionary::class, CustomVariable::create('disk_thresholds', $obj));
     }
 
     public function testCreatePreservesKey(): void
     {
-        $var = CustomVariable::create('my_key', 'value');
-        $this->assertEquals('my_key', $var->getKey());
+        $var = CustomVariable::create('environment', 'production');
+        $this->assertEquals('environment', $var->getKey());
     }
 
     public function testCreatePreservesValue(): void
     {
-        $var = CustomVariable::create('k', 'hello');
-        $this->assertEquals('hello', $var->getValue());
+        $var = CustomVariable::create('env', 'production');
+        $this->assertEquals('production', $var->getValue());
     }
 
     // -------------------------------------------------------------------------
@@ -140,7 +152,7 @@ class CustomVariableTest extends TestCase
     {
         $row = (object) [
             'format'   => 'json',
-            'varname'  => 'thresholds',
+            'varname'  => 'disk_thresholds',
             'varvalue' => json_encode(['warn' => '20%', 'crit' => '10%']),
         ];
 
@@ -165,8 +177,8 @@ class CustomVariableTest extends TestCase
 
         CustomVariable::fromDbRow((object) [
             'format'   => 'binary',
-            'varname'  => 'data',
-            'varvalue' => 'abc',
+            'varname'  => 'snmp_community',
+            'varvalue' => 'cGFzc3dvcmQ=',
         ]);
     }
 
@@ -266,22 +278,22 @@ class CustomVariableTest extends TestCase
 
     public function testEqualDictionariesAreEqual(): void
     {
-        $a = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
-        $b = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
+        $a = CustomVariable::create('disk_thresholds', ['warn' => '20%', 'crit' => '10%']);
+        $b = CustomVariable::create('disk_thresholds', ['warn' => '20%', 'crit' => '10%']);
         $this->assertTrue($a->equals($b));
     }
 
     public function testDictionaryKeyOrderDoesNotMatter(): void
     {
         // Values must match regardless of the insertion order of keys
-        $a = CustomVariable::create('k', ['crit' => '10%', 'warn' => '20%']);
-        $b = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
+        $a = CustomVariable::create('disk_thresholds', ['crit' => '10%', 'warn' => '20%']);
+        $b = CustomVariable::create('disk_thresholds', ['warn' => '20%', 'crit' => '10%']);
         $this->assertTrue($a->equals($b));
     }
 
     public function testGetDbValueSerializesKeysInSortedOrder(): void
     {
-        $dict = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
+        $dict = CustomVariable::create('disk_thresholds', ['warn' => '20%', 'crit' => '10%']);
         assert($dict instanceof CustomVariableDictionary);
 
         $this->assertSame('{"crit":"10%","warn":"20%"}', $dict->getDbValue());
@@ -289,22 +301,22 @@ class CustomVariableTest extends TestCase
 
     public function testDictionariesWithDifferentKeysAreNotEqual(): void
     {
-        $a = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
-        $b = CustomVariable::create('k', ['warn' => '20%']);
+        $a = CustomVariable::create('disk_thresholds', ['warn' => '20%', 'crit' => '10%']);
+        $b = CustomVariable::create('disk_thresholds', ['warn' => '20%']);
         $this->assertFalse($a->equals($b));
     }
 
     public function testDictionariesWithSameKeysDifferentValuesAreNotEqual(): void
     {
-        $a = CustomVariable::create('k', ['warn' => '20%', 'crit' => '10%']);
-        $b = CustomVariable::create('k', ['warn' => '30%', 'crit' => '10%']);
+        $a = CustomVariable::create('disk_thresholds', ['warn' => '20%', 'crit' => '10%']);
+        $b = CustomVariable::create('disk_thresholds', ['warn' => '30%', 'crit' => '10%']);
         $this->assertFalse($a->equals($b));
     }
 
     public function testDictionaryIsNotEqualToString(): void
     {
-        $dict = CustomVariable::create('k', ['warn' => '20%']);
-        $str  = CustomVariable::create('k', 'hello');
+        $dict = CustomVariable::create('disk_thresholds', ['warn' => '20%']);
+        $str  = CustomVariable::create('env', 'production');
         $this->assertFalse($dict->equals($str));
     }
 
@@ -313,8 +325,8 @@ class CustomVariableTest extends TestCase
         // Empty PHP arrays have no string keys so CustomVariable::create() returns
         // CustomVariableArray, not CustomVariableDictionary — both produce the same
         // db value '[]', so they must compare equal.
-        $a = CustomVariable::create('k', []);
-        $b = CustomVariable::create('k', []);
+        $a = CustomVariable::create('disk_thresholds', []);
+        $b = CustomVariable::create('disk_thresholds', []);
         $this->assertTrue($a->equals($b));
     }
 }

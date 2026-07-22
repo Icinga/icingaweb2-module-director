@@ -20,9 +20,9 @@ class SensitiveElementTest extends TestCase
     public function testGetValueReturnsTheEnteredValue(): void
     {
         $element = new SensitiveElement('api_token');
-        $element->setValue('s3cr3t-value');
+        $element->setValue('sk_live_4f8a1c9d2b7e');
 
-        $this->assertSame('s3cr3t-value', $element->getValue());
+        $this->assertSame('sk_live_4f8a1c9d2b7e', $element->getValue());
     }
 
     public function testWasSubmittedUnchangedIsFalseWhenNothingWasEverEntered(): void
@@ -43,7 +43,7 @@ class SensitiveElementTest extends TestCase
     public function testWasSubmittedUnchangedIsFalseWhenGivenANewValue(): void
     {
         $element = new SensitiveElement('api_token');
-        $element->setValue('new-value');
+        $element->setValue('sk_live_9d3e7b2a6f10');
 
         $this->assertFalse($element->wasSubmittedUnchanged());
     }
@@ -75,11 +75,11 @@ class SensitiveElementTest extends TestCase
         // it as-is. If we masked it too, saving again would look like "left unchanged"
         // and quietly bring back the old secret.
         $element = new SensitiveElement('api_token');
-        $element->setValue('freshly-typed-value');
+        $element->setValue('sk_live_00ff11ee22dd');
 
         $html = (string) $element;
 
-        $this->assertStringContainsString('value="freshly-typed-value"', $html);
+        $this->assertStringContainsString('value="sk_live_00ff11ee22dd"', $html);
     }
 
     public function testRenderedValueAttributeIsAbsentWhenExplicitlyEmptied(): void

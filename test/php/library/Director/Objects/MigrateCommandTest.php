@@ -41,7 +41,7 @@ class MigrateCommandTest extends BaseTestCase
     // Migratable as 'sensitive' (legacy hidden-visibility string)
     private const VAR_HIDDEN       = self::PREFIX . 'snmp_community';
 
-    private const VAR_DUP          = self::PREFIX . 'dup_field';
+    private const VAR_DUP          = self::PREFIX . 'notification_email';
 
     private const VAR_TIME_FIELD = self::PREFIX . 'time_field';
 
@@ -73,8 +73,8 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_HIDDEN,
         self::VAR_DUP,
         self::VAR_TIME_FIELD,
-        self::PREFIX . 'rollback_first',
-        self::PREFIX . 'rollback_second',
+        self::PREFIX . 'tls_cert_path',
+        self::PREFIX . 'tls_key_path',
     ];
 
     public function testDryRunPrintsWhatWouldMigrateWithoutWriting(): void
@@ -422,19 +422,19 @@ class MigrateCommandTest extends BaseTestCase
 
         $sharedUuid = Uuid::uuid4()->getBytes();
         $customProperties = [
-            self::PREFIX . 'rollback_first' => [
+            self::PREFIX . 'tls_cert_path' => [
                 'datafield_id' => 90001,
                 'uuid'         => $sharedUuid,
-                'key_name'     => self::PREFIX . 'rollback_first',
+                'key_name'     => self::PREFIX . 'tls_cert_path',
                 'label'        => null,
                 'description'  => null,
                 'category_id'  => null,
                 'value_type'   => 'string',
             ],
-            self::PREFIX . 'rollback_second' => [
+            self::PREFIX . 'tls_key_path' => [
                 'datafield_id' => 90002,
                 'uuid'         => $sharedUuid,
-                'key_name'     => self::PREFIX . 'rollback_second',
+                'key_name'     => self::PREFIX . 'tls_key_path',
                 'label'        => null,
                 'description'  => null,
                 'category_id'  => null,
@@ -458,7 +458,7 @@ class MigrateCommandTest extends BaseTestCase
 
         $count = $dba->fetchOne(
             $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])
-                ->where('key_name = ?', self::PREFIX . 'rollback_first')
+                ->where('key_name = ?', self::PREFIX . 'tls_cert_path')
         );
         $this->assertEquals(
             0,
@@ -714,19 +714,19 @@ class MigrateCommandTest extends BaseTestCase
         $field->set('visibility', 'hidden');
         $field->store();
 
-        // 9. dup_field × 2 — duplicate varname (skip both)
+        // 9. notification_email × 2 — duplicate varname (skip both)
         //    DirectorDatafield has no uniqueness constraint on varname, so raw insert is safe.
         $dba = $db->getDbAdapter();
         $dba->insert('director_datafield', [
             'uuid'     => DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $dba),
             'varname'  => self::VAR_DUP,
-            'caption'  => 'Dup A',
+            'caption'  => 'Notification Email (added by the ops team)',
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
         ]);
         $dba->insert('director_datafield', [
             'uuid'     => DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $dba),
             'varname'  => self::VAR_DUP,
-            'caption'  => 'Dup B',
+            'caption'  => 'Notification Email (added by the NOC)',
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
         ]);
 
