@@ -752,16 +752,17 @@ class CustomVariableForm extends CompatForm
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
 
         foreach ($objectTypes as $objectType) {
+            // Match by varname, not property_uuid, root key_names are unique and property_uuid
+            // is only ever an optional hint that isn't reliably populated on every stored row.
             $objectCustomVars = $db->fetchAll(
                 $db->select()
                    ->from(['ihv' => "icinga_{$objectType}_var"], [])
                    ->columns([
                        "{$objectType}_id",
                        'varname',
-                       'varvalue',
-                       'property_uuid'
+                       'varvalue'
                    ])
-                   ->where('property_uuid = ?', Db\DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $db)),
+                   ->where('varname = ?', $root['key_name']),
                 [],
                 PDO::FETCH_ASSOC
             );
@@ -772,7 +773,7 @@ class CustomVariableForm extends CompatForm
                         "icinga_{$objectType}_var",
                         ['varname' => $keyName],
                         Filter::matchAll(
-                            Filter::where('property_uuid', Db\DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $db)),
+                            Filter::where('varname', $root['key_name']),
                             Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
                         )
                     );
@@ -806,7 +807,7 @@ class CustomVariableForm extends CompatForm
                     "icinga_{$objectType}_var",
                     ['varvalue' => json_encode($varValue)],
                     Filter::matchAll(
-                        Filter::where('property_uuid', Db\DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $db)),
+                        Filter::where('varname', $root['key_name']),
                         Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
                     )
                 );

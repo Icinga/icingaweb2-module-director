@@ -610,6 +610,114 @@ class CustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testRenamingUsedRootPropertyUpdatesHostVarnameEvenWithoutAPropertyUuidLink(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___switch03',
+            'object_type' => 'object',
+            'address'     => '192.0.2.62',
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = '___TEST___switch03';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___snmp_community',
+            'value_type' => 'string',
+            'label'      => 'SNMP Community',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___snmp_community';
+        $this->createdKeyNames[] = '___TEST___snmp_string';
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___snmp_community',
+            'varvalue'      => json_encode('public'),
+            'format'        => 'json',
+            'property_uuid' => null,
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $rootUuid);
+        self::callMethod($form, 'updateUsedCustomVarNames', ['___TEST___snmp_community', '___TEST___snmp_string']);
+
+        $row = $dba->fetchRow(
+            $dba->select()->from('icinga_host_var', ['varname'])
+                ->where('host_id = ?', $host->get('id'))
+        );
+        $this->assertNotFalse($row);
+        $this->assertSame(
+            '___TEST___snmp_string',
+            $row->varname,
+            'the stored varname must follow the rename even though property_uuid was never linked'
+        );
+    }
+
+    public function testRenamingUsedFieldUpdatesHostVarValueEvenWithoutAPropertyUuidLink(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___switch04',
+            'object_type' => 'object',
+            'address'     => '192.0.2.63',
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = '___TEST___switch04';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___asset_info',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Asset Info',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___asset_info';
+
+        $fieldUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $fieldUuid->getBytes(),
+            'key_name'    => 'asset_type',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___asset_info',
+            'varvalue'      => json_encode(['asset_type' => 'switch', 'location' => 'rack-12']),
+            'format'        => 'json',
+            'property_uuid' => null,
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $fieldUuid, true, $rootUuid);
+        self::callMethod($form, 'updateUsedCustomVarNames', ['asset_type', 'device_type']);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___asset_info')
+        );
+        $this->assertEquals(
+            ['device_type' => 'switch', 'location' => 'rack-12'],
+            json_decode($updatedValue, true),
+            'asset_type must be renamed to device_type in the stored value even though'
+            . ' property_uuid was never linked on that row'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
