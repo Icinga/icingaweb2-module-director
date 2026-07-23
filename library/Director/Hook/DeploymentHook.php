@@ -17,6 +17,17 @@ abstract class DeploymentHook
     }
 
     /**
+     *
+     * Please override this method if you want to change the deployed files before writing them to disk
+     *
+     * @param $files
+     * @return array with $files
+     */
+    public function beforeDump($files){
+        return $files;
+    }
+
+    /**
      * Please override this method if you want to trigger custom actions
      * on a successful dump of the Icinga configuration
      *
