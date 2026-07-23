@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Widget;
 use Icinga\Module\Director\Db\DbUtil;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
+use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Url;
 use ipl\Web\Widget\Link;
@@ -45,14 +46,14 @@ class CustomVarFieldsTable extends Table
             $columns = [
                 static::td([HtmlElement::create('strong', null, new Link($property->key_name, $url))])
                       ->setSeparator(' '),
-                static::td([HtmlElement::create('p', null, $property->label)])->setSeparator(' '),
-                static::td([HtmlElement::create('p', null, $property->value_type)]),
+                static::td([Text::create($property->label)])->setSeparator(' '),
+                static::td([Text::create($property->value_type)]),
             ];
 
             if (isset($property->used_count) && $property->used_count > 0) {
-                $columns[] = static::td([HtmlElement::create('p', null, $this->translate('In use'))]);
+                $columns[] = static::td([Text::create($this->translate('In use'))]);
             } else {
-                $columns[] = static::td([HtmlElement::create('p', null, $this->translate('Not in use'))]);
+                $columns[] = static::td([Text::create($this->translate('Not in use'))]);
             }
 
             $this->addHtml(static::tr($columns));
