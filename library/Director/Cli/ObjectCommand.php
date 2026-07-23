@@ -132,7 +132,8 @@ class ObjectCommand extends Command
                 if ($this->api()->createObjectAtRuntime($object)) {
                     echo "Live creation for '$name' succeeded\n";
                 } else {
-                    echo "Live creation for '$name' succeeded\n";
+                    echo "Live creation for '$name' failed\n";
+                    $object->delete();
                     exit(1);
                 }
 
