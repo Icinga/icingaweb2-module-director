@@ -29,6 +29,7 @@ use Icinga\Module\Director\Web\Widget\ActivityLogInfo;
 use Icinga\Module\Director\Web\Widget\DeployedConfigInfoHeader;
 use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
+use Icinga\Web\Widget\Tabextension\OutputFormat;
 use Exception;
 use RuntimeException;
 use ipl\Html\Html;
@@ -154,16 +155,18 @@ class ConfigController extends ActionController
 
         $this->assertPermission('director/audit');
         $this->setAutorefreshInterval(10);
-        $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog');
+        $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog')->extend(new OutputFormat());
         $this->addTitle($this->translate('Activity Log'));
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
+        $isPdfExport = $this->url()->getParam('format') === 'pdf';
         $table = new ActivityLogTable($this->db());
         $table->setLastDeployedId($lastDeployedId);
+        $table->setIsPdfExport($isPdfExport);
         if ($idRangeEx = $this->url()->getParam('idRangeEx')) {
             $table->applyFilter(Filter::fromQueryString($idRangeEx));
         }
         $filter = Filter::fromQueryString(
-            $this->url()->without(['page', 'limit', 'q', 'idRangeEx'])->getQueryString()
+            $this->url()->without(['page', 'limit', 'q', 'idRangeEx', 'format'])->getQueryString()
         );
         $table->applyFilter($filter);
         if ($this->url()->hasParam('author')) {
@@ -204,6 +207,13 @@ class ConfigController extends ActionController
                     ))
                 );
             }
+        }
+
+        // Export the whole filtered log, not only the page we are on
+        if ($isPdfExport && ! $this->url()->hasParam('limit')) {
+            $table->getQuery()->limit(count($table));
+            // Forget the page too, or the paginator still skips rows
+            $this->url()->shift('page');
         }
 
         $table->renderTo($this);

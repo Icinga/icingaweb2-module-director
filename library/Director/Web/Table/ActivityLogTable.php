@@ -42,6 +42,8 @@ class ActivityLogTable extends IntlZfQueryBasedTable
     protected $continueRange = false;
     protected $currentRow;
 
+    protected $isPdfExport = false;
+
     public function __construct($db)
     {
         parent::__construct($db);
@@ -50,6 +52,16 @@ class ActivityLogTable extends IntlZfQueryBasedTable
     public function assemble()
     {
         $this->getAttributes()->add('class', 'activity-log');
+        if ($this->isPdfExport) {
+            $this->getAttributes()->add('class', 'pdf-export');
+        }
+    }
+
+    public function setIsPdfExport(bool $isPdfExport)
+    {
+        $this->isPdfExport = $isPdfExport;
+
+        return $this;
     }
 
     public function setLastDeployedId($id)
@@ -112,6 +124,16 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         $day = $this->getDateFormatter()->format((new DateTime())->setTimestamp($timestamp));
 
         if ($this->lastDay !== $day) {
+            if ($this->isPdfExport && $this->lastDay === null) {
+                // Empty first header, the only one that repeats on every page
+                $this->nextHeader()->add(
+                    $this::th('', [
+                        'colspan' => $this->hasObjectFilter ? 2 : 3,
+                        'class'   => 'pdf-page-spacer'
+                    ])
+                );
+            }
+
             $this->nextHeader()->add(
                 $this::th($day, [
                     'colspan' => $this->hasObjectFilter ? 2 : 3,
