@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbConnection;
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -45,13 +46,16 @@ class BasketSnapshotCustomVariableResolver
      *
      * @param Db $db
      *
-     * @return DirectorProperty[]
+     * @return array<string, DirectorProperty>
      */
     public function loadCurrentProperties(Db $db): array
     {
         $properties = [];
         foreach ($this->getRequiredUuids() as $uuid) {
-            $properties[$uuid] = DirectorProperty::loadWithUniqueId(Uuid::fromString($uuid), $db);
+            $property = DirectorProperty::loadWithUniqueId(Uuid::fromString($uuid), $db);
+            if ($property !== null) {
+                $properties[$uuid] = $property;
+            }
         }
 
         return $properties;
