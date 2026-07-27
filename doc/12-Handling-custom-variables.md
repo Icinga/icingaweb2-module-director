@@ -62,15 +62,15 @@ types:
 | `fixed-dictionary`    | Fixed Dictionary       | Key-value map with a fixed set of preconfigured keys                                                 |
 | `dynamic-dictionary`  | Dynamic Dictionary     | Key-value map where each key maps to a structured sub-dictionary; keys are added by end-users        |
 
-> Only one level of nesting is allowed. The item type of a `fixed-array`,
-> `dynamic-array` or `fixed-dictionary`, and the fields inside a
-> `dynamic-dictionary`'s sub-dictionary, may only be scalar (`string`,
-> `number`, `bool`, `sensitive`) or datalist (`datalist-strict`,
-> `datalist-non-strict`) types. A nested field can itself be an array of
-> datalist values, but it can never be a `fixed-array`, `fixed-dictionary`
-> or `dynamic-array`/`dynamic-dictionary`. Also, `dynamic-dictionary` can
-> only be defined as a top-level property; it cannot be nested inside
-> another array or dictionary.
+> Only one level of nesting is allowed. The fields of a `fixed-array`,
+> `fixed-dictionary` or `dynamic-dictionary` may only be scalar (`string`,
+> `number`, `bool`, `sensitive`), datalist (`datalist-strict`,
+> `datalist-non-strict`), or `dynamic-array` types. A nested field can
+> never itself be a `fixed-array`, `fixed-dictionary` or
+> `dynamic-dictionary`. A `dynamic-array` can be nested this way, but not
+> inside another `dynamic-array`. Also, `dynamic-dictionary` can only be
+> defined as a top-level property; it cannot be nested inside another
+> array or dictionary.
 >
 > `sensitive` is not offered as the item type of a `dynamic-array` or a
 > datalist. Both render their values as a plain visible list, and there
@@ -202,6 +202,17 @@ vars.snmp_v3 = {
     auth_password  = "authpass123"
     priv_protocol  = "AES"
     priv_password  = "privpass456"
+}
+```
+
+A `fixed-dictionary` field can itself be a `dynamic-array`:
+
+```
+# On a host: MySQL connection parameters, with an array of fallback hosts
+vars.mysql = {
+    host          = "db-primary.internal"
+    fallback_host = ["db-replica-1.internal", "db-replica-2.internal"]
+    port          = "3306"
 }
 ```
 
