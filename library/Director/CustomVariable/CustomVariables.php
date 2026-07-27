@@ -71,7 +71,11 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         )
             ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
             ->join(['io' => 'icinga_' . $type], 'iop.' . $type . '_uuid = io.uuid', [])
-            ->join(['iov' => 'icinga_' . $type . '_var'], 'iov.' . $type . '_id = io.id', [])
+            ->joinLeft(
+                ['iov' => 'icinga_' . $type . '_var'],
+                'iov.' . $type . '_id = io.id AND iov.varname = dp.key_name',
+                []
+            )
             ->where('dp.key_name IN (?)', $keys)
             ->where('io.id IN (?)', $ids);
 
