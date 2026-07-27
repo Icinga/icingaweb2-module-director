@@ -349,43 +349,6 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals('sensitive', $items[0]->get('value_type'));
     }
 
-    /**
-     * director_property.parent_uuid has no FK enforcing the link (see schema/mysql.sql), so a
-     * dangling reference is reachable in practice. beforeStore() must not blow up on it, and
-     * must not treat a vanished parent as if it were a dynamic-array.
-     */
-    public function testDynamicArrayWithDanglingParentReferenceDoesNotCrash(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $dba = $db->getDbAdapter();
-
-        $parent = $this->makeProperty('orphaned_array', 'dynamic-array', 'Orphaned Array', $db);
-        $parent->store();
-        $parentUuid = $parent->get('uuid');
-
-        $dba->delete(
-            'director_property',
-            $dba->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($parentUuid, $dba))
-        );
-
-        $childKeyName = self::PREFIX . 'orphaned_array_item';
-        $this->createdKeyNames[] = $childKeyName;
-        $child = DirectorProperty::create([
-            'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => $childKeyName,
-            'parent_uuid' => $parentUuid,
-            'value_type'  => 'dynamic-array',
-        ], $db);
-
-        $child->store();
-
-        $this->assertNotNull($child->get('uuid'));
-    }
-
     public function testSensitiveCannotBeNestedInsideADynamicArray(): void
     {
         if ($this->skipForMissingDb()) {
@@ -600,7 +563,7 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals(['crit', 'warn'], $childKeys);
     }
 
-    public function testImportWithOrphanedParentDoesNotCrash(): void
+    public function testDeletingAParentCascadesToItsChildren(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -609,38 +572,28 @@ class DirectorPropertyTest extends BaseTestCase
         $db = $this->getDb();
         $dba = $db->getDbAdapter();
 
-        $parent = $this->makeProperty('orphan_parent', 'fixed-dictionary', 'Orphan Parent', $db);
+        $parent = $this->makeProperty('cascade_parent', 'fixed-dictionary', 'Cascade Parent', $db);
         $parent->store();
         $parentUuid = $parent->get('uuid');
 
-        $childKeyName = self::PREFIX . 'orphan_child';
+        $childKeyName = self::PREFIX . 'cascade_child';
         $this->createdKeyNames[] = $childKeyName;
-        DirectorProperty::create([
+        $child = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
             'key_name'    => $childKeyName,
             'parent_uuid' => $parentUuid,
             'value_type'  => 'string',
-        ], $db)->store();
+        ], $db);
+        $child->store();
+        $childUuid = $child->get('uuid');
 
-        // Simulate a dangling parent reference: director_property.parent_uuid has no FK
-        // enforcing this link (see schema/mysql.sql), so this state is reachable in practice.
         $dba->delete(
             'director_property',
             $dba->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($parentUuid, $dba))
         );
 
-        // This branch expects parent_uuid as raw bytes (matching how the equivalent
-        // lookup for $plain->parent_uuid is used at Uuid::fromBytes() a few lines down
-        // in import()), unlike the has-uuid branch's string-form convention.
-        $plain = (object) [
-            'key_name'    => $childKeyName,
-            'parent_uuid' => $parentUuid,
-            'value_type'  => 'string',
-        ];
-
-        $imported = DirectorProperty::import($plain, $db);
-
-        $this->assertInstanceOf(DirectorProperty::class, $imported);
+        $this->assertNull(DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $db));
+        $this->assertNull(DirectorProperty::loadWithUniqueId(Uuid::fromBytes($childUuid), $db));
     }
 
     public function testImportIsIdempotent(): void

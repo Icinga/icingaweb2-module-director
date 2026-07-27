@@ -344,6 +344,11 @@ CREATE TABLE director_property (
     FOREIGN KEY (category_id)
     REFERENCES director_datafield_category (id)
     ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT director_property_parent
+    FOREIGN KEY (parent_uuid)
+    REFERENCES director_property (uuid)
+    ON DELETE CASCADE
     ON UPDATE CASCADE
 );
 
@@ -354,6 +359,8 @@ CREATE UNIQUE INDEX unique_property_name_root
 CREATE UNIQUE INDEX unique_property_name_parent
   ON director_property (key_name, parent_uuid)
   WHERE parent_uuid IS NOT NULL;
+
+CREATE INDEX director_property_parent_uuid ON director_property (parent_uuid);
 
 CREATE TABLE director_property_datalist (
   list_uuid bytea CHECK(LENGTH(list_uuid) = 16) NOT NULL,

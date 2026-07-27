@@ -275,6 +275,11 @@ CREATE TABLE director_property (
     FOREIGN KEY category (category_id)
     REFERENCES director_datafield_category (id)
     ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT director_property_parent
+    FOREIGN KEY parent (parent_uuid)
+    REFERENCES director_property (uuid)
+    ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
