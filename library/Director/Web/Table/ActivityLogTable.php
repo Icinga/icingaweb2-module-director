@@ -39,6 +39,8 @@ class ActivityLogTable extends IntlZfQueryBasedTable
     protected $continueRange = false;
     protected $currentRow;
 
+    protected $isPdfExport = false;
+
     public function __construct($db)
     {
         parent::__construct($db);
@@ -47,6 +49,16 @@ class ActivityLogTable extends IntlZfQueryBasedTable
     public function assemble()
     {
         $this->getAttributes()->add('class', 'activity-log');
+        if ($this->isPdfExport) {
+            $this->getAttributes()->add('class', 'pdf-export');
+        }
+    }
+
+    public function setIsPdfExport(bool $isPdfExport)
+    {
+        $this->isPdfExport = $isPdfExport;
+
+        return $this;
     }
 
     public function setLastDeployedId($id)

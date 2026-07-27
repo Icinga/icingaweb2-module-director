@@ -29,6 +29,7 @@ use Icinga\Module\Director\Web\Widget\ActivityLogInfo;
 use Icinga\Module\Director\Web\Widget\DeployedConfigInfoHeader;
 use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
+use Icinga\Web\Widget\Tabextension\OutputFormat;
 use Exception;
 use RuntimeException;
 use ipl\Html\Html;
@@ -158,7 +159,7 @@ class ConfigController extends ActionController
         $this->assertPermission('director/audit');
         $this->showOptionalBranchActivity();
         $this->setAutorefreshInterval(10);
-        $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog');
+        $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog')->extend(new OutputFormat());
         $this->addTitle($this->translate('Activity Log'));
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
         $table = new ActivityLogTable($this->db());
@@ -167,7 +168,7 @@ class ConfigController extends ActionController
             $table->applyFilter(Filter::fromQueryString($idRangeEx));
         }
         $filter = Filter::fromQueryString(
-            $this->url()->without(['page', 'limit', 'q', 'idRangeEx'])->getQueryString()
+            $this->url()->without(['page', 'limit', 'q', 'idRangeEx', 'format'])->getQueryString()
         );
         $table->applyFilter($filter);
         if ($this->url()->hasParam('author')) {
@@ -207,6 +208,13 @@ class ConfigController extends ActionController
                     ))
                 );
             }
+        }
+
+        // export should contain the whole filtered log, not just the current page
+        if ($this->url()->getParam('format') === 'pdf' && ! $this->url()->hasParam('limit')) {
+            $table->getQuery()->limit(count($table));
+            // drop it here too, otherwise the paginator below still offsets by whatever page we were on
+            $this->url()->shift('page');
         }
 
         $table->renderTo($this);
