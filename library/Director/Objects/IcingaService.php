@@ -437,6 +437,9 @@ class IcingaService extends IcingaObject implements ExportInterface
             return null;
         }
 
+        // key_name is unique among root properties, a DB constraint enforces it on
+        // both engines, so this can only ever match one row. The host_property join
+        // just weeds out a key_name nobody has attached anywhere.
         $query = $this->db
             ->select()
             ->from(['dp' => 'director_property'], ['value_type' => 'dp.value_type'])
