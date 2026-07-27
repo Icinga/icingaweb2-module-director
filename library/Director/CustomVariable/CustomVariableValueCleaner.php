@@ -75,7 +75,7 @@ class CustomVariableValueCleaner
      */
     private function removeDictionaryItem(array &$item, array $path, bool $preserveIndex = false): void
     {
-        $key = array_shift($path);
+        $key = array_shift($path) ?? '';
 
         if (! array_key_exists($key, $item)) {
             return;
@@ -165,7 +165,7 @@ class CustomVariableValueCleaner
             $objectClass = DbObjectTypeRegistry::classByType($objectType);
 
             foreach ($varRows as $varRow) {
-                $varValue = json_decode($varRow['varvalue'], true);
+                $varValue = json_decode($varRow['varvalue'] ?? '', true);
 
                 if ($rootType !== 'dynamic-dictionary') {
                     $this->removeDictionaryItem($varValue, $path, $preserveIndex);
