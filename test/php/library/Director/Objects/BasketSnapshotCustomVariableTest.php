@@ -286,6 +286,39 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         );
     }
 
+    public function testRestoreCreatesCategoryWhenMissingOnTarget(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $categoryName = self::PREFIX . 'disk_category';
+
+        [$host, $property] = $this->createTemplateWithProperty($db);
+        $property->setCategory($categoryName);
+        $property->store();
+
+        $json = $this->buildSnapshotJson($host, $property, $db);
+
+        $this->wipeTemplateAndProperty($host, $property, $db);
+        // The category has to be gone on the target too, that's the fresh-DB
+        // case setCategory() used to get wrong.
+        $dba->delete('director_datafield_category', $dba->quoteInto('category_name = ?', $categoryName));
+
+        BasketSnapshot::restoreJson($json, $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $this->assertEquals(
+            $categoryName,
+            $restored->getCategoryName(),
+            'category_name must survive a restore onto a DB where the category does not exist yet'
+        );
+
+        $dba->delete('director_datafield_category', $dba->quoteInto('category_name = ?', $categoryName));
+    }
+
     public function testRestoreIsIdempotent(): void
     {
         if ($this->skipForMissingDb()) {
