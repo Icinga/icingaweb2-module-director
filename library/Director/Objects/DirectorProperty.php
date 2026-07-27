@@ -138,12 +138,13 @@ class DirectorProperty extends DbObject
 
             $this->category = $category;
         } else {
+            $categoryName = $category;
             $category = DirectorDatafieldCategory::loadOptional($category, $this->getConnection());
             if ($category) {
                 $this->setCategory($category);
             } else {
                 $this->setCategory(DirectorDatafieldCategory::create(
-                    ['category_name' => $category],
+                    ['category_name' => $categoryName],
                     $this->getConnection()
                 ));
             }
