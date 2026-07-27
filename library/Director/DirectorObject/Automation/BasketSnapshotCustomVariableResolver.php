@@ -322,7 +322,8 @@ class BasketSnapshotCustomVariableResolver
         $this->uuidMap = [];
         $this->targetProperties = [];
         foreach ($this->getObjectsByType('CustomVariable') as $uuid => $object) {
-            // Hint: import() doesn't store!
+            // import() prepares the object but does not persist it; $new->get('uuid') may be a
+            // freshly generated UUID that is only valid after storeNewProperties() is called.
             $new = DirectorProperty::import($object, $this->targetDb);
             if ($new->hasBeenLoadedFromDb()) {
                 $newUuid = Uuid::fromBytes(
