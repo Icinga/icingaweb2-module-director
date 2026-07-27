@@ -447,6 +447,8 @@ class DirectorProperty extends DbObject
      */
     protected function beforeStore(): void
     {
+        $this->persistPendingCategory();
+
         $parentUuid = $this->get('parent_uuid');
         if ($parentUuid === null) {
             return;
@@ -483,6 +485,36 @@ class DirectorProperty extends DbObject
                 );
             }
         }
+    }
+
+    /**
+     * A brand new category can end up hanging around only in memory, never
+     * actually saved. That happens on a basket restore hitting a fresh DB,
+     * the category name doesn't exist there yet. Save it here and link it,
+     * so we don't just lose the name.
+     *
+     * @return void
+     */
+    private function persistPendingCategory(): void
+    {
+        if ($this->category === null || $this->category->hasBeenLoadedFromDb()) {
+            return;
+        }
+
+        // A sibling property may have created the very same category a moment ago,
+        // in the same restore, check again before inserting a duplicate name.
+        $existing = DirectorDatafieldCategory::loadOptional(
+            $this->category->get('category_name'),
+            $this->getConnection()
+        );
+
+        if ($existing) {
+            $this->category = $existing;
+        } else {
+            $this->category->store();
+        }
+
+        $this->set('category_id', $this->category->get('id'));
     }
 
     protected function onStore(): void
