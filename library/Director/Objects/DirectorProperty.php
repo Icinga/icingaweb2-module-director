@@ -14,7 +14,11 @@ use stdClass;
 class DirectorProperty extends DbObject
 {
     /** Value types that may never be used for a nested (non-top-level) property */
-    private const NON_NESTABLE_TYPES = ['dynamic-dictionary'];
+    private const NON_NESTABLE_TYPES = [
+        'dynamic-dictionary',
+        'fixed-dictionary',
+        'fixed-array',
+    ];
 
     protected $table = 'director_property';
 
@@ -437,7 +441,8 @@ class DirectorProperty extends DbObject
 
     /**
      * @throws InvalidArgumentException if a nested property is being stored with a value_type
-     *                                  that may only be used at the top level, or a 'sensitive'
+     *                                  that may only be used at the top level, a dynamic-array
+     *                                  is nested inside another dynamic-array, or a 'sensitive'
      *                                  item type is used under a dynamic-array
      */
     protected function beforeStore(): void
@@ -452,17 +457,30 @@ class DirectorProperty extends DbObject
         if (in_array($valueType, self::NON_NESTABLE_TYPES, true)) {
             throw new InvalidArgumentException(sprintf(
                 "'%s' can only be used as a top-level custom variable; it cannot be nested inside"
-                . " a fixed-array, fixed-dictionary, dynamic-array or another dynamic-dictionary",
+                . " a fixed-array, fixed-dictionary, dynamic-array or dynamic-dictionary",
                 $valueType
             ));
         }
 
-        // A dynamic-array shows every entry in the clear, so a sensitive item here
-        // could never actually be hidden.
-        if ($valueType === 'sensitive') {
+        if ($valueType === 'dynamic-array' || $valueType === 'sensitive') {
             $parent = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $this->connection);
-            if ($parent !== null && $parent->get('value_type') === 'dynamic-array') {
-                throw new InvalidArgumentException("'sensitive' cannot be used as the item type of a dynamic-array");
+            $parentValueType = $parent?->get('value_type');
+
+            // dynamic-array may be nested inside a fixed-array, fixed-dictionary or
+            // dynamic-dictionary field, or declare a datalist's item type, but it cannot
+            // nest inside itself (a dynamic-array of dynamic-arrays).
+            if ($valueType === 'dynamic-array' && $parentValueType === 'dynamic-array') {
+                throw new InvalidArgumentException(
+                    "'dynamic-array' cannot be nested inside another dynamic-array"
+                );
+            }
+
+            // A dynamic-array shows every entry in the clear, so a sensitive item here
+            // could never actually be hidden.
+            if ($valueType === 'sensitive' && $parentValueType === 'dynamic-array') {
+                throw new InvalidArgumentException(
+                    "'sensitive' cannot be used as the item type of a dynamic-array"
+                );
             }
         }
     }

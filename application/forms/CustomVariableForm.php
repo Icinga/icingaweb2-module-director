@@ -31,9 +31,6 @@ class CustomVariableForm extends CompatForm
     /** @var bool Whether to hide the key name element or not (checked for the fixed array) */
     private $hideKeyNameElement = false;
 
-    /** @var bool Whether the field is a nested field or not */
-    private $isNestedField = false;
-
     /** @var ?string The key name as stored in the database, used to detect pending renames */
     private ?string $storedKeyName = null;
 
@@ -76,20 +73,6 @@ class CustomVariableForm extends CompatForm
     public function setHideKeyNameElement(bool $hideKeyNameElement): self
     {
         $this->hideKeyNameElement = $hideKeyNameElement;
-
-        return $this;
-    }
-
-    /**
-     * Set whether the field is a nested field (field in a sub dictionary) or not
-     *
-     * @param bool $isNestedField
-     *
-     * @return $this
-     */
-    public function setIsNestedField(bool $isNestedField): self
-    {
-        $this->isNestedField = $isNestedField;
 
         return $this;
     }
@@ -190,17 +173,14 @@ class CustomVariableForm extends CompatForm
             'datalist-non-strict' => 'Data List Non Strict',
         ];
 
-        if (! $this->isNestedField) {
+        // Fixed-array, fixed-dictionary and dynamic-dictionary may only be used as a
+        // top-level custom variable; they cannot be nested inside one another.
+        if ($this->parentUuid === null) {
             $types += [
                 'fixed-array' => 'Fixed Array',
-                'fixed-dictionary' => 'Fixed Dictionary'
+                'fixed-dictionary' => 'Fixed Dictionary',
+                'dynamic-dictionary' => 'Dynamic Dictionary',
             ];
-
-            if ($this->parentUuid === null) {
-                $types += [
-                    'dynamic-dictionary' => 'Dynamic Dictionary'
-                ];
-            }
         }
 
         $this->addElement(

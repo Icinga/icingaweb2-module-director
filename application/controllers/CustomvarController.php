@@ -140,9 +140,7 @@ class CustomvarController extends CompatController
             });
 
         if ($parent) {
-            $propertyForm
-                ->setHideKeyNameElement($parent['value_type'] === 'fixed-array')
-                ->setIsNestedField($parent['parent_uuid'] !== null);
+            $propertyForm->setHideKeyNameElement($parent['value_type'] === 'fixed-array');
         }
 
         $propertyForm->handleRequest($this->getServerRequest());
@@ -315,7 +313,6 @@ class CustomvarController extends CompatController
         $parent = $this->fetchProperty($uuid);
         $propertyForm = (new CustomVariableForm($this->db, null, true, $uuid))
             ->setHideKeyNameElement($parent['value_type'] === 'fixed-array')
-            ->setIsNestedField($parent['parent_uuid'] !== null)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(CustomVariableForm::ON_SUBMIT, function (CustomVariableForm $form) {
                 Notification::success(sprintf(

@@ -147,26 +147,131 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals(['crit', 'warn'], $childKeys);
     }
 
-    public function testDynamicDictionaryNestingIsRejectedByTheModel(): void
+    /**
+     * @dataProvider provideNonNestableTypes
+     */
+    public function testContainerTypesAreRejectedByTheModelWhenNested(string $valueType): void
     {
         if ($this->skipForMissingDb()) {
             return;
         }
 
-        // The "dynamic-dictionary may only be a top-level property" rule must hold
-        // regardless of entry point (form, REST API, CLI migration, basket restore),
-        // not just because CustomVariableForm's dropdown happens to never offer it as
-        // a nested option. DirectorProperty::beforeStore() enforces it directly.
+        // These rules must hold regardless of entry point (form, REST API, CLI migration,
+        // basket restore), not just because CustomVariableForm's dropdown happens to never
+        // offer them as a nested option. DirectorProperty::beforeStore() enforces it directly.
         $db = $this->getDb();
-        $parent = $this->makeProperty('disk_checks', 'dynamic-dictionary', 'Disk Checks', $db);
+        $parent = $this->makeProperty('container_' . str_replace('-', '_', $valueType), 'fixed-dictionary', 'Container', $db);
         $parent->store();
         $parentUuid = $parent->get('uuid');
 
         $child = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => 'thresholds',
+            'key_name'    => 'nested',
             'parent_uuid' => $parentUuid,
-            'value_type'  => 'dynamic-dictionary',
+            'value_type'  => $valueType,
+        ], $db);
+
+        $this->expectException(InvalidArgumentException::class);
+        $child->store();
+    }
+
+    public function provideNonNestableTypes(): array
+    {
+        return [
+            'dynamic-dictionary' => ['dynamic-dictionary'],
+            'fixed-dictionary'   => ['fixed-dictionary'],
+            'fixed-array'        => ['fixed-array'],
+        ];
+    }
+
+    /**
+     * @dataProvider provideDynamicArrayNestableParentTypes
+     */
+    public function testDynamicArrayIsAllowedAsAFieldOfOtherContainerTypes(string $parentValueType): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // dynamic-array may be used as a field inside a fixed-array, fixed-dictionary or
+        // dynamic-dictionary; it is only barred from nesting inside itself.
+        $db = $this->getDb();
+        $parent = $this->makeProperty(
+            'container_for_' . str_replace('-', '_', $parentValueType),
+            $parentValueType,
+            'Container',
+            $db
+        );
+        $parent->store();
+        $parentUuid = $parent->get('uuid');
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'nested',
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'dynamic-array',
+        ], $db);
+        $child->store();
+
+        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $db);
+        $items = $reloaded->fetchItemsFromDb();
+        $this->assertCount(1, $items);
+        $this->assertEquals('dynamic-array', $items[0]->get('value_type'));
+    }
+
+    public function provideDynamicArrayNestableParentTypes(): array
+    {
+        return [
+            'fixed-array'        => ['fixed-array'],
+            'fixed-dictionary'   => ['fixed-dictionary'],
+            'dynamic-dictionary' => ['dynamic-dictionary'],
+        ];
+    }
+
+    public function testDynamicArrayIsAllowedAsTheItemTypeOfADatalist(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // A datalist's item type may be 'dynamic-array' to declare that it accepts a list of
+        // values instead of a single one (see CustomVariableValueValidator).
+        $db = $this->getDb();
+        $parent = $this->makeProperty('multiselect_list', 'datalist-strict', 'Multiselect List', $db);
+        $parent->store();
+        $parentUuid = $parent->get('uuid');
+
+        $itemType = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'dynamic-array',
+        ], $db);
+
+        $itemType->store();
+
+        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $db);
+        $items = $reloaded->fetchItemsFromDb();
+        $this->assertCount(1, $items);
+        $this->assertEquals('dynamic-array', $items[0]->get('value_type'));
+    }
+
+    public function testDynamicArrayCannotBeNestedInsideAnotherDynamicArray(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $parent = $this->makeProperty('array_of_arrays', 'dynamic-array', 'Array Of Arrays', $db);
+        $parent->store();
+        $parentUuid = $parent->get('uuid');
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'dynamic-array',
         ], $db);
 
         $this->expectException(InvalidArgumentException::class);
@@ -339,72 +444,6 @@ class DirectorPropertyTest extends BaseTestCase
         );
         $this->assertEquals($listName, $childDatalist->get('list_name'));
         $this->assertNotNull($childDatalist->get('uuid'), 'Newly created datalist must have a persisted uuid');
-    }
-
-    /**
-     * Same as above, one level deeper: the not-yet-existing datalist is referenced
-     * by a GRANDCHILD (dynamic-dictionary -> fixed-dictionary -> datalist-strict).
-     */
-    public function testDatalistGrandchildOfDynamicDictionaryIsPersistedWhenListDoesNotExistYet(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $parentKeyName = self::PREFIX . 'dict_with_new_list_grandchild';
-        $listName = self::PREFIX . 'never_seen_list_grandchild';
-        $this->createdKeyNames[] = $parentKeyName;
-        $this->createdListNames[] = $listName;
-
-        $this->assertFalse(DirectorDatalist::exists($listName, $db), 'Precondition: datalist must not exist yet');
-
-        $parentUuid = Uuid::uuid4()->toString();
-        $teamUuid = Uuid::uuid4()->toString();
-        $plain = (object) [
-            'uuid'        => $parentUuid,
-            'key_name'    => $parentKeyName,
-            'value_type'  => 'dynamic-dictionary',
-            'label'       => 'Dict With New List Grandchild',
-            'parent_uuid' => null,
-            'category'    => null,
-            'description' => null,
-            'items'       => [
-                'team' => (object) [
-                    'uuid'        => $teamUuid,
-                    'key_name'    => 'team',
-                    'value_type'  => 'fixed-dictionary',
-                    'label'       => null,
-                    'parent_uuid' => $parentUuid,
-                    'category'    => null,
-                    'description' => null,
-                    'items'       => [
-                        'severity' => $this->datalistItemPlain('severity', $teamUuid, $listName),
-                    ],
-                ],
-            ],
-        ];
-
-        $imported = DirectorProperty::import($plain, $db);
-        $imported->store();
-        foreach ($imported->fetchItemsFromDb() as $child) {
-            $child->store();
-            foreach ($child->fetchItemsFromDb() as $grandchild) {
-                $grandchild->store();
-            }
-        }
-
-        $reloadedGroup = DirectorProperty::loadWithUniqueId(Uuid::fromString($teamUuid), $db);
-        $grandchildren = $reloadedGroup->fetchItemsFromDb();
-        $this->assertCount(1, $grandchildren);
-
-        $grandchildDatalist = $grandchildren[0]->getDatalist();
-        $this->assertNotNull(
-            $grandchildDatalist,
-            'Newly created datalist referenced by a dictionary grandchild must be persisted and linked'
-        );
-        $this->assertEquals($listName, $grandchildDatalist->get('list_name'));
-        $this->assertNotNull($grandchildDatalist->get('uuid'), 'Newly created datalist must have a persisted uuid');
     }
 
     public function testExportRoundTrip(): void
