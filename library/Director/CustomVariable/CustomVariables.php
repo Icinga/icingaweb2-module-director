@@ -436,7 +436,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         $out = '';
 
-        if ($object !== null && !empty($object->get('id'))) {
+        if ($object !== null && ! empty($object->get('id'))) {
             $this->prefetchCustomVarTypes($object);
         }
 
