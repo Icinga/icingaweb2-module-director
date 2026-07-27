@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Forms\CustomVariableForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -92,6 +93,48 @@ class CustomVariableFormTest extends BaseTestCase
         $this->assertCount(1, $childRows, 'exactly one child row should be created for the item type');
         $this->assertSame('0', (string) $childRows[0]->key_name);
         $this->assertSame('string', $childRows[0]->value_type);
+    }
+
+    public function testAssembleOffersContainerTypesOnlyAtTheTopLevel(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // The form's persistence bypasses DirectorProperty::store() (see addNewProperty()/
+        // updateExistingProperty(), both raw $db->insert()/update()), so this dropdown is the
+        // only thing standing between a submitted request and an illegal nested container row.
+        // Zend's DeferredInArrayValidator on the select rejects any value_type not present in
+        // these options, so what's offered here is a real enforcement boundary, not cosmetic.
+        $db = $this->getDb();
+
+        $rootForm = new CustomVariableForm($db);
+        self::callMethod($rootForm, 'assemble', []);
+        $rootOptions = $rootForm->getElement('value_type');
+        $this->assertNotNull($rootOptions->getOption('fixed-array'));
+        $this->assertNotNull($rootOptions->getOption('fixed-dictionary'));
+        $this->assertNotNull($rootOptions->getOption('dynamic-dictionary'));
+        $this->assertNotNull($rootOptions->getOption('dynamic-array'));
+
+        $fieldForm = new CustomVariableForm($db, null, true, Uuid::uuid4());
+        self::callMethod($fieldForm, 'assemble', []);
+        $fieldOptions = $fieldForm->getElement('value_type');
+        $this->assertNull(
+            $fieldOptions->getOption('fixed-array'),
+            'fixed-array must not be offered as a nested field'
+        );
+        $this->assertNull(
+            $fieldOptions->getOption('fixed-dictionary'),
+            'fixed-dictionary must not be offered as a nested field'
+        );
+        $this->assertNull(
+            $fieldOptions->getOption('dynamic-dictionary'),
+            'dynamic-dictionary must not be offered as a nested field'
+        );
+        $this->assertNotNull(
+            $fieldOptions->getOption('dynamic-array'),
+            'dynamic-array must still be offered as a nested field'
+        );
     }
 
     public function testUpdateStringPropertyKeyName(): void

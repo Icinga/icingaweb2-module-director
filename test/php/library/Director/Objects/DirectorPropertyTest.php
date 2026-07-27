@@ -160,13 +160,14 @@ class DirectorPropertyTest extends BaseTestCase
         // basket restore), not just because CustomVariableForm's dropdown happens to never
         // offer them as a nested option. DirectorProperty::beforeStore() enforces it directly.
         $db = $this->getDb();
-        $parent = $this->makeProperty('container_' . str_replace('-', '_', $valueType), 'fixed-dictionary', 'Container', $db);
+        $suffix = 'network_config_' . str_replace('-', '_', $valueType);
+        $parent = $this->makeProperty($suffix, 'fixed-dictionary', 'Network Config', $db);
         $parent->store();
         $parentUuid = $parent->get('uuid');
 
         $child = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => 'nested',
+            'key_name'    => 'interfaces',
             'parent_uuid' => $parentUuid,
             'value_type'  => $valueType,
         ], $db);
@@ -185,6 +186,53 @@ class DirectorPropertyTest extends BaseTestCase
     }
 
     /**
+     * A crafted basket snapshot is the threat model the nesting guard was built for
+     * (see beforeStore()), so it must be enforced on the import() -> store() path too,
+     * not only on properties built directly via create().
+     */
+    public function testContainerTypeNestedViaBasketImportIsRejected(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $parentKeyName = self::PREFIX . 'router_config';
+        $this->createdKeyNames[] = $parentKeyName;
+
+        $parentUuid = Uuid::uuid4()->toString();
+        $plain = (object) [
+            'uuid'        => $parentUuid,
+            'key_name'    => $parentKeyName,
+            'value_type'  => 'fixed-dictionary',
+            'label'       => 'Router Config',
+            'parent_uuid' => null,
+            'category'    => null,
+            'description' => null,
+            'items'       => [
+                'interfaces' => (object) [
+                    'uuid'        => Uuid::uuid4()->toString(),
+                    'key_name'    => 'interfaces',
+                    'value_type'  => 'fixed-dictionary',
+                    'label'       => null,
+                    'parent_uuid' => $parentUuid,
+                    'category'    => null,
+                    'description' => null,
+                    'items'       => [],
+                ],
+            ],
+        ];
+
+        $imported = DirectorProperty::import($plain, $db);
+        $imported->store();
+
+        $this->expectException(InvalidArgumentException::class);
+        foreach ($imported->fetchItemsFromDb() as $child) {
+            $child->store();
+        }
+    }
+
+    /**
      * @dataProvider provideDynamicArrayNestableParentTypes
      */
     public function testDynamicArrayIsAllowedAsAFieldOfOtherContainerTypes(string $parentValueType): void
@@ -196,18 +244,14 @@ class DirectorPropertyTest extends BaseTestCase
         // dynamic-array may be used as a field inside a fixed-array, fixed-dictionary or
         // dynamic-dictionary; it is only barred from nesting inside itself.
         $db = $this->getDb();
-        $parent = $this->makeProperty(
-            'container_for_' . str_replace('-', '_', $parentValueType),
-            $parentValueType,
-            'Container',
-            $db
-        );
+        $suffix = 'network_config_' . str_replace('-', '_', $parentValueType);
+        $parent = $this->makeProperty($suffix, $parentValueType, 'Network Config', $db);
         $parent->store();
         $parentUuid = $parent->get('uuid');
 
         $child = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => 'nested',
+            'key_name'    => 'dns_servers',
             'parent_uuid' => $parentUuid,
             'value_type'  => 'dynamic-array',
         ], $db);
@@ -237,7 +281,7 @@ class DirectorPropertyTest extends BaseTestCase
         // A datalist's item type may be 'dynamic-array' to declare that it accepts a list of
         // values instead of a single one (see CustomVariableValueValidator).
         $db = $this->getDb();
-        $parent = $this->makeProperty('multiselect_list', 'datalist-strict', 'Multiselect List', $db);
+        $parent = $this->makeProperty('allowed_regions', 'datalist-strict', 'Allowed Regions', $db);
         $parent->store();
         $parentUuid = $parent->get('uuid');
 
@@ -263,7 +307,7 @@ class DirectorPropertyTest extends BaseTestCase
         }
 
         $db = $this->getDb();
-        $parent = $this->makeProperty('array_of_arrays', 'dynamic-array', 'Array Of Arrays', $db);
+        $parent = $this->makeProperty('backup_ports', 'dynamic-array', 'Backup Ports', $db);
         $parent->store();
         $parentUuid = $parent->get('uuid');
 
@@ -276,6 +320,70 @@ class DirectorPropertyTest extends BaseTestCase
 
         $this->expectException(InvalidArgumentException::class);
         $child->store();
+    }
+
+    public function testSensitiveIsAllowedAsAFieldOfAFixedDictionary(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Only a dynamic-array is barred from holding a sensitive item, since it renders
+        // every entry in the clear; a fixed-dictionary field has no such restriction.
+        $db = $this->getDb();
+        $parent = $this->makeProperty('snmp_settings', 'fixed-dictionary', 'SNMP Settings', $db);
+        $parent->store();
+        $parentUuid = $parent->get('uuid');
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'community_string',
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'sensitive',
+        ], $db);
+        $child->store();
+
+        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parentUuid), $db);
+        $items = $reloaded->fetchItemsFromDb();
+        $this->assertCount(1, $items);
+        $this->assertEquals('sensitive', $items[0]->get('value_type'));
+    }
+
+    /**
+     * director_property.parent_uuid has no FK enforcing the link (see schema/mysql.sql), so a
+     * dangling reference is reachable in practice. beforeStore() must not blow up on it, and
+     * must not treat a vanished parent as if it were a dynamic-array.
+     */
+    public function testDynamicArrayWithDanglingParentReferenceDoesNotCrash(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $parent = $this->makeProperty('orphaned_array', 'dynamic-array', 'Orphaned Array', $db);
+        $parent->store();
+        $parentUuid = $parent->get('uuid');
+
+        $dba->delete(
+            'director_property',
+            $dba->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($parentUuid, $dba))
+        );
+
+        $childKeyName = self::PREFIX . 'orphaned_array_item';
+        $this->createdKeyNames[] = $childKeyName;
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => $childKeyName,
+            'parent_uuid' => $parentUuid,
+            'value_type'  => 'dynamic-array',
+        ], $db);
+
+        $child->store();
+
+        $this->assertNotNull($child->get('uuid'));
     }
 
     public function testSensitiveCannotBeNestedInsideADynamicArray(): void
