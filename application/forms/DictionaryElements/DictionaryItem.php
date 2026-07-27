@@ -102,7 +102,7 @@ class DictionaryItem extends FieldsetElement
         $this->addElement('hidden', 'inherited_from');
 
         $valElementName = 'var';
-        $type = $this->getElement('type')->getValue();
+        $type = $this->getElement('type')->getValue() ?? '';
         $label = $this->getElement('label')->getValue();
 
         if ($this->removeButton !== null) {
@@ -120,7 +120,7 @@ class DictionaryItem extends FieldsetElement
         }
 
         if ($label === null) {
-            $label = $this->getElement('name')->getValue();
+            $label = $this->getElement('name')->getValue() ?? '';
         }
 
         $uuid = Uuid::fromBytes($this->fields['uuid']);
@@ -637,7 +637,7 @@ class DictionaryItem extends FieldsetElement
         ) {
             $values['value'] = $this->getElement('var-search')->getValue();
         } else {
-            $type = $this->getElement('type')->getValue();
+            $type = $this->getElement('type')->getValue() ?? '';
             $parentType = $this->getElement('parent_type')->getValue();
 
             if (empty($parentType) && ! empty($this->getElement('inherited')->getValue())) {
