@@ -14,8 +14,13 @@ class TestableCustomVarRenderer extends CustomVarRenderer
         string $parentKey,
         string $childKey,
         array $config,
-        ?string $grandparentKey = null
+        ?string $grandparentKey = null,
+        ?string $valueType = null
     ): void {
+        if ($valueType !== null) {
+            $config['value_type'] = $valueType;
+        }
+
         $this->dictionaryChildConfig[$this->scopeKey($grandparentKey, $parentKey)][$childKey] = $config;
     }
 
@@ -27,6 +32,11 @@ class TestableCustomVarRenderer extends CustomVarRenderer
     public function seedDictionaryName(string $key): void
     {
         $this->dictionaryNames[] = $key;
+    }
+
+    public function seedPropertyValueType(string $key, string $valueType): void
+    {
+        $this->customVariableConfig[$key]['value_type'] = $valueType;
     }
 
     public function renderDictionaryValForTest(string $key, array $value)

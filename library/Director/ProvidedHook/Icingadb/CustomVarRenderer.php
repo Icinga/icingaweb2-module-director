@@ -304,7 +304,10 @@ class CustomVarRenderer extends CustomVarRendererHook
 
             foreach ($customProperties as $customProperty) {
                 $propertyName = $customProperty['key_name'];
-                $this->customVariableConfig[$propertyName] = ['label' => $customProperty['label']];
+                $this->customVariableConfig[$propertyName] = [
+                    'label'      => $customProperty['label'],
+                    'value_type' => $customProperty['value_type'],
+                ];
                 if (isset($customProperty['category'])) {
                     $this->customVariableConfig[$propertyName]['group'] = $customProperty['category'];
                 }
@@ -505,7 +508,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                 if (in_array($parent['value_type'], ['fixed-dictionary', 'dynamic-dictionary'], true)) {
                     $this->customPropertyDictionaries[$parent['key_name']][$row['key_name']] = $row['label'];
 
-                    $childConfig = ['label' => $row['label']];
+                    $childConfig = ['label' => $row['label'], 'value_type' => $row['value_type']];
                     if ($row['value_type'] === 'sensitive') {
                         $childConfig['visibility'] = 'hidden';
                     }
@@ -540,6 +543,32 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
 
         return $this->dictionaryChildConfig[$this->scopeKey($grandparentKey, $parentKey)][$key] ?? null;
+    }
+
+    /**
+     * Whether $key, scoped under $parentKey/$grandparentKey, is a *-dictionary
+     *
+     * dictionaryNames is a flat, unscoped list of top-level dictionary names, so it
+     * only works when $key is top-level itself ($parentKey === null). A nested child
+     * can share its name with an unrelated top-level dictionary elsewhere in the same
+     * property tree, so nested lookups go through the scoped dictionaryChildConfig
+     * instead.
+     *
+     * @param string $key
+     * @param ?string $parentKey
+     * @param ?string $grandparentKey
+     *
+     * @return bool
+     */
+    private function isDictionaryValueType(string $key, ?string $parentKey, ?string $grandparentKey = null): bool
+    {
+        if ($parentKey === null) {
+            return in_array($key, $this->dictionaryNames, true);
+        }
+
+        $valueType = $this->dictionaryChildConfigFor($key, $parentKey, $grandparentKey)['value_type'] ?? null;
+
+        return $valueType !== null && str_ends_with($valueType, '-dictionary');
     }
 
     public function renderCustomVarKey(string $key, ?string $parentKey = null, ?string $grandparentKey = null)
@@ -613,7 +642,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                     Attributes::create(['title' => $this->datalistMaps[$key][$value] . " [$value]"]),
                     Text::create($this->datalistMaps[$key][$value])
                 );
-            } elseif ($value !== null && in_array($key, $this->dictionaryNames)) {
+            } elseif ($value !== null && $this->isDictionaryValueType($key, $parentKey, $grandparentKey)) {
                 return $this->renderDictionaryVal($key, (array) $value);
             }
         } catch (Throwable $e) {
@@ -697,18 +726,37 @@ class CustomVarRenderer extends CustomVarRendererHook
                     )
                 );
 
+                // For a fixed-dictionary/fixed-array, $k is itself a declared schema child of
+                // $key, so the config for its own fields lives under scope ($k under $key). A
+                // dynamic-dictionary's keys are end-user-created entries with no schema identity
+                // of their own though, so its fields are declared directly under $key, not under
+                // $k. Since dynamic-dictionary can never be nested, $key has no scope of its own
+                // here either.
+                if (($this->customVariableConfig[$key]['value_type'] ?? null) === 'dynamic-dictionary') {
+                    $fieldParentKey = $key;
+                    $fieldGrandparentKey = null;
+                } else {
+                    $fieldParentKey = $k;
+                    $fieldGrandparentKey = $key;
+                }
+
                 $this->dictionaryLevel++;
                 foreach ($val as $childKey => $childVal) {
-                    $childVal = $this->renderCustomVarValue($childKey, $childVal, $k, $key) ?? $childVal;
-                    $label = $this->renderCustomVarKey($childKey, $k, $key) ?? $childKey;
-                    if (
-                        ! in_array($childKey, $this->dictionaryNames)
-                        && ! array_key_exists($childKey, $this->customPropertyDictionaries)
-                        && is_array($childVal)
-                    ) {
-                        $this->renderArrayVal($label, $childVal);
-                    } elseif (array_key_exists($childKey, $this->customPropertyDictionaries)) {
-                        $this->renderArrayVal($label, $childVal, $childKey);
+                    $childVal = $this->renderCustomVarValue($childKey, $childVal, $fieldParentKey, $fieldGrandparentKey)
+                        ?? $childVal;
+                    $label = $this->renderCustomVarKey($childKey, $fieldParentKey, $fieldGrandparentKey) ?? $childKey;
+
+                    // A masked or datalist-mapped value is always a string or ValidHtml,
+                    // never an array, no matter what the schema says $childKey is. So we
+                    // check the actual value before recursing into it. The Array vs
+                    // Dictionary label still comes from the schema, scoped correctly,
+                    // since $childKey alone can collide with an unrelated dictionary
+                    // elsewhere in the property tree (e.g. a schema child sharing its own
+                    // parent's key_name).
+                    if (! $childVal instanceof ValidHtml && (is_array($childVal) || is_object($childVal))) {
+                        $isDictionaryChild = $this
+                            ->isDictionaryValueType($childKey, $fieldParentKey, $fieldGrandparentKey);
+                        $this->renderArrayVal($label, (array) $childVal, $isDictionaryChild ? $childKey : null);
                     } else {
                         $this->dictionaryBody->addHtml(
                             new HtmlElement(
@@ -735,7 +783,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                         new HtmlElement(
                             'td',
                             null,
-                            $this->renderCustomVarValue($k, $val, $key) ?? Html::wantHtml($val)
+                            Html::wantHtml($this->renderCustomVarValue($k, $val, $key) ?? $val)
                         )
                     )
                 );
@@ -745,7 +793,16 @@ class CustomVarRenderer extends CustomVarRendererHook
         $this->dictionaryLevel--;
 
         if ($this->dictionaryLevel === 0) {
-            return $this->dictionaryTable->addHtml($this->dictionaryBody);
+            // Icingadb's own custom var table only counts items itself for a plain
+            // array value. We always hand back rendered HTML here instead (masking has
+            // to happen while we still hold the raw value), so without this the root
+            // row would show no item count at all, unlike a fixed-/dynamic-array.
+            $numItems = count($value);
+
+            return (new HtmlDocument())->addHtml(
+                Text::create(sprintf(tp('%d item', '%d items', $numItems), $numItems)),
+                $this->dictionaryTable->addHtml($this->dictionaryBody)
+            );
         }
 
         return null;
@@ -798,7 +855,7 @@ class CustomVarRenderer extends CustomVarRendererHook
             }
 
             if (! $value instanceof HtmlElement) {
-                $renderedValue = $this->renderCustomVarValue($key, $value) ?? Html::wantHtml($value);
+                $renderedValue = Html::wantHtml($this->renderCustomVarValue($key, $value) ?? $value);
             } else {
                 $renderedValue = Html::wantHtml($value);
             }

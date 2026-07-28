@@ -164,6 +164,146 @@ class CustomVarRendererTest extends BaseTestCase
         );
     }
 
+    public function testDynamicDictionaryEntriesMaskSensitiveChildrenAcrossEveryEntry(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "servers" is a dynamic-dictionary: end users add arbitrary entries
+        // ("primary", "backup", ...), each a sub-dictionary with a schema-declared
+        // "password" child. The schema child is scoped directly under "servers",
+        // not under the runtime entry key - rendering must look it up the same way,
+        // or the sensitive value slips through in the clear for every entry.
+        $renderer->seedDictionaryName('servers');
+        $renderer->seedPropertyValueType('servers', 'dynamic-dictionary');
+        $renderer->seedDictionaryChild('servers', 'password', [
+            'label'      => 'Password',
+            'visibility' => 'hidden',
+        ]);
+
+        $html = $renderer->renderDictionaryValForTest('servers', [
+            'primary' => ['password' => 'hunter2'],
+            'backup'  => ['password' => 'hunter3'],
+        ])->render();
+
+        $this->assertStringNotContainsString('hunter2', $html);
+        $this->assertStringNotContainsString('hunter3', $html);
+        $this->assertStringContainsString('***', $html);
+    }
+
+    public function testNestedFixedDictionaryChildStillMasksUnderItsOwnScope(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "config" is a fixed-dictionary whose "db" child is itself a nested
+        // fixed-dictionary with a "password" child. Unlike a dynamic-dictionary,
+        // "db" is a real declared schema child of "config", so the existing
+        // scope chain (child under db under config) must still apply unchanged.
+        $renderer->seedDictionaryName('config');
+        $renderer->seedPropertyValueType('config', 'fixed-dictionary');
+        $renderer->seedDictionaryChild('db', 'password', [
+            'label'      => 'Database password',
+            'visibility' => 'hidden',
+        ], 'config');
+
+        $html = $renderer->renderDictionaryValForTest('config', [
+            'db' => ['password' => 'super-secret'],
+        ])->render();
+
+        $this->assertStringNotContainsString('super-secret', $html);
+        $this->assertStringContainsString('***', $html);
+    }
+
+    public function testDynamicDictionaryChildSharingParentNameStillMasksWithoutCrashing(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "credentials" is a dynamic-dictionary keyed by service name (grafana,
+        // elasticsearch, ...), and each entry's one field happens to be named
+        // "credentials" too, since that's just what the value itself is. dictionaryNames
+        // is a flat list of dictionary property names, so a naive check on the child key
+        // alone wrongly matches the unrelated top-level "credentials" dictionary and
+        // tries to treat the masked string as an array, which used to crash instead of
+        // just rendering "***".
+        $renderer->seedDictionaryName('credentials');
+        $renderer->seedPropertyValueType('credentials', 'dynamic-dictionary');
+        $renderer->seedDictionaryChild('credentials', 'credentials', [
+            'label'      => 'Credentials',
+            'visibility' => 'hidden',
+        ], null, 'sensitive');
+
+        $html = $renderer->renderDictionaryValForTest('credentials', [
+            'grafana'       => ['credentials' => 'glsa_9f8e7d6c5b4a'],
+            'elasticsearch' => ['credentials' => 'esa_1a2b3c4d5e6f'],
+        ])->render();
+
+        $this->assertStringNotContainsString('glsa_9f8e7d6c5b4a', $html);
+        $this->assertStringNotContainsString('esa_1a2b3c4d5e6f', $html);
+        $this->assertStringContainsString('***', $html);
+    }
+
+    public function testSensitiveFixedArrayItemMasksInFullyRenderedHtml(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // Unlike testSameNamedArrayItemsUnderDifferentDictionariesDoNotShareMasking,
+        // this renders the full HTML table, not just the array return value. Masking
+        // an array item used to build a raw "***" string straight into an HtmlElement,
+        // which requires a ValidHtml, not a plain string, and crashed.
+        $renderer->seedDictionaryName('backup');
+        $renderer->seedDictionaryChild('backup', 'targets', ['label' => 'Targets']);
+        $renderer->seedSensitiveArrayItem('targets', '0', 'backup');
+
+        $html = $renderer->renderDictionaryValForTest('backup', [
+            'targets' => ['rsync://backup:s3cr3t@backup.example.com/data'],
+        ])->render();
+
+        $this->assertStringNotContainsString('rsync://backup:s3cr3t@backup.example.com/data', $html);
+        $this->assertStringContainsString('***', $html);
+    }
+
+    public function testNestedArrayChildPassedAsObjectRendersWithArraySuffix(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // Real custom var values come from JSON and often arrive as stdClass rather
+        // than arrays, so the array/dictionary recursion check must accept objects
+        // too, not just arrays.
+        $renderer->seedDictionaryName('clusters');
+        $renderer->seedPropertyValueType('clusters', 'fixed-dictionary');
+        $renderer->seedDictionaryChild('us_east', 'endpoints', ['label' => 'Endpoints'], 'clusters');
+
+        $html = $renderer->renderDictionaryValForTest('clusters', [
+            'us_east' => (object) ['endpoints' => (object) ['metrics' => 'https://prometheus.us-east.example.com']],
+        ])->render();
+
+        $this->assertStringContainsString('prometheus.us-east.example.com', $html);
+        $this->assertStringContainsString('(Array)', $html);
+    }
+
+    public function testNestedDictionaryTypedChildRendersWithDictionarySuffix(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "endpoints" is itself declared as a fixed-dictionary in the schema, scoped
+        // under "us_east" under "clusters". The Array/Dictionary label must come from
+        // that scoped schema lookup, not from a flat, unscoped name check.
+        $renderer->seedDictionaryName('clusters');
+        $renderer->seedPropertyValueType('clusters', 'fixed-dictionary');
+        $renderer->seedDictionaryChild(
+            'us_east',
+            'endpoints',
+            ['label' => 'Endpoints'],
+            'clusters',
+            'fixed-dictionary'
+        );
+
+        $html = $renderer->renderDictionaryValForTest('clusters', [
+            'us_east' => ['endpoints' => ['metrics' => 'https://prometheus.us-east.example.com']],
+        ])->render();
+
+        $this->assertStringContainsString('(Dictionary)', $html);
+    }
+
     public function testAppliedForArrayUsesItsValuesAsNameSuffix(): void
     {
         $renderer = new CustomVarRenderer();
