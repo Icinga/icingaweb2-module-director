@@ -67,10 +67,11 @@ types:
 > `number`, `bool`, `sensitive`), datalist (`datalist-strict`,
 > `datalist-non-strict`), or `dynamic-array` types. A nested field can
 > never itself be a `fixed-array`, `fixed-dictionary` or
-> `dynamic-dictionary`. A `dynamic-array` can be nested this way, but not
-> inside another `dynamic-array`. Also, `dynamic-dictionary` can only be
-> defined as a top-level property; it cannot be nested inside another
-> array or dictionary.
+> `dynamic-dictionary`, that also rules out nesting a `fixed-array`
+> inside another `fixed-array`. A `dynamic-array` can be nested this
+> way, but not inside another `dynamic-array`. Also, `dynamic-dictionary`
+> can only be defined as a top-level property; it cannot be nested
+> inside another array or dictionary.
 >
 > `sensitive` is not offered as the item type of a `dynamic-array` or a
 > datalist. Both render their values as a plain visible list, and there
