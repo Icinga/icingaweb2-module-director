@@ -296,9 +296,7 @@ class DirectorProperty extends DbObject
     public static function fromDbRow($row, Db $connection)
     {
         $obj = static::create((array) $row, $connection);
-        $obj->loadedFromDb = true;
-        $obj->hasBeenModified = false;
-        $obj->modifiedProperties = [];
+        $obj->setBeingLoadedFromDb();
         $obj->onLoadFromDb();
 
         return $obj;
