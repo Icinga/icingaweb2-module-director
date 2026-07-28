@@ -32,11 +32,14 @@ class CustomVariableValueApplier
      * used for a POST carrying a full "vars" dictionary at the base
      * object endpoint.
      *
-     * @return void
+     * @return bool Whether anything was actually wiped or written. A PUT always
+     *              counts as a change since it replaces the full set regardless
+     *              of the end result. Otherwise this reflects CustomVariables'
+     *              own modification tracking, checked before storeToDb() resets it.
      *
      * @throws NotFoundError
      */
-    public function apply(CustomVarApplyRequest $request): void
+    public function apply(CustomVarApplyRequest $request): bool
     {
         $object = $request->object;
         $dbAdapter = $this->db->getDbAdapter();
@@ -107,6 +110,7 @@ class CustomVariableValueApplier
                 );
             }
 
+            $hasChanged = $wipeValuesInDb || $objectVars->hasBeenModified();
             $objectVars->storeToDb($object);
         } catch (Throwable $e) {
             if ($manageTransaction) {
@@ -119,6 +123,8 @@ class CustomVariableValueApplier
         if ($manageTransaction) {
             $dbAdapter->commit();
         }
+
+        return $hasChanged;
     }
 
     /**

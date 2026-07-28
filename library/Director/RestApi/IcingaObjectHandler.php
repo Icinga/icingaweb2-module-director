@@ -321,13 +321,20 @@ class IcingaObjectHandler extends RequestHandler
             return $object;
         }
 
-        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+        $varsWereChanged = (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $object,
             $request->overRiddenCustomVars,
             $request->actionName,
             $request->method,
             $request->replaceAll
         ));
+
+        // persistChanges() only checks the object's own columns, so it may have
+        // already set 304 even though the applier above really changed the
+        // database. Fix that up without touching a 201 already earned.
+        if ($varsWereChanged && $this->response->getHttpResponseCode() === 304) {
+            $this->response->setHttpResponseCode(200);
+        }
 
         return IcingaObject::loadByType($type, $object->getObjectName(), $db);
     }

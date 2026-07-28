@@ -22,6 +22,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
     private const PREFIX = '___TEST___';
     private const TEMPLATE_NAME = self::PREFIX . 'webserver-template';
     private const DB_CONNECTION_KEY = self::PREFIX . 'database_connection';
+    private const REGION_KEY = self::PREFIX . 'region';
 
     public function testObjectChangeAndCustomVarValidationFailureRollBackTogether(): void
     {
@@ -100,6 +101,126 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
     }
 
+    public function testVarsOnlyPostReportsSuccessNotNotModified(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
+            IcingaHost::load(self::TEMPLATE_NAME, $db)->delete();
+        }
+
+        $host = IcingaHost::create([
+            'object_name'  => self::TEMPLATE_NAME,
+            'object_type'  => 'template',
+            'display_name' => 'Webserver Template',
+        ]);
+        $host->store($db);
+
+        $regionProperty = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::REGION_KEY,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db);
+        $regionProperty->store();
+
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($regionProperty->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($host->get('uuid'), $dba),
+        ]);
+
+        $response = new Response();
+        $handler = new IcingaObjectHandler(new Request(), $response, $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $method->setAccessible(true);
+
+        // Mirrors a base-object POST body of {"vars": {"region": "us-east"}} with
+        // no other property changes, same as handleApiRequest() builds for a
+        // vars-only POST.
+        $writeRequest = new IcingaObjectWriteRequest(
+            $host,
+            [],
+            'host',
+            'index',
+            'POST',
+            true,
+            [self::REGION_KEY => 'us-east'],
+            false,
+            new UrlParams()
+        );
+
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest) {
+            $method->invoke($handler, $writeRequest);
+        });
+
+        $this->assertEquals(
+            200,
+            $response->getHttpResponseCode(),
+            'A vars-only POST that really mutates data must not report 304 Not Modified'
+        );
+
+        $reloaded = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            'us-east',
+            $reloaded->vars()->get(self::REGION_KEY)->getValue(),
+            'The custom variable must actually have been persisted'
+        );
+    }
+
+    public function testNoOpVarsPostKeepsNotModifiedStatus(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
+            IcingaHost::load(self::TEMPLATE_NAME, $db)->delete();
+        }
+
+        $host = IcingaHost::create([
+            'object_name'  => self::TEMPLATE_NAME,
+            'object_type'  => 'template',
+            'display_name' => 'Webserver Template',
+        ]);
+        $host->store($db);
+
+        $response = new Response();
+        $handler = new IcingaObjectHandler(new Request(), $response, $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $method->setAccessible(true);
+
+        // Null for a variable that was never set is a true no-op, nothing to
+        // wipe or write. Unlike the real mutation above, this must keep 304.
+        $writeRequest = new IcingaObjectWriteRequest(
+            $host,
+            [],
+            'host',
+            'index',
+            'POST',
+            true,
+            [self::REGION_KEY => null],
+            false,
+            new UrlParams()
+        );
+
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest) {
+            $method->invoke($handler, $writeRequest);
+        });
+
+        $this->assertEquals(
+            304,
+            $response->getHttpResponseCode(),
+            'A vars override that resolves to a true no-op must keep reporting 304 Not Modified'
+        );
+    }
+
     public function testDeleteIsAllowedOnTheIndexAction(): void
     {
         IcingaObjectHandler::assertDeleteAllowed('index');
@@ -145,6 +266,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
             }
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::DB_CONNECTION_KEY));
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::REGION_KEY));
         }
 
         parent::tearDown();
