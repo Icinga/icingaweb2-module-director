@@ -445,19 +445,37 @@ class DirectorProperty extends DbObject
     /**
      * @throws InvalidArgumentException if a nested property is being stored with a value_type
      *                                  that may only be used at the top level, a dynamic-array
-     *                                  is nested inside another dynamic-array, or a 'sensitive'
-     *                                  item type is used under a dynamic-array or datalist
+     *                                  is nested inside another dynamic-array, a 'sensitive'
+     *                                  item type is used under a dynamic-array or datalist, or a
+     *                                  property is being (re)typed into a dynamic-array or
+     *                                  datalist while it still has a 'sensitive' child
      */
     protected function beforeStore(): void
     {
         $this->persistPendingCategory();
 
+        $valueType = $this->get('value_type');
+
+        // The child-side check further down only fires when the child itself gets stored.
+        // Switching an existing dynamic-dictionary (or similar) to a dynamic-array or
+        // datalist skips that check entirely, so a sensitive child already sitting there
+        // would suddenly start rendering in the clear. Catch that here too.
+        if (in_array($valueType, self::UNMASKED_LIST_TYPES, true)) {
+            foreach ($this->fetchExistingChildrenFromDb() as $child) {
+                if ($child->get('value_type') === 'sensitive') {
+                    throw new InvalidArgumentException(sprintf(
+                        "'%s' cannot be used here, this property has a 'sensitive' child which"
+                        . " would then be rendered in the clear",
+                        $valueType
+                    ));
+                }
+            }
+        }
+
         $parentUuid = $this->get('parent_uuid');
         if ($parentUuid === null) {
             return;
         }
-
-        $valueType = $this->get('value_type');
 
         if (in_array($valueType, self::NON_NESTABLE_TYPES, true)) {
             throw new InvalidArgumentException(sprintf(
