@@ -1,3 +1,9 @@
+-- citext has been a "trusted" extension since PostgreSQL 13, so the database owner
+-- (the role this migration runs as) can install it without superuser rights. On
+-- older PostgreSQL, or a role without CREATE on the database, this fails and the
+-- migration transaction rolls back cleanly. See doc/05-Upgrading.md.
+CREATE EXTENSION IF NOT EXISTS citext;
+
 CREATE TYPE enum_property_value_type AS ENUM(
   'string',
   'number',
@@ -41,7 +47,7 @@ CREATE UNIQUE INDEX unique_property_name_parent
   ON director_property (key_name, parent_uuid)
   WHERE parent_uuid IS NOT NULL;
 
--- Postgres does not auto-index an FK's referencing column; without this, deleting a
+-- Postgres does not auto-index an FK's referencing column. Without this, deleting a
 -- property does a sequential scan to find its children.
 CREATE INDEX director_property_parent_uuid ON director_property (parent_uuid);
 
