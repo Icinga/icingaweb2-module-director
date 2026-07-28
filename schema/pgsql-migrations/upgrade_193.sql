@@ -29,7 +29,6 @@ CREATE TABLE director_property (
     FOREIGN KEY (parent_uuid)
     REFERENCES director_property (uuid)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
 );
 
 -- Unique key_name at root level (no parent)

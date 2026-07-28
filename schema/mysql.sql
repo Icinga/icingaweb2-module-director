@@ -280,7 +280,6 @@ CREATE TABLE director_property (
     FOREIGN KEY parent (parent_uuid)
     REFERENCES director_property (uuid)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 ALTER TABLE director_datalist

@@ -349,7 +349,6 @@ CREATE TABLE director_property (
     FOREIGN KEY (parent_uuid)
     REFERENCES director_property (uuid)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX unique_property_name_root
