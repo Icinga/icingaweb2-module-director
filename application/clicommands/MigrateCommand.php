@@ -79,6 +79,8 @@ class MigrateCommand extends Command
     {
         $db = $this->db();
         $customPropertiesToMigrate = $this->prepareCustomProperties();
+        // count datafields now, before delete wipes the migrated rows away
+        $totalDatafields = count(DirectorDatafield::loadAll($db));
         $dryRun = $this->params->shift('dry-run') ?? false;
         $delete = $this->params->shift('delete') ?? false;
         // Dry run summary
@@ -131,7 +133,7 @@ class MigrateCommand extends Command
             }
         }
 
-        $totalSkipped = count(DirectorDatafield::loadAll($db)) - $totalMigrated;
+        $totalSkipped = $totalDatafields - $totalMigrated;
         if ($delete) {
             echo "The following datafields have been migrated and deleted:\n";
             if ($this->isVerbose) {

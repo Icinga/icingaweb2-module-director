@@ -422,6 +422,29 @@ class MigrateCommandTest extends BaseTestCase
         );
     }
 
+    public function testSkippedCountStaysCorrectAfterDelete(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $totalBefore = count(DirectorDatafield::loadAll($db));
+        $expectedMigrated = count(self::MIGRATABLE);
+        $expectedSkipped = $totalBefore - $expectedMigrated;
+
+        $cmd = new TestableMigrateCommand($db, ['--delete']);
+        $output = $cmd->runDatafields();
+
+        $this->assertStringContainsString(
+            "Total number of datafields skipped: $expectedSkipped\n",
+            $output,
+            '--delete must not shrink the skipped count by counting datafields after they were removed'
+        );
+    }
+
     public function testMigrateDatafieldsRollsBackOnMidLoopFailure(): void
     {
         if ($this->skipForMissingDb()) {
