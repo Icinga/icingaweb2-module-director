@@ -236,7 +236,8 @@ class MigrateCommand extends Command
                     $customProperty['value_type'] = 'datalist-non-strict';
                 }
 
-                $customProperty['item_type'] = $settings['data_type'] === 'array'
+                // older datalists were saved without this setting, and it defaulted to string
+                $customProperty['item_type'] = ($settings['data_type'] ?? 'string') === 'array'
                     ? 'dynamic-array'
                     : 'string';
 

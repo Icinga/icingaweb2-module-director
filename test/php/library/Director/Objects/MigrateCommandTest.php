@@ -33,6 +33,8 @@ class MigrateCommandTest extends BaseTestCase
 
     private const VAR_ENV_CHOICES_DEFAULT_BEHAVIOR = self::PREFIX . 'env_choices_default_behavior';
 
+    private const VAR_ENV_CHOICES_NO_DATA_TYPE = self::PREFIX . 'env_choices_no_data_type';
+
     // Non-migratable datafield varnames
     private const VAR_SQL_QUERY    = self::PREFIX . 'sql_query_field';
 
@@ -67,6 +69,7 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_ENV_SUGGEST,
         self::VAR_HIDDEN,
         self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR,
+        self::VAR_ENV_CHOICES_NO_DATA_TYPE,
     ];
 
     private const ALL_TEST_VARS = [
@@ -76,6 +79,7 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_ENV_CHOICES,
         self::VAR_ENV_SUGGEST,
         self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR,
+        self::VAR_ENV_CHOICES_NO_DATA_TYPE,
         self::VAR_SQL_QUERY,
         self::VAR_CATEGORIZED,
         self::VAR_HIDDEN,
@@ -226,6 +230,41 @@ class MigrateCommandTest extends BaseTestCase
             $row->value_type,
             'a datalist datafield with no explicit "behavior" setting must migrate as strict, '
             . 'matching DataTypeDatalist\'s own default'
+        );
+    }
+
+    public function testDatalistWithoutDataTypeSettingMigratesAsString(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $property = $dba->fetchRow(
+            $dba->select()->from('director_property', ['uuid'])
+                ->where('key_name = ?', self::VAR_ENV_CHOICES_NO_DATA_TYPE)
+        );
+        $this->assertNotFalse($property, 'env_choices_no_data_type property must be created');
+
+        $itemValueType = $dba->fetchOne(
+            $dba->select()->from('director_property', ['value_type'])
+                ->where(
+                    'parent_uuid = ?',
+                    DbUtil::quoteBinaryCompat(DbUtil::binaryResult($property->uuid), $dba)
+                )
+        );
+
+        $this->assertEquals(
+            'string',
+            $itemValueType,
+            'a datalist datafield with no "data_type" setting must migrate its item type as string, '
+            . 'not warn or abort'
         );
     }
 
@@ -795,6 +834,17 @@ class MigrateCommandTest extends BaseTestCase
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeDatalist',
         ], $db);
         $field->set('data_type', 'string');
+        $field->set('datalist_id', $datalistId);
+        $field->store();
+
+        // 5c. env_choices_no_data_type — datalist datafield with no 'data_type' setting at
+        // all, must default to 'string', matching the legacy runtime's own fallback.
+        $field = DirectorDatafield::create([
+            'varname'  => self::VAR_ENV_CHOICES_NO_DATA_TYPE,
+            'caption'  => 'Environment Choices No Data Type',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeDatalist',
+        ], $db);
+        $field->set('behavior', 'strict');
         $field->set('datalist_id', $datalistId);
         $field->store();
 
