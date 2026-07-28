@@ -315,23 +315,27 @@ class CustomVariableValueCleaner
      *
      * Does nothing if a legacy Data Field still exists under the same varname, a value
      * migration deliberately left behind can still be that field's live data, not this
-     * property's.
+     * property's. The admin has to rename or remove that field first, then delete this
+     * property again to actually clear it.
      *
      * @param string $varname the root property's own key_name. Only call this for a root
      *                        property, a nested property's key_name isn't guaranteed unique
      *                        and could collide with an unrelated root variable
      *
-     * @return void
+     * @return int Number of stored values left in place because of a legacy Data Field, 0
+     *             if there was no conflict and the values were deleted as usual
      */
-    public function deleteStoredValues(string $varname): void
+    public function deleteStoredValues(string $varname): int
     {
         if ($this->hasLegacyDatafield($varname)) {
-            return;
+            return $this->countStoredValues($varname);
         }
 
         foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
             $this->db->delete("icinga_{$object}_var", Filter::where('varname', $varname));
         }
+
+        return 0;
     }
 
     /**
@@ -348,6 +352,27 @@ class CustomVariableValueCleaner
                ->from('director_datafield', ['cnt' => 'COUNT(*)'])
                ->where('varname = ?', $varname)
         );
+    }
+
+    /**
+     * Count how many stored values exist under this varname, across every object type
+     *
+     * @return int
+     */
+    private function countStoredValues(string $varname): int
+    {
+        $db = $this->db->getDbAdapter();
+        $total = 0;
+
+        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
+            $total += (int) $db->fetchOne(
+                $db->select()
+                   ->from("icinga_{$object}_var", ['cnt' => 'COUNT(*)'])
+                   ->where('varname = ?', $varname)
+            );
+        }
+
+        return $total;
     }
 
     /**

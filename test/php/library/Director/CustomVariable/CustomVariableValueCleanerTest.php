@@ -149,7 +149,7 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             'format'   => 'json',
         ]);
 
-        (new CustomVariableValueCleaner($db))->deleteStoredValues(self::SHARED_KEY_NAME);
+        $keptCount = (new CustomVariableValueCleaner($db))->deleteStoredValues(self::SHARED_KEY_NAME);
 
         $storedValue = $dba->fetchOne(
             $dba->select()->from('icinga_host_var', ['varvalue'])
@@ -161,6 +161,11 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             json_encode('us-east'),
             $storedValue,
             'a value must not be wiped while a legacy Data Field still claims the same varname'
+        );
+        $this->assertEquals(
+            1,
+            $keptCount,
+            'the number of values kept alive because of the conflict must be reported back'
         );
     }
 
@@ -194,7 +199,7 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             'format'   => 'json',
         ]);
 
-        (new CustomVariableValueCleaner($db))->deleteStoredValues(self::SHARED_KEY_NAME);
+        $keptCount = (new CustomVariableValueCleaner($db))->deleteStoredValues(self::SHARED_KEY_NAME);
 
         $storedValue = $dba->fetchOne(
             $dba->select()->from('icinga_host_var', ['varvalue'])
@@ -206,6 +211,7 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $storedValue,
             'a value must still be wiped outright when no legacy Data Field shares its varname'
         );
+        $this->assertEquals(0, $keptCount, 'nothing was kept, so no values must be reported back');
     }
 
     protected function tearDown(): void

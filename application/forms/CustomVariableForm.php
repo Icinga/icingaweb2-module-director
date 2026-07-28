@@ -7,6 +7,7 @@ use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
@@ -33,6 +34,12 @@ class CustomVariableForm extends CompatForm
 
     /** @var ?string The key name as stored in the database, used to detect pending renames */
     private ?string $storedKeyName = null;
+
+    /** @var int Stored values kept because a legacy Data Field still claims the same varname */
+    private int $keptStoredValueCount = 0;
+
+    /** @var ?string The varname reported by $keptStoredValueCount, for the warning message */
+    private ?string $keptStoredValueVarname = null;
 
     public function __construct(
         protected DbConnection $db,
@@ -441,6 +448,17 @@ class CustomVariableForm extends CompatForm
         }
 
         $this->db->getDbAdapter()->commit();
+
+        if ($this->keptStoredValueCount > 0) {
+            Notification::warning(sprintf(
+                $this->translate(
+                    'Kept %d stored value(s) for "%s", a Data Field with the same name still exists. '
+                    . 'Rename or remove it, then save this property again to clear them.'
+                ),
+                $this->keptStoredValueCount,
+                $this->keptStoredValueVarname
+            ));
+        }
     }
 
     /**
@@ -532,7 +550,8 @@ class CustomVariableForm extends CompatForm
                 // to be cleared, the same way deleting the property outright would clear it.
                 $cleaner = new CustomVariableValueCleaner($this->db);
                 if ($this->parentUuid === null) {
-                    $cleaner->deleteStoredValues($dbProperty['key_name']);
+                    $this->keptStoredValueCount = $cleaner->deleteStoredValues($dbProperty['key_name']);
+                    $this->keptStoredValueVarname = $dbProperty['key_name'];
                 } else {
                     $parentProperty = $this->fetchProperty($this->parentUuid);
                     $cleaner->removeObjectCustomVars($dbProperty, $parentProperty, true);

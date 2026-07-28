@@ -7,6 +7,7 @@ use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Web\Widget\CustomVarObjectList;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlElement;
@@ -189,18 +190,30 @@ class DeleteCustomVariableForm extends CompatForm
         $allUuids = array_merge([$uuid], $this->collectDescendantUuids($uuid));
         $quotedAllUuids = DbUtil::quoteBinaryCompat($allUuids, $this->db->getDbAdapter());
 
-        $db->runFailSafeTransaction(function () use ($db, $prop, $quotedAllUuids, $cleaner) {
+        $keptValues = 0;
+        $db->runFailSafeTransaction(function () use ($db, $prop, $quotedAllUuids, $cleaner, &$keptValues) {
             $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedAllUuids));
 
             $cleaner->removeObjectCustomVars($prop, $this->parent);
             $cleaner->removeFromOverrideServiceVars($prop, $this->parent);
 
             if (empty($this->parent)) {
-                $cleaner->deleteStoredValues($prop['key_name']);
+                $keptValues = $cleaner->deleteStoredValues($prop['key_name']);
             }
 
             $db->delete('director_property', Filter::where('uuid', $quotedAllUuids));
         });
+
+        if ($keptValues > 0) {
+            Notification::warning(sprintf(
+                $this->translate(
+                    'Kept %d stored value(s) for "%s", a Data Field with the same name still exists. '
+                    . 'Rename or remove it, then delete this property again to clear them.'
+                ),
+                $keptValues,
+                $prop['key_name']
+            ));
+        }
     }
 
     /**
