@@ -185,11 +185,20 @@ class MigrateCommand extends Command
             'key_name'
         );
 
+        // key_name is case-insensitive in the new schema (citext/utf8mb4_unicode_ci),
+        // but a plain PHP array lookup on $directorProperty is not, so a legacy
+        // datafield differing only by case would slip past this check and blow up
+        // later on the database's own unique constraint instead.
+        $existingKeyNamesByLower = [];
+        foreach (array_keys($directorProperty) as $keyName) {
+            $existingKeyNamesByLower[mb_strtolower($keyName, 'UTF-8')] = true;
+        }
+
         $customProperties = [];
         $migrationQuery = $this->getDataFieldsMigrationQuery();
         $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
         foreach ($migrationQuery as $row) {
-            if (isset($directorProperty[$row->varname])) {
+            if (isset($existingKeyNamesByLower[mb_strtolower($row->varname, 'UTF-8')])) {
                 $this->existingCustomProperties[] = $row->varname;
 
                 continue;
@@ -507,11 +516,27 @@ class MigrateCommand extends Command
     private function getDatafieldsWithDuplicateNames(): array
     {
         $query = $this->getDataFieldQuery();
-        $query->columns(['varname' => 'dd.varname', 'count' => 'COUNT(dd.varname)']);
-        $query->group('dd.varname');
-        $query->select()->having('COUNT(dd.varname) > 1');
+        $query->columns(['varname' => 'dd.varname']);
 
-        return $query->fetchPairs();
+        // key_name is case-insensitive in the new schema, but the legacy varname column
+        // is not, so this groups by lowercase name in PHP rather than relying on a SQL
+        // GROUP BY, which would follow the datafield table's own case-sensitive collation
+        // and miss names that only differ by case.
+        $varnamesByLower = [];
+        foreach ($query->fetchColumn() as $varname) {
+            $varnamesByLower[mb_strtolower($varname, 'UTF-8')][] = $varname;
+        }
+
+        $duplicates = [];
+        foreach ($varnamesByLower as $varnames) {
+            if (count($varnames) > 1) {
+                foreach ($varnames as $varname) {
+                    $duplicates[$varname] = count($varnames);
+                }
+            }
+        }
+
+        return $duplicates;
     }
 
     /**

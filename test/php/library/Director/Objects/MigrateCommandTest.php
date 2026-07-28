@@ -45,6 +45,14 @@ class MigrateCommandTest extends BaseTestCase
 
     private const VAR_TIME_FIELD = self::PREFIX . 'time_field';
 
+    // Case-only duplicate pair (skip both, since key_name is case-insensitive)
+    private const VAR_CASE_DUP_LOWER = self::PREFIX . 'region';
+
+    private const VAR_CASE_DUP_UPPER = self::PREFIX . 'Region';
+
+    // Collides with a pre-existing property that only differs in case
+    private const VAR_CASE_EXISTING = self::PREFIX . 'Datacenter';
+
     private const LIST_NAME = self::PREFIX . 'migrate_list';
 
     private const CAT_NAME  = self::PREFIX . 'migrate_category';
@@ -73,6 +81,9 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_HIDDEN,
         self::VAR_DUP,
         self::VAR_TIME_FIELD,
+        self::VAR_CASE_DUP_LOWER,
+        self::VAR_CASE_DUP_UPPER,
+        self::VAR_CASE_EXISTING,
         self::PREFIX . 'tls_cert_path',
         self::PREFIX . 'tls_key_path',
     ];
@@ -484,6 +495,81 @@ class MigrateCommandTest extends BaseTestCase
             $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])->where('key_name = ?', self::VAR_DUP)
         );
         $this->assertEquals(0, (int) $count, 'Duplicate-named datafield must not be migrated');
+    }
+
+    public function testCaseOnlyDuplicateNamesAreBothSkipped(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        // key_name is case-insensitive in the new schema, so "region" and "Region"
+        // collide there even though the legacy datafield table happily holds both.
+        DirectorDatafield::create([
+            'varname'  => self::VAR_CASE_DUP_LOWER,
+            'caption'  => 'Region',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        DirectorDatafield::create([
+            'varname'  => self::VAR_CASE_DUP_UPPER,
+            'caption'  => 'Region (added later by someone else)',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        $cmd = new TestableMigrateCommand($db, ['--verbose']);
+        $output = $cmd->runDatafields();
+
+        $this->assertStringContainsString(self::VAR_CASE_DUP_LOWER, $output);
+        $this->assertStringContainsString(self::VAR_CASE_DUP_UPPER, $output);
+
+        $dba = $db->getDbAdapter();
+        foreach ([self::VAR_CASE_DUP_LOWER, self::VAR_CASE_DUP_UPPER] as $varname) {
+            $count = $dba->fetchOne(
+                $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])->where('key_name = ?', $varname)
+            );
+            $this->assertEquals(0, (int) $count, "case-only duplicate '$varname' must not be migrated");
+        }
+    }
+
+    public function testExistingCustomPropertyBlocksMigrationRegardlessOfCase(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        DirectorDatafield::create([
+            'varname'  => self::VAR_CASE_EXISTING,
+            'caption'  => 'Datacenter',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        // Pre-create a director_property whose key_name only differs in case
+        $existingKeyName = strtolower(self::VAR_CASE_EXISTING);
+        $db->insert('director_property', [
+            'uuid'       => DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $db->getDbAdapter()),
+            'key_name'   => $existingKeyName,
+            'value_type' => 'string',
+        ]);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])->where('key_name = ?', $existingKeyName)
+        );
+        $this->assertEquals(
+            1,
+            (int) $count,
+            'a legacy datafield differing only in case from an existing property must not be migrated'
+        );
     }
 
     public function testExistingCustomPropertyBlocksMigration(): void
