@@ -7,6 +7,7 @@ namespace Tests\Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -17,6 +18,8 @@ class CustomVariableValueCleanerTest extends BaseTestCase
     private const PREFIX = '___TEST___';
 
     private const ROOT_KEY_NAME = self::PREFIX . 'contact_ips';
+
+    private const SHARED_KEY_NAME = self::PREFIX . 'region';
 
     public function testKeepPropertyInPlaceNullsFixedArraySlotWithoutReindexing(): void
     {
@@ -108,6 +111,103 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         );
     }
 
+    public function testDeleteStoredValuesKeepsValueAliveForLegacyDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'shared_name_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.71',
+        ], $db);
+        $host->store();
+
+        // Migration skips a datafield when a same-named property already exists, so
+        // both can end up pointing at the same stored value under the same varname.
+        DirectorDatafield::create([
+            'varname'  => self::SHARED_KEY_NAME,
+            'caption'  => 'Region',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::SHARED_KEY_NAME,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::SHARED_KEY_NAME,
+            'varvalue' => json_encode('us-east'),
+            'format'   => 'json',
+        ]);
+
+        (new CustomVariableValueCleaner($db))->deleteStoredValues(self::SHARED_KEY_NAME);
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::SHARED_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            json_encode('us-east'),
+            $storedValue,
+            'a value must not be wiped while a legacy Data Field still claims the same varname'
+        );
+    }
+
+    public function testDeleteStoredValuesRemovesValueWithoutLegacyDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'no_conflict_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.72',
+        ], $db);
+        $host->store();
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::SHARED_KEY_NAME,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::SHARED_KEY_NAME,
+            'varvalue' => json_encode('us-east'),
+            'format'   => 'json',
+        ]);
+
+        (new CustomVariableValueCleaner($db))->deleteStoredValues(self::SHARED_KEY_NAME);
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::SHARED_KEY_NAME)
+        );
+
+        $this->assertFalse(
+            $storedValue,
+            'a value must still be wiped outright when no legacy Data Field shares its varname'
+        );
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -115,6 +215,8 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba = $db->getDbAdapter();
 
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'retype_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'shared_name_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'no_conflict_host']);
 
             $rows = $dba->fetchAll(
                 $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', self::ROOT_KEY_NAME)
@@ -127,6 +229,8 @@ class CustomVariableValueCleanerTest extends BaseTestCase
                 );
             }
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::ROOT_KEY_NAME));
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SHARED_KEY_NAME));
+            $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::SHARED_KEY_NAME));
         }
 
         parent::tearDown();

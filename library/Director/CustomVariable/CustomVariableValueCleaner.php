@@ -313,6 +313,10 @@ class CustomVariableValueCleaner
     /**
      * Drop every stored value for a root property outright, across every object type.
      *
+     * Does nothing if a legacy Data Field still exists under the same varname, a value
+     * migration deliberately left behind can still be that field's live data, not this
+     * property's.
+     *
      * @param string $varname the root property's own key_name. Only call this for a root
      *                        property, a nested property's key_name isn't guaranteed unique
      *                        and could collide with an unrelated root variable
@@ -321,9 +325,29 @@ class CustomVariableValueCleaner
      */
     public function deleteStoredValues(string $varname): void
     {
+        if ($this->hasLegacyDatafield($varname)) {
+            return;
+        }
+
         foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
             $this->db->delete("icinga_{$object}_var", Filter::where('varname', $varname));
         }
+    }
+
+    /**
+     * Whether a legacy Data Field still exists under this exact varname
+     *
+     * @return bool
+     */
+    private function hasLegacyDatafield(string $varname): bool
+    {
+        $db = $this->db->getDbAdapter();
+
+        return (bool) $db->fetchOne(
+            $db->select()
+               ->from('director_datafield', ['cnt' => 'COUNT(*)'])
+               ->where('varname = ?', $varname)
+        );
     }
 
     /**
