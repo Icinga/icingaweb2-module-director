@@ -762,6 +762,65 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals(1, (int) $count, 'import() must not create duplicate rows');
     }
 
+    public function testImportReconcilesSameKeyUnderDifferentUuid(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeProperty('cross_instance_region', 'string', 'Region', $db);
+        $property->store();
+        $localUuid = $property->get('uuid');
+
+        // Two instances creating the same property end up with the same key_name
+        // but a different uuid, this mirrors that basket restore scenario.
+        $foreign = $property->export();
+        $foreign->uuid = Uuid::uuid4()->toString();
+
+        $imported = DirectorProperty::import($foreign, $db);
+
+        $this->assertEquals(
+            Uuid::fromBytes($localUuid)->toString(),
+            Uuid::fromBytes($imported->get('uuid'))->toString(),
+            'import() must reconcile onto the existing local property, not create a new one'
+        );
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])
+                ->where('key_name = ?', self::PREFIX . 'cross_instance_region')
+        );
+        $this->assertEquals(1, (int) $count, 'a same-key import from another instance must not create a duplicate');
+    }
+
+    public function testImportUpdatesExistingCandidateWhenContentDiffersUnderDifferentUuid(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeProperty('cross_instance_dc', 'string', 'Datacenter', $db);
+        $property->store();
+
+        $foreign = $property->export();
+        $foreign->uuid = Uuid::uuid4()->toString();
+        $foreign->label = 'Datacenter (renamed elsewhere)';
+
+        $imported = DirectorProperty::import($foreign, $db);
+        if ($imported->hasBeenModified()) {
+            $imported->store();
+        }
+
+        $reloaded = DirectorProperty::load(self::PREFIX . 'cross_instance_dc', $db);
+        $this->assertEquals(
+            'Datacenter (renamed elsewhere)',
+            $reloaded->get('label'),
+            'import() must update the existing candidate in place when content differs'
+        );
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
