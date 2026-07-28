@@ -20,6 +20,9 @@ class DirectorProperty extends DbObject
         'fixed-array',
     ];
 
+    /** Parent value_types whose items are always rendered in the clear, never masked */
+    private const UNMASKED_LIST_TYPES = ['dynamic-array', 'datalist-strict', 'datalist-non-strict'];
+
     protected $table = 'director_property';
 
     protected $keyName = 'key_name';
@@ -443,7 +446,7 @@ class DirectorProperty extends DbObject
      * @throws InvalidArgumentException if a nested property is being stored with a value_type
      *                                  that may only be used at the top level, a dynamic-array
      *                                  is nested inside another dynamic-array, or a 'sensitive'
-     *                                  item type is used under a dynamic-array
+     *                                  item type is used under a dynamic-array or datalist
      */
     protected function beforeStore(): void
     {
@@ -477,11 +480,11 @@ class DirectorProperty extends DbObject
                 );
             }
 
-            // A dynamic-array shows every entry in the clear, so a sensitive item here
-            // could never actually be hidden.
-            if ($valueType === 'sensitive' && $parentValueType === 'dynamic-array') {
+            // A dynamic-array or datalist shows every entry in the clear, so a sensitive
+            // item here could never actually be hidden.
+            if ($valueType === 'sensitive' && in_array($parentValueType, self::UNMASKED_LIST_TYPES, true)) {
                 throw new InvalidArgumentException(
-                    "'sensitive' cannot be used as the item type of a dynamic-array"
+                    "'sensitive' cannot be used as the item type of a dynamic-array or datalist"
                 );
             }
         }

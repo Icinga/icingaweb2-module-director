@@ -372,6 +372,40 @@ class DirectorPropertyTest extends BaseTestCase
         $child->store();
     }
 
+    /**
+     * @dataProvider provideDatalistTypes
+     */
+    public function testSensitiveCannotBeNestedInsideADatalist(string $datalistType): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // A datalist renders every entry in the clear too, same reasoning as a dynamic-array.
+        $db = $this->getDb();
+        $suffix = 'community_strings_' . str_replace('-', '_', $datalistType);
+        $parent = $this->makeProperty($suffix, $datalistType, 'Community Strings', $db);
+        $parent->store();
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $parent->get('uuid'),
+            'value_type'  => 'sensitive',
+        ], $db);
+
+        $this->expectException(InvalidArgumentException::class);
+        $child->store();
+    }
+
+    public function provideDatalistTypes(): array
+    {
+        return [
+            'datalist-strict'     => ['datalist-strict'],
+            'datalist-non-strict' => ['datalist-non-strict'],
+        ];
+    }
+
     public function testDatalistStrictAssociatesDatalist(): void
     {
         if ($this->skipForMissingDb()) {
