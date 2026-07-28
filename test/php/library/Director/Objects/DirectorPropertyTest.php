@@ -45,6 +45,25 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals('Environment', $loaded->get('label'));
     }
 
+    public function testBoolPropertyPersistsAndReloads(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeProperty('in_maintenance', 'bool', 'In Maintenance', $db);
+        $property->store();
+
+        $uuid = Uuid::fromBytes($property->get('uuid'));
+        $loaded = DirectorProperty::loadWithUniqueId($uuid, $db);
+
+        $this->assertNotNull($loaded);
+        $this->assertEquals(self::PREFIX . 'in_maintenance', $loaded->get('key_name'));
+        $this->assertEquals('bool', $loaded->get('value_type'));
+        $this->assertEquals('In Maintenance', $loaded->get('label'));
+    }
+
     public function testKeyNameUniquenessIsCaseInsensitiveOnBothDatabases(): void
     {
         if ($this->skipForMissingDb()) {
