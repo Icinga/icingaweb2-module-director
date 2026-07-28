@@ -316,6 +316,10 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
             'category_name must survive a restore onto a DB where the category does not exist yet'
         );
 
+        // restoreJson() recreated the property (and its category link), so it must be wiped
+        // again before the category delete below, or that delete hits director_property_category's
+        // ON DELETE RESTRICT.
+        $this->wipeTemplateAndProperty($host, $property, $db);
         $dba->delete('director_datafield_category', $dba->quoteInto('category_name = ?', $categoryName));
     }
 
