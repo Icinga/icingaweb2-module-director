@@ -417,6 +417,84 @@ class DirectorPropertyTest extends BaseTestCase
         $child->store();
     }
 
+    public function testSwitchingToDynamicArrayIsRejectedWhenASensitiveChildStillExists(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // A dynamic-dictionary is a safe home for a sensitive child, but flipping that same
+        // property to dynamic-array afterwards is not, that type shows everything in the clear.
+        $db = $this->getDb();
+        $parent = $this->makeProperty('secrets_holder', 'dynamic-dictionary', 'Secrets Holder', $db);
+        $parent->store();
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'password',
+            'parent_uuid' => $parent->get('uuid'),
+            'value_type'  => 'sensitive',
+        ], $db);
+        $child->store();
+
+        $parent->set('value_type', 'dynamic-array');
+        $this->expectException(InvalidArgumentException::class);
+        $parent->store();
+    }
+
+    /**
+     * @dataProvider provideDatalistTypes
+     */
+    public function testSwitchingToDatalistIsRejectedWhenASensitiveChildStillExists(string $datalistType): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $suffix = 'secrets_holder_' . str_replace('-', '_', $datalistType);
+        $parent = $this->makeProperty($suffix, 'dynamic-dictionary', 'Secrets Holder', $db);
+        $parent->store();
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'password',
+            'parent_uuid' => $parent->get('uuid'),
+            'value_type'  => 'sensitive',
+        ], $db);
+        $child->store();
+
+        $parent->set('value_type', $datalistType);
+        $this->expectException(InvalidArgumentException::class);
+        $parent->store();
+    }
+
+    public function testSwitchingToDynamicArrayIsAllowedWithoutASensitiveChild(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Switching type stays possible as long as nothing sensitive would end up exposed.
+        $db = $this->getDb();
+        $parent = $this->makeProperty('plain_holder', 'dynamic-dictionary', 'Plain Holder', $db);
+        $parent->store();
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'note',
+            'parent_uuid' => $parent->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $child->store();
+
+        $parent->set('value_type', 'dynamic-array');
+        $parent->store();
+
+        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($parent->get('uuid')), $db);
+        $this->assertEquals('dynamic-array', $reloaded->get('value_type'));
+    }
+
     public function provideDatalistTypes(): array
     {
         return [
