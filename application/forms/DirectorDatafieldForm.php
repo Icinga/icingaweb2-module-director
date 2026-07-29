@@ -281,7 +281,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function enumDataTypes()
     {
         $hooks = Hook::all('Director\\DataType');
-        $enum = [null => $this->translate('- please choose -')];
+        $enum = ['' => $this->translate('- please choose -')];
         /** @var DataTypeHook $hook */
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();

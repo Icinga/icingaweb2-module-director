@@ -37,13 +37,13 @@ class TemplateUsageTable extends Table
 
     /**
      * @param IcingaObject $template
-     * @param Branch|null $branch
+     * @param ?Branch $branch
      *
      * @return TemplateUsageTable
      *
      * @throws ProgrammingError
      */
-    public static function forTemplate(IcingaObject $template, Auth $auth, Branch $branch = null)
+    public static function forTemplate(IcingaObject $template, Auth $auth, ?Branch $branch = null)
     {
         $type = ucfirst($template->getShortTableName());
         $class = __NAMESPACE__ . "\\{$type}TemplateUsageTable";
@@ -64,7 +64,7 @@ class TemplateUsageTable extends Table
         ];
     }
 
-    protected function __construct(IcingaObject $template, Auth $auth, Branch $branch = null)
+    protected function __construct(IcingaObject $template, Auth $auth, ?Branch $branch = null)
     {
         $this->auth = $auth;
 

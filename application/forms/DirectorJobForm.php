@@ -103,7 +103,7 @@ class DirectorJobForm extends DirectorObjectForm
             $class = $this->getSentOrObjectValue('job_class');
         }
 
-        if (array_key_exists($class, $this->enumJobTypes())) {
+        if ($class !== null && array_key_exists($class, $this->enumJobTypes())) {
             return $class;
         }
 

@@ -77,7 +77,7 @@ class ImportSourceDirectorObject extends ImportSourceHook
         $form->addElement('select', 'object_type', [
             'label'    => $form->translate('Object Type'),
             'multiOptions' => [
-                null              => $form->translate('All Object Types'),
+                ''                => $form->translate('All Object Types'),
                 'object'          => $form->translate('Objects'),
                 'template'        => $form->translate('Templates'),
                 'external_object' => $form->translate('External Objects'),

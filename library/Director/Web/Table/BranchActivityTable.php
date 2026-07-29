@@ -21,7 +21,7 @@ class BranchActivityTable extends IntlZfQueryBasedTable
 
     protected $linkToObject = true;
 
-    public function __construct(UuidInterface $branchUuid, $db, UuidInterface $objectUuid = null)
+    public function __construct(UuidInterface $branchUuid, $db, ?UuidInterface $objectUuid = null)
     {
         $this->branchUuid = $branchUuid;
         $this->objectUuid = $objectUuid;

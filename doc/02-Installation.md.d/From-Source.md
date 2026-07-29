@@ -8,7 +8,7 @@ Make sure you use `director` as the module name. The following requirements must
 
 ## Requirements
 
-* PHP (≥7.3)
+* PHP (≥8.2)
     * Director v1.10 is the last version with support for PHP v5.6
 * [Icinga 2](https://github.com/Icinga/icinga2) (≥2.8.0)
     * It is recommended to use the latest feature release of Icinga 2
@@ -19,6 +19,9 @@ Make sure you use `director` as the module name. The following requirements must
           nodes
 * [Icinga Web](https://github.com/Icinga/icingaweb2) (≥2.8.0). All versions since 2.2 should also work fine, but
   might show smaller UI bugs and are not actively tested
+* The following Icinga PHP libraries must be installed:
+    * [icinga-php-library](https://github.com/Icinga/icinga-php-library) (≥0.14.2)
+    * [icinga-php-thirdparty](https://github.com/Icinga/icinga-php-thirdparty) (≥0.15.3)
 * The following Icinga modules must be installed and enabled:
     * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (≥0.22.0)
     * If you are using Icinga Web <2.9.0, the following modules are also required
@@ -41,7 +44,7 @@ and extract it to a folder named `director` in one of your Icinga Web module pat
 You might want to use a script as follows for this task:
 
 ```shell
-MODULE_VERSION="1.11.8"
+MODULE_VERSION="1.11.9"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
@@ -60,7 +63,7 @@ Simply clone the repository in one of your Icinga web module path directories.
 You might want to use a script as follows for this task:
 
 ```shell
-MODULE_VERSION="1.11.8"
+MODULE_VERSION="1.11.9"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
