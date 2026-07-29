@@ -149,7 +149,7 @@ class CustomVariableValueCleaner
             $this->updateFixedArrayItems($parentUuid, $property['key_name']);
         }
 
-        foreach (['host', 'service', 'notification', 'command', 'user'] as $objectType) {
+        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
             $idColumn = "{$objectType}_id";
             // Match by varname, not property_uuid, root key_names are unique and property_uuid
             // is only ever an optional hint that isn't reliably populated on every stored row.

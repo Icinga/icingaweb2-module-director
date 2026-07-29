@@ -12,6 +12,7 @@ use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Ramsey\Uuid\Uuid;
 
@@ -811,8 +812,9 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         $dba = $db->getDbAdapter();
 
         // Existing coverage for removeObjectCustomVars() only ever touches
-        // icinga_host_var. The cleaner walks host, service, notification, command
-        // and user tables the same way, so a service-attached field needs cleanup too.
+        // icinga_host_var. The cleaner walks host, service, notification, command,
+        // user and service_set tables the same way, so a service-attached field
+        // needs cleanup too.
         $service = IcingaService::create([
             'object_name'  => '___TEST___load-check',
             'object_type'  => 'template',
@@ -878,6 +880,81 @@ class DeleteCustomVariableFormTest extends BaseTestCase
 
         $service->delete();
         $dba->delete('director_property', ['key_name = ?' => '___TEST___load_thresholds']);
+    }
+
+    public function testDeletingFieldUpdatesServiceSetVarWithoutCrashing(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $serviceSet = IcingaServiceSet::create([
+            'object_name' => '___TEST___load-checks',
+            'object_type' => 'template',
+        ], $db);
+        $serviceSet->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___load_thresholds_set',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Load Thresholds',
+        ], $db)->store();
+
+        $warnUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $warnUuid->getBytes(),
+            'key_name'    => 'warn',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_service_set_var', [
+            'service_set_id' => $serviceSet->get('id'),
+            'varname'        => '___TEST___load_thresholds_set',
+            'varvalue'       => json_encode(['warn' => '5', 'crit' => '10']),
+            'format'         => 'json',
+            'property_uuid'  => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $warnUuid->getBytes(),
+                'key_name'    => 'warn',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $rootUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $rootUuid->getBytes(),
+                'key_name'    => '___TEST___load_thresholds_set',
+                'value_type'  => 'fixed-dictionary',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $updatedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_service_set_var', ['varvalue'])
+                ->where('service_set_id = ?', $serviceSet->get('id'))
+                ->where('varname = ?', '___TEST___load_thresholds_set')
+        );
+
+        $this->assertEquals(
+            ['crit' => '10'],
+            json_decode($updatedValue, true),
+            'warn must be removed from the service-set-attached fixed-dictionary value'
+        );
+
+        $serviceSet->delete();
+        $dba->delete('director_property', ['key_name = ?' => '___TEST___load_thresholds_set']);
     }
 
     public function testFixedArrayReindexPreservesRequiredFlagOnSurvivingItem(): void
