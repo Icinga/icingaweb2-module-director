@@ -153,6 +153,19 @@ class CustomVariableForm extends CompatForm
 
                     return false;
                 });
+            } elseif ($this->uuid === null && $this->parentUuid === null) {
+                $cleaner = new CustomVariableValueCleaner($this->db);
+                $keyNameValidators[] = new CallbackValidator(function ($value, $validator) use ($cleaner) {
+                    if (! $cleaner->wouldDeleteCollideWithLegacyDatafield((string) $value)) {
+                        return true;
+                    }
+
+                    $validator->addMessage($this->translate(
+                        'A Data Field with the same name already exists. Rename or remove it first.'
+                    ));
+
+                    return false;
+                });
             }
 
             $this->addElement(
