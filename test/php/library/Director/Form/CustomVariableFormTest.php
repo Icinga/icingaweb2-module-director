@@ -7,6 +7,7 @@ namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\CustomVariableForm;
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -24,6 +25,9 @@ class CustomVariableFormTest extends BaseTestCase
 
     /** @var string[] Host names created during tests, for tearDown cleanup */
     private array $createdHostNames = [];
+
+    /** @var string[] Data Field varnames created during tests, for tearDown cleanup */
+    private array $createdDatafieldNames = [];
 
     public function testAddStringPropertyCreatesRow(): void
     {
@@ -549,6 +553,55 @@ class CustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testRetypeIsBlockedWhenALegacyDatafieldStillOwnsTheName(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        DirectorDatafield::create([
+            'varname'  => '___TEST___shared_tag',
+            'caption'  => 'Shared Tag',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+        $this->createdDatafieldNames[] = '___TEST___shared_tag';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___shared_tag',
+            'value_type' => 'string',
+            'label'      => 'Shared Tag',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___shared_tag';
+
+        // The form validator should already catch this, so calling updateExistingProperty()
+        // directly here is testing the backstop, the same as a crafted submission would hit.
+        $form = new TestableCustomVariableForm($db, $rootUuid);
+        self::callMethod($form, 'updateExistingProperty', [
+            [
+                'key_name'    => '___TEST___shared_tag',
+                'value_type'  => 'number',
+                'label'       => 'Shared Tag',
+                'description' => null,
+            ]
+        ]);
+
+        $storedType = $dba->fetchOne(
+            $dba->select()->from('director_property', ['value_type'])
+                ->where('key_name = ?', '___TEST___shared_tag')
+        );
+
+        $this->assertSame(
+            'string',
+            $storedType,
+            'value_type must stay put when a legacy Data Field still owns the varname'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -572,6 +625,10 @@ class CustomVariableFormTest extends BaseTestCase
                 if (DirectorDatalist::exists($listName, $db)) {
                     DirectorDatalist::load($listName, $db)->delete();
                 }
+            }
+
+            foreach ($this->createdDatafieldNames as $varname) {
+                $dba->delete('director_datafield', $dba->quoteInto('varname = ?', $varname));
             }
         }
 

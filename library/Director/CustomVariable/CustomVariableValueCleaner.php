@@ -383,6 +383,18 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Whether deleting or retyping this varname would collide with a legacy Data Field
+     *
+     * Public so a form can validate this before submit instead of only finding out after.
+     *
+     * @return bool
+     */
+    public function wouldDeleteCollideWithLegacyDatafield(string $varname): bool
+    {
+        return $this->hasLegacyDatafield($varname);
+    }
+
+    /**
      * Whether a legacy Data Field still exists under this exact varname
      *
      * @return bool

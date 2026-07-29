@@ -7,7 +7,6 @@ use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
-use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
@@ -35,12 +34,6 @@ class CustomVariableForm extends CompatForm
 
     /** @var ?string The key name as stored in the database, used to detect pending renames */
     private ?string $storedKeyName = null;
-
-    /** @var int Stored values kept because a legacy Data Field still claims the same varname */
-    private int $keptStoredValueCount = 0;
-
-    /** @var ?string The varname reported by $keptStoredValueCount, for the warning message */
-    private ?string $keptStoredValueVarname = null;
 
     public function __construct(
         protected DbConnection $db,
@@ -220,6 +213,35 @@ class CustomVariableForm extends CompatForm
             ];
         }
 
+        $valueTypeValidators = [];
+        if (! $used && $this->parentUuid === null && $this->uuid !== null) {
+            $storedValueType = $this->fetchProperty($this->uuid)['value_type'] ?? null;
+            $storedKeyName = $this->storedKeyName;
+            $cleaner = new CustomVariableValueCleaner($this->db);
+            $valueTypeValidators[] = new CallbackValidator(function (
+                $value,
+                $validator
+            ) use (
+                $cleaner,
+                $storedKeyName,
+                $storedValueType
+            ) {
+                if (
+                    $storedKeyName === null
+                    || (string) $value === $storedValueType
+                    || ! $cleaner->wouldDeleteCollideWithLegacyDatafield($storedKeyName)
+                ) {
+                    return true;
+                }
+
+                $validator->addMessage($this->translate(
+                    'A Data Field with the same name still exists. Rename or remove it first.'
+                ));
+
+                return false;
+            });
+        }
+
         $this->addElement(
             'select',
             'value_type',
@@ -235,6 +257,7 @@ class CustomVariableForm extends CompatForm
                     'This property is used in one or more templates and hence the value type'
                     . ' cannot be changed.'
                 ) : '',
+                'validators'        => $valueTypeValidators,
             ]
         );
 
@@ -478,17 +501,6 @@ class CustomVariableForm extends CompatForm
         }
 
         $this->db->getDbAdapter()->commit();
-
-        if ($this->keptStoredValueCount > 0) {
-            Notification::warning(sprintf(
-                $this->translate(
-                    'Kept %d stored value(s) for "%s", a Data Field with the same name still exists. '
-                    . 'Rename or remove it, then save this property again to clear them.'
-                ),
-                $this->keptStoredValueCount,
-                $this->keptStoredValueVarname
-            ));
-        }
     }
 
     /**
@@ -572,16 +584,26 @@ class CustomVariableForm extends CompatForm
 
         if (! $used) {
             $dbProperty = $this->fetchProperty($this->uuid);
-            if ($dbProperty['value_type'] !== $valueType) {
+            $cleaner = new CustomVariableValueCleaner($this->db);
+
+            // The form validator should already catch this, this is just a backstop in
+            // case a Data Field showed up between validation and submit.
+            $blockedByLegacyDatafield = $this->parentUuid === null
+                && $dbProperty['value_type'] !== $valueType
+                && $cleaner->wouldDeleteCollideWithLegacyDatafield($dbProperty['key_name']);
+
+            if ($blockedByLegacyDatafield) {
+                // Its values can't be cleared, so keep the old type too, no point retyping
+                // the property and leaving stale data behind under the new type.
+                $values['value_type'] = $dbProperty['value_type'];
+            } elseif ($dbProperty['value_type'] !== $valueType) {
                 $db = $this->db->getDbAdapter();
 
                 // The old value type is going away, so whatever this property already holds in
                 // host/service/etc. custom variables no longer matches the new schema and has
                 // to be cleared, the same way deleting the property outright would clear it.
-                $cleaner = new CustomVariableValueCleaner($this->db);
                 if ($this->parentUuid === null) {
-                    $this->keptStoredValueCount = $cleaner->deleteStoredValues($dbProperty['key_name']);
-                    $this->keptStoredValueVarname = $dbProperty['key_name'];
+                    $cleaner->deleteStoredValues($dbProperty['key_name']);
                 } else {
                     $parentProperty = $this->fetchProperty($this->parentUuid);
                     $cleaner->removeObjectCustomVars($dbProperty, $parentProperty, true);
