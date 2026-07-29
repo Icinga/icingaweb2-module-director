@@ -339,23 +339,24 @@ class CustomVariableValueCleaner
     }
 
     /**
-     * Rename every stored value for a root property from its old to its new varname, across
-     * every object type.
+     * Rename every stored value for a root property, across every object type
      *
-     * Does nothing if a legacy Data Field still exists under the old varname, the stored value
-     * could still be that field's live data, not this property's; renaming it away would break
-     * the legacy field the same way deleting it would.
+     * Skips the rename if a legacy Data Field owns the old or the new varname. Under the
+     * old name its values might be the field's, not this property's. Under the new name it
+     * would collide with the field's own row (host_id/varname is a primary key here).
      *
      * @param string $oldVarname the root property's varname before the rename
      * @param string $newVarname the root property's varname after the rename
      *
-     * @return int Number of stored values left in place because of a legacy Data Field, 0
-     *             if there was no conflict and the values were renamed as usual
+     * @return int Number of stored values left under the old varname because of a conflict,
+     *             0 if there was no conflict and the values were renamed as usual
      */
     public function renameStoredValues(string $oldVarname, string $newVarname): int
     {
-        if ($this->hasLegacyDatafield($oldVarname)) {
-            return $this->countStoredValues($oldVarname);
+        if ($this->wouldRenameCollideWithLegacyDatafield($oldVarname, $newVarname)) {
+            // A new-name conflict can block this even with nothing stored under the old
+            // name yet, so 0 can't mean "no conflict" here.
+            return max(1, $this->countStoredValues($oldVarname));
         }
 
         foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
@@ -367,6 +368,18 @@ class CustomVariableValueCleaner
         }
 
         return 0;
+    }
+
+    /**
+     * Whether renaming from $oldVarname to $newVarname would collide with a legacy Data Field
+     *
+     * Public so a form can validate this before submit instead of only finding out after.
+     *
+     * @return bool
+     */
+    public function wouldRenameCollideWithLegacyDatafield(string $oldVarname, string $newVarname): bool
+    {
+        return $this->hasLegacyDatafield($oldVarname) || $this->hasLegacyDatafield($newVarname);
     }
 
     /**

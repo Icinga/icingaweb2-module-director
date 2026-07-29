@@ -324,6 +324,46 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         $this->assertEquals(0, $keptCount, 'nothing was kept, so no values must be reported back');
     }
 
+    public function testRenameStoredValuesBlocksOnNewNameConflictEvenWithNothingStoredYet(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $newKeyName = self::PREFIX . 'zone';
+
+        // The target name is already a legacy Data Field, but the property being
+        // renamed has no stored values under its old name yet. Still has to block.
+        DirectorDatafield::create([
+            'varname'  => $newKeyName,
+            'caption'  => 'Zone',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::SHARED_KEY_NAME,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db)->store();
+
+        $cleaner = new CustomVariableValueCleaner($db);
+
+        $this->assertTrue(
+            $cleaner->wouldRenameCollideWithLegacyDatafield(self::SHARED_KEY_NAME, $newKeyName),
+            'a legacy Data Field under the new name must be reported as a conflict too'
+        );
+
+        $keptCount = $cleaner->renameStoredValues(self::SHARED_KEY_NAME, $newKeyName);
+
+        $this->assertGreaterThan(
+            0,
+            $keptCount,
+            'a new-name conflict must be reported even when nothing was stored under the old name'
+        );
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -349,6 +389,7 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::ROOT_KEY_NAME));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SHARED_KEY_NAME));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::SHARED_KEY_NAME));
+            $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::PREFIX . 'zone'));
         }
 
         parent::tearDown();

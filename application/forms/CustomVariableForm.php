@@ -15,6 +15,7 @@ use ipl\Web\Common\CalloutType;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
+use ipl\Validator\CallbackValidator;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Callout;
 use PDO;
@@ -133,12 +134,41 @@ class CustomVariableForm extends CompatForm
                 ['value' => $db->fetchOne($query)]
             );
         } else {
+            $keyNameValidators = [];
+            if ($this->parentUuid === null && $used && $this->storedKeyName !== null) {
+                $storedKeyName = $this->storedKeyName;
+                $cleaner = new CustomVariableValueCleaner($this->db);
+                $keyNameValidators[] = new CallbackValidator(function (
+                    $value,
+                    $validator
+                ) use (
+                    $cleaner,
+                    $storedKeyName
+                ) {
+                    $newKeyName = (string) $value;
+                    if (
+                        $newKeyName === $storedKeyName
+                        || ! $cleaner->wouldRenameCollideWithLegacyDatafield($storedKeyName, $newKeyName)
+                    ) {
+                        return true;
+                    }
+
+                    $validator->addMessage($this->translate(
+                        'A Data Field with the old or the new name still exists. Rename or'
+                        . ' remove it first.'
+                    ));
+
+                    return false;
+                });
+            }
+
             $this->addElement(
                 'text',
                 'key_name',
                 [
-                    'label'    => $this->translate('Property Key *'),
-                    'required' => true
+                    'label'      => $this->translate('Property Key *'),
+                    'required'   => true,
+                    'validators' => $keyNameValidators
                 ]
             );
         }
@@ -629,7 +659,12 @@ class CustomVariableForm extends CompatForm
             );
 
             if ($storedKeyName !== $values['key_name']) {
-                $this->updateUsedCustomVarNames($storedKeyName, $values['key_name']);
+                $renamed = $this->updateUsedCustomVarNames($storedKeyName, $values['key_name']);
+                if (! $renamed) {
+                    // Values can't follow, so keep the old name too, no point renaming
+                    // the property and orphaning its values.
+                    $values['key_name'] = $storedKeyName;
+                }
             }
         }
 
@@ -732,9 +767,10 @@ class CustomVariableForm extends CompatForm
      * @param string $storedKeyName
      * @param mixed  $keyName
      *
-     * @return void
+     * @return bool Whether the rename actually happened. False means the property must keep
+     *              its old key_name too, its stored values could not follow the rename
      */
-    private function updateUsedCustomVarNames(string $storedKeyName, mixed $keyName): void
+    private function updateUsedCustomVarNames(string $storedKeyName, mixed $keyName): bool
     {
         $db = $this->db->getDbAdapter();
         $cleaner = new CustomVariableValueCleaner($this->db);
@@ -742,17 +778,15 @@ class CustomVariableForm extends CompatForm
         if (! $this->parentUuid) {
             $root = $this->fetchProperty($this->uuid);
 
-            // A legacy Data Field can share this root property's old varname; if it does, the
-            // stored values under that varname could be the field's live data, not this
-            // property's, so renaming them away would break the field the same way deleting
-            // them would.
-            $kept = $cleaner->renameStoredValues($root['key_name'], (string) $keyName);
-            if ($kept > 0) {
-                $this->keptStoredValueCount = $kept;
-                $this->keptStoredValueVarname = $root['key_name'];
+            // The form validator should already catch this, this is just a backstop
+            // in case a Data Field showed up between validation and submit.
+            if ($cleaner->wouldRenameCollideWithLegacyDatafield($root['key_name'], (string) $keyName)) {
+                return false;
             }
 
-            return;
+            $cleaner->renameStoredValues($root['key_name'], (string) $keyName);
+
+            return true;
         }
 
         $parent = $this->fetchProperty($this->parentUuid);
@@ -800,5 +834,7 @@ class CustomVariableForm extends CompatForm
                 );
             }
         }
+
+        return true;
     }
 }
