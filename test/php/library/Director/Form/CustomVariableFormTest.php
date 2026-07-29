@@ -505,6 +505,50 @@ class CustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testUsedPropertyCannotHaveItsValueTypeChangedViaCraftedSubmission(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___locked_type',
+            'value_type' => 'string',
+            'label'      => 'Locked Type',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___locked_type';
+
+        // value_type is disabled in the UI once a property is used, but disabled is just
+        // a browser hint, so a crafted request could still submit a different one here.
+        $form = new TestableCustomVariableForm($db, $rootUuid);
+        $form->setForcedUsedCount(1);
+
+        self::callMethod($form, 'updateExistingProperty', [
+            [
+                'key_name'    => '___TEST___locked_type',
+                'value_type'  => 'number',
+                'label'       => 'Locked Type',
+                'description' => null,
+            ]
+        ]);
+
+        $storedType = $dba->fetchOne(
+            $dba->select()->from('director_property', ['value_type'])
+                ->where('key_name = ?', '___TEST___locked_type')
+        );
+
+        $this->assertSame(
+            'string',
+            $storedType,
+            'value_type must stay put for a used property even if a different one is submitted'
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {

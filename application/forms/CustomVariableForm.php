@@ -649,14 +649,12 @@ class CustomVariableForm extends CompatForm
                 }
             }
         } else {
-            $storedKeyName = $this->db->fetchOne(
-                $this->db->select()
-                    ->from('director_property', ['key_name'])
-                    ->where(
-                        'uuid',
-                        Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter())
-                    )
-            );
+            $dbProperty = $this->fetchProperty($this->uuid);
+            $storedKeyName = $dbProperty['key_name'];
+
+            // value_type is disabled in the UI once a property is used, but disabled is
+            // just a browser hint, so pin it back here too instead of trusting the client.
+            $values['value_type'] = $dbProperty['value_type'];
 
             if ($storedKeyName !== $values['key_name']) {
                 $renamed = $this->updateUsedCustomVarNames($storedKeyName, $values['key_name']);
