@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.11.9
+-------
+
+### Internals
+
+- Fix: Adapt to react/promise v3 and react/event-loop v1.6 (#3043)
+- Fix: PromiseUtil shim for react/promise v2/v3 compatibility (#3081)
+
+You can find issues and feature requests related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/45?closed=1)
+
 v1.11.8
 -------
 

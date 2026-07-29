@@ -6,7 +6,7 @@ use Exception;
 use gipfl\Cli\Process;
 use gipfl\IcingaCliDaemon\DbResourceConfigWatch;
 use gipfl\SystemD\NotifySystemD;
-use React\EventLoop\Factory as Loop;
+use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Ramsey\Uuid\Uuid;
 
@@ -42,10 +42,10 @@ class BackgroundDaemon
     /** @var bool */
     protected $shuttingDown = false;
 
-    public function run(LoopInterface $loop = null)
+    public function run(?LoopInterface $loop = null)
     {
         if ($ownLoop = ($loop === null)) {
-            $loop = Loop::create();
+            $loop = Loop::get();
         }
         $this->loop = $loop;
         $this->loop->futureTick(function () {

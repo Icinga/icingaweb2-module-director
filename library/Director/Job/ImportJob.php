@@ -115,7 +115,7 @@ class ImportJob extends JobHook
 
         $res = $db->fetchPairs($query);
         return array(
-            null      => $form->translate('- please choose -'),
+            ''        => $form->translate('- please choose -'),
             '__ALL__' => $form->translate('Run all imports at once')
         ) + $res;
     }

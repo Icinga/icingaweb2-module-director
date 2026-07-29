@@ -25,7 +25,7 @@ class InspectPackages
         $this->baseUrl = $baseUrl;
     }
 
-    public function getContent(IcingaEndpoint $endpoint = null, $package = null, $stage = null, $file = null)
+    public function getContent(?IcingaEndpoint $endpoint = null, $package = null, $stage = null, $file = null)
     {
         if ($endpoint === null) {
             return $this->getRootEndpoints();
@@ -40,7 +40,7 @@ class InspectPackages
         }
     }
 
-    public function getTitle(IcingaEndpoint $endpoint = null, $package = null, $stage = null, $file = null)
+    public function getTitle(?IcingaEndpoint $endpoint = null, $package = null, $stage = null, $file = null)
     {
         if ($endpoint === null) {
             return $this->translate('Endpoint in your Root Zone');
@@ -55,7 +55,7 @@ class InspectPackages
         }
     }
 
-    public function getBreadCrumb(IcingaEndpoint $endpoint = null, $package = null, $stage = null)
+    public function getBreadCrumb(?IcingaEndpoint $endpoint = null, $package = null, $stage = null)
     {
         $parts = [
             'endpoint' => $endpoint === null ? null : $endpoint->getObjectName(),

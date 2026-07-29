@@ -60,7 +60,7 @@ class ObjectsTableCommand extends ObjectsTable implements FilterableByUsage
         );
     }
 
-    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
+    protected function applyObjectTypeFilter(ZfSelect $query, ?ZfSelect $right = null)
     {
         return $query;
     }

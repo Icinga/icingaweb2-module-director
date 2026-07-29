@@ -678,7 +678,7 @@ abstract class ObjectController extends ActionController
         return $this;
     }
 
-    protected function addObjectForm(IcingaObject $object = null)
+    protected function addObjectForm(?IcingaObject $object = null)
     {
         $form = $this->loadObjectForm($object);
         $this->content()->add($form);
@@ -686,7 +686,7 @@ abstract class ObjectController extends ActionController
         return $this;
     }
 
-    protected function loadObjectForm(IcingaObject $object = null)
+    protected function loadObjectForm(?IcingaObject $object = null)
     {
         /** @var DirectorObjectForm $class */
         $class = sprintf(

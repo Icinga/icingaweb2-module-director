@@ -16,7 +16,7 @@ class IcingaCommandForm extends DirectorObjectForm
         $this->addElement('select', 'methods_execute', array(
             'label' => $this->translate('Command type'),
             'multiOptions' => array(
-                null                 => '- please choose -',
+                '' => '- please choose -',
                 $this->translate('Plugin commands') => array(
                     'PluginCheck'        => 'Plugin Check Command',
                     'PluginNotification' => 'Notification Plugin Command',
@@ -121,7 +121,7 @@ class IcingaCommandForm extends DirectorObjectForm
             return array();
         }
 
-        $id = $object->get('id');
+        $id = $object->get('id') ?? ''; // NULL is not allowed as array key
 
         if (array_key_exists($id, $tpl)) {
             unset($tpl[$id]);

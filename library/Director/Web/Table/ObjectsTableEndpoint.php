@@ -62,7 +62,7 @@ class ObjectsTableEndpoint extends ObjectsTable
         }
     }
 
-    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
+    protected function applyObjectTypeFilter(ZfSelect $query, ?ZfSelect $right = null)
     {
         return $query->where("o.object_type IN ('object', 'external_object')");
     }

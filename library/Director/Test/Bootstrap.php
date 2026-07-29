@@ -8,7 +8,7 @@ class Bootstrap
 {
     public static function cli($basedir = null)
     {
-        error_reporting(E_ALL | E_STRICT);
+        error_reporting(E_ALL);
         if ($basedir === null) {
             $basedir = dirname(dirname(dirname(__DIR__)));
         }

@@ -15,7 +15,7 @@ class BranchedObjectHint extends HtmlDocument
 {
     use Translation;
 
-    public function __construct(Branch $branch, Auth $auth, BranchedObject $object = null, $hasPreferredBranch = false)
+    public function __construct(Branch $branch, Auth $auth, ?BranchedObject $object = null, $hasPreferredBranch = false)
     {
         if (! $branch->isBranch()) {
             if ($hasPreferredBranch) {

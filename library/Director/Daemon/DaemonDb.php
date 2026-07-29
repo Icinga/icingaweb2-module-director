@@ -11,6 +11,7 @@ use Icinga\Module\Director\Db\Migrations;
 use ipl\Stdlib\EventEmitter;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 use RuntimeException;
 use SplObjectStorage;
 
@@ -111,7 +112,7 @@ class DaemonDb
             $this->emitStatus('no configuration');
             $this->dbConfig = $config;
 
-            return resolve();
+            return resolve(null);
         } else {
             $this->emitStatus('configuration loaded');
             $this->dbConfig = $config;
@@ -124,7 +125,7 @@ class DaemonDb
     {
         if ($this->connection !== null) {
             Logger::error('Trying to establish a connection while being connected');
-            return reject();
+            return reject(new RuntimeException());
         }
         $callback = function () use ($config) {
             $this->reallyEstablishConnection($config);
@@ -219,7 +220,7 @@ class DaemonDb
     }
 
     /**
-     * @return \React\Promise\PromiseInterface
+     * @return PromiseInterface
      */
     protected function reconnect()
     {
@@ -232,7 +233,7 @@ class DaemonDb
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function connect()
     {
@@ -242,16 +243,16 @@ class DaemonDb
             }
         }
 
-        return resolve();
+        return resolve(null);
     }
 
     /**
-     * @return \React\Promise\ExtendedPromiseInterface
+     * @return PromiseInterface
      */
     public function disconnect()
     {
         if (! $this->connection) {
-            return resolve();
+            return resolve(null);
         }
         if ($this->pendingDisconnect) {
             return $this->pendingDisconnect->promise();
@@ -265,7 +266,7 @@ class DaemonDb
             $resolve = function () use ($pendingComponents, $component) {
                 $pendingComponents->detach($component);
                 if ($pendingComponents->count() === 0) {
-                    $this->pendingDisconnect->resolve();
+                    $this->pendingDisconnect->resolve(null);
                 }
             };
             // TODO: What should we do in case they don't?

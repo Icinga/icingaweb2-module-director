@@ -106,7 +106,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
     protected $uuidColumn = 'uuid';
 
     public static function enumProperties(
-        DbConnection $connection = null,
+        ?DbConnection $connection = null,
         $prefix = '',
         $filter = null
     ) {
@@ -200,7 +200,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
         }
     }
 
-    public function renderAgentZoneAndEndpoint(IcingaConfig $config = null)
+    public function renderAgentZoneAndEndpoint(?IcingaConfig $config = null)
     {
         if (!$this->isObject()) {
             return;
@@ -314,7 +314,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
         return $this->getRenderingZone() === self::ALL_NON_GLOBAL_ZONES;
     }
 
-    protected function getDefaultZone(IcingaConfig $config = null)
+    protected function getDefaultZone(?IcingaConfig $config = null)
     {
         if ($this->isTemplate()) {
             return self::ALL_NON_GLOBAL_ZONES;

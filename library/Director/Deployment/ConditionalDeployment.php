@@ -31,7 +31,7 @@ class ConditionalDeployment implements LoggerAwareInterface
     /** @var ?string */
     protected $noDeploymentReason = null;
 
-    public function __construct(Db $connection, CoreApi $api = null)
+    public function __construct(Db $connection, ?CoreApi $api = null)
     {
         $this->setLogger(new NullLogger());
         $this->db = $connection;

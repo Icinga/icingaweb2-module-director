@@ -182,11 +182,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     }
 
     /**
-     * @param FilterExpression|null $filter
+     * @param ?FilterExpression $filter
      * @return Boolean|string
      * @throws Zend_Form_Exception
      */
-    protected function element(FilterExpression $filter = null)
+    protected function element(?FilterExpression $filter = null)
     {
         if ($filter) {
             // TODO: Make this configurable
@@ -244,11 +244,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     }
 
     /**
-     * @param FilterExpression|null $filter
+     * @param ?FilterExpression $filter
      * @return Boolean
      * @throws Zend_Form_Exception
      */
-    protected function boolean(FilterExpression $filter = null)
+    protected function boolean(?FilterExpression $filter = null)
     {
         $value = $filter === null ? '' : $filter->getExpression();
 
@@ -270,12 +270,12 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     }
 
     /**
-     * @param FilterExpression|null $filter
-     * @param string                $suggestionContext
+     * @param ?FilterExpression $filter
+     * @param string $suggestionContext
      *
      * @return mixed
      */
-    protected function text(FilterExpression $filter = null, $suggestionContext = null)
+    protected function text(?FilterExpression $filter = null, $suggestionContext = null)
     {
         $attr = null;
         if ($suggestionContext !== null) {
@@ -326,7 +326,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return $res;
     }
 
-    protected function elementId($field, Filter $filter = null)
+    protected function elementId($field, ?Filter $filter = null)
     {
         $prefix = $this->fieldName . '[id_';
         $suffix = '][' . $field . ']';
@@ -335,10 +335,10 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     }
 
     /**
-     * @param FilterChain|null $filter
+     * @param ?FilterChain $filter
      * @return mixed
      */
-    protected function selectOperator(FilterChain $filter = null)
+    protected function selectOperator(?FilterChain $filter = null)
     {
         $ops = [
             'AND' => 'AND',
@@ -354,7 +354,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         );
     }
 
-    protected function selectSign(FilterExpression $filter = null)
+    protected function selectSign(?FilterExpression $filter = null)
     {
         $signs = [
             '='  => '=',
@@ -401,7 +401,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         );
     }
 
-    public function setColumns(array $columns = null)
+    public function setColumns(?array $columns = null)
     {
         $this->cachedColumnSelect = $columns ? $this->arrayForSelect($columns) : null;
         return $this;
@@ -417,7 +417,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         $this->suggestionContext = $context;
     }
 
-    protected function selectColumn(FilterExpression $filter = null)
+    protected function selectColumn(?FilterExpression $filter = null)
     {
         $active = $filter === null ? null : $filter->getColumn();
         if ($filter && $this->columnIsJson($filter)) {
@@ -464,7 +464,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     protected function optionalEnum($enum)
     {
         return array_merge(
-            array(null => $this->view->translate('- please choose -')),
+            ['' => $this->view->translate('- please choose -')],
             $enum
         );
     }

@@ -60,10 +60,10 @@ trait RepositoryByObjectHelper
 
     /**
      * @param IcingaObject $object
-     * @param Db|null $connection
+     * @param ?Db $connection
      * @return static
      */
-    public static function instanceByObject(IcingaObject $object, Db $connection = null)
+    public static function instanceByObject(IcingaObject $object, ?Db $connection = null)
     {
         if (null === $connection) {
             $connection = $object->getConnection();
