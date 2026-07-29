@@ -29,11 +29,6 @@ class MigrateCommand extends Command
      */
     private const SUPPORTED_DATATYPES = ['Array', 'Boolean', 'Number', 'String', 'Datalist'];
 
-    private $existingCustomProperties = [];
-
-    /** @var array Migrated Datafields ['id' => 'datafield_name'] */
-    private $migratedDataFields = [];
-
     /**
      * Show what would be migrated, without making any changes
      *
@@ -43,8 +38,8 @@ class MigrateCommand extends Command
      */
     public function summaryAction()
     {
-        $customPropertiesToMigrate = $this->prepareCustomProperties();
-        $this->printMigrationDetails($customPropertiesToMigrate);
+        [$customPropertiesToMigrate, $existingCustomProperties] = $this->prepareCustomProperties();
+        $this->printMigrationDetails($customPropertiesToMigrate, $existingCustomProperties);
 
         $totalMigrated = 0;
         foreach ($customPropertiesToMigrate as $customProperty) {
@@ -78,19 +73,19 @@ class MigrateCommand extends Command
     public function datafieldsAction()
     {
         $db = $this->db();
-        $customPropertiesToMigrate = $this->prepareCustomProperties();
+        [$customPropertiesToMigrate, $existingCustomProperties] = $this->prepareCustomProperties();
         // count datafields now, before delete wipes the migrated rows away
         $totalDatafields = count(DirectorDatafield::loadAll($db));
         $dryRun = $this->params->shift('dry-run') ?? false;
         $delete = $this->params->shift('delete') ?? false;
         // Dry run summary
         if ($dryRun) {
-            $this->printMigrationDetails($customPropertiesToMigrate);
+            $this->printMigrationDetails($customPropertiesToMigrate, $existingCustomProperties);
         }
 
         echo "Migrating Data fields\n";
 
-        foreach ($this->existingCustomProperties as $varname) {
+        foreach ($existingCustomProperties as $varname) {
             unset($customPropertiesToMigrate[$varname]);
 
             if ($this->isVerbose) {
@@ -120,8 +115,9 @@ class MigrateCommand extends Command
             }
         }
 
+        $migratedDataFields = [];
         if (! empty($customPropertiesToMigrate)) {
-            $this->migrateDatafields($customPropertiesToMigrate, $dryRun, $delete && ! $dryRun);
+            $migratedDataFields = $this->migrateDatafields($customPropertiesToMigrate, $dryRun, $delete && ! $dryRun);
         }
 
         echo "Migration completed\n";
@@ -147,7 +143,7 @@ class MigrateCommand extends Command
             } else {
                 echo "The following datafields have been migrated and deleted:\n";
                 if ($this->isVerbose) {
-                    foreach ($this->migratedDataFields as $dataField) {
+                    foreach ($migratedDataFields as $dataField) {
                         echo "$dataField \n";
                     }
                 }
@@ -165,29 +161,30 @@ class MigrateCommand extends Command
      * already exists, so the final migrated/skipped totals aren't a mystery.
      *
      * @param array $customPropertiesToMigrate
+     * @param array $existingCustomProperties
      *
      * @return void
      */
-    private function printMigrationDetails(array $customPropertiesToMigrate): void
+    private function printMigrationDetails(array $customPropertiesToMigrate, array $existingCustomProperties): void
     {
         $this->checkMigrateableDatafieldTypes();
         $this->checkDatafieldsWithCategory();
         $this->checkUnmigrateableDatafieldTypes();
         $this->checkDatafieldsWithDuplicateNames();
 
-        $supportedDatatypeCount = count($customPropertiesToMigrate) + count($this->existingCustomProperties);
+        $supportedDatatypeCount = count($customPropertiesToMigrate) + count($existingCustomProperties);
         printf(
             "Of the %d datafields with a supported datatype, %d already have a matching new custom variable"
             . " and will be skipped\n\n",
             $supportedDatatypeCount,
-            count($this->existingCustomProperties)
+            count($existingCustomProperties)
         );
     }
 
     /**
      * Prepare custom properties to migrate
      *
-     * @return array
+     * @return array{0: array, 1: array} [$customPropertiesToMigrate, $existingCustomProperties]
      */
     private function prepareCustomProperties(): array
     {
@@ -208,11 +205,12 @@ class MigrateCommand extends Command
         }
 
         $customProperties = [];
+        $existingCustomProperties = [];
         $migrationQuery = $this->getDataFieldsMigrationQuery();
         $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
         foreach ($migrationQuery as $row) {
             if (isset($existingKeyNamesByLower[mb_strtolower($row->varname, 'UTF-8')])) {
-                $this->existingCustomProperties[] = $row->varname;
+                $existingCustomProperties[] = $row->varname;
 
                 continue;
             }
@@ -265,7 +263,7 @@ class MigrateCommand extends Command
             $customProperties[$row->varname] = $customProperty;
         }
 
-        return $customProperties;
+        return [$customProperties, $existingCustomProperties];
     }
 
     /**
@@ -278,13 +276,14 @@ class MigrateCommand extends Command
      *
      * @param array $customProperties
      *
-     * @return void
+     * @return array Migrated datafields, as ['id' => 'datafield_name'], empty on a dry run
      */
-    private function migrateDatafields(array $customProperties, bool $dryRun, bool $delete = false): void
+    private function migrateDatafields(array $customProperties, bool $dryRun, bool $delete = false): array
     {
         $db = $this->db();
+        $migratedDataFields = [];
 
-        $migrate = function () use ($db, $customProperties, $dryRun) {
+        $migrate = function () use ($db, $customProperties, $dryRun, &$migratedDataFields) {
             $dbAdapter = $db->getDbAdapter();
             foreach ($customProperties as $varName => $customProperty) {
                 if (str_starts_with($customProperty['value_type'], 'unsupported-')) {
@@ -312,7 +311,7 @@ class MigrateCommand extends Command
                 if (! $dryRun) {
                     $datafieldId = $customProperty['datafield_id'];
                     unset($customProperty['datafield_id']);
-                    $this->migratedDataFields[$datafieldId] = $varName;
+                    $migratedDataFields[$datafieldId] = $varName;
                     $uuidBytes = $customProperty['uuid'];
                     $customProperty['uuid'] = DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter);
                     $db->insert('director_property', $customProperty);
@@ -349,17 +348,19 @@ class MigrateCommand extends Command
         if ($dryRun) {
             $migrate();
 
-            return;
+            return $migratedDataFields;
         }
 
         if ($delete) {
-            $db->runFailSafeTransaction(function () use ($migrate) {
+            $db->runFailSafeTransaction(function () use ($migrate, &$migratedDataFields) {
                 $migrate();
-                $this->deleteMigratedDataFields();
+                $this->deleteMigratedDataFields($migratedDataFields);
             });
         } else {
             $db->runFailSafeTransaction($migrate);
         }
+
+        return $migratedDataFields;
     }
 
     /**
@@ -617,17 +618,19 @@ class MigrateCommand extends Command
      * are only consistent with each other and with the migration when committed
      * or rolled back together.
      *
+     * @param array $migratedDataFields Migrated datafields, as ['id' => 'datafield_name']
+     *
      * @return void
      */
-    private function deleteMigratedDataFields(): void
+    private function deleteMigratedDataFields(array $migratedDataFields): void
     {
-        if (empty($this->migratedDataFields)) {
+        if (empty($migratedDataFields)) {
             return;
         }
 
         $db = $this->db();
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
-        $datafieldIds = array_keys($this->migratedDataFields);
+        $datafieldIds = array_keys($migratedDataFields);
         foreach ($objectTypes as $type) {
             $db->delete(
                 "icinga_{$type}_field",
