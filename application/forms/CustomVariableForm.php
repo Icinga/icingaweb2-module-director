@@ -741,20 +741,28 @@ class CustomVariableForm extends CompatForm
 
         if (! $this->parentUuid) {
             $root = $this->fetchProperty($this->uuid);
-            $oldPath = null;
-            $newPath = null;
-        } else {
-            $parent = $this->fetchProperty($this->parentUuid);
-            [$root, $oldPath] = $cleaner->resolveRootProperty(['key_name' => $storedKeyName], $parent);
-            $newPath = array_slice($oldPath, 0, -1);
-            $newPath[] = $keyName;
+
+            // A legacy Data Field can share this root property's old varname; if it does, the
+            // stored values under that varname could be the field's live data, not this
+            // property's, so renaming them away would break the field the same way deleting
+            // them would.
+            $kept = $cleaner->renameStoredValues($root['key_name'], (string) $keyName);
+            if ($kept > 0) {
+                $this->keptStoredValueCount = $kept;
+                $this->keptStoredValueVarname = $root['key_name'];
+            }
+
+            return;
         }
+
+        $parent = $this->fetchProperty($this->parentUuid);
+        [$root, $oldPath] = $cleaner->resolveRootProperty(['key_name' => $storedKeyName], $parent);
+        $newPath = array_slice($oldPath, 0, -1);
+        $newPath[] = $keyName;
 
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
 
         foreach ($objectTypes as $objectType) {
-            // Match by varname, not property_uuid, root key_names are unique and property_uuid
-            // is only ever an optional hint that isn't reliably populated on every stored row.
             $objectCustomVars = $db->fetchAll(
                 $db->select()
                    ->from(['ihv' => "icinga_{$objectType}_var"], [])
@@ -767,21 +775,6 @@ class CustomVariableForm extends CompatForm
                 [],
                 PDO::FETCH_ASSOC
             );
-
-            if (! $this->parentUuid) {
-                foreach ($objectCustomVars as $objectCustomVar) {
-                    $this->db->update(
-                        "icinga_{$objectType}_var",
-                        ['varname' => $keyName],
-                        Filter::matchAll(
-                            Filter::where('varname', $root['key_name']),
-                            Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
-                        )
-                    );
-                }
-
-                continue;
-            }
 
             foreach ($objectCustomVars as $objectCustomVar) {
                 $varValue = json_decode($objectCustomVar['varvalue'], true);

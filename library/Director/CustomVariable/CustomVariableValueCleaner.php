@@ -339,6 +339,37 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Rename every stored value for a root property from its old to its new varname, across
+     * every object type.
+     *
+     * Does nothing if a legacy Data Field still exists under the old varname, the stored value
+     * could still be that field's live data, not this property's; renaming it away would break
+     * the legacy field the same way deleting it would.
+     *
+     * @param string $oldVarname the root property's varname before the rename
+     * @param string $newVarname the root property's varname after the rename
+     *
+     * @return int Number of stored values left in place because of a legacy Data Field, 0
+     *             if there was no conflict and the values were renamed as usual
+     */
+    public function renameStoredValues(string $oldVarname, string $newVarname): int
+    {
+        if ($this->hasLegacyDatafield($oldVarname)) {
+            return $this->countStoredValues($oldVarname);
+        }
+
+        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
+            $this->db->update(
+                "icinga_{$object}_var",
+                ['varname' => $newVarname],
+                Filter::where('varname', $oldVarname)
+            );
+        }
+
+        return 0;
+    }
+
+    /**
      * Whether a legacy Data Field still exists under this exact varname
      *
      * @return bool

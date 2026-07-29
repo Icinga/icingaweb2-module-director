@@ -214,6 +214,116 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         $this->assertEquals(0, $keptCount, 'nothing was kept, so no values must be reported back');
     }
 
+    public function testRenameStoredValuesKeepsValueAliveForLegacyDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $newKeyName = self::PREFIX . 'zone';
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_shared_name_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.73',
+        ], $db);
+        $host->store();
+
+        DirectorDatafield::create([
+            'varname'  => self::SHARED_KEY_NAME,
+            'caption'  => 'Region',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::SHARED_KEY_NAME,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::SHARED_KEY_NAME,
+            'varvalue' => json_encode('us-east'),
+            'format'   => 'json',
+        ]);
+
+        $keptCount = (new CustomVariableValueCleaner($db))->renameStoredValues(
+            self::SHARED_KEY_NAME,
+            $newKeyName
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::SHARED_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            json_encode('us-east'),
+            $storedValue,
+            'a value must stay under the old varname while a legacy Data Field still claims it'
+        );
+        $this->assertEquals(
+            1,
+            $keptCount,
+            'the number of values kept alive because of the conflict must be reported back'
+        );
+    }
+
+    public function testRenameStoredValuesRenamesValueWithoutLegacyDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $newKeyName = self::PREFIX . 'zone';
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_no_conflict_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.74',
+        ], $db);
+        $host->store();
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::SHARED_KEY_NAME,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::SHARED_KEY_NAME,
+            'varvalue' => json_encode('us-east'),
+            'format'   => 'json',
+        ]);
+
+        $keptCount = (new CustomVariableValueCleaner($db))->renameStoredValues(
+            self::SHARED_KEY_NAME,
+            $newKeyName
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', $newKeyName)
+        );
+
+        $this->assertEquals(
+            json_encode('us-east'),
+            $storedValue,
+            'a value must be renamed outright when no legacy Data Field shares its varname'
+        );
+        $this->assertEquals(0, $keptCount, 'nothing was kept, so no values must be reported back');
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -223,6 +333,8 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'retype_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'shared_name_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'no_conflict_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_shared_name_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_no_conflict_host']);
 
             $rows = $dba->fetchAll(
                 $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', self::ROOT_KEY_NAME)
