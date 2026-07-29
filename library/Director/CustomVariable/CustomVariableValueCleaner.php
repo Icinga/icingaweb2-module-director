@@ -411,6 +411,36 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Whether creating or renaming a legacy Data Field to $varname would collide with a
+     * root property
+     *
+     * Public so a form can validate this before submit instead of only finding out after.
+     *
+     * @return bool
+     */
+    public function wouldDatafieldCollideWithProperty(string $varname): bool
+    {
+        return $this->hasProperty($varname);
+    }
+
+    /**
+     * Whether a root property still exists under this exact key_name
+     *
+     * @return bool
+     */
+    private function hasProperty(string $varname): bool
+    {
+        $db = $this->db->getDbAdapter();
+
+        return (bool) $db->fetchOne(
+            $db->select()
+               ->from('director_property', ['cnt' => 'COUNT(*)'])
+               ->where('parent_uuid IS NULL')
+               ->where('key_name = ?', $varname)
+        );
+    }
+
+    /**
      * Count how many stored values exist under this varname, across every object type
      *
      * @return int

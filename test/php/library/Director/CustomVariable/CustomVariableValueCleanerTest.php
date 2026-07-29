@@ -364,6 +364,67 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         );
     }
 
+    public function testWouldDatafieldCollideWithPropertyDetectsExistingRootProperty(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $keyName = self::PREFIX . 'city';
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => $keyName,
+            'value_type' => 'string',
+            'label'      => 'City',
+        ], $db)->store();
+
+        $cleaner = new CustomVariableValueCleaner($db);
+
+        $this->assertTrue(
+            $cleaner->wouldDatafieldCollideWithProperty($keyName),
+            'a root property under this varname must be reported as a conflict'
+        );
+        $this->assertFalse(
+            $cleaner->wouldDatafieldCollideWithProperty(self::PREFIX . 'no_such_property'),
+            'an unrelated varname must not be reported as a conflict'
+        );
+    }
+
+    public function testWouldDatafieldCollideWithPropertyIgnoresNestedProperties(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $parentUuid = Uuid::uuid4();
+        $childKeyName = self::PREFIX . 'street';
+
+        DirectorProperty::create([
+            'uuid'       => $parentUuid->getBytes(),
+            'key_name'   => self::PREFIX . 'address',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Address',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'parent_uuid' => $parentUuid->getBytes(),
+            'key_name'    => $childKeyName,
+            'value_type'  => 'string',
+            'label'       => 'Street',
+        ], $db)->store();
+
+        $cleaner = new CustomVariableValueCleaner($db);
+
+        $this->assertFalse(
+            $cleaner->wouldDatafieldCollideWithProperty($childKeyName),
+            'a nested property key_name is not a root varname and must not block a Data Field'
+        );
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -390,6 +451,22 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SHARED_KEY_NAME));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::SHARED_KEY_NAME));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::PREFIX . 'zone'));
+
+            $addressRows = $dba->fetchAll(
+                $dba->select()->from('director_property', ['uuid'])
+                    ->where('key_name = ?', self::PREFIX . 'address')
+            );
+            foreach ($addressRows as $row) {
+                $dba->delete(
+                    'director_property',
+                    $dba->quoteInto('parent_uuid = ?', DbUtil::quoteBinaryCompat(
+                        DbUtil::binaryResult($row->uuid),
+                        $dba
+                    ))
+                );
+            }
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PREFIX . 'address'));
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PREFIX . 'city'));
         }
 
         parent::tearDown();

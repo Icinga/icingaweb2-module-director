@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Application\Hook;
@@ -18,6 +19,18 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function onRequest()
     {
         if ($this->hasBeenSent()) {
+            $varname = $this->getSentValue('varname');
+            $isNew = ! $this->object()->hasBeenLoadedFromDb();
+            if (! empty($varname) && ($isNew || $this->shouldBeRenamed())) {
+                $cleaner = new CustomVariableValueCleaner($this->getDb());
+                if ($cleaner->wouldDatafieldCollideWithProperty($varname)) {
+                    $this->getElement('varname')->addError($this->translate(
+                        'A Custom Variable Property with the same name already exists.'
+                        . ' Rename or remove it first.'
+                    ));
+                }
+            }
+
             if ($this->shouldBeDeleted()) {
                 $varname = $this->getSentValue('varname');
                 if ($cnt = CustomVariables::countAll($varname, $this->getDb())) {
