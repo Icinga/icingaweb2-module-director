@@ -338,7 +338,18 @@ class MigrateCommandTest extends BaseTestCase
         $this->createAllFixtures($db);
 
         $cmd = new TestableMigrateCommand($db, ['--dry-run', '--delete']);
-        $cmd->runDatafields();
+        $output = $cmd->runDatafields();
+
+        $this->assertStringContainsString(
+            'would be migrated and deleted',
+            $output,
+            '--dry-run --delete must report the pending deletion in future tense'
+        );
+        $this->assertStringNotContainsString(
+            'have been migrated and deleted',
+            $output,
+            '--dry-run --delete must not claim datafields were already deleted'
+        );
 
         $dba = $db->getDbAdapter();
         foreach (self::MIGRATABLE as $varname) {

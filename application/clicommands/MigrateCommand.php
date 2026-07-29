@@ -135,10 +135,21 @@ class MigrateCommand extends Command
 
         $totalSkipped = $totalDatafields - $totalMigrated;
         if ($delete) {
-            echo "The following datafields have been migrated and deleted:\n";
-            if ($this->isVerbose) {
-                foreach ($this->migratedDataFields as $dataField) {
-                    echo "$dataField \n";
+            if ($dryRun) {
+                echo "The following datafields would be migrated and deleted:\n";
+                if ($this->isVerbose) {
+                    foreach ($customPropertiesToMigrate as $varname => $customProperty) {
+                        if (! str_starts_with($customProperty['value_type'], 'unsupported-')) {
+                            echo "$varname \n";
+                        }
+                    }
+                }
+            } else {
+                echo "The following datafields have been migrated and deleted:\n";
+                if ($this->isVerbose) {
+                    foreach ($this->migratedDataFields as $dataField) {
+                        echo "$dataField \n";
+                    }
                 }
             }
         }
