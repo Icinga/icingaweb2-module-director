@@ -75,7 +75,7 @@ class Dictionary extends FieldsetElement
                     'submitButton',
                     'remove_' . $count,
                     [
-                        'label' => 'Remove Item',
+                        'label' => 'Remove',
                         'class' => ['remove-property'],
                         'formnovalidate' => true
                     ]

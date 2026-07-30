@@ -41,7 +41,7 @@ class NestedDictionaryItem extends FieldsetElement
     protected function assemble(): void
     {
         $this->addElement('text', 'key', [
-            'label' => $this->translate('Key'),
+            'label' => $this->translate('Key Name'),
             'required' => true
         ]);
 
@@ -66,7 +66,7 @@ class NestedDictionaryItem extends FieldsetElement
                 $this->removeButton->setLabel(new Icon('trash'))
                     ->setAttribute('formnovalidate', true)
                     ->setAttribute('class', ['remove-button'])
-                    ->add(Text::create(' ' . $this->translate('Remove')))
+                    ->add(Text::create(' ' . $this->translate('Remove Item')))
             ));
         }
 

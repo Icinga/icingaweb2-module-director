@@ -313,7 +313,7 @@ class CustomVariablesForm extends CompatForm
 
         if ($propertyData['allow_removal']) {
             $removeButton = $dictionary->createElement('submitButton', 'remove_' . $index, [
-                'label' => 'Remove Item',
+                'label' => 'Remove',
                 'class' => ['remove-property'],
                 'formnovalidate' => true
             ]);
