@@ -154,10 +154,24 @@ class CustomVariableForm extends CompatForm
 
                     return false;
                 });
-            } elseif ($this->uuid === null && $this->parentUuid === null) {
+            } elseif ($this->parentUuid === null) {
+                // Covers a brand new property (uuid === null) and an existing, still
+                // unused one being renamed. Only the new value matters here, neither
+                // path moves any stored values around.
+                $storedKeyName = $this->storedKeyName;
                 $cleaner = new CustomVariableValueCleaner($this->db);
-                $keyNameValidators[] = new CallbackValidator(function ($value, $validator) use ($cleaner) {
-                    if (! $cleaner->wouldDeleteCollideWithLegacyDatafield((string) $value)) {
+                $keyNameValidators[] = new CallbackValidator(function (
+                    $value,
+                    $validator
+                ) use (
+                    $cleaner,
+                    $storedKeyName
+                ) {
+                    $newKeyName = (string) $value;
+                    if (
+                        $newKeyName === $storedKeyName
+                        || ! $cleaner->wouldDeleteCollideWithLegacyDatafield($newKeyName)
+                    ) {
                         return true;
                     }
 
@@ -602,6 +616,16 @@ class CustomVariableForm extends CompatForm
 
             // The form validator should already catch this, this is just a backstop in
             // case a Data Field showed up between validation and submit.
+            if (
+                $this->parentUuid === null
+                && $dbProperty['key_name'] !== $values['key_name']
+                && $cleaner->wouldDeleteCollideWithLegacyDatafield((string) $values['key_name'])
+            ) {
+                // Can't tell its values apart from a Data Field's, so keep the old name
+                // too, no point renaming into a name we can't safely own.
+                $values['key_name'] = $dbProperty['key_name'];
+            }
+
             $blockedByLegacyDatafield = $this->parentUuid === null
                 && $dbProperty['value_type'] !== $valueType
                 && $cleaner->wouldDeleteCollideWithLegacyDatafield($dbProperty['key_name']);
