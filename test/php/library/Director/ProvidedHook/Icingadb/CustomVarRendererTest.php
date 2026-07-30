@@ -241,6 +241,36 @@ class CustomVarRendererTest extends BaseTestCase
         $this->assertStringContainsString('***', $html);
     }
 
+    public function testRenderCustomVarValueMasksEverythingWhenPrefetchFailed(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // prefetchForObject() throwing (DB error, whatever) leaves every masking
+        // config empty. That must not read as "nothing here is sensitive", or a
+        // failed metadata lookup would just show every var raw instead of erroring.
+        $renderer->seedPrefetchFailed();
+
+        $result = $renderer->renderCustomVarValue('api_token', 's3cr3t-value');
+
+        $this->assertSame('***', $result);
+    }
+
+    public function testRenderCustomVarValueMasksOnRenderFailure(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // A var we do recognize as ours, but something breaks while working out how
+        // to render it. Falling back to null here would show the raw value instead.
+        $renderer->seedDictionaryName('servers');
+        $renderer->seedPropertyValueType('servers', 'dynamic-dictionary');
+        $renderer->seedCustomPropertyDictionary('servers');
+        $renderer->forceRenderFailure();
+
+        $result = $renderer->renderCustomVarValue('servers', ['primary' => ['password' => 'hunter2']]);
+
+        $this->assertSame('***', $result);
+    }
+
     public function testSensitiveFixedArrayItemMasksInFullyRenderedHtml(): void
     {
         $renderer = new TestableCustomVarRenderer();

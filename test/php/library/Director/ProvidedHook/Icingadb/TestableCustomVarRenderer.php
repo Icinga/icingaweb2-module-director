@@ -3,6 +3,8 @@
 namespace Tests\Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Icinga\Module\Director\ProvidedHook\Icingadb\CustomVarRenderer;
+use ipl\Html\ValidHtml;
+use RuntimeException;
 
 /**
  * Test seam: exposes protected rendering internals of CustomVarRenderer without
@@ -10,6 +12,27 @@ use Icinga\Module\Director\ProvidedHook\Icingadb\CustomVarRenderer;
  */
 class TestableCustomVarRenderer extends CustomVarRenderer
 {
+    private bool $forceRenderFailure = false;
+
+    public function seedPrefetchFailed(): void
+    {
+        $this->prefetchFailed = true;
+    }
+
+    public function forceRenderFailure(): void
+    {
+        $this->forceRenderFailure = true;
+    }
+
+    protected function renderDictionaryVal(string $key, array $value): ?ValidHtml
+    {
+        if ($this->forceRenderFailure) {
+            throw new RuntimeException('forced failure for test');
+        }
+
+        return parent::renderDictionaryVal($key, $value);
+    }
+
     public function seedDictionaryChild(
         string $parentKey,
         string $childKey,
@@ -37,6 +60,11 @@ class TestableCustomVarRenderer extends CustomVarRenderer
     public function seedPropertyValueType(string $key, string $valueType): void
     {
         $this->customVariableConfig[$key]['value_type'] = $valueType;
+    }
+
+    public function seedCustomPropertyDictionary(string $key, array $children = []): void
+    {
+        $this->customPropertyDictionaries[$key] = $children;
     }
 
     public function renderDictionaryValForTest(string $key, array $value)

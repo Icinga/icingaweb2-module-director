@@ -68,6 +68,14 @@ class CustomVarRenderer extends CustomVarRendererHook
 
     protected $dictionaryLevel = 0;
 
+    /**
+     * Whether prefetchForObject() failed, none of the config above can be trusted then,
+     * so a value must render masked rather than fall back to raw
+     *
+     * @var bool
+     */
+    protected $prefetchFailed = false;
+
     /** @var HtmlElement Table for dictionary fields */
     private $dictionaryTable;
 
@@ -353,6 +361,7 @@ class CustomVarRenderer extends CustomVarRendererHook
             return true;
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
+            $this->prefetchFailed = true;
 
             return false;
         }
@@ -603,7 +612,10 @@ class CustomVarRenderer extends CustomVarRendererHook
         $childConfig = $this->dictionaryChildConfigFor($key, $parentKey, $grandparentKey);
 
         if (! (isset($this->fieldConfig[$key]) || $childConfig !== null || isset($this->customVariableConfig[$key]))) {
-            return null;
+            // No config means "not ours" only when prefetch actually ran. If it failed,
+            // this config is empty regardless of what the var actually is, so masking
+            // is the only safe answer here.
+            return $this->prefetchFailed ? '***' : null;
         }
 
         try {
@@ -645,11 +657,15 @@ class CustomVarRenderer extends CustomVarRendererHook
             } elseif ($value !== null && $this->isDictionaryValueType($key, $parentKey, $grandparentKey)) {
                 return $this->renderDictionaryVal($key, (array) $value);
             }
+
+            return null;
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
-        }
 
-        return null;
+            // This key is one of ours (checked above), we just failed to work out
+            // how to render it. Mask it, showing it raw would defeat sensitive fields.
+            return '***';
+        }
     }
 
     public function identifyCustomVarGroup(string $key): ?string
