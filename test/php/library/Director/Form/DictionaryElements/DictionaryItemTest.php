@@ -104,6 +104,25 @@ class DictionaryItemTest extends BaseTestCase
         $this->assertSame('', $result['var']);
     }
 
+    public function testPrepareMasksSensitiveChildInsideInheritedDynamicDictionary(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->buildWifiNetworksDynamicDictionaryProperty();
+        $property['inherited'] = [
+            'office' => ['ssid' => 'corp-guest', 'passphrase' => 's3cr3t-wifi-pass'],
+        ];
+        $property['inherited_from'] = 'base-template';
+
+        $result = DictionaryItem::prepare($property);
+
+        $this->assertStringNotContainsString('s3cr3t-wifi-pass', $result['inherited']);
+        $this->assertStringContainsString("***", $result['inherited']);
+        $this->assertStringContainsString('corp-guest', $result['inherited']);
+    }
+
     public function testGetItemDefaultsSensitiveValueToEmptyStringInFixedArray(): void
     {
         $item = new TestableDictionaryItem('0', []);
@@ -830,6 +849,47 @@ class DictionaryItemTest extends BaseTestCase
         $dictionaryItem->ensureAssembled();
 
         return $dictionaryItem;
+    }
+
+    /**
+     * Build a dynamic-dictionary ("wifi_networks") property with a string child
+     * ("ssid") and a sensitive child ("passphrase"), backed by real director_property
+     * rows. Caller fills in 'inherited' as needed.
+     */
+    private function buildWifiNetworksDynamicDictionaryProperty(): array
+    {
+        $db = $this->getDb();
+        $parentUuidBytes = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . 'wifi_networks';
+        $this->createdKeyNames[] = $keyName;
+
+        DirectorProperty::create([
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'dynamic-dictionary',
+            'label' => 'Wifi Networks',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => 'ssid',
+            'parent_uuid' => $parentUuidBytes,
+            'value_type' => 'string',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => 'passphrase',
+            'parent_uuid' => $parentUuidBytes,
+            'value_type' => 'sensitive',
+        ], $db)->store();
+
+        return [
+            'uuid' => $parentUuidBytes,
+            'key_name' => $keyName,
+            'value_type' => 'dynamic-dictionary',
+            'label' => 'Wifi Networks',
+        ];
     }
 
     /**

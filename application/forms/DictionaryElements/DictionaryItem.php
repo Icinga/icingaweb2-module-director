@@ -492,9 +492,8 @@ class DictionaryItem extends FieldsetElement
                 $property['value'] ?? []
             );
 
-            $values['inherited'] = isset($property['inherited'])
-                ? json_encode($property['inherited'], JSON_PRETTY_PRINT)
-                : '';
+            $inherited = self::maskSensitiveEntries($property['inherited'] ?? [], $dictionaryItems);
+            $values['inherited'] = ! empty($inherited) ? json_encode($inherited, JSON_PRETTY_PRINT) : '';
             $values['inherited_from'] = $property['inherited_from'] ?? '';
         } elseif (
             $property['value_type'] === 'datalist-non-strict'
@@ -619,6 +618,48 @@ class DictionaryItem extends FieldsetElement
         }
 
         return $result;
+    }
+
+    /**
+     * Mask any sensitive child's value inside an inherited dynamic-dictionary
+     *
+     * $inherited is keyed by entry (one per dictionary row), each entry an assoc array
+     * of the dictionary's own child key_names. A sensitive child in there is otherwise
+     * shown in the clear once json-encoded into the "Inherited from ..." field.
+     *
+     * @param array $inherited
+     * @param array $children Children item definitions, keyed by key_name, carrying value_type
+     *
+     * @return array
+     */
+    private static function maskSensitiveEntries(array $inherited, array $children): array
+    {
+        $sensitiveKeys = [];
+        foreach ($children as $keyName => $child) {
+            if (($child['value_type'] ?? null) === 'sensitive') {
+                $sensitiveKeys[] = $keyName;
+            }
+        }
+
+        if (empty($sensitiveKeys)) {
+            return $inherited;
+        }
+
+        foreach ($inherited as $entryKey => $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            foreach ($sensitiveKeys as $keyName) {
+                if (($entry[$keyName] ?? '') !== '') {
+                    $entry[$keyName] = '***';
+                }
+            }
+
+            $inherited[$entryKey] = $entry;
+        }
+
+        return $inherited;
     }
 
     /**
