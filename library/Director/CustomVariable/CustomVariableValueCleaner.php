@@ -124,7 +124,7 @@ class CustomVariableValueCleaner
      * schema renumbering still happens either way, it's property schema only and has
      * nothing to do with the Data Field's data.
      *
-     * @param bool $keepPropertyInPlace true when $property is only being retyped, not removed
+     * @param bool $keepPropertyInPlace true when only $property's type is changing, not removed
      *
      * @return int Number of stored values left in place because of a legacy Data Field, 0
      *             if there was no conflict and the values were updated as usual
@@ -143,9 +143,9 @@ class CustomVariableValueCleaner
         $parentUuid = Uuid::fromBytes($parent['uuid']);
         $isParentFixedArray = $parent['value_type'] === 'fixed-array';
 
-        // A retyped-in-place property keeps its slot, only a removed one needs its
-        // fixed-array siblings renumbered. This is schema only, it has nothing to do
-        // with the Data Field check below, so it always has to run.
+        // A property that only changes type in place keeps its slot, only a removed
+        // one needs its fixed-array siblings renumbered. This is schema only, it has
+        // nothing to do with the Data Field check below, so it always has to run.
         if (! $keepPropertyInPlace && $isParentFixedArray) {
             $this->updateFixedArrayItems($parentUuid, $property['key_name']);
         }
@@ -406,7 +406,7 @@ class CustomVariableValueCleaner
     }
 
     /**
-     * Whether deleting or retyping this varname would collide with a legacy Data Field
+     * Whether deleting this varname or changing its type would collide with a legacy Data Field
      *
      * Public so a form can validate this before submit instead of only finding out after.
      *

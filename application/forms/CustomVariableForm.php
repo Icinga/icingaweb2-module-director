@@ -663,8 +663,8 @@ class CustomVariableForm extends CompatForm
                 && $cleaner->wouldDeleteCollideWithLegacyDatafield($dbProperty['key_name']);
 
             if ($blockedByLegacyDatafield) {
-                // Its values can't be cleared, so keep the old type too, no point retyping
-                // the property and leaving stale data behind under the new type.
+                // Its values can't be cleared, so keep the old type too, no point changing
+                // the property's type and leaving stale data behind under the new type.
                 $values['value_type'] = $dbProperty['value_type'];
             } elseif ($dbProperty['value_type'] !== $valueType) {
                 $db = $this->db->getDbAdapter();
