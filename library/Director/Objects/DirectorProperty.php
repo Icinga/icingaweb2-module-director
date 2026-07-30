@@ -556,16 +556,17 @@ class DirectorProperty extends DbObject
                 continue;
             }
 
+            // The export carries the exporting instance's own parent_uuid, which can
+            // point at a UUID this property was reconciled away from. Always re-parent
+            // onto this property's real, local UUID instead of trusting the export.
+            $value->parent_uuid = $this->get('uuid');
+
             $itemUUid = Uuid::fromString($itemUUid);
             $itemCandidate = DirectorProperty::loadWithUniqueId($itemUUid, $db);
             if (! $itemCandidate) {
-                if (isset($value->parent_uuid)) {
-                    $value->parent_uuid = Uuid::fromString($value->parent_uuid)->getBytes();
-                }
-
                 $child = DirectorProperty::import($value, $db);
                 if ($nestedItems) {
-                    $child->items = $this->importItems($nestedItems, $db);
+                    $child->items = $child->importItems($nestedItems, $db);
                 }
 
                 $itemCandidates[$key] = $child;
@@ -574,9 +575,6 @@ class DirectorProperty extends DbObject
             }
 
             assert($itemCandidate instanceof DirectorProperty);
-            if (isset($value->parent_uuid)) {
-                $value->parent_uuid = Uuid::fromString($value->parent_uuid)->getBytes();
-            }
 
             $datalist = null;
             if (isset($value->datalist)) {
@@ -591,7 +589,7 @@ class DirectorProperty extends DbObject
             }
 
             if ($nestedItems) {
-                $itemCandidate->items = $this->importItems($nestedItems, $db);
+                $itemCandidate->items = $itemCandidate->importItems($nestedItems, $db);
             }
 
             $itemCandidates[$key] = $itemCandidate;
