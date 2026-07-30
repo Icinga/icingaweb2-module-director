@@ -19,12 +19,6 @@
     .dictionary,
     .nested-dictionary,
     .nested-dictionary-item {
-      &.no-border {
-        border: none;
-      }
-
-      border: 1px solid @gray-light;
-      border-radius: 1em;
       .remove-button {
         width: fit-content;
         border: none;
@@ -37,9 +31,23 @@
       }
     }
 
-    .dictionary-item.removable {
+    .dictionary {
+      &.no-border {
+        border: none;
+      }
+
       border: 1px solid @gray-light;
       border-radius: 1em;
+    }
+
+    // items with a legend get their border on the wrapping div, a fieldset border cuts through its own legend
+    &:has(> .dictionary-item.collapsible),
+    &:has(> .nested-dictionary-item) {
+      border: 1px solid @gray-light;
+      border-radius: 1em;
+    }
+
+    .dictionary-item.removable {
       .remove-property {
         width: fit-content;
         border: none;
@@ -53,21 +61,34 @@
   }
 }
 
-.nested-dictionary-item.collapsed > legend::before {
+.nested-dictionary-item.collapsed > legend::before,
+.dictionary-item.collapsible.collapsed > legend::before {
   content: '\e820';
 }
 
-.nested-dictionary-item > legend {
+.nested-dictionary-item > legend,
+.dictionary-item.collapsible > legend {
+  // a legend sits on its fieldset border by default, block display keeps it inside
+  display: block;
+  width: 100%;
   font-size: 1em;
   color: @text-color-light;
   font-weight: normal;
-  background-color: @gray-lighter;
-  width: 100%;
 
   &::before {
     // icon: down
     font-family: 'ifont';
     content: '\e81d';
+  }
+}
+
+// the remove button lives inside the legend, collapsing clips everything below it
+.dictionary-item.collapsible > legend {
+  display: flex;
+  align-items: center;
+
+  .remove-property {
+    margin-left: auto;
   }
 }
 
@@ -79,7 +100,6 @@
   }
 
   .control-group:has(> .item-required-checkbox) {
-    justify-content: end;
     margin: 1em 0.5em 0 0;
   }
 
@@ -100,13 +120,18 @@
     .nested-dictionary,
     .nested-dictionary-item {
       padding: 0 0.5em;
+
       .remove-button {
         position: absolute;
         top: 0;
         right: 0;
-        margin-top: 0.1em;
+        margin-top: 1em;
         margin-right: 3.5em;
         justify-content: center;
+      }
+
+      &.collapsed .remove-button {
+        margin-top: 0.1em;
       }
     }
 
@@ -117,15 +142,12 @@
       }
     }
 
-    .dictionary-item.removable {
-      position: relative;
-      .remove-property {
-        position: absolute;
-        top: 0;
-        right: 0;
-        margin-top: -1em;
-        justify-content: center;
-      }
+    .dictionary-item.removable .remove-property {
+      justify-content: center;
+    }
+
+    .dictionary-item.collapsible {
+      padding: 0 0.5em;
     }
 
     .nested-dictionary {
@@ -148,7 +170,14 @@
       }
     }
 
-    .nested-dictionary-item {
+    // only a scalar value sits flush against the bottom border, a nested dictionary
+    // or array already brings its own spacing
+    .dictionary-item.collapsible > .control-group:last-of-type:not(:has(> .dictionary, > .nested-dictionary)) {
+      margin-bottom: 1em;
+    }
+
+    .nested-dictionary-item,
+    .dictionary-item.collapsible {
       > .control-group:first-of-type {
         margin-top: 1em;
       }
@@ -162,11 +191,10 @@
           margin-right: 0.5em;
         }
       }
+    }
 
-      &.collapsed {
-        border: none;
-        padding: 0;
-      }
+    .nested-dictionary-item.collapsed {
+      padding: 0;
     }
   }
 }
