@@ -119,8 +119,10 @@ class CustomVariableValueCleaner
      * Strip $property's value out of every host's, service's, etc. stored custom variables.
      * No-op for a root property (empty $parent), use deleteStoredValues() for that case.
      *
-     * Does nothing if a legacy Data Field owns the root ancestor's varname, those stored
-     * values could be the field's, not this property's.
+     * Leaves the stored values alone if a legacy Data Field owns the root ancestor's
+     * varname, those values could be the field's, not this property's. The fixed-array
+     * schema renumbering still happens either way, it's property schema only and has
+     * nothing to do with the Data Field's data.
      *
      * @param bool $keepPropertyInPlace true when $property is only being retyped, not removed
      *
@@ -138,24 +140,25 @@ class CustomVariableValueCleaner
 
         [$rootProp, $path] = $this->resolveRootProperty($property, $parent);
 
+        $parentUuid = Uuid::fromBytes($parent['uuid']);
+        $isParentFixedArray = $parent['value_type'] === 'fixed-array';
+
+        // A retyped-in-place property keeps its slot, only a removed one needs its
+        // fixed-array siblings renumbered. This is schema only, it has nothing to do
+        // with the Data Field check below, so it always has to run.
+        if (! $keepPropertyInPlace && $isParentFixedArray) {
+            $this->updateFixedArrayItems($parentUuid, $property['key_name']);
+        }
+
         if ($this->hasLegacyDatafield($rootProp['key_name'])) {
             return $this->countStoredValues($rootProp['key_name']);
         }
 
         $db = $this->db->getDbAdapter();
-        $parentUuid = Uuid::fromBytes($parent['uuid']);
         $rootUuid = Uuid::fromBytes($rootProp['uuid']);
         $rootType = $rootProp['value_type'];
-
-        $isParentFixedArray = $parent['value_type'] === 'fixed-array';
         $isRootFixedArray = $rootType === 'fixed-array';
         $preserveIndex = $keepPropertyInPlace && $isParentFixedArray;
-
-        // A retyped-in-place property keeps its slot, only a removed one needs its
-        // fixed-array siblings renumbered.
-        if (! $keepPropertyInPlace && $isParentFixedArray) {
-            $this->updateFixedArrayItems($parentUuid, $property['key_name']);
-        }
 
         foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
             $idColumn = "{$objectType}_id";
