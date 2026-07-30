@@ -10,6 +10,7 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Application\Hook;
 use Icinga\Web\Notification;
 use Exception;
+use Zend_Validate_Callback;
 
 class DirectorDatafieldForm extends DirectorObjectForm
 {
@@ -20,19 +21,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function onRequest()
     {
         if ($this->hasBeenSent()) {
-            $varname = $this->getSentValue('varname');
-            $isNew = ! $this->object()->hasBeenLoadedFromDb();
             $collidesWithProperty = false;
-            if (! empty($varname) && ($isNew || $this->shouldBeRenamed())) {
-                $cleaner = new CustomVariableValueCleaner($this->getDb());
-                if ($cleaner->wouldDatafieldCollideWithProperty($varname)) {
-                    $collidesWithProperty = true;
-                    $this->getElement('varname')->addError($this->translate(
-                        'A Custom Variable Property with the same name already exists.'
-                        . ' Rename or remove it first.'
-                    ));
-                }
-            }
 
             if ($this->shouldBeDeleted()) {
                 $varname = $this->getSentValue('varname');
@@ -187,6 +176,26 @@ class DirectorDatafieldForm extends DirectorObjectForm
                 'This will be the name of the custom variable in the rendered Icinga configuration.'
             ),
             'required'    => true,
+            'validators'   => [
+                new Zend_Validate_Callback(function ($value) {
+                    $varname = $value;
+                    $isNew = ! $this->object()->hasBeenLoadedFromDb();
+                    if (! empty($varname) && ($isNew || $this->shouldBeRenamed())) {
+                        $cleaner = new CustomVariableValueCleaner($this->getDb());
+                        if ($cleaner->wouldDatafieldCollideWithProperty($varname)) {
+                            $this->getElement('varname')->addErrorMessage($this->translate(
+                                'A Custom Variable Property with the same name already exists.'
+                                . ' Rename or remove it first.'
+                            ));
+
+                            return false;
+                        }
+                    }
+
+
+                    return true;
+                })
+            ]
         ));
 
         $this->addElement('text', 'caption', array(
