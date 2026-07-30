@@ -119,23 +119,31 @@ class CustomVariableValueCleaner
      * Strip $property's value out of every host's, service's, etc. stored custom variables.
      * No-op for a root property (empty $parent), use deleteStoredValues() for that case.
      *
+     * Does nothing if a legacy Data Field owns the root ancestor's varname, those stored
+     * values could be the field's, not this property's.
+     *
      * @param bool $keepPropertyInPlace true when $property is only being retyped, not removed
      *
-     * @return void
+     * @return int Number of stored values left in place because of a legacy Data Field, 0
+     *             if there was no conflict and the values were updated as usual
      */
     public function removeObjectCustomVars(
         array $property,
         ?array $parent = null,
         bool $keepPropertyInPlace = false
-    ): void {
+    ): int {
         if (empty($parent)) {
-            return;
+            return 0;
+        }
+
+        [$rootProp, $path] = $this->resolveRootProperty($property, $parent);
+
+        if ($this->hasLegacyDatafield($rootProp['key_name'])) {
+            return $this->countStoredValues($rootProp['key_name']);
         }
 
         $db = $this->db->getDbAdapter();
         $parentUuid = Uuid::fromBytes($parent['uuid']);
-
-        [$rootProp, $path] = $this->resolveRootProperty($property, $parent);
         $rootUuid = Uuid::fromBytes($rootProp['uuid']);
         $rootType = $rootProp['value_type'];
 
@@ -199,28 +207,26 @@ class CustomVariableValueCleaner
                 $vars->storeToDb($object);
             }
         }
+
+        return 0;
     }
 
     /**
      * Strip $property's value out of every host's _override_servicevars custom variable.
      *
+     * Does nothing if a legacy Data Field owns the root ancestor's varname, same reasoning
+     * as removeObjectCustomVars().
+     *
      * @param bool $keepPropertyInPlace see removeObjectCustomVars()
      *
-     * @return void
+     * @return int Number of stored values left in place because of a legacy Data Field, 0
+     *             if there was no conflict and the values were updated as usual
      */
     public function removeFromOverrideServiceVars(
         array $property,
         array $parent,
         bool $keepPropertyInPlace = false
-    ): void {
-        $db = $this->db->getDbAdapter();
-
-        $overrideVarname = $db->fetchOne(
-            $db->select()
-               ->from('director_setting', ['setting_value'])
-               ->where('setting_name = ?', 'override_services_varname')
-        ) ?: '_override_servicevars';
-
+    ): int {
         if (empty($parent)) {
             $rootKeyName = $property['key_name'];
             $rootType = $property['value_type'];
@@ -232,6 +238,18 @@ class CustomVariableValueCleaner
             $rootType = $rootProp['value_type'];
             $preserveIndex = $keepPropertyInPlace && $parent['value_type'] === 'fixed-array';
         }
+
+        if ($this->hasLegacyDatafield($rootKeyName)) {
+            return $this->countStoredValues($rootKeyName);
+        }
+
+        $db = $this->db->getDbAdapter();
+
+        $overrideVarname = $db->fetchOne(
+            $db->select()
+               ->from('director_setting', ['setting_value'])
+               ->where('setting_name = ?', 'override_services_varname')
+        ) ?: '_override_servicevars';
 
         $query = $db->select()
                     ->from('icinga_host_var', ['host_id', 'varvalue'])
@@ -308,6 +326,8 @@ class CustomVariableValueCleaner
                 );
             }
         }
+
+        return 0;
     }
 
     /**

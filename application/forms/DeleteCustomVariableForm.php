@@ -190,15 +190,23 @@ class DeleteCustomVariableForm extends CompatForm
         $allUuids = array_merge([$uuid], $this->collectDescendantUuids($uuid));
         $quotedAllUuids = DbUtil::quoteBinaryCompat($allUuids, $this->db->getDbAdapter());
 
+        $collidingKeyName = $prop['key_name'];
+        if (! empty($this->parent)) {
+            [$rootProp, ] = $cleaner->resolveRootProperty($prop, $this->parent);
+            $collidingKeyName = $rootProp['key_name'];
+        }
+
         $keptValues = 0;
         $db->runFailSafeTransaction(function () use ($db, $prop, $quotedAllUuids, $cleaner, &$keptValues) {
             $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedAllUuids));
 
-            $cleaner->removeObjectCustomVars($prop, $this->parent);
-            $cleaner->removeFromOverrideServiceVars($prop, $this->parent);
+            $keptValues = max(
+                $cleaner->removeObjectCustomVars($prop, $this->parent),
+                $cleaner->removeFromOverrideServiceVars($prop, $this->parent)
+            );
 
             if (empty($this->parent)) {
-                $keptValues = $cleaner->deleteStoredValues($prop['key_name']);
+                $keptValues = max($keptValues, $cleaner->deleteStoredValues($prop['key_name']));
             }
 
             $db->delete('director_property', Filter::where('uuid', $quotedAllUuids));
@@ -211,7 +219,7 @@ class DeleteCustomVariableForm extends CompatForm
                     . 'Rename or remove it, then delete this property again to clear them.'
                 ),
                 $keptValues,
-                $prop['key_name']
+                $collidingKeyName
             ));
         }
     }

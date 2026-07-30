@@ -7,6 +7,7 @@ use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
@@ -616,11 +617,27 @@ class CustomVariableForm extends CompatForm
                 // host/service/etc. custom variables no longer matches the new schema and has
                 // to be cleared, the same way deleting the property outright would clear it.
                 if ($this->parentUuid === null) {
-                    $cleaner->deleteStoredValues($dbProperty['key_name']);
+                    $keptValues = $cleaner->deleteStoredValues($dbProperty['key_name']);
+                    $collidingKeyName = $dbProperty['key_name'];
                 } else {
                     $parentProperty = $this->fetchProperty($this->parentUuid);
-                    $cleaner->removeObjectCustomVars($dbProperty, $parentProperty, true);
-                    $cleaner->removeFromOverrideServiceVars($dbProperty, $parentProperty, true);
+                    $keptValues = max(
+                        $cleaner->removeObjectCustomVars($dbProperty, $parentProperty, true),
+                        $cleaner->removeFromOverrideServiceVars($dbProperty, $parentProperty, true)
+                    );
+                    [$rootProp, ] = $cleaner->resolveRootProperty($dbProperty, $parentProperty);
+                    $collidingKeyName = $rootProp['key_name'];
+                }
+
+                if ($keptValues > 0) {
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Kept %d stored value(s) for "%s", a Data Field with the same name'
+                            . ' still exists.'
+                        ),
+                        $keptValues,
+                        $collidingKeyName
+                    ));
                 }
 
                 // A dictionary can be nested arbitrarily deep (dictionary -> dictionary -> ...),
