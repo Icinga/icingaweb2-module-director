@@ -35,10 +35,20 @@ class BasketSnapshotCustomVariableResolver
     /** @var bool */
     protected $newPropertiesStored = false;
 
-    public function __construct($objects, Db $targetDb)
+    /** @var bool */
+    protected $readOnly;
+
+    /**
+     * @param       $objects
+     * @param Db    $targetDb
+     * @param bool  $readOnly True for a diff/comparison, which never calls storeNewProperties()
+     *                        on this resolver and so must not let import() persist a new datalist
+     */
+    public function __construct($objects, Db $targetDb, bool $readOnly = false)
     {
         $this->objects = (array) $objects;
         $this->targetDb = $targetDb;
+        $this->readOnly = $readOnly;
     }
 
     /**
@@ -324,7 +334,9 @@ class BasketSnapshotCustomVariableResolver
         foreach ($this->getObjectsByType('CustomVariable') as $uuid => $object) {
             // import() prepares the object but does not persist it; $new->get('uuid') may be a
             // freshly generated UUID that is only valid after storeNewProperties() is called.
-            $new = DirectorProperty::import($object, $this->targetDb);
+            // A read-only resolver never calls storeNewProperties() at all, so it also can't
+            // let import() create and store a new datalist here.
+            $new = DirectorProperty::import($object, $this->targetDb, ! $this->readOnly);
             if ($new->hasBeenLoadedFromDb()) {
                 $newUuid = Uuid::fromBytes(
                     Db\DbUtil::binaryResult($new->get('uuid'))

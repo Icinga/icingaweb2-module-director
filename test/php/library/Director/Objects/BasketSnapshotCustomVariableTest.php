@@ -27,6 +27,7 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
 
     private const TEMPLATE_NAME = self::PREFIX . 'linux-server';
     private const PROP_KEY_NAME = self::PREFIX . 'disk_checks_bk';
+    private const DIFF_LIST_NAME = self::PREFIX . 'diff_only_disk_list';
 
     public function testSnapshotIncludesCustomVariableSection(): void
     {
@@ -394,6 +395,48 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         }
     }
 
+    public function testViewingDiffDoesNotCreateDatalist(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $propertyUuid = Uuid::uuid4()->toString();
+        $resolver = new BasketSnapshotCustomVariableResolver(
+            [
+                'CustomVariable' => [
+                    $propertyUuid => (object) [
+                        'uuid'        => $propertyUuid,
+                        'key_name'    => self::PREFIX . 'diff_only_disk_list_prop',
+                        'value_type'  => 'datalist-strict',
+                        'label'       => null,
+                        'parent_uuid' => null,
+                        'category'    => null,
+                        'description' => null,
+                        'datalist'    => self::DIFF_LIST_NAME,
+                        'items'       => [],
+                    ],
+                ],
+            ],
+            $db,
+            true
+        );
+
+        // BasketDiff builds a resolver just like this to render a comparison and never calls
+        // storeNewProperties() on it. Just viewing that comparison shouldn't write anything.
+        $resolver->tweakTargetUuids((object) ['customVariables' => []]);
+
+        $count = $dba->fetchOne(
+            $dba->select()->from('director_datalist', ['cnt' => 'COUNT(*)'])
+                ->where('list_name = ?', self::DIFF_LIST_NAME)
+        );
+
+        $this->assertEquals(0, (int) $count, 'Viewing a basket comparison must not create a datalist');
+    }
+
     public function testBasketsWithoutCustomPropertiesStillWork(): void
     {
         if ($this->skipForMissingDb()) {
@@ -454,6 +497,7 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
             }
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PROP_KEY_NAME));
+            $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::DIFF_LIST_NAME));
         }
 
         parent::tearDown();

@@ -305,17 +305,18 @@ class DirectorProperty extends DbObject
     /**
      * Resolve a datalist referenced by name during basket import
      *
-     * If no datalist with this name exists yet in the target database, a new one is created
-     * and persisted immediately, so that it has a uuid by the time onStore() links it to this
-     * property, and so that sibling properties referencing the same not-yet-existing list name
-     * resolve to the very same row instead of each creating their own duplicate.
+     * If it doesn't exist on the target yet, a new one is created and stored right away, so
+     * onStore() has a uuid to link against and siblings sharing the same new name reuse the same
+     * row instead of each creating their own. A diff/comparison lookup passes $persist false
+     * though, it only wants an in-memory datalist and must not write anything.
      *
      * @param mixed $datalistName
      * @param Db    $db
+     * @param bool  $persist
      *
      * @return ?DirectorDatalist
      */
-    private static function resolveImportedDatalist($datalistName, Db $db): ?DirectorDatalist
+    private static function resolveImportedDatalist($datalistName, Db $db, bool $persist = true): ?DirectorDatalist
     {
         $datalist = DirectorDatalist::loadOptional($datalistName, $db);
         if (! $datalist && is_string($datalistName)) {
@@ -323,7 +324,9 @@ class DirectorProperty extends DbObject
                 'list_name' => $datalistName,
                 'owner'     => static::currentUsername(),
             ], $db);
-            $datalist->store($db);
+            if ($persist) {
+                $datalist->store($db);
+            }
         }
 
         return $datalist;
@@ -337,9 +340,12 @@ class DirectorProperty extends DbObject
     }
 
     /**
+     * @param bool $persist Pass false for a diff/comparison lookup, so a not-yet-existing
+     *                       datalist stays in memory instead of getting stored
+     *
      * @throws NotFoundError
      */
-    public static function import(stdClass $plain, Db $db): static
+    public static function import(stdClass $plain, Db $db, bool $persist = true): static
     {
         $dba = $db->getDbAdapter();
         $uuid = $plain->uuid ?? null;
@@ -352,7 +358,7 @@ class DirectorProperty extends DbObject
         if ($uuid) {
             $uuid = Uuid::fromString($uuid);
             if (isset($plain->datalist)) {
-                $datalist = static::resolveImportedDatalist($plain->datalist, $db);
+                $datalist = static::resolveImportedDatalist($plain->datalist, $db, $persist);
                 unset($plain->datalist);
             }
 
@@ -368,7 +374,7 @@ class DirectorProperty extends DbObject
                     $candidate->datalist = $datalist;
                 }
 
-                $candidate->items = $candidate->importItems((array) $items, $db);
+                $candidate->items = $candidate->importItems((array) $items, $db, $persist);
 
                 return $candidate;
             }
@@ -396,7 +402,7 @@ class DirectorProperty extends DbObject
                 $candidate->datalist = $datalist;
             }
 
-            $candidate->items = $candidate->importItems((array) $items, $db);
+            $candidate->items = $candidate->importItems((array) $items, $db, $persist);
 
             return $candidate;
         }
@@ -408,7 +414,7 @@ class DirectorProperty extends DbObject
         }
 
         if ($items) {
-            $property->items = $property->importItems((array) $items, $db);
+            $property->items = $property->importItems((array) $items, $db, $persist);
         }
 
         return $property;
@@ -538,10 +544,12 @@ class DirectorProperty extends DbObject
      *
      * @param array $items
      * @param Db    $db
+     * @param bool  $persist Whether a not-yet-existing referenced datalist may be created and
+     *                       stored right away, see import()
      *
      * @return array
      */
-    private function importItems(array $items, Db $db): array
+    private function importItems(array $items, Db $db, bool $persist = true): array
     {
         if (empty($items)) {
             return [];
@@ -564,9 +572,9 @@ class DirectorProperty extends DbObject
             $itemUUid = Uuid::fromString($itemUUid);
             $itemCandidate = DirectorProperty::loadWithUniqueId($itemUUid, $db);
             if (! $itemCandidate) {
-                $child = DirectorProperty::import($value, $db);
+                $child = DirectorProperty::import($value, $db, $persist);
                 if ($nestedItems) {
-                    $child->items = $child->importItems($nestedItems, $db);
+                    $child->items = $child->importItems($nestedItems, $db, $persist);
                 }
 
                 $itemCandidates[$key] = $child;
@@ -578,7 +586,7 @@ class DirectorProperty extends DbObject
 
             $datalist = null;
             if (isset($value->datalist)) {
-                $datalist = static::resolveImportedDatalist($value->datalist, $db);
+                $datalist = static::resolveImportedDatalist($value->datalist, $db, $persist);
                 unset($value->datalist);
             }
 
@@ -589,7 +597,7 @@ class DirectorProperty extends DbObject
             }
 
             if ($nestedItems) {
-                $itemCandidate->items = $itemCandidate->importItems($nestedItems, $db);
+                $itemCandidate->items = $itemCandidate->importItems($nestedItems, $db, $persist);
             }
 
             $itemCandidates[$key] = $itemCandidate;

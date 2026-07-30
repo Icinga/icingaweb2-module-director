@@ -66,7 +66,8 @@ class BasketDiff
         if ($this->customPropertyResolver === null) {
             $this->customPropertyResolver = new BasketSnapshotCustomVariableResolver(
                 $this->getBasketObjects(),
-                $this->db
+                $this->db,
+                true
             );
         }
 
