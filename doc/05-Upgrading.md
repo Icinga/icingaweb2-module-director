@@ -15,6 +15,7 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.12.x](#upgrade-to-1.12.x)
 * [Upgrading to 1.11.x](#upgrade-to-1.11.x)
 * [Upgrading to 1.10.x](#upgrade-to-1.10.x)
 * [Upgrading to 1.9.x](#upgrade-to-1.9.x)
@@ -41,6 +42,22 @@ All you need for backing up your Director is a snapshot of your database. Please
 use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
+
+<a name="upgrade-to-1.12.x"></a>Upgrading to 1.12.x
+--------------------------------------------------
+
+The custom property schema migration (version 193) uses the `citext` PostgreSQL
+extension and installs it automatically if it's missing. This works without any
+manual action on PostgreSQL 13+, since the database owner (the role Director
+already connects with) is allowed to install "trusted" extensions like `citext`
+on its own.
+
+On PostgreSQL versions older than 13, or if Director's database role doesn't own
+the database, automatic installation isn't possible and the migration will fail.
+Should this happen, install the extension yourself as a superuser and re-run
+the migration afterward.
+
+     psql -q -c "CREATE EXTENSION citext;"
 
 <a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
 --------------------------------------------------
