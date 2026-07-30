@@ -6,6 +6,7 @@ use Exception;
 use gipfl\Diff\HtmlRenderer\InlineDiff;
 use gipfl\Diff\PhpDiff;
 use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Url;
 use gipfl\Web\Table\NameValueTable;
 use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
@@ -56,6 +57,20 @@ class BasketController extends ActionController
             )
         );
         $basket = $this->requireBasket();
+
+        $url = Url::fromPath('director/basket/add', [
+            'type'  => 'Basket',
+        ]);
+
+        $url->getParams()->addValues('names', [$basket->getUniqueIdentifier()]);
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            $url,
+            null,
+            ['class' => 'icon-tag']
+        ));
+
         $this->basketTabs()->activate('show');
         $this->addTitle($basket->get('basket_name'));
         if ($basket->isEmpty()) {
