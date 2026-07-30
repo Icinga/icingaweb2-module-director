@@ -183,6 +183,38 @@ class CustomVariableForm extends CompatForm
                 });
             }
 
+            $keyNameValidators[] = new CallbackValidator(function ($value, $validator) {
+                $keyName = (string) $value;
+                $db = $this->db->getDbAdapter();
+                $query = $db->select()
+                    ->from('director_property', ['count' => 'COUNT(*)'])
+                    ->where('key_name = ?', $keyName);
+
+                if ($this->parentUuid === null) {
+                    $query->where('parent_uuid IS NULL');
+                } else {
+                    $query->where(
+                        'parent_uuid = ?',
+                        Db\DbUtil::quoteBinaryCompat($this->parentUuid->getBytes(), $db)
+                    );
+                }
+
+                if ($this->uuid !== null) {
+                    $query->where('uuid != ?', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $db));
+                }
+
+                if ((int) $db->fetchOne($query) === 0) {
+                    return true;
+                }
+
+                $validator->addMessage($this->translate(
+                    'A property with this name already exists at this level. Please choose a'
+                    . ' different name.'
+                ));
+
+                return false;
+            });
+
             $this->addElement(
                 'text',
                 'key_name',
