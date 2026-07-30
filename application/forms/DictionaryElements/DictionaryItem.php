@@ -14,6 +14,7 @@ use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
@@ -104,6 +105,18 @@ class DictionaryItem extends FieldsetElement
         $valElementName = 'var';
         $type = $this->getElement('type')->getValue() ?? '';
         $label = $this->getElement('label')->getValue();
+        $name = $this->getElement('name')->getValue() ?? '';
+        $isTopLevel = empty($this->getElement('parent_type')->getValue());
+        $isContainer = in_array($type, ['fixed-dictionary', 'fixed-array', 'dynamic-dictionary'], true);
+
+        $uuid = Uuid::fromBytes($this->fields['uuid']);
+        $itemType = str_starts_with($type, 'datalist-') ? self::fetchItemType($uuid) : null;
+
+        if ($label === null) {
+            $label = $name;
+        }
+
+        $typeLabel = $this->getTypeLabel($type, $itemType);
 
         if ($this->removeButton !== null) {
             $this->addAttributes(['class' => ['removable']]);
@@ -112,18 +125,39 @@ class DictionaryItem extends FieldsetElement
                 'class' => 'item-required-checkbox',
                 'value' => ($this->fields['required_current'] ?? false) ? 'y' : 'n'
             ]);
-            $this->addHtml(new HtmlElement(
-                'div',
-                null,
-                $this->removeButton
-            ));
+
+            if (! $isTopLevel) {
+                $this->addHtml(new HtmlElement('div', null, $this->removeButton));
+            }
         }
 
-        if ($label === null) {
-            $label = $this->getElement('name')->getValue() ?? '';
+        if ($isTopLevel) {
+            // The remove button goes inside the legend itself, not next to it. A
+            // collapsed item is clipped down to the legend's own height, so anything
+            // outside the legend (like a separately positioned remove button) gets
+            // cut off.
+            $legendContent = [Text::create($label . ' (' . $typeLabel . ')')];
+            if ($this->removeButton !== null) {
+                $legendContent[] = $this->removeButton;
+            }
+
+            $this->prependHtml(new HtmlElement('legend', null, ...$legendContent));
+            $this->addAttributes([
+                'class' => 'collapsible',
+                'data-toggle-element' => 'legend',
+                'data-visible-height' => 0,
+            ]);
         }
 
-        $uuid = Uuid::fromBytes($this->fields['uuid']);
+        if ($isTopLevel && ! $isContainer) {
+            $this->addElement('text', 'key_name_display', [
+                'label' => $this->translate('Key Name'),
+                'value' => $name,
+                'disabled' => true,
+                'ignore' => true,
+            ]);
+        }
+
         // Pass down this item's own stored value, so each child gets its current value
         // too. Without this, a nested sensitive field has nothing to fall back on when
         // it comes back blank.
@@ -140,12 +174,16 @@ class DictionaryItem extends FieldsetElement
             $placeholder = $inherited . ' (' . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
         }
 
+        $valueLabel = $isTopLevel
+            ? $this->translate('Value') . ' (' . $typeLabel . ')'
+            : $label . ' (' . $typeLabel . ')';
+
         if ($type === 'number') {
             $this->addElement(
                 'number',
                 $valElementName,
                 [
-                    'label' => $label . ' (Number)',
+                    'label' => $valueLabel,
                     'placeholder' => $placeholder,
                     'step' => 'any'
                 ]
@@ -162,7 +200,7 @@ class DictionaryItem extends FieldsetElement
                 new SensitiveElement(
                     $valElementName,
                     [
-                        'label' => $label . ' (Sensitive)',
+                        'label' => $valueLabel,
                         'autocomplete' => 'off'
                     ]
                 )
@@ -172,10 +210,9 @@ class DictionaryItem extends FieldsetElement
                 ->shouldAutoSubmit()
                 ->setVerticalTermDirection()
                 ->setPlaceHolder($placeholder)
-                ->setLabel($label . ' (Array)'));
+                ->setLabel($valueLabel));
         } elseif (str_starts_with($type, 'datalist-')) {
             $isStrict = substr($type, strlen('datalist-')) === 'strict';
-            $itemType = self::fetchItemType($uuid);
             $datalistEntries = self::fetchDataListEntries($uuid);
             if ($itemType === 'string') {
                 if ($isStrict) {
@@ -183,7 +220,7 @@ class DictionaryItem extends FieldsetElement
                         'select',
                         $valElementName,
                         [
-                            'label' => $label . ' (Datalist String [strict])',
+                            'label' => $valueLabel,
                             'placeholder' => $placeholder,
                             'value' => '',
                             'options' => ['' => $this->translate('- Please choose -')]
@@ -195,7 +232,7 @@ class DictionaryItem extends FieldsetElement
                     $listEntriesInput = $this->createElement('text', $valElementName, [
                         'autocomplete' => 'off',
                         'ignore' => true,
-                        'label' => $label . ' (Datalist String [non-strict])',
+                        'label' => $valueLabel,
                         'data-enrichment-type' => 'completion',
                         'data-auto-submit' => true,
                         'data-term-suggestions' => "#{$valElementName}-suggestions-{$fieldsetName}",
@@ -246,21 +283,20 @@ class DictionaryItem extends FieldsetElement
                     };
 
                     $listEntriesInput
-                        ->setLabel($label . ' (Datalist Array [strict])')
+                        ->setLabel($valueLabel)
                         ->on(TermInput::ON_ENRICH, $termValidator)
                         ->on(TermInput::ON_ADD, $termValidator)
                         ->on(TermInput::ON_PASTE, $termValidator)
                         ->on(TermInput::ON_SAVE, $termValidator);
                 } else {
-                    $listEntriesInput->setLabel($label . ' (Datalist Array [non-strict])');
+                    $listEntriesInput->setLabel($valueLabel);
                 }
 
                 $this->addElement($listEntriesInput);
             }
         } elseif ($type === 'fixed-dictionary' || $type === 'fixed-array') {
             $this->addElement(
-                (new Dictionary($valElementName, $children))
-                    ->setLabel($label . ' (' . ucfirst(substr($type, strlen('fixed-'))) . ')')
+                (new Dictionary($valElementName, $children, ['class' => 'no-border']))->setIsChild()
             );
         } elseif ($type === 'dynamic-dictionary') {
             $this->addElement((new NestedDictionary(
@@ -268,13 +304,13 @@ class DictionaryItem extends FieldsetElement
                 $children,
                 ['inherited_from' => $inheritedFrom, 'value' => $inherited],
                 $this->fields['value'] ?? []
-            ))->setLabel($label . ' (Dictionary)')->setUuid(Uuid::fromBytes($this->fields['uuid'])));
+            ))->setUuid(Uuid::fromBytes($this->fields['uuid'])));
         } else {
             $this->addElement(
                 'text',
                 $valElementName,
                 [
-                    'label' => $label . ' (' . ucfirst($type) . ')',
+                    'label' => $valueLabel,
                     'placeholder' => $placeholder
                 ]
             );
@@ -293,6 +329,38 @@ class DictionaryItem extends FieldsetElement
                 $this->markValueRequired($valueElement);
             }
         }
+    }
+
+    /**
+     * Get the "(Type)" suffix used in this item's heading and value label
+     *
+     * @param string $type
+     * @param ?string $itemType Item type of a dynamic-array/datalist, null otherwise
+     *
+     * @return string
+     */
+    private function getTypeLabel(string $type, ?string $itemType): string
+    {
+        if ($type === 'dynamic-array') {
+            return 'Array';
+        }
+
+        if (str_starts_with($type, 'datalist-')) {
+            $isStrict = substr($type, strlen('datalist-')) === 'strict';
+            $kind = $itemType === 'dynamic-array' ? 'Array' : 'String';
+
+            return 'Datalist ' . $kind . ' [' . ($isStrict ? 'strict' : 'non-strict') . ']';
+        }
+
+        if ($type === 'fixed-dictionary' || $type === 'fixed-array') {
+            return ucfirst(substr($type, strlen('fixed-')));
+        }
+
+        if ($type === 'dynamic-dictionary') {
+            return 'Dictionary';
+        }
+
+        return ucfirst($type);
     }
 
     /**
