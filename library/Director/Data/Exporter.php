@@ -188,6 +188,9 @@ class Exporter
             if (isset($bespokeExport->datalist)) {
                 $props['datalist'] = $bespokeExport->datalist;
             }
+
+            $props['category'] = $bespokeExport->category;
+            unset($props['category_id']);
         }
     }
 
