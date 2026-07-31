@@ -364,7 +364,9 @@ class IcingaService extends IcingaObject implements ExportInterface
             $extraName = '';
             $applyForVar = substr($applyFor, strlen('host.vars.'));
             if (preg_match('/[^a-zA-Z0-9_]/', $applyForVar)) {
-                $applyFor = 'host.vars["' . addcslashes($applyForVar, '"\\') . '"]';
+                // Old escaping missed newlines and other control chars, use the
+                // same string renderer as everywhere else in the config
+                $applyFor = 'host.vars[' . c::renderString($applyForVar) . ']';
             }
 
             $propertyType = $this->fetchApplyForPropertyType($applyForVar);

@@ -101,6 +101,27 @@ class IcingaServiceApplyForTest extends BaseTestCase
         );
     }
 
+    public function testApplyForVarNameWithSpecialCharsIsProperlyEscaped(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $service = $this->applyService('quoted-var-check', "host.vars.weird\"name\n\$injected\$");
+        $service->setConnection($db);
+
+        $rendered = (string) $service;
+
+        // A quote, a newline and a $ in the var name must not break out of the
+        // generated string literal or slip a macro reference into the config.
+        $this->assertStringContainsString(
+            'host.vars["weird\"name\n\\$injected\\$"]',
+            $rendered
+        );
+        $this->assertStringNotContainsString("weird\"name\n\$injected\$", $rendered);
+    }
+
     public function testApplyForPrefersLegacyDatafieldOverUnrelatedSameNamedProperty(): void
     {
         if ($this->skipForMissingDb()) {
