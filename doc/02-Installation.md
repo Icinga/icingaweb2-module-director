@@ -35,7 +35,7 @@ or install [from source](02-Installation.md.d/From-Source.md).
 
 ## Setting up the Database
 
-A MySQL (≥5.7), MariaDB (≥10.2), or PostgreSQL (≥9.6) database is required to run Icinga Director.
+A MySQL (≥8), MariaDB (≥10.2.2), or PostgreSQL (≥9.6) database is required to run Icinga Director.
 Please follow the steps listed for your target database, to set up the database and the user.
 The schema will be imported later via the web interface.
 
