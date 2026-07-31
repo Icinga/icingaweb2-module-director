@@ -19,10 +19,7 @@ CREATE TABLE director_property (
   description text,
   parent_uuid_v varbinary(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) STORED,
   PRIMARY KEY (uuid),
-  -- key_name is capped at 180 bytes here (not the full 255) so this index stays
-  -- under the 767-byte limit that applies with the old COMPACT/Antelope row
-  -- format, in case a server was set up to use it explicitly.
-  UNIQUE INDEX unique_name_parent_uuid (key_name(180), parent_uuid_v),
+  UNIQUE INDEX unique_name_parent_uuid (key_name, parent_uuid_v),
   CONSTRAINT director_property_category
     FOREIGN KEY category (category_id)
     REFERENCES director_datafield_category (id)
@@ -32,7 +29,7 @@ CREATE TABLE director_property (
     FOREIGN KEY parent (parent_uuid)
     REFERENCES director_property (uuid)
     ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE icinga_host_property (
   host_uuid varbinary(16) NOT NULL,
