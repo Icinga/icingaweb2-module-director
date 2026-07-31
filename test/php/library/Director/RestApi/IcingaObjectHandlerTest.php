@@ -5,6 +5,7 @@ namespace Tests\Icinga\Module\Director\RestApi;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\RestApi\IcingaObjectHandler;
 use Icinga\Module\Director\RestApi\IcingaObjectWriteRequest;
@@ -15,6 +16,7 @@ use Icinga\Web\UrlParams;
 use InvalidArgumentException;
 use ReflectionMethod;
 use Ramsey\Uuid\Uuid;
+use RuntimeException;
 use Throwable;
 
 class IcingaObjectHandlerTest extends BaseTestCase
@@ -23,6 +25,10 @@ class IcingaObjectHandlerTest extends BaseTestCase
     private const TEMPLATE_NAME = self::PREFIX . 'webserver-template';
     private const DB_CONNECTION_KEY = self::PREFIX . 'database_connection';
     private const REGION_KEY = self::PREFIX . 'region';
+    private const CYCLE_HOST_CHILD = self::PREFIX . 'linux-server';
+    private const CYCLE_HOST_PARENT = self::PREFIX . 'generic-host';
+    private const CYCLE_COMMAND_CHILD = self::PREFIX . 'check_http';
+    private const CYCLE_COMMAND_PARENT = self::PREFIX . 'plugin-check-command';
 
     public function testObjectChangeAndCustomVarValidationFailureRollBackTogether(): void
     {
@@ -219,6 +225,102 @@ class IcingaObjectHandlerTest extends BaseTestCase
             $response->getHttpResponseCode(),
             'A vars override that resolves to a true no-op must keep reporting 304 Not Modified'
         );
+    }
+
+    public static function cycleScenarioProvider(): array
+    {
+        return [
+            'host POST'    => ['host', 'POST'],
+            'host PUT'     => ['host', 'PUT'],
+            'command POST' => ['command', 'POST'],
+            'command PUT'  => ['command', 'PUT'],
+        ];
+    }
+
+    /**
+     * @dataProvider cycleScenarioProvider
+     */
+    public function testIndirectImportCycleIsRejectedBeforeBeingPersisted(string $type, string $method): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        // "linux-server" already imports "generic-host" (and "check_http" already
+        // imports "plugin-check-command"), like most real Director setups. Making
+        // the base template import the child back would close a two-node loop.
+        [$child, $parent] = $type === 'host'
+            ? [self::CYCLE_HOST_CHILD, self::CYCLE_HOST_PARENT]
+            : [self::CYCLE_COMMAND_CHILD, self::CYCLE_COMMAND_PARENT];
+
+        $this->deleteIfExists($type, $child, $db);
+        $this->deleteIfExists($type, $parent, $db);
+
+        $class = $type === 'host' ? IcingaHost::class : IcingaCommand::class;
+
+        $parentTemplate = $class::create([
+            'object_name' => $parent,
+            'object_type' => 'template',
+        ], $db);
+        $parentTemplate->store($db);
+
+        $childTemplate = $class::create([
+            'object_name' => $child,
+            'object_type' => 'template',
+            'imports'     => [$parent],
+        ], $db);
+        $childTemplate->store($db);
+
+        $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
+        $reflectionMethod = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $reflectionMethod->setAccessible(true);
+
+        $data = $method === 'PUT'
+            ? ['object_type' => 'template', 'imports' => [$child]]
+            : ['imports' => [$child]];
+
+        $writeRequest = new IcingaObjectWriteRequest(
+            $parentTemplate,
+            $data,
+            $type,
+            'index',
+            $method,
+            false,
+            [],
+            false,
+            new UrlParams()
+        );
+
+        $threw = false;
+        try {
+            $db->runFailSafeTransaction(function () use ($reflectionMethod, $handler, $writeRequest) {
+                $reflectionMethod->invoke($handler, $writeRequest);
+            });
+        } catch (Throwable $e) {
+            $threw = true;
+            $this->assertInstanceOf(RuntimeException::class, $e);
+        }
+
+        $this->assertTrue($threw, 'Closing an indirect two-node import cycle must raise an exception');
+
+        $reloaded = $class::load($parent, $db);
+        $this->assertSame(
+            [],
+            $reloaded->getImports(),
+            'The rejected import cycle must not have been persisted'
+        );
+
+        $this->deleteIfExists($type, $child, $db);
+        $this->deleteIfExists($type, $parent, $db);
+    }
+
+    private function deleteIfExists(string $type, string $name, $db): void
+    {
+        $class = $type === 'host' ? IcingaHost::class : IcingaCommand::class;
+        if ($class::exists($name, $db)) {
+            $class::load($name, $db)->delete();
+        }
     }
 
     public function testDeleteIsAllowedOnTheIndexAction(): void
