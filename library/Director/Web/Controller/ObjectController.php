@@ -1072,7 +1072,8 @@ abstract class ObjectController extends ActionController
                         'label'      => 'dp.label'
                     ]
                 )
-                ->where('dp.uuid IN (?)', DbUtil::quoteBinaryCompat($uuidBytes, $db->getDbAdapter()));
+                ->where('dp.uuid IN (?)', DbUtil::quoteBinaryCompat($uuidBytes, $db->getDbAdapter()))
+                ->where('dp.parent_uuid IS NULL');
 
             $addedRows = $db->getDbAdapter()->fetchAll($addedQuery, fetchMode: PDO::FETCH_ASSOC);
             foreach ($addedRows as &$row) {
