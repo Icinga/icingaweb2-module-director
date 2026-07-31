@@ -79,21 +79,57 @@ addresses to probe. A service apply rule creates one HTTP check per entry.
    ]
    ```
 
-4. Create a `Service Template` with `check_command = http`, and its own custom variable
-   `http_address` (type `String`).
-5. Create an `Apply Rule` for that template, set `Apply For` to `http_vhosts_list`, the service
-   name pattern to `http - $value$`, and `http_address` to `$value$`.
+4. Create a `Service Template` named `http-template` with `check_command = http`, and its own
+   custom variable `http_address` (type `String`).
+5. Create an `Apply Rule` importing `http-template`, set `Apply For` to `http_vhosts_list`, and
+   the assign filter to `host.vars.http_vhosts_list`. Leave the service name and `http_address`
+   at their defaults for now.
 
-The rendered configuration looks like:
+Right after creating it, before setting a name pattern or filling in `http_address`, the `Preview`
+tab shows a plain, literal name inline on the `apply Service` line, no separate `name` line, and
+nothing between `assign where` and `import DirectorOverrideTemplate`:
 
 ```
-apply Service "http - " for (value in host.vars.http_vhosts_list) {
-    check_command     = "http"
-    vars.http_address = value
+apply Service "http-check" for (value in host.vars.http_vhosts_list) {
 
-    assign where host.vars.http_vhosts_list
+    vars.overriddenVar = "http-check"
+    import "http-template"
+
+    assign where host.vars.http_vhosts_list == 1
+
+    import DirectorOverrideTemplate
 }
 ```
+
+6. Now set the service name pattern to `http - $value$` and `http_address` to `$value$`.
+
+Because the name pattern contains a `$value$` macro, Icinga Director cannot render it as a
+literal, inline service name anymore. It renders it as a computed `name` expression instead, right
+after the `for (...)` clause. `check_command` still isn't repeated here, it comes from the
+imported `http-template`:
+
+```
+apply Service for (value in host.vars.http_vhosts_list) {
+    name = "http - " + value
+
+    vars.overriddenVar = "http - \$value\$"
+    import "http-template"
+
+    assign where host.vars.http_vhosts_list == 1
+    vars.http_address = value
+
+    import DirectorOverrideTemplate
+}
+```
+
+`import DirectorOverrideTemplate` is appended to every Apply Rule, Custom Variable based or not,
+it's what makes the optional "Override vars for inherited/applied Services" feature (see
+[REST API](70-REST-API.md)) work at all. `vars.overriddenVar` is the Custom-Variable-specific part
+of that same mechanism: since the rendered service name varies with each iteration, Director keeps
+the original, un-evaluated name pattern around in this variable so that template can still look up
+per-iteration overrides by name. It's added to every Apply For rule bound to a Custom Variable,
+whether or not its name pattern contains a macro. You can ignore both if you don't use per-service
+overrides.
 
 Three services are created on that host: `http - www.example.com`, `http - api.example.com` and
 `http - status.example.com`.
@@ -126,10 +162,28 @@ creates one disk check per entry.
    }
    ```
 
-4. Create a `Service Template` with `check_command = disk` and custom variables `disk_partitions`,
-   `disk_wfree`, `disk_cfree` (type `String`).
-5. Create an `Apply Rule`, set `Apply For` to `disk_checks`, the service name pattern to
-   `disk - $key$`, and the custom variables to:
+4. Create a `Service Template` named `disk-template` with `check_command = disk` and custom
+   variables `disk_partitions`, `disk_wfree`, `disk_cfree` (type `String`).
+5. Create an `Apply Rule` importing `disk-template`, set `Apply For` to `disk_checks`, and the
+   assign filter to `host.vars.disk_checks`. Leave the service name and the custom variables
+   below at their defaults for now.
+
+Just like in the array example above, the plain, just-created rule renders with a literal name
+inline, no `name` line, and nothing between `assign where` and `import DirectorOverrideTemplate`:
+
+```
+apply Service "disk-check" for (key => value in host.vars.disk_checks) {
+
+    vars.overriddenVar = "disk-check"
+    import "disk-template"
+
+    assign where host.vars.disk_checks == 1
+
+    import DirectorOverrideTemplate
+}
+```
+
+6. Now set the service name pattern to `disk - $key$`, and the custom variables to:
 
    | Variable            | Value                     |
    |----------------------|---------------------------|
@@ -140,16 +194,24 @@ creates one disk check per entry.
    The `Apply For` page shows a hint listing all `$value.<field>$` (or `$value["field-name"]$` for
    field names that aren't valid identifiers) expressions available for the selected dictionary.
 
-The rendered configuration looks like:
+The `$key$` macro in the name pattern now forces Icinga Director to render `name` as a separate
+computed expression rather than an inline string; `check_command` still comes from the imported
+`disk-template` rather than being repeated on the apply rule. Custom variables render in
+alphabetical order by name, not the order you entered them in:
 
 ```
-apply Service "disk - " for (key => value in host.vars.disk_checks) {
-    check_command         = "disk"
-    vars.disk_partitions  = value.disk_partition
-    vars.disk_wfree       = value.disk_wfree
-    vars.disk_cfree       = value.disk_cfree
+apply Service for (key => value in host.vars.disk_checks) {
+    name = "disk - " + key
 
-    assign where host.vars.disk_checks
+    vars.overriddenVar = "disk - \$key\$"
+    import "disk-template"
+
+    assign where host.vars.disk_checks == 1
+    vars.disk_cfree = value.disk_cfree
+    vars.disk_partitions = value.disk_partition
+    vars.disk_wfree = value.disk_wfree
+
+    import DirectorOverrideTemplate
 }
 ```
 

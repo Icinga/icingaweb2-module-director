@@ -261,12 +261,26 @@ body.
   the ones in the body. Values inherited from templates are not affected either
   way, since they aren't stored on the object itself.
 
-`PUT` replaces variables by detaching and reattaching them behind the scenes.
-The `required` flag configured for an attachment (see
-[Marking a custom variable as required](12-Handling-custom-variables.md#Required-custom-variables))
-is preserved across that relink; this endpoint only reads and writes values,
-there's no way to set or query the `required` flag through it. Changing it
-still requires the `Custom Variables` tab of the template it was attached on.
+On a **template**, `PUT` replaces more than values: it detaches every
+variable currently attached directly to that template, then reattaches only
+the ones present in the request body, attaching a not-yet-used one for the
+first time if needed (see
+[Attaching a variable to a template for the first time](#Custom-Variables-attach-template)
+below). A directly attached variable left out of the body is detached along
+with it, not just cleared of its value.
+
+This endpoint only ever reads and writes values, it has no way to set or
+query the `required` flag itself. To keep a values-only `PUT` from silently
+turning a required variable optional, the `required` flag of a variable
+still present in the body is preserved across that detach/reattach cycle;
+changing the flag still requires the `Custom Variables` tab of the template
+the variable was attached on.
+
+On any other object (host, service, command, user, notification), `PUT`
+only replaces values: it can never attach a variable that isn't already
+available to the object through one of its imported templates; see
+[Attaching a variable to a template for the first
+time](#Custom-Variables-attach-template) below for how that's restricted.
 
 #### Setting a `string` variable
 

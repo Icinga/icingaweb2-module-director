@@ -284,11 +284,12 @@ Go to `Custom Variables` in the Icinga Director menu and choose
   datalist type, selects whether items are scalar values or, for
   datalists, a `dynamic-array` of values
 
-Once a `fixed-array`, `fixed-dictionary` or `dynamic-array` /
-`dynamic-dictionary` property has been created, use its detail page to
-add the nested items: fixed positions for `fixed-array`, fixed keys for
-`fixed-dictionary`, or the single item type for `dynamic-array` /
-`dynamic-dictionary`.
+Once a `fixed-array`, `fixed-dictionary`, `dynamic-array` or
+`dynamic-dictionary` property has been created, use its detail page to add
+its nested structure: fixed positions for `fixed-array`, fixed keys for
+`fixed-dictionary`, the single item type for `dynamic-array`, or, for
+`dynamic-dictionary`, the set of sub-dictionary fields every entry holds, no
+matter what key an end-user later assigns to that entry.
 
 > Once a property is used on one or more templates, its `Property Type`,
 > `Item Type` and `List name` can no longer be changed. Remove it from
@@ -299,8 +300,13 @@ add the nested items: fixed positions for `fixed-array`, fixed keys for
 Every object type that supports custom variables (host, service, command,
 user and notification) exposes a `Custom Variables` tab on its object and
 template detail pages, next to the `Fields (Deprecated)` tab. Service sets
-do not expose this tab yet. Use `Add Custom Variable` there to attach a
-configured property and fill in its value:
+do not expose this tab yet.
+
+Only a **template** can attach a configured property with `Add Custom
+Variable`, adding it to the schema that concrete objects then fill in. A
+concrete object's `Custom Variables` tab only lets you fill in or override
+values for properties already attached there or inherited from one of its
+imported templates; it has no `Add Custom Variable` action of its own.
 
 * Custom variables inherited from imported templates are shown and can
   be overridden on the object itself.
@@ -373,10 +379,11 @@ Existing template assignments are carried over automatically, so
 migrated variables show up already attached to the same host, service,
 command, user and notification templates that used the original field.
 
-> If a property created by a migration is later renamed or removed,
-> values that were already migrated under it are not automatically
-> relinked to the change. Treat a freshly migrated property's key name
-> and lifetime with a bit of extra care until this is automated.
+> Renaming or removing a property, migrated or not, automatically renames or removes its stored
+> values by variable name. The one exception is a variable name still claimed by a Data field that
+> hasn't been migrated (or was migrated without `--delete`): its values are deliberately left in
+> place rather than renamed or deleted out from under that field, so migrate any colliding Data
+> field first if you want a clean rename or removal.
 
 Configuration Baskets
 ---------------------
