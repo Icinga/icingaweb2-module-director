@@ -411,8 +411,11 @@ class IcingaConfigHelper
             // value[*] matches a numeric index or a quoted key, e.g. value["on call contact"].
             // Both '"' and '\' are excluded from the quoted key so it can't be escaped early.
             $regexBody = str_replace('\[\*\]', '\[(?:\d+|"[^"\\\\]*")\]', $regexBody);
-            // Any other wildcard matches exactly one macro-name segment, not arbitrary text.
-            $regexBody = str_replace('\*', '[A-Za-z_.\d]+', $regexBody);
+            // A wildcard matches one or more dot-joined segments, not raw text.
+            // Old class also matched a leading digit, a trailing dot, or repeated
+            // dots like "host..address".
+            $segment = '[A-Za-z_][A-Za-z0-9_]*';
+            $regexBody = str_replace('\*', $segment . '(?:\.' . $segment . ')*', $regexBody);
 
             if (preg_match('/^' . $regexBody . '$/', $name)) {
                 return true;
