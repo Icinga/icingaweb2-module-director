@@ -39,7 +39,13 @@ class CustomVarRenderer extends CustomVarRendererHook
     /** @var array Related custom variable configuration */
     protected $customVariableConfig = [];
 
-    /** @var array Related datalists and their keys and values */
+    /**
+     * Datalist entries, keyed by the owning property's own full scope (see
+     * ownScopeKey()), then entry_name. Two properties can share a key_name and
+     * still have unrelated datalists, so never key or look this up by name alone.
+     *
+     * @var array
+     */
     protected $datalistMaps = [];
 
     /** @var array Related dictionary field names */
@@ -331,33 +337,6 @@ class CustomVarRenderer extends CustomVarRendererHook
 
             $this->loadNestedPropertyConfig($db, $customProperties);
 
-            $dataListEntries = $db->select()->from(
-                ['dpd' => 'director_property_datalist'],
-                [
-                    'property_uuid' => 'dpd.property_uuid',
-                    'entry_name' => 'dde.entry_name',
-                    'entry_value' => 'dde.entry_value',
-                    'property_name' => 'dpc.key_name',
-                ]
-            )->join(
-                ['dd' => 'director_datalist'],
-                'dd.uuid = dpd.list_uuid',
-                []
-            )->join(
-                ['dde' => 'director_datalist_entry'],
-                'dd.id = dde.list_id',
-                []
-            )->join(
-                ['dpc' => 'director_property'],
-                'dpd.property_uuid = dpc.uuid',
-                []
-            );
-
-            foreach ($dataListEntries as $dataListEntry) {
-                $this->datalistMaps[$dataListEntry->property_name][$dataListEntry->entry_name]
-                    = $dataListEntry->entry_value;
-            }
-
             return true;
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
@@ -469,8 +448,30 @@ class CustomVarRenderer extends CustomVarRendererHook
     }
 
     /**
-     * Load dictionary child and sensitive-array metadata scoped to the object's own
-     * property tree
+     * Scope key for a property's own identity, not its ancestor path
+     *
+     * dictionaryChildConfig and sensitiveArrayItems key by the parent's scope plus
+     * the child's key_name. A datalist attaches to the property itself though, so
+     * we need one more level, chaining the key onto its own ancestor scope.
+     *
+     * @param string $key
+     * @param ?string $parentKey
+     * @param ?string $grandparentKey
+     *
+     * @return string
+     */
+    protected function ownScopeKey(string $key, ?string $parentKey, ?string $grandparentKey = null): string
+    {
+        if ($parentKey === null) {
+            return $key;
+        }
+
+        return $this->scopeKey($this->scopeKey($grandparentKey, $parentKey), $key);
+    }
+
+    /**
+     * Load dictionary child, sensitive-array and datalist metadata for the object's
+     * own property tree
      *
      * Custom properties nest at most one level deep, so this only walks 2 generations
      * below the object's top level properties, never the whole director_property table.
@@ -494,6 +495,8 @@ class CustomVarRenderer extends CustomVarRendererHook
                 'scope'      => null,
             ];
         }
+
+        $allProperties = $frontier;
 
         for ($depth = 0; $depth < 2 && ! empty($frontier); $depth++) {
             $query = $dbAdapter->select()
@@ -532,7 +535,59 @@ class CustomVarRenderer extends CustomVarRendererHook
                 ];
             }
 
+            $allProperties += $children;
             $frontier = $children;
+        }
+
+        $this->loadDatalistEntries($dbAdapter, $allProperties);
+    }
+
+    /**
+     * Load datalist captions for every property in $properties that has one attached
+     *
+     * A datalist can sit on a root property, on a dynamic-array (one shared list for
+     * every item), or on one named position of a fixed-array. Each of those is its own
+     * director_property row, so we key by that property's own full scope instead of
+     * its bare key_name, or two unrelated properties sharing a name would stomp on
+     * each other's captions.
+     *
+     * @param \Zend_Db_Adapter_Abstract|\gipfl\ZfDb\Adapter\Adapter $dbAdapter
+     * @param array $properties uuid (raw binary) => ['key_name' => ..., 'scope' => ?string, ...]
+     *
+     * @return void
+     */
+    private function loadDatalistEntries($dbAdapter, array $properties): void
+    {
+        if (empty($properties)) {
+            return;
+        }
+
+        $query = $dbAdapter->select()->from(
+            ['dpd' => 'director_property_datalist'],
+            [
+                'property_uuid' => 'dpd.property_uuid',
+                'entry_name'    => 'dde.entry_name',
+                'entry_value'   => 'dde.entry_value',
+            ]
+        )->join(
+            ['dd' => 'director_datalist'],
+            'dd.uuid = dpd.list_uuid',
+            []
+        )->join(
+            ['dde' => 'director_datalist_entry'],
+            'dd.id = dde.list_id',
+            []
+        )->where('dpd.property_uuid IN (?)', DbUtil::quoteBinaryCompat(array_keys($properties), $dbAdapter));
+
+        foreach ($dbAdapter->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+            $row = DbUtil::normalizeRow($row);
+            $property = $properties[$row['property_uuid']] ?? null;
+            if ($property === null) {
+                continue;
+            }
+
+            $scope = $this->scopeKey($property['scope'], $property['key_name']);
+            $this->datalistMaps[$scope][$row['entry_name']] = $row['entry_value'];
         }
     }
 
@@ -630,15 +685,27 @@ class CustomVarRenderer extends CustomVarRendererHook
 
             if (is_array($value) && ! isset($this->customPropertyDictionaries[$key])) {
                 $renderedValue = [];
-                $arrayScope = $this->scopeKey($parentKey, $key);
+                // A shared datalist can sit on the array itself, or a fixed-array
+                // position can have its own. Try the position first, then the array.
+                $arrayScope = $this->ownScopeKey($key, $parentKey, $grandparentKey);
                 foreach ($value as $k => $v) {
                     if (isset($this->sensitiveArrayItems[$arrayScope][$k])) {
                         $renderedValue[$k] = '***';
-                    } elseif (is_string($v) && isset($this->datalistMaps[$key][$v])) {
+
+                        continue;
+                    }
+
+                    $caption = null;
+                    if (is_string($v)) {
+                        $itemScope = $this->scopeKey($arrayScope, (string) $k);
+                        $caption = $this->datalistMaps[$itemScope][$v] ?? $this->datalistMaps[$arrayScope][$v] ?? null;
+                    }
+
+                    if ($caption !== null) {
                         $renderedValue[$k] = new HtmlElement(
                             'span',
-                            Attributes::create(['title' => $this->datalistMaps[$key][$v] . " [$v]"]),
-                            Text::create($this->datalistMaps[$key][$v])
+                            Attributes::create(['title' => "$caption [$v]"]),
+                            Text::create($caption)
                         );
                     } else {
                         $renderedValue[$k] = $v;
@@ -648,11 +715,12 @@ class CustomVarRenderer extends CustomVarRendererHook
                 return $renderedValue;
             }
 
-            if (is_string($value) && isset($this->datalistMaps[$key][$value])) {
+            $ownScope = $this->ownScopeKey($key, $parentKey, $grandparentKey);
+            if (is_string($value) && isset($this->datalistMaps[$ownScope][$value])) {
                 return new HtmlElement(
                     'span',
-                    Attributes::create(['title' => $this->datalistMaps[$key][$value] . " [$value]"]),
-                    Text::create($this->datalistMaps[$key][$value])
+                    Attributes::create(['title' => $this->datalistMaps[$ownScope][$value] . " [$value]"]),
+                    Text::create($this->datalistMaps[$ownScope][$value])
                 );
             } elseif ($value !== null && $this->isDictionaryValueType($key, $parentKey, $grandparentKey)) {
                 return $this->renderDictionaryVal($key, (array) $value);

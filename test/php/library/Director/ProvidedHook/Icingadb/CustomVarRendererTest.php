@@ -10,6 +10,7 @@ use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\ProvidedHook\Icingadb\CustomVarRenderer;
 use Icinga\Module\Director\Test\BaseTestCase;
+use ipl\Html\ValidHtml;
 use ReflectionMethod;
 use Ramsey\Uuid\Uuid;
 
@@ -161,6 +162,48 @@ class CustomVarRendererTest extends BaseTestCase
             '***',
             $plainValue[1],
             'An array item must not be masked by a same-named sensitive item in an unrelated dictionary'
+        );
+    }
+
+    public function testSameNamedDatalistPropertiesUnderDifferentDictionariesDoNotShareCaptions(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // Two unrelated dictionaries each have a "status" child bound to its own
+        // datalist. Both datalists happen to use the raw value "up", but the
+        // caption for it must come from the right dictionary, not whichever one
+        // got merged in last.
+        $renderer->seedDictionaryChild('database_a', 'status', ['label' => 'Status']);
+        $renderer->seedDictionaryChild('database_b', 'status', ['label' => 'Status']);
+        $renderer->seedDatalistEntry('status', 'up', 'Database A is healthy', 'database_a');
+        $renderer->seedDatalistEntry('status', 'up', 'Database B is healthy', 'database_b');
+
+        $renderedA = $renderer->renderCustomVarValue('status', 'up', 'database_a');
+        $renderedB = $renderer->renderCustomVarValue('status', 'up', 'database_b');
+
+        $this->assertStringContainsString('Database A is healthy', $renderedA->render());
+        $this->assertStringContainsString('Database B is healthy', $renderedB->render());
+    }
+
+    public function testFixedArrayDatalistResolvesByItemPositionNotWholeArray(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "targets" is a fixed-array nested under "network_a". Only position "0"
+        // has its own datalist attached, position "1" holds the same raw value
+        // but has none of its own, so it must render raw, not borrow position 0's
+        // caption just because they share the array's name.
+        $renderer->seedDictionaryChild('network_a', 'targets', ['label' => 'Targets']);
+        $renderer->seedDatalistEntry('0', 'prod', 'Production DC', 'targets', 'network_a');
+
+        $rendered = $renderer->renderCustomVarValue('targets', ['prod', 'prod'], 'network_a');
+
+        $this->assertInstanceOf(ValidHtml::class, $rendered[0]);
+        $this->assertStringContainsString('Production DC', $rendered[0]->render());
+        $this->assertEquals(
+            'prod',
+            $rendered[1],
+            'A position with no datalist of its own must not inherit a sibling position\'s caption'
         );
     }
 

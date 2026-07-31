@@ -67,6 +67,17 @@ class TestableCustomVarRenderer extends CustomVarRenderer
         $this->customPropertyDictionaries[$key] = $children;
     }
 
+    public function seedDatalistEntry(
+        string $key,
+        string $entryName,
+        string $entryValue,
+        ?string $parentKey = null,
+        ?string $grandparentKey = null
+    ): void {
+        $scope = $this->ownScopeKey($key, $parentKey, $grandparentKey);
+        $this->datalistMaps[$scope][$entryName] = $entryValue;
+    }
+
     public function renderDictionaryValForTest(string $key, array $value)
     {
         return $this->renderDictionaryVal($key, $value);
