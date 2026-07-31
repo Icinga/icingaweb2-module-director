@@ -688,11 +688,11 @@ class MigrateCommandTest extends BaseTestCase
         $row = $dba->fetchRow(
             $dba->select()->from(['ihp' => 'icinga_host_property'], ['required'])
                 ->join(['dp' => 'director_property'], 'dp.uuid = ihp.property_uuid', [])
-                ->where('dp.key_name = ?', self::VAR_ENV)
+                ->where('dp.key_name = ?', self::VAR_CHECK_INTERVAL)
         );
 
         $this->assertNotFalse($row, 'icinga_host_property row must be created for the bound host');
-        $this->assertEquals('y', $row->required, 'is_required must be carried over into the new required column');
+        $this->assertEquals('n', $row->required, 'is_required must be carried over into the new required column');
     }
 
     public function testObjectTemplateBindingWarnsAboutUnmigratedVarFilter(): void
@@ -719,7 +719,75 @@ class MigrateCommandTest extends BaseTestCase
                 ->join(['dp' => 'director_property'], 'dp.uuid = ihp.property_uuid', [])
                 ->where('dp.key_name = ?', self::VAR_ENV)
         );
-        $this->assertEquals(1, (int) $count, 'the binding must still be created even though its filter is dropped');
+        $this->assertEquals(0, (int) $count, 'a filtered binding must not be migrated by default');
+    }
+
+    public function testAllowLossyFiltersMigratesFilteredBinding(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        $cmd = new TestableMigrateCommand($db, ['--allow-lossy-filters']);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()->from(['ihp' => 'icinga_host_property'], ['cnt' => 'COUNT(*)'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = ihp.property_uuid', [])
+                ->where('dp.key_name = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(1, (int) $count, '--allow-lossy-filters must migrate the binding despite its filter');
+    }
+
+    public function testDeleteKeepsDatafieldWithUnmigratedVarFilter(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $host = $this->createHostFieldBinding($db);
+
+        $cmd = new TestableMigrateCommand($db, ['--delete']);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $dfCount = $dba->fetchOne(
+            $dba->select()->from('director_datafield', ['cnt' => 'COUNT(*)'])->where('varname = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(
+            1,
+            (int) $dfCount,
+            '--delete must not remove a datafield that still has a var_filter binding'
+        );
+
+        $fieldCount = $dba->fetchOne(
+            $dba->select()->from('icinga_host_field', ['cnt' => 'COUNT(*)'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('var_filter IS NOT NULL')
+        );
+        $this->assertEquals(
+            1,
+            (int) $fieldCount,
+            '--delete must not remove the original filtered binding'
+        );
+
+        // check_interval has no filter, so it must still be migrated and deleted as usual
+        $checkIntervalCount = $dba->fetchOne(
+            $dba->select()->from('director_datafield', ['cnt' => 'COUNT(*)'])
+                ->where('varname = ?', self::VAR_CHECK_INTERVAL)
+        );
+        $this->assertEquals(
+            0,
+            (int) $checkIntervalCount,
+            '--delete must still remove a datafield whose bindings have no filter'
+        );
     }
 
     public function testObjectTemplateBindingWithoutFilterDoesNotWarn(): void
