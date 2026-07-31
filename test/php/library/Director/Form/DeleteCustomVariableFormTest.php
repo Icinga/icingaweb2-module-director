@@ -7,6 +7,7 @@ namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DeleteCustomVariableForm;
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -1043,6 +1044,134 @@ class DeleteCustomVariableFormTest extends BaseTestCase
             $requiredRow,
             'the required binding on the surviving item must not be lost by the reindex'
         );
+    }
+
+    public function testDeletingNestedPropertyDetachesRootVarnameNotChildKeyName(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // A switch's SNMP settings dictionary, with a legacy Data Field still claiming the
+        // root varname -- this is what makes onSuccess() keep the stored value alive and
+        // detach its property_uuid instead of deleting the property outright.
+        DirectorDatafield::create([
+            'varname'  => '___TEST___switch_snmp',
+            'caption'  => 'Switch SNMP',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___switch_snmp',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Switch SNMP',
+        ], $db)->store();
+
+        $communityUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $communityUuid->getBytes(),
+            'key_name'    => 'community',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $switchHost = IcingaHost::create([
+            'object_name' => '___TEST___switch01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.62',
+        ], $db);
+        $switchHost->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $switchHost->get('id'),
+            'varname'       => '___TEST___switch_snmp',
+            'varvalue'      => json_encode(['community' => 'public']),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        // An unrelated top-level property that only happens to share its key_name
+        // ("community") with the nested field being deleted. The bug used the nested
+        // property's own key_name to detach stored values instead of the colliding root's,
+        // which would have nulled this row's property_uuid too.
+        $unrelatedUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $unrelatedUuid->getBytes(),
+            'key_name'   => 'community',
+            'value_type' => 'string',
+            'label'      => 'Community',
+        ], $db)->store();
+
+        $printerHost = IcingaHost::create([
+            'object_name' => '___TEST___printer01',
+            'object_type' => 'object',
+            'address'     => '192.0.2.63',
+        ], $db);
+        $printerHost->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $printerHost->get('id'),
+            'varname'       => 'community',
+            'varvalue'      => json_encode('printer-guild'),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($unrelatedUuid->getBytes(), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $communityUuid->getBytes(),
+                'key_name'    => 'community',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $rootUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $rootUuid->getBytes(),
+                'key_name'    => '___TEST___switch_snmp',
+                'value_type'  => 'fixed-dictionary',
+                'parent_uuid' => null,
+            ]
+        );
+
+        self::callMethod($form, 'onSuccess', []);
+
+        $unrelatedRow = $dba->fetchRow(
+            $dba->select()->from('icinga_host_var', ['property_uuid'])
+                ->where('host_id = ?', $printerHost->get('id'))
+                ->where('varname = ?', 'community')
+        );
+        $this->assertNotFalse($unrelatedRow, 'the unrelated "community" var row must not be deleted');
+        $this->assertEquals(
+            $unrelatedUuid->getBytes(),
+            DbUtil::binaryResult($unrelatedRow->property_uuid),
+            'detaching the colliding root property must not touch an unrelated var row that only'
+            . ' shares the deleted nested field\'s own key_name'
+        );
+
+        $rootRow = $dba->fetchRow(
+            $dba->select()->from('icinga_host_var', ['property_uuid'])
+                ->where('host_id = ?', $switchHost->get('id'))
+                ->where('varname = ?', '___TEST___switch_snmp')
+        );
+        $this->assertNotFalse($rootRow, 'the root var row must not be deleted, only detached');
+        $this->assertNull(
+            $rootRow->property_uuid,
+            'the root var row must have its property_uuid nulled, since it is kept alive by the'
+            . ' colliding legacy Data Field'
+        );
+
+        $dba->delete('icinga_host', ['object_name = ?' => '___TEST___switch01']);
+        $dba->delete('icinga_host', ['object_name = ?' => '___TEST___printer01']);
+        $dba->delete('director_property', ['key_name = ?' => 'community']);
+        $dba->delete('director_property', ['key_name = ?' => '___TEST___switch_snmp']);
+        $dba->delete('director_datafield', ['varname = ?' => '___TEST___switch_snmp']);
     }
 
     public function tearDown(): void

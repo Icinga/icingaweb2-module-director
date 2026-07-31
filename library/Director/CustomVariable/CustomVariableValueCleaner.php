@@ -362,6 +362,26 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Detach every stored value for a root property outright, across every object type.
+     *
+     * @param string $varname the root property's own key_name. Only call this for a root
+     *                        property, a nested property's key_name isn't guaranteed unique
+     *                        and could collide with an unrelated root variable
+     *
+     * @return void
+     */
+    public function detachStoredValues(string $varname): void
+    {
+        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
+            $this->db->update(
+                "icinga_{$object}_var",
+                ['property_uuid' => null],
+                Filter::where('varname', $varname)
+            );
+        }
+    }
+
+    /**
      * Rename every stored value for a root property, across every object type
      *
      * Skips the rename if a legacy Data Field owns the old or the new varname. Under the

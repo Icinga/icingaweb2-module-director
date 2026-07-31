@@ -197,7 +197,7 @@ class DeleteCustomVariableForm extends CompatForm
         }
 
         $keptValues = 0;
-        $db->runFailSafeTransaction(function () use ($db, $prop, $quotedAllUuids, $cleaner, &$keptValues) {
+        $db->runFailSafeTransaction(function () use ($db, $prop, $collidingKeyName, $quotedAllUuids, $cleaner, &$keptValues) {
             $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedAllUuids));
 
             $keptValues = max(
@@ -207,6 +207,10 @@ class DeleteCustomVariableForm extends CompatForm
 
             if (empty($this->parent)) {
                 $keptValues = max($keptValues, $cleaner->deleteStoredValues($prop['key_name']));
+            }
+
+            if ($keptValues) {
+                $cleaner->detachStoredValues($collidingKeyName);
             }
 
             $db->delete('director_property', Filter::where('uuid', $quotedAllUuids));
