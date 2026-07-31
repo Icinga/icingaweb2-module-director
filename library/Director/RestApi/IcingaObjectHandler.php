@@ -269,7 +269,19 @@ class IcingaObjectHandler extends RequestHandler
 
         if ($request->actionName !== 'variables') {
             if ($object) {
-                // Avoid cyclic imports for hosts and commands
+                if ($request->method === 'POST') {
+                    $object->setProperties($data);
+                } else {
+                    $data = array_merge([
+                        'object_type' => $object->get('object_type'),
+                        'object_name' => $object->getObjectName()
+                    ], $data);
+                    $object->replaceWith(IcingaObject::createByType($type, $data, $db));
+                }
+
+                // Avoid cyclic imports for hosts and commands. Checked against the
+                // in-memory imports set above, so a cycle introduced by this very
+                // request is caught before it gets persisted.
                 if (in_array($object->getShortTableName(), ['host', 'command'], true)) {
                     if (in_array((int) $object->get('id'), $object->listAncestorIds())) {
                         throw new RuntimeException(
@@ -279,21 +291,11 @@ class IcingaObjectHandler extends RequestHandler
                         );
                     }
 
-                    if (isset($data['imports']) && in_array($object->get('object_name'), $data['imports'])) {
+                    if (in_array($object->getObjectName(), $object->getImports())) {
                         throw new RuntimeException(
                             'You can not import the same object into itself: ' . $object->getObjectName()
                         );
                     }
-                }
-
-                if ($request->method === 'POST') {
-                    $object->setProperties($data);
-                } else {
-                    $data = array_merge([
-                        'object_type' => $object->get('object_type'),
-                        'object_name' => $object->getObjectName()
-                    ], $data);
-                    $object->replaceWith(IcingaObject::createByType($type, $data, $db));
                 }
 
                 $this->persistChanges($object);
