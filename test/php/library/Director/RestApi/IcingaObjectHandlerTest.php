@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\RestApi\IcingaObjectHandler;
 use Icinga\Module\Director\RestApi\IcingaObjectWriteRequest;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -247,6 +248,10 @@ class IcingaObjectHandlerTest extends BaseTestCase
         }
 
         $db = $this->getDb();
+        // Template tree is cached per type for the whole run and never refreshes
+        // itself, so clear it or an earlier test leaves us with stale ancestry.
+        IcingaTemplateRepository::clear();
+
         // "linux-server" already imports "generic-host" (and "check_http" already
         // imports "plugin-check-command"), like most real Director setups. Making
         // the base template import the child back would close a two-node loop.
@@ -259,60 +264,62 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
         $class = $type === 'host' ? IcingaHost::class : IcingaCommand::class;
 
-        $parentTemplate = $class::create([
-            'object_name' => $parent,
-            'object_type' => 'template',
-        ], $db);
-        $parentTemplate->store($db);
-
-        $childTemplate = $class::create([
-            'object_name' => $child,
-            'object_type' => 'template',
-            'imports'     => [$parent],
-        ], $db);
-        $childTemplate->store($db);
-
-        $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
-        $reflectionMethod = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
-        $reflectionMethod->setAccessible(true);
-
-        $data = $method === 'PUT'
-            ? ['object_type' => 'template', 'imports' => [$child]]
-            : ['imports' => [$child]];
-
-        $writeRequest = new IcingaObjectWriteRequest(
-            $parentTemplate,
-            $data,
-            $type,
-            'index',
-            $method,
-            false,
-            [],
-            false,
-            new UrlParams()
-        );
-
-        $threw = false;
         try {
-            $db->runFailSafeTransaction(function () use ($reflectionMethod, $handler, $writeRequest) {
-                $reflectionMethod->invoke($handler, $writeRequest);
-            });
-        } catch (Throwable $e) {
-            $threw = true;
-            $this->assertInstanceOf(RuntimeException::class, $e);
+            $parentTemplate = $class::create([
+                'object_name' => $parent,
+                'object_type' => 'template',
+            ], $db);
+            $parentTemplate->store($db);
+
+            $childTemplate = $class::create([
+                'object_name' => $child,
+                'object_type' => 'template',
+                'imports'     => [$parent],
+            ], $db);
+            $childTemplate->store($db);
+
+            $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
+            $reflectionMethod = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+            $reflectionMethod->setAccessible(true);
+
+            $data = $method === 'PUT'
+                ? ['object_type' => 'template', 'imports' => [$child]]
+                : ['imports' => [$child]];
+
+            $writeRequest = new IcingaObjectWriteRequest(
+                $parentTemplate,
+                $data,
+                $type,
+                'index',
+                $method,
+                false,
+                [],
+                false,
+                new UrlParams()
+            );
+
+            $threw = false;
+            try {
+                $db->runFailSafeTransaction(function () use ($reflectionMethod, $handler, $writeRequest) {
+                    $reflectionMethod->invoke($handler, $writeRequest);
+                });
+            } catch (Throwable $e) {
+                $threw = true;
+                $this->assertInstanceOf(RuntimeException::class, $e);
+            }
+
+            $this->assertTrue($threw, 'Closing an indirect two-node import cycle must raise an exception');
+
+            $reloaded = $class::load($parent, $db);
+            $this->assertSame(
+                [],
+                $reloaded->getImports(),
+                'The rejected import cycle must not have been persisted'
+            );
+        } finally {
+            $this->deleteIfExists($type, $child, $db);
+            $this->deleteIfExists($type, $parent, $db);
         }
-
-        $this->assertTrue($threw, 'Closing an indirect two-node import cycle must raise an exception');
-
-        $reloaded = $class::load($parent, $db);
-        $this->assertSame(
-            [],
-            $reloaded->getImports(),
-            'The rejected import cycle must not have been persisted'
-        );
-
-        $this->deleteIfExists($type, $child, $db);
-        $this->deleteIfExists($type, $parent, $db);
     }
 
     private function deleteIfExists(string $type, string $name, $db): void
