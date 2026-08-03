@@ -220,7 +220,10 @@ class IcingaConfigHelperTest extends BaseTestCase
 
         $this->assertFalse(c::isValidMacroName('host..address', $whiteList), 'repeated dot must not match');
         $this->assertFalse(c::isValidMacroName('host.address.', $whiteList), 'trailing dot must not match');
-        $this->assertFalse(c::isValidMacroName('host.1address', $whiteList), 'segment starting with a digit must not match');
+        $this->assertFalse(
+            c::isValidMacroName('host.1address', $whiteList),
+            'segment starting with a digit must not match'
+        );
         $this->assertTrue(c::isValidMacroName('host.address', $whiteList));
         $this->assertTrue(c::isValidMacroName('host.vars.custom', $whiteList));
     }
