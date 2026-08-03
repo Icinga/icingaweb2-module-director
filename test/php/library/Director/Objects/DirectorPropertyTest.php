@@ -821,6 +821,51 @@ class DirectorPropertyTest extends BaseTestCase
         );
     }
 
+    public function testPropertyCannotBeItsOwnParent(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeProperty('self_parent', 'string', 'Self Parent', $db);
+        $property->store();
+
+        $property->set('parent_uuid', $property->get('uuid'));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('cannot be its own parent');
+        $property->store();
+    }
+
+    public function testPropertyCannotBeParentedUnderItsOwnChild(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $parent = $this->makeProperty('cycle_parent', 'fixed-dictionary', 'Cycle Parent', $db);
+        $parent->store();
+
+        $childKeyName = self::PREFIX . 'cycle_child';
+        $this->createdKeyNames[] = $childKeyName;
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => $childKeyName,
+            'parent_uuid' => $parent->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $child->store();
+
+        // Close the loop: make the parent a child of its own child.
+        $parent->set('parent_uuid', $child->get('uuid'));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('cannot be its own parent');
+        $parent->store();
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {

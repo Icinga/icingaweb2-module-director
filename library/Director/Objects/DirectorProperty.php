@@ -455,6 +455,8 @@ class DirectorProperty extends DbObject
             return;
         }
 
+        $this->assertNoParentCycle($parentUuid);
+
         if (in_array($valueType, self::NON_NESTABLE_TYPES, true)) {
             throw new InvalidArgumentException(sprintf(
                 "'%s' can only be used as a top-level custom variable; it cannot be nested inside"
@@ -483,6 +485,44 @@ class DirectorProperty extends DbObject
                     "'sensitive' cannot be used as the item type of a dynamic-array or datalist"
                 );
             }
+        }
+    }
+
+    /**
+     * Reject a parent that is this property itself or one of its own descendants
+     *
+     * Walks up from the proposed parent. Landing back on our own uuid means
+     * that parent is really one of our descendants, which would close a loop.
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertNoParentCycle(string $parentUuid): void
+    {
+        $ownUuid = $this->get('uuid');
+        if ($ownUuid === null) {
+            return;
+        }
+
+        $visited = [];
+        $currentUuid = $parentUuid;
+
+        while ($currentUuid !== null) {
+            if ($currentUuid === $ownUuid) {
+                throw new InvalidArgumentException(
+                    'A property cannot be its own parent, directly or through one of its own children'
+                );
+            }
+
+            $visitedKey = bin2hex($currentUuid);
+            if (isset($visited[$visitedKey])) {
+                // Already a broken chain further up, not this store's problem to solve
+                break;
+            }
+
+            $visited[$visitedKey] = true;
+
+            $parent = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($currentUuid), $this->connection);
+            $currentUuid = $parent?->get('parent_uuid');
         }
     }
 
