@@ -59,6 +59,15 @@ the migration afterward.
 
      psql -q -c "CREATE EXTENSION citext;"
 
+The REST API now enforces a Custom Variable's Item Type when it's a
+`Data List Strict` or `Data List Non Strict` property. Before this release, the
+`variables` endpoint accepted a single value or a list of values on either type
+of property, no matter what Item Type was configured. If Item Type is set to
+`Dynamic Array`, only a list is accepted now, otherwise only a single value is.
+A request that used to send the wrong shape and get away with it will now be
+rejected, check any script or integration relying on that endpoint if you use
+`Data List` properties.
+
 <a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
 --------------------------------------------------
 
