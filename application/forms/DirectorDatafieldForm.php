@@ -21,7 +21,12 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function onRequest()
     {
         if ($this->hasBeenSent()) {
-            $collidesWithProperty = false;
+            $newVarname = $this->getSentValue('varname');
+            $collidesWithProperty = ! empty($newVarname)
+                && $this->shouldBeRenamed()
+                && (new CustomVariableValueCleaner($this->getDb()))->wouldDatafieldCollideWithProperty(
+                    $newVarname
+                );
 
             if ($this->shouldBeDeleted()) {
                 $varname = $this->getSentValue('varname');
