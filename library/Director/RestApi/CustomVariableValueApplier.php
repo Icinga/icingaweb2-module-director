@@ -60,7 +60,7 @@ class CustomVariableValueApplier
             $dbAdapter->beginTransaction();
         }
 
-        $preservedRequiredFlags = [];
+        $preservedDirectAttachments = [];
 
         try {
             if ($wipeValuesInDb) {
@@ -68,10 +68,9 @@ class CustomVariableValueApplier
                 $dbAdapter->delete('icinga_' . $type . '_var', $objectWhere);
 
                 if ($wipePropertyAttachmentsInDb) {
-                    // The attachment row is about to be deleted and re-created further down,
-                    // remember its required flag so that a values-only PUT cannot silently
-                    // turn a required property into an optional one.
-                    $preservedRequiredFlags = $this->getDirectPropertyRequiredFlags($object);
+                    // Snapshot direct attachments before wiping them below, or a property
+                    // attached only here looks unattached once gone and gets rejected as new.
+                    $preservedDirectAttachments = $this->getDirectPropertyAttachments($object);
 
                     $uuidExpr = DbUtil::quoteBinaryCompat(
                         DbUtil::binaryResult($object->get('uuid')),
@@ -106,7 +105,7 @@ class CustomVariableValueApplier
                     $customProperties,
                     $key,
                     $value,
-                    $preservedRequiredFlags
+                    $preservedDirectAttachments
                 );
             }
 
@@ -141,7 +140,7 @@ class CustomVariableValueApplier
         array $customProperties,
         string $key,
         mixed $value,
-        array $preservedRequiredFlags = []
+        array $preservedDirectAttachments = []
     ): void {
         $object = $request->object;
         $objectVars->set($key, $value);
@@ -170,6 +169,14 @@ class CustomVariableValueApplier
         }
 
         if ($request->actionName !== 'variables') {
+            return;
+        }
+
+        // Attached here directly before this PUT wiped it, restore it rather than
+        // rejecting this object for lacking a brand new attachment.
+        if (isset($preservedDirectAttachments[$key])) {
+            $this->reattachPreservedProperty($object, $key, $value, $preservedDirectAttachments[$key], $objectVars);
+
             return;
         }
 
@@ -217,19 +224,54 @@ class CustomVariableValueApplier
         $dbAdapter->insert('icinga_' . $type . '_property', [
             'property_uuid' => DbUtil::quoteBinaryCompat($customPropertyUuid, $dbAdapter),
             $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
-            'required' => $preservedRequiredFlags[$key] ?? 'n'
+            'required' => 'n'
         ]);
 
         $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
     }
 
     /**
-     * Get the required flags of the properties currently attached directly
-     * to the given object, keyed by the property's key_name
+     * Re-create a direct attachment wiped earlier in this request and store its value
      *
-     * @return array<string, string>
+     * @param array{uuid: string, value_type: string, required: string} $attachment
      */
-    private function getDirectPropertyRequiredFlags(IcingaObject $object): array
+    private function reattachPreservedProperty(
+        IcingaObject $object,
+        string $key,
+        mixed $value,
+        array $attachment,
+        CustomVariables $objectVars
+    ): void {
+        CustomVariableValueValidator::assertMatchesType($key, $value, $attachment['value_type']);
+        if ($attachment['value_type'] === 'datalist-strict') {
+            CustomVariableValueValidator::assertDatalistValueAllowed(
+                $key,
+                $value,
+                Uuid::fromBytes($attachment['uuid']),
+                $this->db
+            );
+        }
+
+        $type = $object->getShortTableName();
+        $dbAdapter = $this->db->getDbAdapter();
+        $dbAdapter->insert('icinga_' . $type . '_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($attachment['uuid'], $dbAdapter),
+            $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
+            'required' => $attachment['required']
+        ]);
+
+        $objectVars->registerVarUuid($key, Uuid::fromBytes($attachment['uuid']));
+    }
+
+    /**
+     * Get the properties attached directly to the object, keyed by key_name
+     *
+     * Tells "replacing an attached property" apart from "attaching a new one"
+     * once a PUT has wiped this object's own attachment rows.
+     *
+     * @return array<string, array{uuid: string, value_type: string, required: string}>
+     */
+    private function getDirectPropertyAttachments(IcingaObject $object): array
     {
         if ($object->get('uuid') === null) {
             return [];
@@ -243,12 +285,16 @@ class CustomVariableValueApplier
         );
         $query = $dbAdapter->select()
             ->from(['iop' => 'icinga_' . $type . '_property'], ['required' => 'iop.required'])
-            ->join(['dp' => 'director_property'], 'dp.uuid = iop.property_uuid', ['key_name' => 'dp.key_name'])
+            ->join(['dp' => 'director_property'], 'dp.uuid = iop.property_uuid', [
+                'key_name' => 'dp.key_name',
+                'uuid' => 'dp.uuid',
+                'value_type' => 'dp.value_type'
+            ])
             ->where($dbAdapter->quoteInto("iop.{$type}_uuid = ?", $uuidExpr));
 
         $result = [];
         foreach ($dbAdapter->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
-            $result[$row['key_name']] = $row['required'];
+            $result[$row['key_name']] = DbUtil::normalizeRow($row);
         }
 
         return $result;

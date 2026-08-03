@@ -2,6 +2,7 @@
 
 namespace Tests\Icinga\Module\Director\RestApi;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -16,6 +17,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
 {
     private const PREFIX = '___TEST___';
     private const TEMPLATE_NAME = self::PREFIX . 'applier-host';
+    private const CONCRETE_HOST_NAME = self::PREFIX . 'applier-host-concrete';
     private const ENV_KEY = self::PREFIX . 'applier_env';
     private const MYSQL_KEY = self::PREFIX . 'applier_mysql';
 
@@ -288,6 +290,74 @@ class CustomVariableValueApplierTest extends BaseTestCase
         );
     }
 
+    public function testConcreteObjectPutReplacesADirectlyAttachedProperty(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createConcreteHost($db);
+        $this->attachProperties($host, $db);
+
+        // ENV_KEY is attached directly here, never inherited. A "variables" PUT wipes
+        // and rebuilds attachments, so resubmitting it must replace the value, not get
+        // rejected for lacking a brand new attachment on a non-template object.
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $host = IcingaHost::load(self::CONCRETE_HOST_NAME, $db);
+        $this->assertEquals('production', $host->vars()->get(self::ENV_KEY)->getValue());
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_property', ['COUNT(*)'])
+                ->where(
+                    'host_uuid = ?',
+                    DbUtil::quoteBinaryCompat($host->get('uuid'), $dba)
+                )
+        );
+        $this->assertEquals(
+            1,
+            (int) $count,
+            'Replacing a directly attached property must keep its attachment row'
+        );
+    }
+
+    public function testConcreteObjectPutStillRejectsABrandNewAttachment(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createConcreteHost($db);
+
+        // MYSQL_KEY is registered but never attached to this host at all, a
+        // concrete object still cannot create a brand new attachment via PUT.
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::MYSQL_KEY,
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'MySQL settings',
+        ], $db)->store();
+
+        $this->expectException(NotFoundError::class);
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::MYSQL_KEY => (object) ['host' => 'db-primary']],
+            'variables',
+            'PUT',
+            false
+        ));
+    }
+
     private function createTemplate($db): IcingaHost
     {
         if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
@@ -297,6 +367,21 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $host = IcingaHost::create([
             'object_name' => self::TEMPLATE_NAME,
             'object_type' => 'template',
+        ]);
+        $host->store($db);
+
+        return $host;
+    }
+
+    private function createConcreteHost($db): IcingaHost
+    {
+        if (IcingaHost::exists(self::CONCRETE_HOST_NAME, $db)) {
+            IcingaHost::load(self::CONCRETE_HOST_NAME, $db)->delete();
+        }
+
+        $host = IcingaHost::create([
+            'object_name' => self::CONCRETE_HOST_NAME,
+            'object_type' => 'object',
         ]);
         $host->store($db);
 
@@ -354,16 +439,18 @@ class CustomVariableValueApplierTest extends BaseTestCase
             $db = $this->getDb();
             $dba = $db->getDbAdapter();
 
-            if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
-                $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
-                $dba->delete(
-                    'icinga_host_property',
-                    $dba->quoteInto(
-                        'host_uuid = ?',
-                        DbUtil::quoteBinaryCompat(DbUtil::binaryResult($host->get('uuid')), $dba)
-                    )
-                );
-                $host->delete();
+            foreach ([self::TEMPLATE_NAME, self::CONCRETE_HOST_NAME] as $hostName) {
+                if (IcingaHost::exists($hostName, $db)) {
+                    $host = IcingaHost::load($hostName, $db);
+                    $dba->delete(
+                        'icinga_host_property',
+                        $dba->quoteInto(
+                            'host_uuid = ?',
+                            DbUtil::quoteBinaryCompat(DbUtil::binaryResult($host->get('uuid')), $dba)
+                        )
+                    );
+                    $host->delete();
+                }
             }
 
             $dba->delete('director_property', $dba->quoteInto('key_name IN (?)', [self::ENV_KEY, self::MYSQL_KEY]));
