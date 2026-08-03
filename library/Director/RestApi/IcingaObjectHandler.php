@@ -10,6 +10,7 @@ use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\OverrideHelper;
@@ -283,7 +284,19 @@ class IcingaObjectHandler extends RequestHandler
                 // in-memory imports set above, so a cycle introduced by this very
                 // request is caught before it gets persisted.
                 if (in_array($object->getShortTableName(), ['host', 'command'], true)) {
-                    if (in_array((int) $object->get('id'), $object->listAncestorIds())) {
+                    // listAncestorIds() throws NestingError as soon as it hits a loop,
+                    // so an indirect cycle never reaches the check below. Wrap it into
+                    // the same exception a direct self-import already gets.
+                    try {
+                        $isOwnAncestor = in_array((int) $object->get('id'), $object->listAncestorIds());
+                    } catch (NestingError $e) {
+                        throw new RuntimeException(
+                            'Import loop detected for the object '
+                            . $object->getObjectName() . ': ' . $e->getMessage()
+                        );
+                    }
+
+                    if ($isOwnAncestor) {
                         throw new RuntimeException(
                             'Import loop detected for the object '
                             . $object->getObjectName() . ' -> Imports: '
