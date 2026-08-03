@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\CustomVariable\OverrideServiceVarsKeyValidator;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
@@ -17,8 +18,10 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
+use ipl\Web\Common\CalloutType;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Widget\Callout;
 use LogicException;
 use Ramsey\Uuid\Uuid;
 
@@ -96,6 +99,11 @@ class CustomVariablesForm extends CompatForm
     protected function assemble(): void
     {
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
+
+        $overrideVarsWarning = $this->buildOverrideVarsWarning();
+        if ($overrideVarsWarning !== null) {
+            $this->addHtml($overrideVarsWarning);
+        }
 
         $properties = $this->objectProperties;
         if ($this->object->isTemplate()) {
@@ -248,6 +256,45 @@ class CustomVariablesForm extends CompatForm
         return $this->applyGenerated
             || $this->inheritedServiceFrom
             || ($this->host && $this->set);
+    }
+
+    /**
+     * Warn about _override_servicevars keys that don't match any known service
+     *
+     * Only fires when editing a Host's own vars directly, never in the guided
+     * per-service override screens, where the key comes from an already-resolved
+     * service name and can't be wrong.
+     *
+     * @return Callout|null
+     */
+    protected function buildOverrideVarsWarning(): ?Callout
+    {
+        if (
+            ! $this->object instanceof IcingaHost
+            || $this->object->isTemplate()
+            || $this->isOverrideServiceVars()
+        ) {
+            return null;
+        }
+
+        $unmatchedKeys = OverrideServiceVarsKeyValidator::findUnmatchedKeys($this->object);
+        if (empty($unmatchedKeys)) {
+            return null;
+        }
+
+        return new Callout(
+            CalloutType::Warning,
+            Text::create(sprintf(
+                $this->translate(
+                    'These "%s" keys (%s) do not match any known service, service set or'
+                    . ' apply rule for this host, so they have no effect. If a key targets a'
+                    . ' dynamically named apply-for service, this check cannot verify it, so'
+                    . ' it may be a false warning.'
+                ),
+                $this->object->getServiceOverrivesVarname(),
+                implode(', ', $unmatchedKeys)
+            ))
+        );
     }
 
     /**
