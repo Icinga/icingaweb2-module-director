@@ -428,7 +428,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
         return $this;
     }
 
-    protected function getServiceOverrivesVarname()
+    public function getServiceOverrivesVarname()
     {
         return $this->connection->settings()->override_services_varname;
     }
