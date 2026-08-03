@@ -18,9 +18,6 @@ use Icinga\Module\Director\Objects\IcingaService;
  */
 class OverrideServiceVarsKeyValidator
 {
-    /** @var array<string, string[]> Cached per request, keyed by host name */
-    protected static array $cache = [];
-
     /**
      * @return string[] Unmatched keys, empty if none
      */
@@ -30,16 +27,10 @@ class OverrideServiceVarsKeyValidator
             return [];
         }
 
-        // Keyed by name, not object id. Object ids get reused after GC.
-        $cacheKey = $host->getObjectName();
-        if (array_key_exists($cacheKey, self::$cache)) {
-            return self::$cache[$cacheKey];
-        }
-
         $keys = array_keys((array) $host->getAllOverriddenServiceVars());
         $candidates = static::candidateServiceNames($host);
 
-        return self::$cache[$cacheKey] = array_values(array_diff($keys, $candidates));
+        return array_values(array_diff($keys, $candidates));
     }
 
     /**
