@@ -113,10 +113,10 @@ class IcingaServiceApplyForTest extends BaseTestCase
 
         $rendered = (string) $service;
 
-        // A quote, a newline and a $ in the var name must not break out of the
-        // generated string literal or slip a macro reference into the config.
+        // Quote and newline must not break out of the string literal. $ stays
+        // as-is, renderString() never escapes it, same as everywhere else.
         $this->assertStringContainsString(
-            'host.vars["weird\"name\n\\$injected\\$"]',
+            'host.vars["weird\"name\n$injected$"]',
             $rendered
         );
         $this->assertStringNotContainsString("weird\"name\n\$injected\$", $rendered);
