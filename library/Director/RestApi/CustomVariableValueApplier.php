@@ -153,7 +153,13 @@ class CustomVariableValueApplier
         $var->setModified();
 
         if (isset($customProperties[$key])) {
-            CustomVariableValueValidator::assertMatchesType($key, $value, $customProperties[$key]['value_type']);
+            CustomVariableValueValidator::assertMatchesType(
+                $key,
+                $value,
+                $customProperties[$key]['value_type'],
+                Uuid::fromBytes($customProperties[$key]['uuid']),
+                $this->db
+            );
             if ($customProperties[$key]['value_type'] === 'datalist-strict') {
                 CustomVariableValueValidator::assertDatalistValueAllowed(
                     $key,
@@ -210,7 +216,13 @@ class CustomVariableValueApplier
         $propertyRow = DbUtil::normalizeRow($propertyRow);
         $customPropertyUuid = $propertyRow['uuid'];
 
-        CustomVariableValueValidator::assertMatchesType($key, $value, $propertyRow['value_type']);
+        CustomVariableValueValidator::assertMatchesType(
+            $key,
+            $value,
+            $propertyRow['value_type'],
+            Uuid::fromBytes($customPropertyUuid),
+            $this->db
+        );
         if ($propertyRow['value_type'] === 'datalist-strict') {
             CustomVariableValueValidator::assertDatalistValueAllowed(
                 $key,
@@ -242,7 +254,13 @@ class CustomVariableValueApplier
         array $attachment,
         CustomVariables $objectVars
     ): void {
-        CustomVariableValueValidator::assertMatchesType($key, $value, $attachment['value_type']);
+        CustomVariableValueValidator::assertMatchesType(
+            $key,
+            $value,
+            $attachment['value_type'],
+            Uuid::fromBytes($attachment['uuid']),
+            $this->db
+        );
         if ($attachment['value_type'] === 'datalist-strict') {
             CustomVariableValueValidator::assertDatalistValueAllowed(
                 $key,

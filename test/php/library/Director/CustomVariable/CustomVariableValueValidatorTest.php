@@ -57,6 +57,8 @@ class CustomVariableValueValidatorTest extends BaseTestCase
         $this->addToAssertionCount(1);
     }
 
+    // Without a property to check the item type against, a datalist just takes
+    // either shape, only a dictionary is rejected outright.
     public function testDatalistTypeAcceptsScalarValue(): void
     {
         CustomVariableValueValidator::assertMatchesType('env_choice', 'prod', 'datalist-strict');
@@ -73,6 +75,106 @@ class CustomVariableValueValidatorTest extends BaseTestCase
     {
         $this->expectException(InvalidArgumentException::class);
         CustomVariableValueValidator::assertMatchesType('env_choice', (object) ['a' => 'b'], 'datalist-strict');
+    }
+
+    // With a property given, its item type child decides the shape, same as a
+    // plain dynamic-array does. No item type child means a single value only.
+    public function testDatalistWithArrayItemTypeRejectsScalarValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeDatalistStrictProperty(
+            $db,
+            'validator_array_item_scalar',
+            'validator_array_item_scalar_list',
+            ['prod', 'dev'],
+            true
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        CustomVariableValueValidator::assertMatchesType(
+            'validator_array_item_scalar',
+            'prod',
+            'datalist-strict',
+            Uuid::fromBytes($property->get('uuid')),
+            $db
+        );
+    }
+
+    public function testDatalistWithArrayItemTypeAcceptsArray(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeDatalistStrictProperty(
+            $db,
+            'validator_array_item_ok',
+            'validator_array_item_ok_list',
+            ['prod', 'dev'],
+            true
+        );
+
+        CustomVariableValueValidator::assertMatchesType(
+            'validator_array_item_ok',
+            ['prod', 'dev'],
+            'datalist-strict',
+            Uuid::fromBytes($property->get('uuid')),
+            $db
+        );
+        $this->addToAssertionCount(1);
+    }
+
+    public function testDatalistWithoutItemTypeRejectsArrayValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeDatalistStrictProperty(
+            $db,
+            'validator_scalar_item_array',
+            'validator_scalar_item_array_list',
+            ['prod', 'dev']
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        CustomVariableValueValidator::assertMatchesType(
+            'validator_scalar_item_array',
+            ['prod', 'dev'],
+            'datalist-strict',
+            Uuid::fromBytes($property->get('uuid')),
+            $db
+        );
+    }
+
+    public function testDatalistWithoutItemTypeAcceptsScalarValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->makeDatalistStrictProperty(
+            $db,
+            'validator_scalar_item_ok',
+            'validator_scalar_item_ok_list',
+            ['prod', 'dev']
+        );
+
+        CustomVariableValueValidator::assertMatchesType(
+            'validator_scalar_item_ok',
+            'prod',
+            'datalist-strict',
+            Uuid::fromBytes($property->get('uuid')),
+            $db
+        );
+        $this->addToAssertionCount(1);
     }
 
     public function testDatalistStrictRejectsUnknownValue(): void
@@ -174,7 +276,8 @@ class CustomVariableValueValidatorTest extends BaseTestCase
         $db,
         string $keyName,
         string $listName,
-        array $entryNames
+        array $entryNames,
+        bool $withArrayItemType = false
     ): DirectorProperty {
         $listName = self::PREFIX . $listName;
         $keyName = self::PREFIX . $keyName;
@@ -199,6 +302,15 @@ class CustomVariableValueValidatorTest extends BaseTestCase
         ];
         $property = DirectorProperty::import($plain, $db);
         $property->store();
+
+        if ($withArrayItemType) {
+            DirectorProperty::create([
+                'uuid'        => Uuid::uuid4()->getBytes(),
+                'key_name'    => '0',
+                'parent_uuid' => $property->get('uuid'),
+                'value_type'  => 'dynamic-array',
+            ], $db)->store();
+        }
 
         return $property;
     }
