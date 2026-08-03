@@ -314,10 +314,14 @@ time](#Custom-Variables-attach-template) below for how that's restricted.
 { "snmp_community": "s3cr3t-community" }
 ```
 
-A `sensitive` variable is masked in the web UI and in the Icinga DB read view, but that
-masking doesn't extend to the API. A `GET` on this object returns `snmp_community` with
-its real value, not `***`, since the API is meant to give you back exactly what's
+A `sensitive` variable is masked in object forms and in the Icinga DB read view, but
+that masking doesn't extend to the API. A `GET` on this object returns `snmp_community`
+with its real value, not `***`, since the API is meant to give you back exactly what's
 stored. Keep that in mind when logging requests or sharing API responses.
+
+The `Preview` tab for the objects in the Director web UI is likewise unmasked: it renders the
+generated Icinga 2 configuration exactly as it will be deployed, `sensitive` values
+included in cleartext. Treat that page with the same care as the API response.
 
 #### Setting an array variable (`fixed-array`, `dynamic-array`, or a datalist array)
 
