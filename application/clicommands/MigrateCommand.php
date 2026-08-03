@@ -656,7 +656,8 @@ class MigrateCommand extends Command
                     }
 
                     echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
-                        . "var_filter is not supported by the new property system and will not be migrated\n";
+                        . "var_filter is not supported by the new property system, so it will be dropped"
+                        . " and the binding will be migrated without it\n";
                 }
 
                 $db->insert(
