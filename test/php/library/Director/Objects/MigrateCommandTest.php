@@ -819,6 +819,77 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertEquals('n', $row->required);
     }
 
+    public function testMigrationStampsExistingValueWithNewPropertyUuid(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $host = $this->createHostFieldBinding($db);
+
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::VAR_CHECK_INTERVAL,
+            'varvalue' => json_encode('60'),
+            'format'   => 'json',
+        ]);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $propertyUuid = DbUtil::binaryResult($dba->fetchOne(
+            $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', self::VAR_CHECK_INTERVAL)
+        ));
+        $storedUuid = DbUtil::binaryResult($dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['property_uuid'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::VAR_CHECK_INTERVAL)
+        ));
+
+        $this->assertEquals(
+            $propertyUuid,
+            $storedUuid,
+            'migration must stamp a pre-existing stored value with the new property UUID, so'
+            . ' detaching the property later can find it'
+        );
+    }
+
+    public function testFilteredBindingLeavesExistingValueUnstamped(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $host = $this->createHostFieldBinding($db);
+
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::VAR_ENV,
+            'varvalue' => json_encode('production'),
+            'format'   => 'json',
+        ]);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $storedUuid = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['property_uuid'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::VAR_ENV)
+        );
+
+        $this->assertNull(
+            $storedUuid,
+            'a value whose only binding was left filtered and unmigrated must not be stamped yet'
+        );
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {

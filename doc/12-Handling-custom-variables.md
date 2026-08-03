@@ -365,6 +365,8 @@ else is skipped and reported:
 * the field has no category
 * there is no other field sharing the same variable name
 * no custom variable with the same key already exists
+* the field's binding on a template has no `var_filter` set, unless
+  `--allow-lossy-filters` is given (see below)
 
 | Data field type | Custom variable type |
 |------------------|-----------------------|
@@ -375,15 +377,35 @@ else is skipped and reported:
 | `DataTypeDatalist` (strict / suggest strict) | `datalist-strict` |
 | `DataTypeDatalist` (other) | `datalist-non-strict` |
 
+A `DataTypeDatalist` field configured to accept multiple values (its
+`data_type` setting is `array`) migrates with `item_type` set to
+`dynamic-array`, so the resulting property stores a list of datalist
+values instead of a single one. Every other `Datalist` field migrates
+with a plain `string` item type.
+
 Existing template assignments are carried over automatically, so
 migrated variables show up already attached to the same host, service,
 command, user and notification templates that used the original field.
+
+> A field bound to a template with a `var_filter` (only applying the field
+> under certain conditions) is left untouched by default, since the new
+> property system has no equivalent for conditional bindings; migrating it
+> would make an optional field unconditionally required. Pass
+> `--allow-lossy-filters` to migrate it anyway and drop the filter, or
+> `--verbose` to see which fields were skipped for this reason. With
+> `--delete`, a datafield kept back this way is never removed, even without
+> `--allow-lossy-filters`.
 
 > Renaming or removing a property, migrated or not, automatically renames or removes its stored
 > values by variable name. The one exception is a variable name still claimed by a Data field that
 > hasn't been migrated (or was migrated without `--delete`): its values are deliberately left in
 > place rather than renamed or deleted out from under that field, so migrate any colliding Data
 > field first if you want a clean rename or removal.
+>
+> Migration stamps existing stored values with the property's UUID, so detaching the
+> property from a template later correctly finds and removes them too. The one
+> exception is a field left out due to a retained `var_filter` binding (see above):
+> its values keep their old, UUID-less shape until you migrate that binding as well.
 
 Configuration Baskets
 ---------------------

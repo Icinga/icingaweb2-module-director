@@ -6,6 +6,7 @@ use Icinga\Data\Db\DbQuery;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterMatch;
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -293,7 +294,8 @@ class MigrateCommand extends Command
      *
      * With $delete, legacy bindings and definitions are removed in the same transaction as
      * the migration, so a failure on either side rolls back both. A datafield with a filtered
-     * binding that was left untouched is kept out of that deletion.
+     * binding that was left untouched is kept out of that deletion. Old values also get
+     * stamped with the new property's UUID, unless a filtered binding was left in place.
      *
      * @param array $customProperties
      * @param bool  $allowLossyFilters Migrate a filtered binding anyway, dropping the var_filter
@@ -309,11 +311,13 @@ class MigrateCommand extends Command
         bool $allowLossyFilters = false
     ): array {
         $db = $this->db();
+        $cleaner = new CustomVariableValueCleaner($db);
         $migratedDataFields = [];
         $retainedDataFields = [];
 
         $migrate = function () use (
             $db,
+            $cleaner,
             $customProperties,
             $dryRun,
             $allowLossyFilters,
@@ -379,6 +383,9 @@ class MigrateCommand extends Command
 
                     if ($hasRetainedBinding) {
                         $retainedDataFields[$datafieldId] = $varName;
+                    } else {
+                        // old values had no UUID, stamp them now or detach won't find them later
+                        $cleaner->backfillPropertyUuid($varName, $propertyUuid);
                     }
                 }
 

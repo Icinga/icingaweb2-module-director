@@ -382,6 +382,33 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Stamp every stored value still missing a property_uuid with the given one
+     *
+     * Migrated values had no UUID before, so a later detach would miss them and
+     * leave them behind. This makes sure detach finds them.
+     *
+     * @param string $varname the root property's own key_name, not a nested one
+     * @param UuidInterface $propertyUuid
+     *
+     * @return void
+     */
+    public function backfillPropertyUuid(string $varname, UuidInterface $propertyUuid): void
+    {
+        $propertyUuidExpr = DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $this->db->getDbAdapter());
+
+        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
+            $this->db->update(
+                "icinga_{$object}_var",
+                ['property_uuid' => $propertyUuidExpr],
+                Filter::matchAll(
+                    Filter::where('varname', $varname),
+                    Filter::fromQueryString('property_uuid IS NULL')
+                )
+            );
+        }
+    }
+
+    /**
      * Rename every stored value for a root property, across every object type
      *
      * Skips the rename if a legacy Data Field owns the old or the new varname. Under the
