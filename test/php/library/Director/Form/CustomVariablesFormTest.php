@@ -235,5 +235,4 @@ class CustomVariablesFormTest extends BaseTestCase
         $result = CustomVariablesForm::filterEmpty($entry);
         $this->assertSame(['label' => 'dc1'], $result);
     }
-
 }
