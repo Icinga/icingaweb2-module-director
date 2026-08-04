@@ -11,6 +11,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Security\SecurityException;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -47,6 +48,9 @@ class CustomVariablesForm extends CompatForm
 
     /** @var array UUIDs of custom variables that have been marked required */
     private array $requiredVarUuids = [];
+
+    /** @var bool Whether the current principal has director/admin */
+    private bool $isAdmin = false;
 
     public function __construct(
         public readonly IcingaObject $object,
@@ -89,6 +93,20 @@ class CustomVariablesForm extends CompatForm
     public function setRequiredVarUuids(array $uuids): static
     {
         $this->requiredVarUuids = $uuids;
+
+        return $this;
+    }
+
+    /**
+     * Set whether the current principal has director/admin
+     *
+     * @param bool $isAdmin
+     *
+     * @return $this
+     */
+    public function setIsAdmin(bool $isAdmin): static
+    {
+        $this->isAdmin = $isAdmin;
 
         return $this;
     }
@@ -379,11 +397,12 @@ class CustomVariablesForm extends CompatForm
      * Assert that a new custom variable may be attached to $this->object
      *
      * Custom variables are only meant to be attached directly to a
-     * template.
+     * template, and needs director/admin.
      *
      * @return void
      *
      * @throws LogicException
+     * @throws SecurityException
      */
     private function assertCanAttachNewVariable(): void
     {
@@ -392,6 +411,10 @@ class CustomVariablesForm extends CompatForm
                 'Custom Variables can only be attached directly to a template, got %s',
                 $this->object->getObjectName()
             ));
+        }
+
+        if (! $this->isAdmin) {
+            throw new SecurityException('Attaching a new custom variable requires the director/admin permission');
         }
     }
 

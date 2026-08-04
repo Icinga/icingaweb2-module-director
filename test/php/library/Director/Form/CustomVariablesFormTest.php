@@ -9,6 +9,7 @@ use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Test\BaseTestCase;
+use Icinga\Security\SecurityException;
 use LogicException;
 use ReflectionMethod;
 
@@ -34,7 +35,7 @@ class CustomVariablesFormTest extends BaseTestCase
         $method->invoke($form);
     }
 
-    public function testAttachingNewPropertyToTemplateIsAllowed(): void
+    public function testAttachingNewPropertyToTemplateWithoutAdminThrows(): void
     {
         $host = IcingaHost::create([
             'object_name' => 'linux-server',
@@ -42,6 +43,21 @@ class CustomVariablesFormTest extends BaseTestCase
         ]);
 
         $form = new CustomVariablesForm($host);
+        $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
+        $method->setAccessible(true);
+
+        $this->expectException(SecurityException::class);
+        $method->invoke($form);
+    }
+
+    public function testAttachingNewPropertyToTemplateAsAdminIsAllowed(): void
+    {
+        $host = IcingaHost::create([
+            'object_name' => 'linux-server',
+            'object_type' => 'template',
+        ]);
+
+        $form = (new CustomVariablesForm($host))->setIsAdmin(true);
         $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
         $method->setAccessible(true);
 

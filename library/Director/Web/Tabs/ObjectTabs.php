@@ -95,7 +95,8 @@ class ObjectTabs extends Tabs
             ));
         }
 
-        if ($auth->hasPermission(Permission::ADMIN) && $this->hasCustomProperties()) {
+        // attach is admin gated, view/edit is not
+        if ($this->hasCustomProperties()) {
             $this->add('variables', array(
                 'url'       => sprintf('director/%s/variables', $type),
                 'urlParams' => $params,

@@ -7,6 +7,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
@@ -423,7 +424,7 @@ abstract class ObjectController extends ActionController
 
     public function variablesAction(): void
     {
-        $this->assertPermission('director/admin');
+        // attach is gated separately in CustomVariablesForm::assertCanAttachNewVariable()
         $object = $this->requireObject();
 
         $newVarUuid = $this->params->shift('newVarUuid');
@@ -497,25 +498,27 @@ abstract class ObjectController extends ActionController
         $this->prepareApplyForHeader();
 
         if ($this->object->isTemplate()) {
-            $slotIndex = $form->getElement('properties')->getItemCount();
+            if ($this->hasPermission(Permission::ADMIN)) {
+                $slotIndex = $form->getElement('properties')->getItemCount();
 
-            $buttonUrl = Url::fromPath(
-                'director/' . $this->getType() . '/add-var',
-                ['uuid' => $this->getUuidFromUrl(), 'nextSlotIndex' => $slotIndex]
-            );
-            $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
-            $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+                $buttonUrl = Url::fromPath(
+                    'director/' . $this->getType() . '/add-var',
+                    ['uuid' => $this->getUuidFromUrl(), 'nextSlotIndex' => $slotIndex]
+                );
+                $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
+                $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
 
-            $this->actions()->add(
-                Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
-                    (new ButtonLink(
-                        $this->translate('Add Custom Variable'),
-                        $buttonUrl->getAbsoluteUrl(),
-                        null,
-                        ['class' => 'control-button']
-                    ))->openInModal()
-                ])
-            );
+                $this->actions()->add(
+                    Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
+                        (new ButtonLink(
+                            $this->translate('Add Custom Variable'),
+                            $buttonUrl->getAbsoluteUrl(),
+                            null,
+                            ['class' => 'control-button']
+                        ))->openInModal()
+                    ])
+                );
+            }
 
             if ($form) {
                 $this->content()->add($form);
@@ -553,6 +556,10 @@ abstract class ObjectController extends ActionController
         array $addedVarUuids,
         array $requiredVarUuids = []
     ): void {
+        if (! $this->hasPermission(Permission::ADMIN)) {
+            return;
+        }
+
         $type = $object->getShortTableName();
         $db = $this->db()->getDbAdapter();
         $uuidBytes = Uuid::fromString($newVarUuid)->getBytes();
@@ -718,7 +725,8 @@ abstract class ObjectController extends ActionController
         $form = (new CustomVariablesForm($object, $objectProperties))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->setAddedVarUuids($addedVarUuids)
-            ->setRequiredVarUuids($requiredVarUuids);
+            ->setRequiredVarUuids($requiredVarUuids)
+            ->setIsAdmin($this->hasPermission(Permission::ADMIN));
         if (empty($objectProperties)) {
             return $form;
         }
