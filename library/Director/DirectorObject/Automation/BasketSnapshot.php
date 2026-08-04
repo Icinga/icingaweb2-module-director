@@ -285,15 +285,22 @@ class BasketSnapshot extends DbObject
     {
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
-        $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
-        $propertyResolver = new BasketSnapshotCustomVariableResolver($all, $connection);
-        $this->restoreType($all, 'DataList', $fieldResolver, $connection);
-        $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
-        $fieldResolver->storeNewFields();
-        $propertyResolver->storeNewProperties();
-        foreach ($this->restoreOrder as $typeName) {
-            $this->restoreType($all, $typeName, $fieldResolver, $connection, $propertyResolver);
+        try {
+            $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
+            $propertyResolver = new BasketSnapshotCustomVariableResolver($all, $connection);
+            $this->restoreType($all, 'DataList', $fieldResolver, $connection);
+            $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
+            $fieldResolver->storeNewFields();
+            $propertyResolver->storeNewProperties();
+            foreach ($this->restoreOrder as $typeName) {
+                $this->restoreType($all, $typeName, $fieldResolver, $connection, $propertyResolver);
+            }
+        } catch (\Throwable $e) {
+            $db->rollBack();
+
+            throw $e;
         }
+
         $db->commit();
     }
 
