@@ -280,38 +280,39 @@ class IcingaObjectHandler extends RequestHandler
                     $object->replaceWith(IcingaObject::createByType($type, $data, $db));
                 }
 
-                // Avoid cyclic imports for hosts and commands. Checked against the
-                // in-memory imports set above, so a cycle introduced by this very
-                // request is caught before it gets persisted.
+                // Avoid cyclic imports for hosts and commands. The tree we check
+                // against is still built from persisted data, so a cycle only
+                // introduced by this request may not show up until store() resolves
+                // it for real. Catch both and raise the same exception either way.
                 if (in_array($object->getShortTableName(), ['host', 'command'], true)) {
-                    // listAncestorIds() throws NestingError as soon as it hits a loop,
-                    // so an indirect cycle never reaches the check below. Wrap it into
-                    // the same exception a direct self-import already gets.
                     try {
                         $isOwnAncestor = in_array((int) $object->get('id'), $object->listAncestorIds());
+
+                        if ($isOwnAncestor) {
+                            throw new RuntimeException(
+                                'Import loop detected for the object '
+                                . $object->getObjectName() . ' -> Imports: '
+                                . implode(', ', $object->getImports())
+                            );
+                        }
+
+                        if (in_array($object->getObjectName(), $object->getImports())) {
+                            throw new RuntimeException(
+                                'You can not import the same object into itself: '
+                                . $object->getObjectName()
+                            );
+                        }
+
+                        $this->persistChanges($object);
                     } catch (NestingError $e) {
                         throw new RuntimeException(
                             'Import loop detected for the object '
                             . $object->getObjectName() . ': ' . $e->getMessage()
                         );
                     }
-
-                    if ($isOwnAncestor) {
-                        throw new RuntimeException(
-                            'Import loop detected for the object '
-                            . $object->getObjectName() . ' -> Imports: '
-                            . implode(', ', $object->getImports())
-                        );
-                    }
-
-                    if (in_array($object->getObjectName(), $object->getImports())) {
-                        throw new RuntimeException(
-                            'You can not import the same object into itself: ' . $object->getObjectName()
-                        );
-                    }
+                } else {
+                    $this->persistChanges($object);
                 }
-
-                $this->persistChanges($object);
             } elseif ($request->allowsOverrides && $type === 'service') {
                 if ($request->method === 'PUT') {
                     throw new InvalidArgumentException('Overrides are not (yet) available for HTTP PUT');
