@@ -47,8 +47,8 @@ class DirectorProperty extends DbObject
         'category' => 'DirectorDatafieldCategory'
     ];
 
-    /** @var DirectorProperty[] */
-    private $items = [];
+    /** @var DirectorProperty[]|null null is "not loaded yet", empty array is "really has no children" */
+    private ?array $items = null;
 
     /** @var ?DirectorDatalist */
     private $datalist = null;
@@ -220,7 +220,7 @@ class DirectorProperty extends DbObject
      */
     public function fetchItemsFromDb(): array
     {
-        if ($this->items) {
+        if ($this->items !== null) {
             return $this->items;
         }
 
@@ -228,6 +228,8 @@ class DirectorProperty extends DbObject
         if ($uuid === null) {
             return [];
         }
+
+        $this->items = [];
 
         $uuid = Uuid::fromBytes($uuid);
         $query = $this->db->select()
@@ -665,9 +667,7 @@ class DirectorProperty extends DbObject
             $itemCandidate = DirectorProperty::loadWithUniqueId($itemUUid, $db);
             if (! $itemCandidate) {
                 $child = DirectorProperty::import($value, $db, $persist);
-                if ($nestedItems) {
-                    $child->items = $child->importItems($nestedItems, $db, $persist);
-                }
+                $child->items = $child->importItems($nestedItems, $db, $persist);
 
                 $itemCandidates[$key] = $child;
 
@@ -690,9 +690,7 @@ class DirectorProperty extends DbObject
                 $itemCandidate->assignDatalist($datalist);
             }
 
-            if ($nestedItems) {
-                $itemCandidate->items = $itemCandidate->importItems($nestedItems, $db, $persist);
-            }
+            $itemCandidate->items = $itemCandidate->importItems($nestedItems, $db, $persist);
 
             $itemCandidates[$key] = $itemCandidate;
         }
