@@ -5,7 +5,6 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
@@ -13,6 +12,7 @@ use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotCustomVariabl
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
+use LogicException;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -388,7 +388,7 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         ];
 
         try {
-            $this->expectException(ProgrammingError::class);
+            $this->expectException(LogicException::class);
             $resolver->relinkObjectCustomProperties($host, $exportedObject);
         } finally {
             $host->delete();

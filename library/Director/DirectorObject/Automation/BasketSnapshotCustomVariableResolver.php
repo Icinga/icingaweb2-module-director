@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
@@ -10,6 +9,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
+use LogicException;
 use Ramsey\Uuid\Uuid;
 
 class BasketSnapshotCustomVariableResolver
@@ -267,12 +267,12 @@ class BasketSnapshotCustomVariableResolver
      * storeNewProperties() runs and writes back the real uuid, so relinking
      * before that point would write a link that points at nothing.
      *
-     * @throws ProgrammingError
+     * @throws LogicException
      */
     protected function assertPropertiesHaveBeenStored(): void
     {
         if (! $this->newPropertiesStored && ! empty($this->getObjectsByType('CustomVariable'))) {
-            throw new ProgrammingError(
+            throw new LogicException(
                 'storeNewProperties() must run before custom properties can be relinked'
             );
         }
