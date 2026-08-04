@@ -9,6 +9,7 @@ use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotCustomVariableResolver;
+use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -28,6 +29,8 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
     private const TEMPLATE_NAME = self::PREFIX . 'linux-server';
     private const PROP_KEY_NAME = self::PREFIX . 'disk_checks_bk';
     private const DIFF_LIST_NAME = self::PREFIX . 'diff_only_disk_list';
+    private const MOUNT_POINTS_PROD_LIST = self::PREFIX . 'mount_points_prod';
+    private const MOUNT_POINTS_STAGING_LIST = self::PREFIX . 'mount_points_staging';
 
     public function testSnapshotIncludesCustomVariableSection(): void
     {
@@ -491,6 +494,85 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         $this->assertEquals('sensitive', $children[0]->get('value_type'));
     }
 
+    public function testRestoreRepointsDatalistWithoutOtherColumnChange(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        $prodMountPoints = DirectorDatalist::create([
+            'list_name' => self::MOUNT_POINTS_PROD_LIST,
+            'owner'     => 'test',
+        ], $db);
+        $prodMountPoints->store();
+
+        $stagingMountPoints = DirectorDatalist::create([
+            'list_name' => self::MOUNT_POINTS_STAGING_LIST,
+            'owner'     => 'test',
+        ], $db);
+        $stagingMountPoints->store();
+
+        $property->set('value_type', 'datalist-strict');
+        $property->assignDatalist($prodMountPoints);
+        $property->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+
+        // Someone repointed the field from the prod mount point list to the staging one.
+        // value_type, label, everything else on the property stays the same, only the
+        // linked list differs. store() used to see nothing modified and skip the write,
+        // leaving the prod list attached on the target.
+        $decoded = json_decode($json);
+        $decoded->CustomVariable->{$propertyUuidString}->datalist = self::MOUNT_POINTS_STAGING_LIST;
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $restoredList = $restored->getDatalist();
+        $this->assertNotNull($restoredList, 'Property must still have a linked datalist');
+        $this->assertEquals(self::MOUNT_POINTS_STAGING_LIST, $restoredList->get('list_name'));
+    }
+
+    public function testRestoreClearsDatalistWhenTargetPropertyStillHasOne(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        $prodMountPoints = DirectorDatalist::create([
+            'list_name' => self::MOUNT_POINTS_PROD_LIST,
+            'owner'     => 'test',
+        ], $db);
+        $prodMountPoints->store();
+
+        $property->set('value_type', 'datalist-strict');
+        $property->assignDatalist($prodMountPoints);
+        $property->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+
+        // export() reports "false" for a Data List field with no linked list, the same
+        // shape as a field someone unlinked before taking this snapshot. Restoring that
+        // must actually clear the mount point list still sitting on the target.
+        $decoded = json_decode($json);
+        $decoded->CustomVariable->{$propertyUuidString}->datalist = false;
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $this->assertNull($restored->getDatalist(), 'Datalist link must be cleared by restore');
+    }
+
     public function testRestoreStampsPropertyUuidOnVarTable(): void
     {
         if ($this->skipForMissingDb()) {
@@ -744,6 +826,8 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PROP_KEY_NAME));
             $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::DIFF_LIST_NAME));
+            $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::MOUNT_POINTS_PROD_LIST));
+            $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::MOUNT_POINTS_STAGING_LIST));
         }
 
         parent::tearDown();

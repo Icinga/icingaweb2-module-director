@@ -53,6 +53,9 @@ class DirectorProperty extends DbObject
     /** @var ?DirectorDatalist */
     private $datalist = null;
 
+    /** True once we actually looked up the datalist, so null can mean "none" instead of "not yet" */
+    private bool $datalistResolved = false;
+
     /** @var ?DirectorDatafieldCategory */
     private $category;
 
@@ -272,9 +275,11 @@ class DirectorProperty extends DbObject
 
     public function getDatalist(): ?DirectorDatalist
     {
-        if ($this->datalist) {
+        if ($this->datalistResolved) {
             return $this->datalist;
         }
+
+        $this->datalistResolved = true;
 
         if (str_starts_with($this->get('value_type'), 'datalist-')) {
             $query = $this->db->select()->from(['dd' => 'director_datalist'], ['list_name'])
@@ -290,6 +295,31 @@ class DirectorProperty extends DbObject
         }
 
         return $this->datalist;
+    }
+
+    /**
+     * Assign the datalist resolved for this property during import
+     *
+     * Swapping or clearing the list touches no tracked column, so store() would think
+     * nothing changed and skip onStore(), the place that actually writes the link. Mark
+     * the property modified here when the list really changed, so it still gets stored.
+     *
+     * @param ?DirectorDatalist $datalist
+     */
+    public function assignDatalist(?DirectorDatalist $datalist): void
+    {
+        if ($this->hasBeenLoadedFromDb()) {
+            $current = $this->getDatalist();
+            $currentUuid = $current ? $current->get('uuid') : null;
+            $newUuid = $datalist ? $datalist->get('uuid') : null;
+
+            if ($currentUuid !== $newUuid) {
+                $this->hasBeenModified = true;
+            }
+        }
+
+        $this->datalist = $datalist;
+        $this->datalistResolved = true;
     }
 
     public static function fromDbRow($row, Db $connection)
@@ -350,6 +380,7 @@ class DirectorProperty extends DbObject
         $dba = $db->getDbAdapter();
         $uuid = $plain->uuid ?? null;
         $datalist = null;
+        $datalistProvided = false;
         // DirectorProperty items (children)
         $items = $plain->items ?? [];
         unset($plain->items);
@@ -358,6 +389,7 @@ class DirectorProperty extends DbObject
         if ($uuid) {
             $uuid = Uuid::fromString($uuid);
             if (isset($plain->datalist)) {
+                $datalistProvided = true;
                 $datalist = static::resolveImportedDatalist($plain->datalist, $db, $persist);
                 unset($plain->datalist);
             }
@@ -370,8 +402,8 @@ class DirectorProperty extends DbObject
                 }
 
                 $candidate->setProperties((array) $plain);
-                if ($datalist) {
-                    $candidate->datalist = $datalist;
+                if ($datalistProvided) {
+                    $candidate->assignDatalist($datalist);
                 }
 
                 $candidate->items = $candidate->importItems((array) $items, $db, $persist);
@@ -395,11 +427,12 @@ class DirectorProperty extends DbObject
             // cannot tell identical from changed here. Adopt the incoming values like
             // the uuid branch above, otherwise the key_name collides on insert anyway.
             $candidate = DirectorProperty::fromDbRow($dbRow, $db);
+
             unset($plain->uuid);
             $candidate->setProperties((array) $plain);
 
-            if ($datalist) {
-                $candidate->datalist = $datalist;
+            if ($datalistProvided) {
+                $candidate->assignDatalist($datalist);
             }
 
             $candidate->items = $candidate->importItems((array) $items, $db, $persist);
@@ -409,8 +442,8 @@ class DirectorProperty extends DbObject
 
         $property = static::create((array) $plain, $db);
 
-        if ($datalist) {
-            $property->datalist = $datalist;
+        if ($datalistProvided) {
+            $property->assignDatalist($datalist);
         }
 
         if ($items) {
@@ -644,15 +677,17 @@ class DirectorProperty extends DbObject
             assert($itemCandidate instanceof DirectorProperty);
 
             $datalist = null;
+            $datalistProvided = false;
             if (isset($value->datalist)) {
+                $datalistProvided = true;
                 $datalist = static::resolveImportedDatalist($value->datalist, $db, $persist);
                 unset($value->datalist);
             }
 
             $itemCandidate->setProperties((array) $value);
 
-            if ($datalist) {
-                $itemCandidate->datalist = $datalist;
+            if ($datalistProvided) {
+                $itemCandidate->assignDatalist($datalist);
             }
 
             if ($nestedItems) {
