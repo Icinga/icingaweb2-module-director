@@ -27,7 +27,7 @@ Make sure you use `director` as the module name. The following requirements must
     * If you are using Icinga Web <2.9.0, the following modules are also required
         * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (≥0.5.0)
         * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (≥0.9.0)
-* A database: MariaDB (≥10.2), MySQL (≥5.7), PostgreSQL (≥9.6). Other
+* A database: MariaDB (≥10.2.2), MySQL (≥8), PostgreSQL (≥9.6). Other
   forks and older versions might work, but are neither tested nor supported
 * `php-pdo-mysql` and/or `php-pdo-pgsql`
 * `php-curl`
