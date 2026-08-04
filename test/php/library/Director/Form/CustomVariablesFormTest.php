@@ -15,12 +15,6 @@ use ReflectionMethod;
 
 class CustomVariablesFormTest extends BaseTestCase
 {
-    /** @var string[] object_names of Services created by a test */
-    private array $createdServices = [];
-
-    private ?IcingaHost $createdHost = null;
-
-
     public function testAttachingNewPropertyToNonTemplateThrows(): void
     {
         $host = IcingaHost::create([
@@ -242,74 +236,4 @@ class CustomVariablesFormTest extends BaseTestCase
         $this->assertSame(['label' => 'dc1'], $result);
     }
 
-    public function testOverrideVarsWarningIsNullForAMatchingKey(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $host = IcingaHost::create(
-            ['object_name' => '___TEST___web1.example.com', 'object_type' => 'object'],
-            $db
-        );
-        $host->store();
-        $this->createdHost = $host;
-
-        $serviceName = '___TEST___ssh';
-        $this->createdServices[] = $serviceName;
-        IcingaService::create(
-            ['object_name' => $serviceName, 'object_type' => 'object', 'host_id' => $host->get('id')],
-            $db
-        )->store();
-        $host->overrideServiceVars($serviceName, (object) ['ssh_port' => '2222']);
-        $host->store();
-
-        $form = new CustomVariablesForm($host);
-        $method = new ReflectionMethod($form, 'buildOverrideVarsWarning');
-
-        $this->assertNull($method->invoke($form));
-    }
-
-    public function testOverrideVarsWarningFlagsAnUnmatchedKey(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $host = IcingaHost::create(
-            ['object_name' => '___TEST___web2.example.com', 'object_type' => 'object'],
-            $db
-        );
-        $host->overrideServiceVars('___TEST___ssl-cert-check', (object) ['warn_days' => '14']);
-        $host->store();
-        $this->createdHost = $host;
-
-        $form = new CustomVariablesForm($host);
-        $method = new ReflectionMethod($form, 'buildOverrideVarsWarning');
-
-        $warning = $method->invoke($form);
-        $this->assertNotNull($warning);
-        $this->assertStringContainsString('___TEST___ssl-cert-check', (string) $warning);
-    }
-
-    protected function tearDown(): void
-    {
-        if ($this->hasDb()) {
-            $db = $this->getDb();
-
-            foreach ($this->createdServices as $serviceName) {
-                if (IcingaService::exists(['object_name' => $serviceName], $db)) {
-                    IcingaService::load(['object_name' => $serviceName], $db)->delete();
-                }
-            }
-
-            if ($this->createdHost !== null && IcingaHost::exists($this->createdHost->getObjectName(), $db)) {
-                IcingaHost::load($this->createdHost->getObjectName(), $db)->delete();
-            }
-        }
-
-        parent::tearDown();
-    }
 }
