@@ -240,6 +240,8 @@ endpoint.
     POST director/<objectType>/variables?<params>
     PUT  director/<objectType>/variables?<params>
 
+This endpoint requires `director/admin`, regardless of object type.
+
 with a JSON body whose keys are variable names and values are the new
 values. Strings, numbers, booleans, arrays and nested dictionaries are
 all accepted, matching the types described in

@@ -98,6 +98,11 @@ abstract class ObjectController extends ActionController
 
     protected function initializeRestApi()
     {
+        if ($this->getRequest()->getActionName() === 'variables') {
+            // the whole variables endpoint stays admin only over the API
+            $this->assertPermission('director/admin');
+        }
+
         $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
         try {
             $this->loadOptionalObject();
