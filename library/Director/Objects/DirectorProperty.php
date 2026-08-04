@@ -421,6 +421,25 @@ class DirectorProperty extends DbObject
     }
 
     /**
+     * Whether storing this property switches its value_type into an unmasked list type
+     *
+     * A basket restore needs this to pick a safe store order. A property entering an
+     * unmasked type needs its children reconciled before it stores. A property leaving
+     * one needs to store first, or a child turning sensitive fails its own check against
+     * the still-old parent type. No single order works for both.
+     *
+     * @return bool
+     */
+    public function entersUnmaskedListType(): bool
+    {
+        if (! in_array($this->get('value_type'), self::UNMASKED_LIST_TYPES, true)) {
+            return false;
+        }
+
+        return ! in_array($this->getOriginalProperty('value_type'), self::UNMASKED_LIST_TYPES, true);
+    }
+
+    /**
      * @throws InvalidArgumentException if a nested property is being stored with a value_type
      *                                  that may only be used at the top level, a dynamic-array
      *                                  is nested inside another dynamic-array, a 'sensitive'

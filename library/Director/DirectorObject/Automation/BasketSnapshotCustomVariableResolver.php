@@ -80,15 +80,10 @@ class BasketSnapshotCustomVariableResolver
     {
         $this->targetProperties = null; // Clear Cache
         foreach ($this->getTargetProperties() as $uuid => $property) {
-            if ($property->hasBeenModified()) {
-                $property->store();
-                $this->uuidMap[$uuid] = Uuid::fromBytes(
-                    DbUtil::binaryResult($property->get('uuid'))
-                )->toString();
-            }
+            $wasModified = $property->hasBeenModified();
+            $this->storeReconciled($property);
 
-            $modified = $this->restoreCustomPropertyItems($property);
-            if ($modified && ! isset($this->uuidMap[$uuid])) {
+            if ($wasModified) {
                 $this->uuidMap[$uuid] = Uuid::fromBytes(
                     DbUtil::binaryResult($property->get('uuid'))
                 )->toString();
@@ -350,30 +345,99 @@ class BasketSnapshotCustomVariableResolver
         }
     }
 
-    private function restoreCustomPropertyItems(DirectorProperty $property): bool
+    /**
+     * Store $node and reconcile its children in whichever order beforeStore() needs
+     *
+     * A node entering an unmasked list type needs its children reconciled first, or
+     * beforeStore() still sees a sensitive child we're about to delete. A node leaving
+     * one needs to store first, or a child turning sensitive fails its own check against
+     * the still-old parent type. Runs at every level, since a nested item can retype
+     * the same way its own children can.
+     */
+    private function storeReconciled(DirectorProperty $node): bool
     {
-        $modified = false;
-        $keep = [];
+        if (! $node->hasBeenLoadedFromDb()) {
+            // Nothing points at it yet, store it first so its children have a parent uuid.
+            $modified = false;
+            if ($node->hasBeenModified()) {
+                $node->store();
+                $modified = true;
+            }
 
-        foreach ($property->fetchItemsFromDb() as $item) {
+            return $this->reconcileChildren($node) || $modified;
+        }
+
+        $entersUnmaskedListType = $node->entersUnmaskedListType();
+        $modified = false;
+
+        if ($entersUnmaskedListType && $this->reconcileChildren($node)) {
+            $modified = true;
+        }
+
+        if ($node->hasBeenModified()) {
+            $node->store();
+            $modified = true;
+        }
+
+        if (! $entersUnmaskedListType && $this->reconcileChildren($node)) {
+            $modified = true;
+        }
+
+        return $modified;
+    }
+
+    private function reconcileChildren(DirectorProperty $property): bool
+    {
+        $items = $property->fetchItemsFromDb();
+        $keep = [];
+        foreach ($items as $item) {
             $itemUuid = $item->get('uuid');
             if ($itemUuid !== null) {
                 $keep[$itemUuid] = true;
             }
+        }
 
-            if ($item->hasBeenModified()) {
-                $item->store();
-                $modified = true;
-            }
+        $modified = false;
 
-            if ($this->restoreCustomPropertyItems($item)) {
+        // Delete removed children first. A survivor moving into a freed slot would
+        // otherwise collide with the row still sitting there, and a parent retype above
+        // would still see a child that's about to disappear anyway.
+        foreach ($property->fetchExistingChildrenFromDb() as $existingChild) {
+            if (! isset($keep[$existingChild->get('uuid')])) {
+                $existingChild->delete();
                 $modified = true;
             }
         }
 
-        foreach ($property->fetchExistingChildrenFromDb() as $existingChild) {
-            if (! isset($keep[$existingChild->get('uuid')])) {
-                $existingChild->delete();
+        // Two children can swap key_name, or just shift after a delete above. Renaming
+        // one straight to its final key_name can hit a sibling that hasn't moved yet, so
+        // park every renamed row under its own uuid first, then hand out the real name
+        // once everyone's out of the way. Raw update on purpose, it's a mechanical rename,
+        // not a real one, and store() would also flush a pending retype too early.
+        $db = $this->targetDb->getDbAdapter();
+        foreach ($items as $item) {
+            if (! $item->hasBeenLoadedFromDb()) {
+                continue;
+            }
+
+            $finalKeyName = $item->get('key_name');
+            if ($item->getOriginalProperty('key_name') === $finalKeyName) {
+                continue;
+            }
+
+            $placeholder = '__director_restore__' . Uuid::fromBytes(
+                DbUtil::binaryResult($item->get('uuid'))
+            )->toString();
+
+            $db->update(
+                'director_property',
+                ['key_name' => $placeholder],
+                $db->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($item->get('uuid'), $db))
+            );
+        }
+
+        foreach ($items as $item) {
+            if ($this->storeReconciled($item)) {
                 $modified = true;
             }
         }
