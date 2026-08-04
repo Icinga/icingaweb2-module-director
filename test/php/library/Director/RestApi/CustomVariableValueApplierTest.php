@@ -300,9 +300,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $host = $this->createConcreteHost($db);
         $this->attachProperties($host, $db);
 
-        // ENV_KEY is attached directly here, never inherited. A "variables" PUT wipes
-        // and rebuilds attachments, so resubmitting it must replace the value, not get
-        // rejected for lacking a brand new attachment on a non-template object.
+        // both attached directly, a concrete PUT replaces values only, never attachments
         (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::ENV_KEY => 'production'],
@@ -313,6 +311,10 @@ class CustomVariableValueApplierTest extends BaseTestCase
 
         $host = IcingaHost::load(self::CONCRETE_HOST_NAME, $db);
         $this->assertEquals('production', $host->vars()->get(self::ENV_KEY)->getValue());
+        $this->assertNull(
+            $host->vars()->get(self::MYSQL_KEY),
+            'a value not resubmitted in a PUT must still be cleared'
+        );
 
         $dba = $db->getDbAdapter();
         $count = $dba->fetchOne(
@@ -324,9 +326,9 @@ class CustomVariableValueApplierTest extends BaseTestCase
                 )
         );
         $this->assertEquals(
-            1,
+            2,
             (int) $count,
-            'Replacing a directly attached property must keep its attachment row'
+            'a concrete object PUT must never detach a property left out of the request body'
         );
     }
 

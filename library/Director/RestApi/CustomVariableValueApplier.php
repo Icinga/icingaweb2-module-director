@@ -46,9 +46,10 @@ class CustomVariableValueApplier
         $type = $object->getShortTableName();
         $objectVars = $object->vars();
         $wipeValuesInDb = $request->method === 'PUT' && $object->get('id');
-        // A PUT on the base object endpoint must still fully replace values but must not detach
-        // properties that were not part of this request.
-        $wipePropertyAttachmentsInDb = $wipeValuesInDb && $request->actionName === 'variables';
+        // only templates allow attach/detach, concrete objects just replace values
+        $wipePropertyAttachmentsInDb = $wipeValuesInDb
+            && $request->actionName === 'variables'
+            && $object->isTemplate();
 
         // If a caller already opened a transaction (e.g. IcingaObjectHandler wrapping
         // object persistence and this call together), let it own the commit/rollback.
