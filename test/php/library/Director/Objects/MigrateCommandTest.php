@@ -815,18 +815,19 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertNotFalse($retainedSection);
         $deletedSection = substr($deletedSection, 0, strpos($deletedSection, 'would be migrated but kept'));
 
+        // match the trailing " \n" too, VAR_ENV is a substring of VAR_ENV_CHOICES and co
         $this->assertStringNotContainsString(
-            self::VAR_ENV,
+            self::VAR_ENV . " \n",
             $deletedSection,
             '--dry-run --delete must not list a filtered datafield among the ones it would delete'
         );
         $this->assertStringContainsString(
-            self::VAR_ENV,
+            self::VAR_ENV . " \n",
             $retainedSection,
             '--dry-run --delete must list the filtered datafield among the ones it would keep'
         );
         $this->assertStringContainsString(
-            self::VAR_CHECK_INTERVAL,
+            self::VAR_CHECK_INTERVAL . " \n",
             $deletedSection,
             '--dry-run --delete must still list an unfiltered datafield among the ones it would delete'
         );
