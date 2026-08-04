@@ -107,7 +107,7 @@ class DictionaryItem extends FieldsetElement
         $label = $this->getElement('label')->getValue();
         $name = $this->getElement('name')->getValue() ?? '';
         $isTopLevel = empty($this->getElement('parent_type')->getValue());
-        $isContainer = in_array($type, ['fixed-dictionary', 'fixed-array', 'dynamic-dictionary'], true);
+        $isContainer = in_array($type, ['fixed-dictionary', 'dynamic-dictionary'], true);
 
         $uuid = Uuid::fromBytes($this->fields['uuid']);
         $itemType = str_starts_with($type, 'datalist-') ? self::fetchItemType($uuid) : null;
