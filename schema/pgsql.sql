@@ -363,6 +363,9 @@ CREATE UNIQUE INDEX unique_property_name_parent
 
 CREATE INDEX director_property_parent_uuid ON director_property (parent_uuid);
 
+CREATE INDEX director_property_category_id ON director_property (category_id)
+  WHERE category_id IS NOT NULL;
+
 CREATE TABLE director_property_datalist (
   list_uuid bytea CHECK(LENGTH(list_uuid) = 16) NOT NULL,
   property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
@@ -674,6 +677,8 @@ CREATE TABLE icinga_command_var (
 CREATE INDEX command_var_command ON icinga_command_var (command_id);
 CREATE INDEX command_var_search_idx ON icinga_command_var (varname);
 CREATE INDEX command_var_checksum ON icinga_command_var (checksum);
+CREATE INDEX command_var_property_uuid ON icinga_command_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 
 CREATE TABLE icinga_apiuser (
@@ -926,6 +931,8 @@ CREATE TABLE icinga_host_var (
 CREATE INDEX host_var_search_idx ON icinga_host_var (varname);
 CREATE INDEX host_var_host ON icinga_host_var (host_id);
 CREATE INDEX host_var_checksum ON icinga_host_var (checksum);
+CREATE INDEX host_var_property_uuid ON icinga_host_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 
 ALTER TABLE icinga_host_template_choice
@@ -1123,6 +1130,8 @@ CREATE TABLE icinga_service_var (
 CREATE INDEX service_var_search_idx ON icinga_service_var (varname);
 CREATE INDEX service_var_service ON icinga_service_var (service_id);
 CREATE INDEX service_var_checksum ON icinga_service_var (checksum);
+CREATE INDEX service_var_property_uuid ON icinga_service_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 
 CREATE TABLE icinga_service_field (
@@ -1260,6 +1269,8 @@ CREATE TABLE icinga_service_set_var (
 CREATE INDEX service_set_var_service_set ON icinga_service_set_var (service_set_id);
 CREATE INDEX service_set_var_search_idx ON icinga_service_set_var (varname);
 CREATE INDEX service_set_var_checksum ON icinga_service_set_var (checksum);
+CREATE INDEX service_set_var_property_uuid ON icinga_service_set_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 
 CREATE TABLE icinga_hostgroup (
@@ -1540,6 +1551,8 @@ CREATE TABLE icinga_user_var (
 CREATE INDEX user_var_search_idx ON icinga_user_var (varname);
 CREATE INDEX user_var_user ON icinga_user_var (user_id);
 CREATE INDEX user_var_checksum ON icinga_user_var (checksum);
+CREATE INDEX user_var_property_uuid ON icinga_user_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 
 CREATE TABLE icinga_user_field (
@@ -2017,6 +2030,8 @@ CREATE TABLE icinga_notification_var (
 CREATE INDEX notification_var_command ON icinga_notification_var (notification_id);
 CREATE INDEX notification_var_search_idx ON icinga_notification_var (varname);
 CREATE INDEX notification_var_checksum ON icinga_notification_var (checksum);
+CREATE INDEX notification_var_property_uuid ON icinga_notification_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 CREATE TABLE icinga_notification_field (
   notification_id integer NOT NULL,

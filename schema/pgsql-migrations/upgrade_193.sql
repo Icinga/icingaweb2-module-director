@@ -47,6 +47,10 @@ CREATE UNIQUE INDEX unique_property_name_parent
 -- property does a sequential scan to find its children.
 CREATE INDEX director_property_parent_uuid ON director_property (parent_uuid);
 
+-- category_id deletes are restricted, same scan problem as parent_uuid above.
+CREATE INDEX director_property_category_id ON director_property (category_id)
+  WHERE category_id IS NOT NULL;
+
 CREATE TABLE icinga_host_property (
   host_uuid bytea CHECK(LENGTH(host_uuid) = 16) NOT NULL,
   property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
@@ -189,6 +193,11 @@ ALTER TABLE icinga_host_var
     FOREIGN KEY (property_uuid)
       REFERENCES director_property (uuid);
 
+-- Postgres won't index this FK column on its own. Deleting a property would
+-- scan the whole var table looking for rows still pointing at it.
+CREATE INDEX host_var_property_uuid ON icinga_host_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
+
 ALTER TABLE icinga_service_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
 
@@ -196,6 +205,9 @@ ALTER TABLE icinga_service_var
   ADD CONSTRAINT icinga_service_var_property_uuid
     FOREIGN KEY (property_uuid)
       REFERENCES director_property (uuid);
+
+CREATE INDEX service_var_property_uuid ON icinga_service_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 ALTER TABLE icinga_command_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
@@ -205,6 +217,9 @@ ALTER TABLE icinga_command_var
     FOREIGN KEY (property_uuid)
       REFERENCES director_property (uuid);
 
+CREATE INDEX command_var_property_uuid ON icinga_command_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
+
 ALTER TABLE icinga_notification_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
 
@@ -212,6 +227,9 @@ ALTER TABLE icinga_notification_var
   ADD CONSTRAINT icinga_notification_var_property_uuid
     FOREIGN KEY (property_uuid)
       REFERENCES director_property (uuid);
+
+CREATE INDEX notification_var_property_uuid ON icinga_notification_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 ALTER TABLE icinga_service_set_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
@@ -221,6 +239,9 @@ ALTER TABLE icinga_service_set_var
     FOREIGN KEY (property_uuid)
       REFERENCES director_property (uuid);
 
+CREATE INDEX service_set_var_property_uuid ON icinga_service_set_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
+
 ALTER TABLE icinga_user_var
   ADD COLUMN property_uuid bytea CHECK(LENGTH(property_uuid) = 16) DEFAULT NULL;
 
@@ -228,6 +249,9 @@ ALTER TABLE icinga_user_var
   ADD CONSTRAINT icinga_user_var_property_uuid
     FOREIGN KEY (property_uuid)
       REFERENCES director_property (uuid);
+
+CREATE INDEX user_var_property_uuid ON icinga_user_var (property_uuid)
+  WHERE property_uuid IS NOT NULL;
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
