@@ -7,10 +7,6 @@
 -- the frontend or provides everything you need for automated migration
 -- handling. Please find more related information in our documentation.
 
--- citext has been a "trusted" extension since PostgreSQL 13, so the database owner
--- (the role this schema is applied as) can install it without superuser rights. On
--- older PostgreSQL, or a role without CREATE on the database, this fails. See
--- doc/02-Installation.md and run `CREATE EXTENSION citext` as a superuser first.
 CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE TYPE enum_activity_action AS ENUM('create', 'delete', 'modify');

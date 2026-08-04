@@ -1,7 +1,3 @@
--- citext has been a "trusted" extension since PostgreSQL 13, so the database owner
--- (the role this migration runs as) can install it without superuser rights. On
--- older PostgreSQL, or a role without CREATE on the database, this fails and the
--- migration transaction rolls back cleanly. See doc/05-Upgrading.md.
 CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE TYPE enum_property_value_type AS ENUM(
