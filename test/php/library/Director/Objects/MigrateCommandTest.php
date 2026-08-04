@@ -790,6 +790,48 @@ class MigrateCommandTest extends BaseTestCase
         );
     }
 
+    public function testDryRunDeleteReportsFilteredBindingAsRetained(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        $cmd = new TestableMigrateCommand($db, ['--dry-run', '--delete', '--verbose']);
+        $output = $cmd->runDatafields();
+
+        $this->assertStringContainsString(
+            'would be migrated but kept',
+            $output,
+            '--dry-run --delete must report a filtered binding as retained, not deletable'
+        );
+
+        $deletedSection = strstr($output, 'would be migrated and deleted:');
+        $retainedSection = strstr($output, 'would be migrated but kept');
+        $this->assertNotFalse($deletedSection);
+        $this->assertNotFalse($retainedSection);
+        $deletedSection = substr($deletedSection, 0, strpos($deletedSection, 'would be migrated but kept'));
+
+        $this->assertStringNotContainsString(
+            self::VAR_ENV,
+            $deletedSection,
+            '--dry-run --delete must not list a filtered datafield among the ones it would delete'
+        );
+        $this->assertStringContainsString(
+            self::VAR_ENV,
+            $retainedSection,
+            '--dry-run --delete must list the filtered datafield among the ones it would keep'
+        );
+        $this->assertStringContainsString(
+            self::VAR_CHECK_INTERVAL,
+            $deletedSection,
+            '--dry-run --delete must still list an unfiltered datafield among the ones it would delete'
+        );
+    }
+
     public function testObjectTemplateBindingWithoutFilterDoesNotWarn(): void
     {
         if ($this->skipForMissingDb()) {
