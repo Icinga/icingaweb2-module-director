@@ -34,6 +34,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
     private const SERVICE_HOST_A = self::PREFIX . 'web1.example.com';
     private const SERVICE_HOST_B = self::PREFIX . 'web2.example.com';
     private const SHARED_SERVICE_NAME = self::PREFIX . 'ssh';
+    private const SSH_PORT_KEY = self::PREFIX . 'ssh_port';
 
     public function testObjectChangeAndCustomVarValidationFailureRollBackTogether(): void
     {
@@ -266,6 +267,22 @@ class IcingaObjectHandlerTest extends BaseTestCase
         ]);
         $serviceB->store($db);
 
+        // A plain object can only get a custom variable that has already been
+        // declared and attached to it (or to one of its templates).
+        $sshPortProperty = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::SSH_PORT_KEY,
+            'value_type' => 'string',
+            'label'      => 'SSH Port',
+        ], $db);
+        $sshPortProperty->store();
+
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_service_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($sshPortProperty->get('uuid'), $dba),
+            'service_uuid'  => DbUtil::quoteBinaryCompat($serviceA->get('uuid'), $dba),
+        ]);
+
         $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
         $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
 
@@ -279,7 +296,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
             'variables',
             'PUT',
             false,
-            ['ssh_port' => '2222'],
+            [self::SSH_PORT_KEY => '2222'],
             false,
             new UrlParams()
         );
@@ -297,7 +314,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
 
         $reloadedA = IcingaService::loadWithUniqueId(Uuid::fromBytes($serviceA->get('uuid')), $db);
-        $this->assertEquals('2222', $reloadedA->vars()->get('ssh_port')->getValue());
+        $this->assertEquals('2222', $reloadedA->vars()->get(self::SSH_PORT_KEY)->getValue());
 
         $reloadedB = IcingaService::loadWithUniqueId(Uuid::fromBytes($serviceB->get('uuid')), $db);
         $this->assertNull(
@@ -481,6 +498,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::DB_CONNECTION_KEY));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::REGION_KEY));
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SSH_PORT_KEY));
 
             $this->deleteServiceFixtures($db);
         }
