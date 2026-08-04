@@ -404,11 +404,12 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         $db = $this->getDb();
         [$host, $property] = $this->createTemplateWithProperty($db);
 
+        // fixed-dictionary can never nest, so use 'string' as the type before the retype
         $item = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
             'key_name'    => 'disk',
             'parent_uuid' => $property->get('uuid'),
-            'value_type'  => 'fixed-dictionary',
+            'value_type'  => 'string',
         ], $db);
         $item->store();
 
