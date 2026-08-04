@@ -34,6 +34,7 @@ use InvalidArgumentException;
 use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
 use stdClass;
+use Throwable;
 
 class BasketSnapshot extends DbObject
 {
@@ -295,7 +296,7 @@ class BasketSnapshot extends DbObject
             foreach ($this->restoreOrder as $typeName) {
                 $this->restoreType($all, $typeName, $fieldResolver, $connection, $propertyResolver);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $db->rollBack();
 
             throw $e;
