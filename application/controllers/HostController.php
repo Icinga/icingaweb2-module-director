@@ -73,8 +73,11 @@ class HostController extends ObjectController
             'findservice',
             'invalidservice',
             'servicesetservice',
+            'servicesetservicedeprecated',
             'appliedservice',
+            'appliedservicedeprecated',
             'inheritedservice',
+            'inheritedservicedeprecated',
         ]);
     }
 
