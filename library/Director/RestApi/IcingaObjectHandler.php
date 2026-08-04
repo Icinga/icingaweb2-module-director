@@ -336,6 +336,15 @@ class IcingaObjectHandler extends RequestHandler
             return $object;
         }
 
+        if (! $object->hasBeenLoadedFromDb()) {
+            // object was never actually created (e.g. a vars-only body with no
+            // properties to create it from), so there is nothing to attach vars to
+            throw new InvalidArgumentException(
+                'Cannot set variables, the object was not created. Provide the properties'
+                . ' required to create it along with the variable overrides.'
+            );
+        }
+
         $varsWereChanged = (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $object,
             $request->overRiddenCustomVars,
@@ -351,7 +360,7 @@ class IcingaObjectHandler extends RequestHandler
             $this->response->setHttpResponseCode(200);
         }
 
-        return IcingaObject::loadByType($type, $object->getObjectName(), $db);
+        return $object::requireWithUniqueId($object->getUniqueId(), $db);
     }
 
     protected function persistChanges(IcingaObject $object)

@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\RestApi\IcingaObjectHandler;
 use Icinga\Module\Director\RestApi\IcingaObjectWriteRequest;
@@ -30,6 +31,9 @@ class IcingaObjectHandlerTest extends BaseTestCase
     private const CYCLE_HOST_PARENT = self::PREFIX . 'generic-host';
     private const CYCLE_COMMAND_CHILD = self::PREFIX . 'check_http';
     private const CYCLE_COMMAND_PARENT = self::PREFIX . 'plugin-check-command';
+    private const SERVICE_HOST_A = self::PREFIX . 'web1.example.com';
+    private const SERVICE_HOST_B = self::PREFIX . 'web2.example.com';
+    private const SHARED_SERVICE_NAME = self::PREFIX . 'ssh';
 
     public function testObjectChangeAndCustomVarValidationFailureRollBackTogether(): void
     {
@@ -228,6 +232,113 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
     }
 
+    public function testServiceVariablesWriteReloadsTheRightServiceWhenNamesCollideAcrossHosts(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->deleteServiceFixtures($db);
+
+        $hostA = IcingaHost::create([
+            'object_name' => self::SERVICE_HOST_A,
+            'object_type' => 'object',
+            'address'     => '127.0.0.1',
+        ]);
+        $hostA->store($db);
+
+        $hostB = IcingaHost::create([
+            'object_name' => self::SERVICE_HOST_B,
+            'object_type' => 'object',
+            'address'     => '127.0.0.2',
+        ]);
+        $hostB->store($db);
+
+        $serviceA = IcingaService::create([
+            'object_name' => self::SHARED_SERVICE_NAME,
+            'object_type' => 'object',
+            'host_id'     => $hostA->get('id'),
+        ]);
+        $serviceA->store($db);
+
+        $serviceB = IcingaService::create([
+            'object_name' => self::SHARED_SERVICE_NAME,
+            'object_type' => 'object',
+            'host_id'     => $hostB->get('id'),
+        ]);
+        $serviceB->store($db);
+
+        $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $method->setAccessible(true);
+
+        // Both services share an object_name, only host_id tells them apart.
+        // A reload keyed on object_name alone (the old code) can't tell which
+        // one to load, and a composite key given a scalar id throws outright.
+        $writeRequest = new IcingaObjectWriteRequest(
+            $serviceA,
+            [],
+            'service',
+            'variables',
+            'PUT',
+            false,
+            ['ssh_port' => '2222'],
+            false,
+            new UrlParams()
+        );
+
+        $result = null;
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest, &$result) {
+            $result = $method->invoke($handler, $writeRequest);
+        });
+
+        $this->assertNotNull($result, 'a service variables write must reload the object, not throw');
+        $this->assertEquals(
+            Uuid::fromBytes($serviceA->get('uuid'))->toString(),
+            $result->getUniqueId()->toString(),
+            'the reloaded object must be the service the request actually targeted'
+        );
+
+        $reloadedA = IcingaService::loadWithUniqueId(Uuid::fromBytes($serviceA->get('uuid')), $db);
+        $this->assertEquals('2222', $reloadedA->vars()->get('ssh_port')->getValue());
+
+        $reloadedB = IcingaService::loadWithUniqueId(Uuid::fromBytes($serviceB->get('uuid')), $db);
+        $this->assertNull(
+            $reloadedB->vars()->get('ssh_port'),
+            'the other host, same-named service must not have picked up the write'
+        );
+    }
+
+    public function testRejectsVariablesOnAnObjectThatWasNeverCreated(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $method->setAccessible(true);
+
+        // No object_name in the body, so createByType() builds an object that
+        // persistChanges() finds unmodified and never stores.
+        $writeRequest = new IcingaObjectWriteRequest(
+            null,
+            [],
+            'host',
+            'index',
+            'POST',
+            true,
+            [self::REGION_KEY => 'us-east'],
+            false,
+            new UrlParams()
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $method->invoke($handler, $writeRequest);
+    }
+
     public static function cycleScenarioProvider(): array
     {
         return [
@@ -376,8 +487,20 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::DB_CONNECTION_KEY));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::REGION_KEY));
+
+            $this->deleteServiceFixtures($db);
         }
 
         parent::tearDown();
+    }
+
+    private function deleteServiceFixtures($db): void
+    {
+        // deleting the host cascades to its services
+        foreach ([self::SERVICE_HOST_A, self::SERVICE_HOST_B] as $hostName) {
+            if (IcingaHost::exists($hostName, $db)) {
+                IcingaHost::load($hostName, $db)->delete();
+            }
+        }
     }
 }
