@@ -498,9 +498,11 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::DB_CONNECTION_KEY));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::REGION_KEY));
-            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SSH_PORT_KEY));
 
+            // Delete the hosts (and cascaded services/vars) before the property row,
+            // a service var written during the test still points at its uuid until then.
             $this->deleteServiceFixtures($db);
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SSH_PORT_KEY));
         }
 
         parent::tearDown();
