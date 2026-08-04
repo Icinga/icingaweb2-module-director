@@ -785,7 +785,7 @@ class CustomVarRenderer extends CustomVarRendererHook
         $this->dictionaryLevel++;
 
         foreach ($value as $k => $val) {
-            if ($k !== null && is_array($val) || is_object($val)) {
+            if (is_array($val) || is_object($val)) {
                 // $val may be a genuine nested array (fixed-/dynamic-array), not a nested
                 // dictionary - mask any sensitive positions it holds using its own key ($k)
                 // before its items are iterated below by position/child key, since those
@@ -856,8 +856,6 @@ class CustomVarRenderer extends CustomVarRendererHook
                 }
 
                 $this->dictionaryLevel--;
-            } elseif (is_array($val)) {
-                $this->renderArrayVal($k, $val, $k);
             } else {
                 $this->dictionaryBody->addHtml(
                     new HtmlElement(
