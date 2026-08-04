@@ -94,7 +94,6 @@ class HostsCommand extends ObjectsCommand
                         [
                             'key_name' => 'dp.key_name',
                             'uuid' => 'dp.uuid',
-                            $objectType . '_uuid' => 'iop.' . $objectType . '_uuid',
                             'value_type' => 'dp.value_type',
                             'label' => 'dp.label',
                             'children' => 'COUNT(cdp.uuid)'
