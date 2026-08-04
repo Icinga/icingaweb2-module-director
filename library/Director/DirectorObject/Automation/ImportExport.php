@@ -86,7 +86,11 @@ class ImportExport
     public function serializeAllCustomProperties()
     {
         $res = [];
-        foreach (DirectorProperty::loadAll($this->connection) as $object) {
+        $query = $this->connection->select()
+            ->from('director_property')
+            ->where('parent_uuid IS NULL');
+
+        foreach (DirectorProperty::loadAll($this->connection, $query) as $object) {
             $res[] = $this->exporter->export($object);
         }
 
