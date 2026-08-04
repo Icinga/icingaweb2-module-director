@@ -86,7 +86,7 @@ class ImportExport
     public function serializeAllCustomProperties()
     {
         $res = [];
-        $query = $this->connection->select()
+        $query = $this->connection->getDbAdapter()->select()
             ->from('director_property')
             ->where('parent_uuid IS NULL');
 
