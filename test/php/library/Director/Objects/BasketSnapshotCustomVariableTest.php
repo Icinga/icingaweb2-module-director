@@ -245,6 +245,252 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         );
     }
 
+    public function testRestoreRenumbersChildItemsAfterDeletingOne(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        $children = [];
+        foreach (['0', '1', '2'] as $keyName) {
+            $child = DirectorProperty::create([
+                'uuid'        => Uuid::uuid4()->getBytes(),
+                'key_name'    => $keyName,
+                'parent_uuid' => $property->get('uuid'),
+                'value_type'  => 'string',
+            ], $db);
+            $child->store();
+            $children[$keyName] = $child;
+        }
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+        $bUuid = Uuid::fromBytes($children['1']->get('uuid'))->toString();
+        $cUuid = Uuid::fromBytes($children['2']->get('uuid'))->toString();
+
+        // Drop slot "0" (A) and shift B and C down a slot, the renumber that used
+        // to collide with the still-present A@0.
+        $decoded = json_decode($json);
+        $kept = [];
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
+            if ($item->uuid === $bUuid) {
+                $item->key_name = '0';
+                $kept[] = $item;
+            } elseif ($item->uuid === $cUuid) {
+                $item->key_name = '1';
+                $kept[] = $item;
+            }
+        }
+
+        $decoded->CustomVariable->{$propertyUuidString}->items = $kept;
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $restoredItems = $restored->fetchItemsFromDb();
+        $byKeyName = [];
+        foreach ($restoredItems as $item) {
+            $byKeyName[$item->get('key_name')] = Uuid::fromBytes($item->get('uuid'))->toString();
+        }
+
+        $this->assertCount(2, $restoredItems, 'The deleted slot must not survive the restore');
+        $this->assertEquals($bUuid, $byKeyName['0'] ?? null, 'B must now hold slot "0"');
+        $this->assertEquals($cUuid, $byKeyName['1'] ?? null, 'C must now hold slot "1"');
+    }
+
+    public function testRestoreSwapsChildItemKeyNames(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        $x = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $x->store();
+
+        $y = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => '1',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $y->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+        $xUuid = Uuid::fromBytes($x->get('uuid'))->toString();
+        $yUuid = Uuid::fromBytes($y->get('uuid'))->toString();
+
+        // No deletion here, X and Y just trade slots.
+        $decoded = json_decode($json);
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
+            if ($item->uuid === $xUuid) {
+                $item->key_name = '1';
+            } elseif ($item->uuid === $yUuid) {
+                $item->key_name = '0';
+            }
+        }
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $byUuid = [];
+        foreach ($restored->fetchItemsFromDb() as $item) {
+            $byUuid[Uuid::fromBytes($item->get('uuid'))->toString()] = $item->get('key_name');
+        }
+
+        $this->assertEquals('1', $byUuid[$xUuid] ?? null, 'X must have swapped into slot "1"');
+        $this->assertEquals('0', $byUuid[$yUuid] ?? null, 'Y must have swapped into slot "0"');
+    }
+
+    public function testRestoreRetypeCanDropAStaleSensitiveChild(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'secret',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'sensitive',
+        ], $db)->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+
+        // Retyping to dynamic-array while dropping the sensitive child used to fail,
+        // the parent got retyped before the child was gone and beforeStore() still saw it.
+        $decoded = json_decode($json);
+        $decoded->CustomVariable->{$propertyUuidString}->value_type = 'dynamic-array';
+        $decoded->CustomVariable->{$propertyUuidString}->items = [];
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $this->assertEquals(
+            'dynamic-array',
+            $restored->get('value_type'),
+            'Retyping away a stale sensitive child must not be rejected'
+        );
+        $this->assertCount(0, $restored->fetchItemsFromDb(), 'The dropped sensitive child must be deleted');
+    }
+
+    public function testRestoreAllowsNestedRetypeDroppingStaleSensitiveGrandchild(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        $item = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'disk',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'fixed-dictionary',
+        ], $db);
+        $item->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'secret',
+            'parent_uuid' => $item->get('uuid'),
+            'value_type'  => 'sensitive',
+        ], $db)->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+        $itemUuidString = Uuid::fromBytes($item->get('uuid'))->toString();
+
+        // The nested item retypes to dynamic-array and drops its own sensitive child
+        // in the same restore. Reordering the root property alone isn't enough, a
+        // nested item needs the same care for its own children.
+        $decoded = json_decode($json);
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $exportedItem) {
+            if ($exportedItem->uuid === $itemUuidString) {
+                $exportedItem->value_type = 'dynamic-array';
+                $exportedItem->items = [];
+            }
+        }
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restoredItem = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($item->get('uuid')), $db);
+        $this->assertEquals(
+            'dynamic-array',
+            $restoredItem->get('value_type'),
+            'Retyping a nested item away from a stale sensitive grandchild must not be rejected'
+        );
+        $this->assertCount(
+            0,
+            $restoredItem->fetchItemsFromDb(),
+            'The dropped sensitive grandchild must be deleted'
+        );
+    }
+
+    public function testRestoreAllowsLeavingUnmaskedTypeWhileAddingSensitiveChild(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+
+        // Retype to an unmasked list type first, as if it already sits that way on
+        // the target before this restore runs.
+        $property->set('value_type', 'dynamic-array');
+        $property->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+
+        // Restore retypes the parent back to dynamic-dictionary and adds a new sensitive
+        // child at the same time. Used to get rejected, the child stored before the
+        // parent's own retype and beforeStore() still saw it as dynamic-array.
+        $decoded = json_decode($json);
+        $decoded->CustomVariable->{$propertyUuidString}->value_type = 'dynamic-dictionary';
+        $decoded->CustomVariable->{$propertyUuidString}->items = [
+            (object) [
+                'uuid'        => Uuid::uuid4()->toString(),
+                'key_name'    => 'secret',
+                'value_type'  => 'sensitive',
+                'label'       => null,
+                'description' => null,
+                'category'    => null,
+            ],
+        ];
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restored = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $this->assertEquals('dynamic-dictionary', $restored->get('value_type'));
+
+        $children = $restored->fetchItemsFromDb();
+        $this->assertCount(1, $children, 'The new sensitive child must be created');
+        $this->assertEquals('sensitive', $children[0]->get('value_type'));
+    }
+
     public function testRestoreStampsPropertyUuidOnVarTable(): void
     {
         if ($this->skipForMissingDb()) {
