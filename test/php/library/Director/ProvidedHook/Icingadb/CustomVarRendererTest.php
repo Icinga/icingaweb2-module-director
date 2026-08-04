@@ -74,7 +74,6 @@ class CustomVarRendererTest extends BaseTestCase
 
         $renderer = new CustomVarRenderer();
         $method = new ReflectionMethod($renderer, 'getObjectCustomProperties');
-        $method->setAccessible(true);
 
         // This must not throw. Under PostgreSQL (and MySQL with ONLY_FULL_GROUP_BY),
         // selecting cpc.category_name / iop.host_uuid without grouping or aggregating
@@ -381,7 +380,6 @@ class CustomVarRendererTest extends BaseTestCase
     {
         $renderer = new CustomVarRenderer();
         $method = new ReflectionMethod($renderer, 'isGeneratedApplyForServiceName');
-        $method->setAccessible(true);
 
         $hostVar = CustomVariable::create('datacenters', ['fra', 'ams']);
 
@@ -393,7 +391,6 @@ class CustomVarRendererTest extends BaseTestCase
     {
         $renderer = new CustomVarRenderer();
         $method = new ReflectionMethod($renderer, 'isGeneratedApplyForServiceName');
-        $method->setAccessible(true);
 
         // Each value is itself an array, which broke the old by-value lookup since
         // it tried to concatenate an array into a string key.

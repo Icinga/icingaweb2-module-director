@@ -70,7 +70,6 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
         $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
         $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
-        $method->setAccessible(true);
 
         $writeRequest = new IcingaObjectWriteRequest(
             $host,
@@ -148,7 +147,6 @@ class IcingaObjectHandlerTest extends BaseTestCase
         $response = new Response();
         $handler = new IcingaObjectHandler(new Request(), $response, $db);
         $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
-        $method->setAccessible(true);
 
         // Mirrors a base-object POST body of {"vars": {"region": "us-east"}} with
         // no other property changes, same as handleApiRequest() builds for a
@@ -205,7 +203,6 @@ class IcingaObjectHandlerTest extends BaseTestCase
         $response = new Response();
         $handler = new IcingaObjectHandler(new Request(), $response, $db);
         $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
-        $method->setAccessible(true);
 
         // Null for a variable that was never set is a true no-op, nothing to
         // wipe or write. Unlike the real mutation above, this must keep 304.
@@ -271,7 +268,6 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
         $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
         $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
-        $method->setAccessible(true);
 
         // Both services share an object_name, only host_id tells them apart.
         // A reload keyed on object_name alone (the old code) can't tell which
@@ -319,7 +315,6 @@ class IcingaObjectHandlerTest extends BaseTestCase
         $db = $this->getDb();
         $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
         $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
-        $method->setAccessible(true);
 
         // No object_name in the body, so createByType() builds an object that
         // persistChanges() finds unmodified and never stores.
@@ -391,7 +386,6 @@ class IcingaObjectHandlerTest extends BaseTestCase
 
             $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
             $reflectionMethod = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
-            $reflectionMethod->setAccessible(true);
 
             $data = $method === 'PUT'
                 ? ['object_type' => 'template', 'imports' => [$child]]

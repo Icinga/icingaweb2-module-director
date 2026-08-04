@@ -29,7 +29,6 @@ class CustomVariablesFormTest extends BaseTestCase
         ]);
         $form = new CustomVariablesForm($host);
         $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
-        $method->setAccessible(true);
 
         $this->expectException(LogicException::class);
         $method->invoke($form);
@@ -44,7 +43,6 @@ class CustomVariablesFormTest extends BaseTestCase
 
         $form = new CustomVariablesForm($host);
         $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
-        $method->setAccessible(true);
 
         $this->expectException(SecurityException::class);
         $method->invoke($form);
@@ -59,7 +57,6 @@ class CustomVariablesFormTest extends BaseTestCase
 
         $form = (new CustomVariablesForm($host))->setIsAdmin(true);
         $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
-        $method->setAccessible(true);
 
         $method->invoke($form);
         $this->addToAssertionCount(1);
@@ -68,7 +65,6 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testIsValueUnsetTreatsZeroStringAsSet(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, '0'));
     }
@@ -76,7 +72,6 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testIsValueUnsetTreatsIntegerZeroAsSet(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, 0));
     }
@@ -84,7 +79,6 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testIsValueUnsetTreatsFloatZeroAsSet(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, 0.0));
     }
@@ -92,7 +86,6 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testIsValueUnsetTreatsFalseAsSet(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, false));
     }
@@ -100,7 +93,6 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testIsValueUnsetTreatsEmptyStringAsUnset(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
-        $method->setAccessible(true);
 
         $this->assertTrue($method->invoke(null, ''));
     }
@@ -108,7 +100,6 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testIsValueUnsetTreatsNullAsUnset(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
-        $method->setAccessible(true);
 
         $this->assertTrue($method->invoke(null, null));
     }
@@ -116,7 +107,6 @@ class CustomVariablesFormTest extends BaseTestCase
     public function testIsValueUnsetTreatsEmptyArrayAsUnset(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
-        $method->setAccessible(true);
 
         $this->assertTrue($method->invoke(null, []));
     }
@@ -131,7 +121,6 @@ class CustomVariablesFormTest extends BaseTestCase
         $form->setApplyGenerated($service);
 
         $method = new ReflectionMethod($form, 'assertOverrideHostIsSet');
-        $method->setAccessible(true);
 
         $this->expectException(LogicException::class);
         $method->invoke($form);
@@ -152,7 +141,6 @@ class CustomVariablesFormTest extends BaseTestCase
         $form->setHostForService($host);
 
         $method = new ReflectionMethod($form, 'assertOverrideHostIsSet');
-        $method->setAccessible(true);
 
         $method->invoke($form);
         $this->addToAssertionCount(1);
@@ -167,7 +155,6 @@ class CustomVariablesFormTest extends BaseTestCase
         $form = new CustomVariablesForm($host);
 
         $method = new ReflectionMethod($form, 'assertOverrideHostIsSet');
-        $method->setAccessible(true);
 
         $method->invoke($form);
         $this->addToAssertionCount(1);
@@ -280,7 +267,6 @@ class CustomVariablesFormTest extends BaseTestCase
 
         $form = new CustomVariablesForm($host);
         $method = new ReflectionMethod($form, 'buildOverrideVarsWarning');
-        $method->setAccessible(true);
 
         $this->assertNull($method->invoke($form));
     }
@@ -302,7 +288,6 @@ class CustomVariablesFormTest extends BaseTestCase
 
         $form = new CustomVariablesForm($host);
         $method = new ReflectionMethod($form, 'buildOverrideVarsWarning');
-        $method->setAccessible(true);
 
         $warning = $method->invoke($form);
         $this->assertNotNull($warning);
