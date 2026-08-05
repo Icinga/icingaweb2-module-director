@@ -17,6 +17,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\HtmlElement;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
@@ -39,7 +40,6 @@ class IcingaServiceForm extends DirectorObjectForm
 
     /** @var bool|null */
     private $blacklisted;
-
 
     /** @var ?IcingaHost */
     private $blacklistedAncestor;
