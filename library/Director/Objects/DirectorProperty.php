@@ -240,10 +240,9 @@ class DirectorProperty extends DbObject
             );
 
         foreach (DirectorProperty::loadAll($this->connection, $query) as $item) {
-            foreach ($item->fetchItemsFromDb() as $nestedItem) {
-                $item->items[] = $nestedItem;
-            }
-
+            // this already fills the child's own list, appending the result
+            // again here used to double every grandchild
+            $item->fetchItemsFromDb();
             $this->items[] = $item;
         }
 

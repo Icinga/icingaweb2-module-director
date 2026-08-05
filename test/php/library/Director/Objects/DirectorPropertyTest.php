@@ -166,6 +166,45 @@ class DirectorPropertyTest extends BaseTestCase
         $this->assertEquals(['crit', 'warn'], $childKeys);
     }
 
+    public function testThreeLevelTreeDoesNotDuplicateGrandchildren(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // fixed-dictionary can only hold a dynamic-array as a nested field, not
+        // another fixed-dictionary, so the middle level here uses that instead.
+        $db = $this->getDb();
+        $networkInterfaces = $this->makeProperty('network_interfaces', 'fixed-dictionary', 'Network Interfaces', $db);
+        $networkInterfaces->store();
+        $networkInterfacesUuid = $networkInterfaces->get('uuid');
+
+        $ipAddresses = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'ip_addresses',
+            'parent_uuid' => $networkInterfacesUuid,
+            'value_type'  => 'dynamic-array',
+        ], $db);
+        $ipAddresses->store();
+
+        $firstAddress = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => '0',
+            'parent_uuid' => $ipAddresses->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $firstAddress->store();
+
+        $reloaded = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($networkInterfacesUuid), $db);
+        $children = $reloaded->fetchItemsFromDb();
+
+        $this->assertCount(1, $children, 'network_interfaces should have exactly one direct child');
+
+        $grandchildren = $children[0]->fetchItemsFromDb();
+        $this->assertCount(1, $grandchildren, 'ip_addresses should show up once, not duplicated');
+        $this->assertEquals('0', $grandchildren[0]->get('key_name'));
+    }
+
     /**
      * @dataProvider provideNonNestableTypes
      */
