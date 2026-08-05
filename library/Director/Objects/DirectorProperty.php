@@ -354,7 +354,7 @@ class DirectorProperty extends DbObject
         if (! $datalist && is_string($datalistName)) {
             $datalist = DirectorDatalist::create([
                 'list_name' => $datalistName,
-                'owner'     => static::currentUsername(),
+                'owner'     => self::currentUsername(),
             ], $db);
             if ($persist) {
                 $datalist->store($db);
@@ -377,7 +377,7 @@ class DirectorProperty extends DbObject
      *
      * @throws NotFoundError
      */
-    public static function import(stdClass $plain, Db $db, bool $persist = true): static
+    public static function import(stdClass $plain, Db $db, bool $persist = true): DirectorProperty
     {
         $dba = $db->getDbAdapter();
         $uuid = $plain->uuid ?? null;
@@ -392,11 +392,11 @@ class DirectorProperty extends DbObject
             $uuid = Uuid::fromString($uuid);
             if (isset($plain->datalist)) {
                 $datalistProvided = true;
-                $datalist = static::resolveImportedDatalist($plain->datalist, $db, $persist);
+                $datalist = self::resolveImportedDatalist($plain->datalist, $db, $persist);
                 unset($plain->datalist);
             }
 
-            $candidate = DirectorProperty::loadWithUniqueId($uuid, $db);
+            $candidate = self::loadWithUniqueId($uuid, $db);
             if ($candidate) {
                 assert($candidate instanceof DirectorProperty);
                 if (isset($plain->parent_uuid)) {
@@ -428,7 +428,7 @@ class DirectorProperty extends DbObject
             // Two instances can create the same property with different uuids, so we
             // cannot tell identical from changed here. Adopt the incoming values like
             // the uuid branch above, otherwise the key_name collides on insert anyway.
-            $candidate = DirectorProperty::fromDbRow($dbRow, $db);
+            $candidate = self::fromDbRow($dbRow, $db);
 
             unset($plain->uuid);
             $candidate->setProperties((array) $plain);
@@ -680,7 +680,7 @@ class DirectorProperty extends DbObject
             $datalistProvided = false;
             if (isset($value->datalist)) {
                 $datalistProvided = true;
-                $datalist = static::resolveImportedDatalist($value->datalist, $db, $persist);
+                $datalist = self::resolveImportedDatalist($value->datalist, $db, $persist);
                 unset($value->datalist);
             }
 
