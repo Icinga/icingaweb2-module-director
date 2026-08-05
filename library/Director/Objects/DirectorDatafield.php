@@ -239,14 +239,21 @@ class DirectorDatafield extends DbObjectWithSettings
             $uuids[] = $object->get('uuid');
         }
 
-        $query = $db
-            ->select()
-            ->from(['dp' => 'director_property'], ['key_name' => 'dp.key_name'])
-            ->join(['iop' => "icinga_{$objectType}_property"], 'dp.uuid = iop.property_uuid', [])
-            ->where("iop.{$objectType}_uuid", DbUtil::quoteBinaryCompat($uuids, $db->getDbAdapter()))
-            ->where('parent_uuid IS NULL AND key_name', $varName);
+        $hasCustomVariableWithSameName = false;
+        if (! empty($uuids)) {
+            $dbAdapter = $db->getDbAdapter();
+            $query = $dbAdapter
+                ->select()
+                ->from(['dp' => 'director_property'], ['key_name' => 'dp.key_name'])
+                ->join(['iop' => "icinga_{$objectType}_property"], 'dp.uuid = iop.property_uuid', [])
+                ->where("iop.{$objectType}_uuid IN (?)", DbUtil::quoteBinaryCompat($uuids, $dbAdapter))
+                ->where('parent_uuid IS NULL')
+                ->where('key_name = ?', $varName);
 
-        if ($query->fetchOne() !== false) {
+            $hasCustomVariableWithSameName = $dbAdapter->fetchOne($query) !== false;
+        }
+
+        if ($hasCustomVariableWithSameName) {
             $el->setAttrib('hidden', true);
             $el->getDecorator('Description')
                 ->setOptions(['tag' => 'p', 'class' => ['description', 'deprecated-data-field']]);

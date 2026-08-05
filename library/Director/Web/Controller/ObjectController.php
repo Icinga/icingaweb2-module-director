@@ -939,15 +939,16 @@ abstract class ObjectController extends ActionController
      */
     protected function fetchVar(string $varName)
     {
-        $db = $this->object->getConnection();
-        $query = $db->select()
+        $dbAdapter = $this->object->getConnection()->getDbAdapter();
+        $query = $dbAdapter->select()
             ->from(
                 ['dp' => 'director_property'],
                 ['*']
             )
-            ->where('parent_uuid IS NULL AND key_name', $varName);
+            ->where('parent_uuid IS NULL')
+            ->where('key_name = ?', $varName);
 
-        return $db->getDbAdapter()->fetchRow($query);
+        return $dbAdapter->fetchRow($query);
     }
 
     /**
