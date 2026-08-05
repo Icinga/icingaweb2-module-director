@@ -118,10 +118,8 @@ class CustomVariableValueApplier
             $hasChanged = $wipeValuesInDb || $objectVars->hasBeenModified();
             $newVars = $this->plainVars($objectVars);
             // the changed flag can say yes even when a value was just resubmitted
-            // unchanged, so compare the real values instead of trusting that flag.
-            // a full replace can also swap which attachment a key points to
-            // while keeping the same value, so that always counts too
-            if ($wipePropertyAttachmentsInDb || json_encode($oldVars) !== json_encode($newVars)) {
+            // unchanged, so compare the real values instead of trusting that flag
+            if (json_encode($oldVars) !== json_encode($newVars)) {
                 // sensitive values are not masked here, same as the web form's
                 // own save path, this is a known gap to close later
                 DirectorActivityLog::logCustomVariableModification($object, $oldVars, $newVars, $this->db);
@@ -161,6 +159,17 @@ class CustomVariableValueApplier
     ): void {
         $object = $request->object;
         $objectVars->set($key, $value);
+
+        // this key was attached straight to the object before this PUT wiped
+        // it, put that attachment and its own required flag back first,
+        // even if the value is null or this property is also inherited from
+        // a template, a direct attachment always wins over an inherited one
+        if (isset($preservedDirectAttachments[$key])) {
+            $this->reattachPreservedProperty($object, $key, $value, $preservedDirectAttachments[$key], $objectVars);
+
+            return;
+        }
+
         $var = $objectVars->get($key);
         if ($var === null) {
             // A null value for a variable that was never set is a no-op
@@ -192,14 +201,6 @@ class CustomVariableValueApplier
         }
 
         if ($request->actionName !== 'variables') {
-            return;
-        }
-
-        // Attached here directly before this PUT wiped it, restore it rather than
-        // rejecting this object for lacking a brand new attachment.
-        if (isset($preservedDirectAttachments[$key])) {
-            $this->reattachPreservedProperty($object, $key, $value, $preservedDirectAttachments[$key], $objectVars);
-
             return;
         }
 
@@ -260,7 +261,8 @@ class CustomVariableValueApplier
     }
 
     /**
-     * Re-create a direct attachment wiped earlier in this request and store its value
+     * Re-create a direct attachment wiped earlier in this request, and store
+     * its value too unless it was cleared
      *
      * @param array{uuid: string, value_type: string, required: string} $attachment
      */
@@ -271,20 +273,24 @@ class CustomVariableValueApplier
         array $attachment,
         CustomVariables $objectVars
     ): void {
-        CustomVariableValueValidator::assertMatchesType(
-            $key,
-            $value,
-            $attachment['value_type'],
-            Uuid::fromBytes($attachment['uuid']),
-            $this->db
-        );
-        if ($attachment['value_type'] === 'datalist-strict') {
-            CustomVariableValueValidator::assertDatalistValueAllowed(
+        // a null value clears the override but the attachment itself still
+        // needs to come back, there is nothing to validate against then
+        if ($value !== null) {
+            CustomVariableValueValidator::assertMatchesType(
                 $key,
                 $value,
+                $attachment['value_type'],
                 Uuid::fromBytes($attachment['uuid']),
                 $this->db
             );
+            if ($attachment['value_type'] === 'datalist-strict') {
+                CustomVariableValueValidator::assertDatalistValueAllowed(
+                    $key,
+                    $value,
+                    Uuid::fromBytes($attachment['uuid']),
+                    $this->db
+                );
+            }
         }
 
         $type = $object->getShortTableName();
@@ -295,7 +301,11 @@ class CustomVariableValueApplier
             'required' => $attachment['required']
         ]);
 
-        $objectVars->registerVarUuid($key, Uuid::fromBytes($attachment['uuid']));
+        $var = $objectVars->get($key);
+        if ($var !== null) {
+            $var->setModified();
+            $objectVars->registerVarUuid($key, Uuid::fromBytes($attachment['uuid']));
+        }
     }
 
     /**
