@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\RestApi;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueValidator;
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
@@ -113,6 +114,21 @@ class CustomVariableValueApplier
                     $value,
                     $preservedDirectAttachments
                 );
+            }
+
+            if ($wipePropertyAttachmentsInDb) {
+                // whatever was attached directly before this PUT and did not come
+                // back above is being detached for good, so any local value still
+                // sitting on an object that imports this template has to go too,
+                // or it keeps showing up even though it can no longer be reached
+                $detached = array_diff_key($preservedDirectAttachments, $request->overRiddenCustomVars);
+                if (! empty($detached)) {
+                    $detachedUuids = array_map(
+                        fn ($attachment) => DbUtil::quoteBinaryCompat($attachment['uuid'], $dbAdapter),
+                        $detached
+                    );
+                    PropertyDetachmentCleaner::removeStaleValues($object, $detachedUuids, $this->db);
+                }
             }
 
             $hasChanged = $wipeValuesInDb || $objectVars->hasBeenModified();

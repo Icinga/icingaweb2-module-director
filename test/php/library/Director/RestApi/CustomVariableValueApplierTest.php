@@ -360,6 +360,69 @@ class CustomVariableValueApplierTest extends BaseTestCase
         ));
     }
 
+    public function testDetachingATemplatePropertyClearsAnImportingHostsLocalOverride(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $template = $this->createTemplate($db);
+        $this->attachProperties($template, $db);
+
+        $concreteHost = $this->createConcreteHost($db);
+        $concreteHost->setImports(self::TEMPLATE_NAME);
+        $concreteHost->store($db);
+        $concreteHost = IcingaHost::load(self::CONCRETE_HOST_NAME, $db);
+
+        // the host inherited ENV_KEY from the template, then saved its own
+        // value for it instead of just using the inherited one
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $concreteHost,
+            [self::ENV_KEY => 'staging'],
+            'index',
+            'PUT',
+            false
+        ));
+
+        $concreteHost = IcingaHost::load(self::CONCRETE_HOST_NAME, $db);
+        $this->assertEquals('staging', $concreteHost->vars()->get(self::ENV_KEY)->getValue());
+
+        // now detach ENV_KEY from the template, leaving only MYSQL_KEY in place
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $template,
+            [self::MYSQL_KEY => (object) ['host' => 'db-primary']],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $concreteHost = IcingaHost::load(self::CONCRETE_HOST_NAME, $db);
+        $this->assertNull(
+            $concreteHost->vars()->get(self::ENV_KEY),
+            'a value saved locally for a property that just got detached from the '
+            . 'template it came from must not keep sitting around on the importing host'
+        );
+
+        $dba = $db->getDbAdapter();
+        $latestEntry = $dba->fetchRow(
+            $dba->select()
+                ->from('director_activity_log', ['new_properties'])
+                ->where('object_name = ?', self::CONCRETE_HOST_NAME)
+                ->order('id DESC')
+                ->limit(1)
+        );
+        $this->assertNotNull(
+            $latestEntry,
+            'clearing a stale value on an importing host must leave a trace in the activity log'
+        );
+        $this->assertStringNotContainsString(
+            self::ENV_KEY,
+            $latestEntry->new_properties,
+            'the activity log entry for the importing host must show the value actually gone'
+        );
+    }
+
     private function createTemplate($db): IcingaHost
     {
         if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
@@ -441,7 +504,9 @@ class CustomVariableValueApplierTest extends BaseTestCase
             $db = $this->getDb();
             $dba = $db->getDbAdapter();
 
-            foreach ([self::TEMPLATE_NAME, self::CONCRETE_HOST_NAME] as $hostName) {
+            // the concrete host may import the template, so it has to go first
+            // or the template's own delete gets rejected as still in use
+            foreach ([self::CONCRETE_HOST_NAME, self::TEMPLATE_NAME] as $hostName) {
                 if (IcingaHost::exists($hostName, $db)) {
                     $host = IcingaHost::load($hostName, $db);
                     $dba->delete(

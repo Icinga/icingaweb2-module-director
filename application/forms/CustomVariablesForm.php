@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\DictionaryElements\DictionaryItem;
@@ -593,32 +593,15 @@ class CustomVariablesForm extends CompatForm
         }
 
         if (! empty($itemsToRemove)) {
-            $objectId = (int) $this->object->get('id');
             $db = $this->object->getDb();
 
-            $objectsToCleanUp = [$objectId];
-            $propertyAsObjectVar = $db->fetchAll(
-                $db
-                    ->select()
-                    ->from('icinga_' . $type . '_var')
-                    ->where('property_uuid IN (?)', $itemsToRemoveUuids)
+            PropertyDetachmentCleaner::removeStaleValues(
+                $this->object,
+                $itemsToRemoveUuids,
+                $this->object->getConnection()
             );
 
-            foreach ($propertyAsObjectVar as $propertyAsObjectVarRow) {
-                $class = DbObjectTypeRegistry::classByType($type);
-                $object = $class::loadWithAutoIncId(
-                    $propertyAsObjectVarRow->{$type . '_id'},
-                    $this->object->getConnection()
-                );
-
-                if (in_array($objectId, $object->listAncestorIds(), true)) {
-                    $objectsToCleanUp[] = (int) $object->get('id');
-                }
-            }
-
-            $propertyWhere = $this->object->getDb()->quoteInto('property_uuid IN (?)', $itemsToRemoveUuids);
-            $objectsWhere = $this->object->getDb()->quoteInto($type . '_id IN (?)', $objectsToCleanUp);
-            $db->delete('icinga_' . $type . '_var', $propertyWhere . ' AND ' . $objectsWhere);
+            $propertyWhere = $db->quoteInto('property_uuid IN (?)', $itemsToRemoveUuids);
 
             $objectWhere = $this->object->getDb()->quoteInto(
                 $type . '_uuid = ?',
