@@ -41,6 +41,28 @@ class CompareBasketObject
             if (isset($value->fields)) {
                 static::sortListBy('datafield_id', $value->fields);
             }
+            if (isset($value->customVariables)) {
+                // The live list always comes alphabetized with a required flag set.
+                // An old basket may lack both, so fake them here before comparing.
+                foreach ($value->customVariables as &$customVariable) {
+                    if (is_array($customVariable)) {
+                        $customVariable['required'] ??= 'n';
+                    } else {
+                        $customVariable->required ??= 'n';
+                    }
+                }
+
+                unset($customVariable);
+                static::sortListBy('property_uuid', $value->customVariables);
+            }
+
+            // Empty and missing mean the same thing here. A live object always
+            // carries these keys, an old basket just skips them. Drop the empty ones.
+            foreach (['customVariables', 'fields'] as $property) {
+                if (isset($value->$property) && empty($value->$property)) {
+                    unset($value->$property);
+                }
+            }
         }
     }
 

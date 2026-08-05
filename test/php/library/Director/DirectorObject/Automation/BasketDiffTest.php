@@ -10,6 +10,7 @@ use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\DirectorObject\Automation\BasketDiff;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Ramsey\Uuid\Uuid;
 
@@ -54,6 +55,187 @@ class BasketDiffTest extends BaseTestCase
             $diff->hasChangedFor('CustomVariable', $propertyUuidString, $rootUuid),
             'the diff must not report a change when nothing was actually modified'
         );
+    }
+
+    /**
+     * Old baskets never had customVariables/fields keys. A template with none of
+     * its own must still diff as unchanged against one of these.
+     */
+    public function testDiffReportsUnchangedWhenBasketOmitsEmptyFieldsAndCustomVariables(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $templateName = self::PREFIX . 'plain-template';
+        $host = IcingaHost::create([
+            'object_name' => $templateName,
+            'object_type' => 'template',
+        ]);
+        $host->store($db);
+
+        try {
+            $basket = Basket::create(['uuid' => Uuid::uuid4()->getBytes(), 'basket_name' => self::PREFIX . 'basket3']);
+            $snapshot = BasketSnapshot::forBasketFromJson(
+                $basket,
+                json_encode([
+                    'HostTemplate' => [
+                        $templateName => (object) [
+                            'object_name' => $templateName,
+                            'object_type' => 'template',
+                        ],
+                    ],
+                ])
+            );
+
+            $diff = new BasketDiff($snapshot, $db);
+
+            $this->assertFalse(
+                $diff->hasChangedFor('HostTemplate', $templateName),
+                'a template without custom variables/fields of its own must not be "modified" '
+                . 'just because the basket omits those keys entirely'
+            );
+        } finally {
+            $host->delete();
+        }
+    }
+
+    /**
+     * Newer baskets always carry customVariables/fields, even as empty arrays. Same
+     * template, still must diff as unchanged.
+     */
+    public function testDiffReportsUnchangedWhenBasketCarriesEmptyFieldsAndCustomVariables(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $templateName = self::PREFIX . 'plain-template';
+        $host = IcingaHost::create([
+            'object_name' => $templateName,
+            'object_type' => 'template',
+        ]);
+        $host->store($db);
+
+        try {
+            $basket = Basket::create(['uuid' => Uuid::uuid4()->getBytes(), 'basket_name' => self::PREFIX . 'basket4']);
+            $snapshot = BasketSnapshot::forBasketFromJson(
+                $basket,
+                json_encode([
+                    'HostTemplate' => [
+                        $templateName => (object) [
+                            'object_name' => $templateName,
+                            'object_type' => 'template',
+                            'customVariables' => [],
+                            'fields' => [],
+                        ],
+                    ],
+                ])
+            );
+
+            $diff = new BasketDiff($snapshot, $db);
+
+            $this->assertFalse(
+                $diff->hasChangedFor('HostTemplate', $templateName),
+                'a template without custom variables/fields of its own must not be "modified" '
+                . 'just because the basket carries those keys as empty arrays'
+            );
+        } finally {
+            $host->delete();
+        }
+    }
+
+    /**
+     * A basket keeps whatever order and keys it was saved with, but the live
+     * template always comes back alphabetized with required filled in. Still
+     * the same properties either way.
+     */
+    public function testDiffReportsUnchangedWhenCustomVariableOrderOrRequiredDiffer(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $templateName = self::PREFIX . 'multi-prop-template';
+
+        $host = IcingaHost::create([
+            'object_name' => $templateName,
+            'object_type' => 'template',
+        ]);
+        $host->store($db);
+
+        // "host" sorts after "env", so the live template won't list them this way
+        $propHost = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::PREFIX . 'host',
+            'value_type' => 'string',
+            'label'      => 'Host',
+        ], $db);
+        $propHost->store();
+
+        $propEnv = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::PREFIX . 'env',
+            'value_type' => 'string',
+            'label'      => 'Env',
+        ], $db);
+        $propEnv->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($propHost->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($host->get('uuid'), $dba),
+        ]);
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($propEnv->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($host->get('uuid'), $dba),
+        ]);
+
+        $hostUuid = Uuid::fromBytes($propHost->get('uuid'))->toString();
+        $envUuid = Uuid::fromBytes($propEnv->get('uuid'))->toString();
+
+        try {
+            $basket = Basket::create(['uuid' => Uuid::uuid4()->getBytes(), 'basket_name' => self::PREFIX . 'basket5']);
+            $snapshot = BasketSnapshot::forBasketFromJson(
+                $basket,
+                json_encode([
+                    'HostTemplate' => [
+                        $templateName => (object) [
+                            'object_name' => $templateName,
+                            'object_type' => 'template',
+                            // attachment order, no 'required', that's how old baskets saved it
+                            'customVariables' => [
+                                (object) ['property_uuid' => $hostUuid],
+                                (object) ['property_uuid' => $envUuid],
+                            ],
+                        ],
+                    ],
+                    'CustomVariable' => [
+                        $hostUuid => $propHost->export(),
+                        $envUuid => $propEnv->export(),
+                    ],
+                ])
+            );
+
+            $diff = new BasketDiff($snapshot, $db);
+
+            $this->assertFalse(
+                $diff->hasChangedFor('HostTemplate', $templateName),
+                'a differently ordered customVariables list, or one without "required", '
+                . 'must not be reported as "modified" when the same properties are attached'
+            );
+        } finally {
+            $dba->delete(
+                'icinga_host_property',
+                $dba->quoteInto('host_uuid = ?', DbUtil::quoteBinaryCompat($host->get('uuid'), $dba))
+            );
+            $host->delete();
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PREFIX . 'host'));
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PREFIX . 'env'));
+        }
     }
 
     protected function tearDown(): void
