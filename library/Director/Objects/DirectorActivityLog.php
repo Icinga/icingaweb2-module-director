@@ -143,11 +143,54 @@ class DirectorActivityLog extends DbObject
 
     public static function logModification(IcingaObject $object, Db $db)
     {
-        $name = $object->getObjectName();
-        $type = $object->getTableName();
         $oldProps = json_encode($object->getPlainUnmodifiedObject());
         $newProps = $object->toJson(null, true);
 
+        return self::logModificationChange(
+            $object->getObjectName(),
+            $object->getTableName(),
+            $oldProps,
+            $newProps,
+            $db
+        );
+    }
+
+    /**
+     * Log a vars-only modification, for a REST write that only touches custom
+     * variables and never runs through the usual object save flow that logs itself
+     *
+     * @param IcingaObject $object
+     * @param stdClass $oldVars
+     * @param stdClass $newVars
+     * @param Db $db
+     *
+     * @return bool
+     */
+    public static function logCustomVariableModification(
+        IcingaObject $object,
+        stdClass $oldVars,
+        stdClass $newVars,
+        Db $db
+    ) {
+        $oldProps = json_encode((object) ['vars' => $oldVars]);
+        $newProps = json_encode((object) ['vars' => $newVars]);
+
+        return self::logModificationChange(
+            $object->getObjectName(),
+            $object->getTableName(),
+            $oldProps,
+            $newProps,
+            $db
+        );
+    }
+
+    private static function logModificationChange(
+        string $name,
+        string $type,
+        string $oldProps,
+        string $newProps,
+        Db $db
+    ) {
         $data = [
             'object_name'     => $name,
             'action_name'     => self::ACTION_MODIFY,

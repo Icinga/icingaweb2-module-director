@@ -7,9 +7,11 @@ use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueValidator;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
 use PDO;
 use Ramsey\Uuid\Uuid;
+use stdClass;
 use Throwable;
 
 /**
@@ -45,6 +47,9 @@ class CustomVariableValueApplier
         $dbAdapter = $this->db->getDbAdapter();
         $type = $object->getShortTableName();
         $objectVars = $object->vars();
+        // save the original values now, once the new ones are written to the
+        // database there is no way to recover what they used to be
+        $oldVars = $this->plainVars($objectVars->getOriginalVars());
         $wipeValuesInDb = $request->method === 'PUT' && $object->get('id');
         // only templates allow attach/detach, concrete objects just replace values
         $wipePropertyAttachmentsInDb = $wipeValuesInDb
@@ -111,6 +116,17 @@ class CustomVariableValueApplier
             }
 
             $hasChanged = $wipeValuesInDb || $objectVars->hasBeenModified();
+            $newVars = $this->plainVars($objectVars);
+            // the changed flag can say yes even when a value was just resubmitted
+            // unchanged, so compare the real values instead of trusting that flag.
+            // a full replace can also swap which attachment a key points to
+            // while keeping the same value, so that always counts too
+            if ($wipePropertyAttachmentsInDb || json_encode($oldVars) !== json_encode($newVars)) {
+                // sensitive values are not masked here, same as the web form's
+                // own save path, this is a known gap to close later
+                DirectorActivityLog::logCustomVariableModification($object, $oldVars, $newVars, $this->db);
+            }
+
             $objectVars->storeToDb($object);
         } catch (Throwable $e) {
             if ($manageTransaction) {
@@ -361,5 +377,29 @@ class CustomVariableValueApplier
         }
 
         return $result;
+    }
+
+    /**
+     * Turn a set of custom variables, current or original, into a plain
+     * key/value object, the same shape used for the activity log diff
+     *
+     * @param iterable $vars
+     *
+     * @return stdClass
+     */
+    private function plainVars(iterable $vars): stdClass
+    {
+        $plain = [];
+        foreach ($vars as $key => $var) {
+            if ($var->hasBeenDeleted()) {
+                continue;
+            }
+
+            $plain[$key] = $var->getValue();
+        }
+
+        ksort($plain);
+
+        return (object) $plain;
     }
 }
