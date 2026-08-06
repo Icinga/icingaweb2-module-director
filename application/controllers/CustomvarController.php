@@ -232,7 +232,7 @@ class CustomvarController extends CompatController
     }
 
     /**
-     * Fetch the give custom variable usage in templates
+     * Fetch the given custom variable usage
      *
      * @return array
      */
