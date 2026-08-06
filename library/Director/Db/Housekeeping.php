@@ -238,7 +238,9 @@ class Housekeeping
     public function countResolveCache()
     {
         $helper = MembershipHousekeeping::instance('host', $this->connection);
-        return array_sum($helper->check());
+        list($newMappings, $outdatedMappings) = $helper->check();
+
+        return count($newMappings) + count($outdatedMappings);
     }
 
     public function wipeResolveCache()
