@@ -42,12 +42,11 @@ class MigrateCommand extends Command
         [$customPropertiesToMigrate, $existingCustomProperties] = $this->prepareCustomProperties();
         $this->printMigrationDetails($customPropertiesToMigrate, $existingCustomProperties);
 
-        $totalMigrated = 0;
-        foreach ($customPropertiesToMigrate as $customProperty) {
-            if (! str_starts_with($customProperty['value_type'], 'unsupported-')) {
-                $totalMigrated++;
-            }
-        }
+        // same check a real run does, so a field held back by a filter doesn't
+        // count as migrated here either. no output of its own, printMigrationDetails()
+        // above already covers that
+        [$migratedDataFields] = $this->migrateDatafields($customPropertiesToMigrate, true, false, false, false);
+        $totalMigrated = count($migratedDataFields);
 
         $totalSkipped = count(DirectorDatafield::loadAll($this->db())) - $totalMigrated;
 
@@ -134,12 +133,9 @@ class MigrateCommand extends Command
 
         echo "Migration completed\n";
 
-        $totalMigrated = 0;
-        foreach ($customPropertiesToMigrate as $customProperty) {
-            if (! str_starts_with($customProperty['value_type'], 'unsupported-')) {
-                $totalMigrated++;
-            }
-        }
+        // a field held back by a filter lands in $retainedDataFields, not here,
+        // counting it as migrated too would also shrink the skipped total below
+        $totalMigrated = count($migratedDataFields);
 
         $totalSkipped = $totalDatafields - $totalMigrated;
         if ($delete) {
@@ -308,6 +304,8 @@ class MigrateCommand extends Command
      *
      * @param array $customProperties
      * @param bool  $allowLossyFilters Migrate a filtered binding anyway, dropping the var_filter
+     * @param bool  $reportProgress    Print per-field lines, off when a caller already prints its
+     *                                 own summary and doesn't need every field listed twice
      *
      * @return array{0: array, 1: array} [$migratedDataFields, $retainedDataFields], both as
      *         ['id' => 'datafield_name']. Filled on a dry run too, since the var_filter
@@ -319,7 +317,8 @@ class MigrateCommand extends Command
         array $customProperties,
         bool $dryRun,
         bool $delete = false,
-        bool $allowLossyFilters = false
+        bool $allowLossyFilters = false,
+        bool $reportProgress = true
     ): array {
         $db = $this->db();
         $cleaner = new CustomVariableValueCleaner($db);
@@ -332,13 +331,14 @@ class MigrateCommand extends Command
             $customProperties,
             $dryRun,
             $allowLossyFilters,
+            $reportProgress,
             &$migratedDataFields,
             &$retainedDataFields
         ) {
             $dbAdapter = $db->getDbAdapter();
             foreach ($customProperties as $varName => $customProperty) {
                 if (str_starts_with($customProperty['value_type'], 'unsupported-')) {
-                    if ($this->isVerbose) {
+                    if ($reportProgress && $this->isVerbose) {
                         echo "[-] Skipping migration of datafield '$varName' as it has an unsupported datatype '"
                             . substr($customProperty['value_type'], strlen('unsupported-'))
                             . "'\n";
@@ -349,7 +349,7 @@ class MigrateCommand extends Command
 
                 $datafieldId = $customProperty['datafield_id'];
 
-                if ($this->hasUnmigratableFilterBinding($datafieldId, $varName, $allowLossyFilters)) {
+                if ($this->hasUnmigratableFilterBinding($datafieldId, $varName, $allowLossyFilters, $reportProgress)) {
                     $retainedDataFields[$datafieldId] = $varName;
 
                     continue;
@@ -407,10 +407,12 @@ class MigrateCommand extends Command
                     $cleaner->backfillPropertyUuid($varName, $propertyUuid);
                 }
 
-                if ($dryRun) {
-                    echo "[*] Would migrate datafield '$varName'\n";
-                } elseif ($this->isVerbose) {
-                    echo "[+] Datafield '$varName' successfully migrated\n";
+                if ($reportProgress) {
+                    if ($dryRun) {
+                        echo "[*] Would migrate datafield '$varName'\n";
+                    } elseif ($this->isVerbose) {
+                        echo "[+] Datafield '$varName' successfully migrated\n";
+                    }
                 }
             }
         };
@@ -650,8 +652,12 @@ class MigrateCommand extends Command
      * run with --allow-lossy-filters would find that property already there and skip the
      * datafield for good, without ever migrating its filtered binding.
      */
-    private function hasUnmigratableFilterBinding(int $datafieldId, string $varName, bool $allowLossyFilters): bool
-    {
+    private function hasUnmigratableFilterBinding(
+        int $datafieldId,
+        string $varName,
+        bool $allowLossyFilters,
+        bool $reportProgress = true
+    ): bool {
         if ($allowLossyFilters) {
             return false;
         }
@@ -665,9 +671,11 @@ class MigrateCommand extends Command
 
             foreach ($dbAdapter->fetchCol($query) as $varFilter) {
                 if (! empty($varFilter)) {
-                    echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
-                        . "var_filter is not supported by the new property system, so it will not be"
-                        . " migrated or deleted\n";
+                    if ($reportProgress) {
+                        echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
+                            . "var_filter is not supported by the new property system, so it will not be"
+                            . " migrated or deleted\n";
+                    }
 
                     return true;
                 }

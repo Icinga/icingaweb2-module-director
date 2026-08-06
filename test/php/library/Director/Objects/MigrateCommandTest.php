@@ -472,6 +472,78 @@ class MigrateCommandTest extends BaseTestCase
         );
     }
 
+    public function testTotalMigratedCountExcludesAFieldHeldBackByAFilter(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        $totalDatafields = count(DirectorDatafield::loadAll($db));
+        $expectedMigrated = count(self::MIGRATABLE) - 1; // VAR_ENV is held back by its filter
+        $expectedSkipped = $totalDatafields - $expectedMigrated;
+
+        $cmd = new TestableMigrateCommand($db);
+        $output = $cmd->runDatafields();
+
+        $this->assertStringContainsString(
+            "Total number of datafields migrated: $expectedMigrated\n",
+            $output,
+            'a field held back by a filter must not be counted as migrated'
+        );
+        $this->assertStringContainsString(
+            "Total number of datafields skipped: $expectedSkipped\n",
+            $output,
+            'a field held back by a filter must count towards skipped, not migrated'
+        );
+    }
+
+    public function testSummaryCountsAFieldHeldBackByAFilterAsSkipped(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        $totalDatafields = count(DirectorDatafield::loadAll($db));
+        $expectedMigrated = count(self::MIGRATABLE) - 1; // VAR_ENV is held back by its filter
+        $expectedSkipped = $totalDatafields - $expectedMigrated;
+
+        $cmd = new class ($db) extends TestableMigrateCommand {
+            public function runSummary(): string
+            {
+                ob_start();
+                $this->summaryAction();
+
+                return (string) ob_get_clean();
+            }
+        };
+
+        $output = $cmd->runSummary();
+
+        $this->assertStringContainsString(
+            "Total number of datafields that will be migrated: $expectedMigrated\n",
+            $output,
+            'summary must not count a field held back by a filter as migrated'
+        );
+        $this->assertStringContainsString(
+            "Total number of datafields that will be skipped: $expectedSkipped\n",
+            $output,
+            'summary must count a field held back by a filter as skipped'
+        );
+        $this->assertStringNotContainsString(
+            "has a var_filter set",
+            $output,
+            'summary already lists why fields are skipped, the migrate classifier must not repeat it'
+        );
+    }
+
     public function testSkippedCountStaysCorrectAfterDelete(): void
     {
         if ($this->skipForMissingDb()) {
