@@ -1456,7 +1456,7 @@ abstract class DirectorObjectForm extends DirectorForm
 
         $this->atRiskValueNamesImportsKey = $importsKey;
 
-        return $this->atRiskValueNames = PropertyDetachmentCleaner::previewValueNamesAtRiskIfImportsBecome(
+        return $this->atRiskValueNames = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved(
             $this->object,
             $pendingImportNames
         );

@@ -177,7 +177,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         ));
         $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
 
-        $atRisk = PropertyDetachmentCleaner::previewValueNamesAtRiskIfImportsBecome($leaf, []);
+        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($leaf, []);
 
         $this->assertEquals(
             [self::REGION_KEY],
@@ -213,7 +213,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         ));
         $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
 
-        $atRisk = PropertyDetachmentCleaner::previewValueNamesAtRiskIfImportsBecome(
+        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved(
             $leaf,
             [self::TEMPLATE_TWO_NAME]
         );

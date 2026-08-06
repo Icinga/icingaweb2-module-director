@@ -138,8 +138,10 @@ class PropertyDetachmentCleaner
      *
      * @return string[]
      */
-    public static function previewValueNamesAtRiskIfImportsBecome(IcingaObject $object, array $pendingImportNames): array
-    {
+    public static function previewCustomVarsLostIfImportsRemoved(
+        IcingaObject $object,
+        array $pendingImportNames
+    ): array {
         if (! $object->hasBeenLoadedFromDb()) {
             return [];
         }
