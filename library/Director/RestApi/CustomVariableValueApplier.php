@@ -187,14 +187,14 @@ class CustomVariableValueApplier
         }
 
         $var = $objectVars->get($key);
-        if ($var === null) {
-            // A null value for a variable that was never set is a no-op
-            return;
-        }
-
-        $var->setModified();
 
         if (isset($customProperties[$key])) {
+            // already reachable, so null here is a real no-op
+            if ($var === null) {
+                return;
+            }
+
+            $var->setModified();
             CustomVariableValueValidator::assertMatchesType(
                 $key,
                 $value,
@@ -216,6 +216,9 @@ class CustomVariableValueApplier
             return;
         }
 
+        // base endpoint only touches properties already reachable above, an
+        // unknown key here is a no-op either way. The variables endpoint
+        // rejects one instead, null must not skip that check below.
         if ($request->actionName !== 'variables') {
             return;
         }
@@ -250,6 +253,13 @@ class CustomVariableValueApplier
         $propertyRow = DbUtil::normalizeRow($propertyRow);
         $customPropertyUuid = $propertyRow['uuid'];
 
+        // key is real, not rejected, but nothing to attach for a null value
+        // on a property that was never attached here to begin with
+        if ($var === null) {
+            return;
+        }
+
+        $var->setModified();
         CustomVariableValueValidator::assertMatchesType(
             $key,
             $value,

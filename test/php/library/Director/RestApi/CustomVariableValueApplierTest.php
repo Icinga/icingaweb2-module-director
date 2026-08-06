@@ -21,7 +21,29 @@ class CustomVariableValueApplierTest extends BaseTestCase
     private const ENV_KEY = self::PREFIX . 'applier_env';
     private const MYSQL_KEY = self::PREFIX . 'applier_mysql';
 
-    public function testNullValueForUnsetVariableDoesNotCrash(): void
+    public function testNullValueForAnAlreadyReachablePropertyIsAQuietNoOp(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createTemplate($db);
+        $this->attachProperties($host, $db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => null],
+            'variables',
+            'POST',
+            false
+        ));
+
+        $reloaded = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertNull($reloaded->vars()->get(self::ENV_KEY));
+    }
+
+    public function testNullValueForAnUnknownKeyOnVariablesEndpointIsStillRejected(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -30,16 +52,121 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $db = $this->getDb();
         $host = $this->createTemplate($db);
 
+        // a null value used to short circuit before the variables endpoint's
+        // own "not configured" check ever ran, letting an unknown key through
+        $this->expectException(NotFoundError::class);
         (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $host,
             [self::PREFIX . 'never_set' => null],
             'variables',
-            'POST',
+            'PUT',
+            false
+        ));
+    }
+
+    public function testNullValueForARealButUnattachedPropertyStaysAQuietNoOp(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createTemplate($db);
+
+        // MYSQL_KEY is a real, configured property, just never attached to
+        // this template, a null value must not attach it either
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::MYSQL_KEY,
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'MySQL settings',
+        ], $db)->store();
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::MYSQL_KEY => null],
+            'variables',
+            'PUT',
             false
         ));
 
-        $reloaded = IcingaHost::load(self::TEMPLATE_NAME, $db);
-        $this->assertNull($reloaded->vars()->get(self::PREFIX . 'never_set'));
+        $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertNull($host->vars()->get(self::MYSQL_KEY));
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_property', ['COUNT(*)'])
+                ->where(
+                    'host_uuid = ?',
+                    DbUtil::quoteBinaryCompat($host->get('uuid'), $dba)
+                )
+        );
+        $this->assertEquals(0, (int) $count, 'a null value must not attach a property that was never attached');
+    }
+
+    public function testPutRollsBackTheFullWipeWhenAnUnknownNullKeyIsMixedIn(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createTemplate($db);
+        $this->attachProperties($host, $db);
+
+        // resubmit both keys, a PUT drops anything left out, and the next PUT
+        // below needs both attachments still there to prove they survive it
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => 'production', self::MYSQL_KEY => (object) ['host' => 'db-primary']],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
+
+        // a PUT wipes every value and attachment up front, a null value for
+        // the unknown key must not let that wipe slip through uncaught
+        try {
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+                $host,
+                [
+                    self::ENV_KEY => 'staging',
+                    self::MYSQL_KEY => (object) ['host' => 'db-replica'],
+                    self::PREFIX . 'never_set' => null,
+                ],
+                'variables',
+                'PUT',
+                false
+            ));
+            $this->fail('Expected a NotFoundError for the unknown key');
+        } catch (NotFoundError $e) {
+            // expected, checked below via a fresh load
+        }
+
+        $host = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            'production',
+            $host->vars()->get(self::ENV_KEY)->getValue(),
+            'a rejected PUT must not leave the earlier wipe applied'
+        );
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_property', ['COUNT(*)'])
+                ->where(
+                    'host_uuid = ?',
+                    DbUtil::quoteBinaryCompat($host->get('uuid'), $dba)
+                )
+        );
+        $this->assertEquals(
+            2,
+            (int) $count,
+            'a rejected PUT must not leave the property attachments wiped either'
+        );
     }
 
     public function testFailedValidationRollsBackFullReplace(): void
