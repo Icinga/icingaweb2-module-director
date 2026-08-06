@@ -13,21 +13,18 @@ use PDO;
 use stdClass;
 
 /**
- * Cleans up custom variable values left behind once a property is no
- * longer reachable, either detached directly or lost with its template
- *
- * A value can stay saved on an object even after it stops being able to
- * inherit it. This used to leave that value stuck there with no way to
- * see or edit it through the usual UI.
+ * Cleans up values left behind once a property is no longer reachable,
+ * detached directly or lost with its template
  */
 class PropertyDetachmentCleaner
 {
     /**
      * Wipe the saved value for the given properties, on this object and
-     * on every object underneath it that stored its own copy
+     * everything below it with no other way left to reach them
      *
-     * Logs an activity entry for each object that loses a value, so
-     * there's a trace of why it disappeared.
+     * A holder may still reach a lost property through another ancestor or
+     * its own direct attachment, so each one gets checked first. Logged and
+     * deleted per holder, since two holders can lose a different subset.
      *
      * @param string[] $quotedPropertyUuids Already quoted with DbUtil::quoteBinaryCompat()
      */
@@ -45,51 +42,73 @@ class PropertyDetachmentCleaner
         $rows = $dbAdapter->fetchAll(
             $dbAdapter->select()
                 ->from('icinga_' . $type . '_var')
-                ->where('property_uuid IN (?)', $quotedPropertyUuids)
+                ->where('property_uuid IN (?)', $quotedPropertyUuids),
+            [],
+            PDO::FETCH_ASSOC
         );
 
-        $removedNamesByHolderId = [];
+        $removedRowsByHolderId = [];
         foreach ($rows as $row) {
-            $holderId = (int) $row->{$type . '_id'};
-            $removedNamesByHolderId[$holderId][] = $row->varname;
+            $row = DbUtil::normalizeRow($row);
+            $holderId = (int) $row[$type . '_id'];
+            $removedRowsByHolderId[$holderId][bin2hex($row['property_uuid'])] = [
+                'uuid'    => $row['property_uuid'],
+                'varname' => $row['varname'],
+            ];
         }
 
-        $objectsToCleanUp = [$objectId];
+        if (empty($removedRowsByHolderId)) {
+            return;
+        }
 
-        if (! empty($removedNamesByHolderId)) {
-            // the cached tree might predate the inheritance change we're
-            // checking against, so force a fresh read
-            IcingaTemplateRepository::clear();
-            // check inheritance directly, no need to load a full object
-            // just to find out it isn't even a descendant
-            $tree = IcingaTemplateRepository::instanceByType($type, $db)->tree();
+        // the cached tree might predate the inheritance change we're
+        // checking against, so force a fresh read
+        IcingaTemplateRepository::clear();
+        $tree = IcingaTemplateRepository::instanceByType($type, $db)->tree();
 
-            foreach ($removedNamesByHolderId as $holderId => $removedNames) {
-                $isHolderTheObjectItself = $holderId === $objectId;
-                if (! $isHolderTheObjectItself && ! array_key_exists($objectId, $tree->getAncestorsById($holderId))) {
-                    continue;
-                }
+        foreach ($removedRowsByHolderId as $holderId => $removedRows) {
+            $isHolderTheObjectItself = $holderId === $objectId;
+            $holderAncestorIds = $tree->getAncestorsById($holderId);
 
-                if ($isHolderTheObjectItself) {
-                    $holder = $object;
-                } else {
-                    $holder = $class::loadWithAutoIncId($holderId, $object->getConnection());
-                    $objectsToCleanUp[] = $holderId;
-                }
-
-                $oldVars = self::plainVars($holder->vars());
-                $newVars = clone $oldVars;
-                foreach ($removedNames as $removedName) {
-                    unset($newVars->$removedName);
-                }
-
-                DirectorActivityLog::logCustomVariableModification($holder, $oldVars, $newVars, $db);
+            if (! $isHolderTheObjectItself && ! array_key_exists($objectId, $holderAncestorIds)) {
+                // not a descendant of $object, unrelated to this detachment
+                continue;
             }
-        }
 
-        $propertyWhere = $dbAdapter->quoteInto('property_uuid IN (?)', $quotedPropertyUuids);
-        $objectsWhere = $dbAdapter->quoteInto($type . '_id IN (?)', $objectsToCleanUp);
-        $dbAdapter->delete('icinga_' . $type . '_var', $propertyWhere . ' AND ' . $objectsWhere);
+            // excludes $object, its attachment row may not be deleted yet
+            // one query per holder, revisit if that shows up slow at scale
+            $reachableIds = array_values(array_diff(
+                array_merge(array_keys($holderAncestorIds), [$holderId]),
+                [$objectId]
+            ));
+            $stillReachableUuids = self::propertyUuidsAttachedToIds($reachableIds, $type, $dbAdapter);
+            $orphanedRows = array_diff_key($removedRows, $stillReachableUuids);
+
+            if (empty($orphanedRows)) {
+                // still reachable some other way, nothing to clean up
+                continue;
+            }
+
+            $holder = $isHolderTheObjectItself
+                ? $object
+                : $class::loadWithAutoIncId($holderId, $object->getConnection());
+
+            $oldVars = self::plainVars($holder->vars());
+            $newVars = clone $oldVars;
+            foreach ($orphanedRows as $orphanedRow) {
+                unset($newVars->{$orphanedRow['varname']});
+            }
+
+            // may log fewer vars than the batch if some survived, expected
+            DirectorActivityLog::logCustomVariableModification($holder, $oldVars, $newVars, $db);
+
+            $orphanedUuids = array_column($orphanedRows, 'uuid');
+            $dbAdapter->delete(
+                'icinga_' . $type . '_var',
+                $dbAdapter->quoteInto('property_uuid IN (?)', DbUtil::quoteBinaryCompat($orphanedUuids, $dbAdapter))
+                . ' AND ' . $dbAdapter->quoteInto($type . '_id = ?', $holderId)
+            );
+        }
     }
 
     /**

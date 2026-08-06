@@ -595,12 +595,6 @@ class CustomVariablesForm extends CompatForm
         if (! empty($itemsToRemove)) {
             $db = $this->object->getDb();
 
-            PropertyDetachmentCleaner::removeStaleValues(
-                $this->object,
-                $itemsToRemoveUuids,
-                $this->object->getConnection()
-            );
-
             $propertyWhere = $db->quoteInto('property_uuid IN (?)', $itemsToRemoveUuids);
 
             $objectWhere = $this->object->getDb()->quoteInto(
@@ -610,6 +604,13 @@ class CustomVariablesForm extends CompatForm
             $db->delete(
                 'icinga_' . $type . '_property',
                 $propertyWhere . ' AND ' . $objectWhere
+            );
+
+            // must delete the attachment first, same order the REST path uses
+            PropertyDetachmentCleaner::removeStaleValues(
+                $this->object,
+                $itemsToRemoveUuids,
+                $this->object->getConnection()
             );
         }
 

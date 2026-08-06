@@ -225,6 +225,162 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         );
     }
 
+    /**
+     * A host that was never stored has nothing to compare imports against, the
+     * preview must return empty right away instead of querying anything.
+     */
+    public function testPreviewStaysEmptyForAHostThatWasNeverStored(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $host = IcingaHost::create([
+            'object_name' => self::LEAF_HOST_NAME,
+            'object_type' => 'object',
+        ]);
+
+        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($host, []);
+
+        $this->assertEquals([], $atRisk);
+    }
+
+    /**
+     * A host can import two templates that both attach the same property. Removing
+     * the attachment from just one of them must not touch the host's value, the
+     * other template still provides it.
+     */
+    public function testDirectDetachSurvivesViaOtherTemplate(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateOne = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $templateTwo = $this->createTemplate(self::TEMPLATE_TWO_NAME, $db);
+        $this->attachProperty($property, $templateOne, $db);
+        $this->attachProperty($property, $templateTwo, $db);
+
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports([self::TEMPLATE_ONE_NAME, self::TEMPLATE_TWO_NAME]);
+        $leaf->store($db);
+        $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $leaf,
+            [self::REGION_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+
+        // same order the real callers use, delete the attachment first, then let
+        // the cleaner work out what's still reachable some other way
+        $this->detachProperty($property, $templateOne, $db);
+        PropertyDetachmentCleaner::removeStaleValues(
+            $templateOne,
+            [DbUtil::quoteBinaryCompat($property->get('uuid'), $db->getDbAdapter())],
+            $db
+        );
+
+        $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
+        $this->assertEquals(
+            'eu-west',
+            $leaf->vars()->get(self::REGION_KEY)->getValue(),
+            'a value must survive a detach from one template when another imported template still provides it'
+        );
+    }
+
+    /**
+     * When the detached template was the only one providing the property, the
+     * value still has to go.
+     */
+    public function testDirectDetachRemovesLastProvider(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateOne = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $templateOne, $db);
+
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports([self::TEMPLATE_ONE_NAME]);
+        $leaf->store($db);
+        $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $leaf,
+            [self::REGION_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+
+        $this->detachProperty($property, $templateOne, $db);
+        PropertyDetachmentCleaner::removeStaleValues(
+            $templateOne,
+            [DbUtil::quoteBinaryCompat($property->get('uuid'), $db->getDbAdapter())],
+            $db
+        );
+
+        $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
+        $this->assertNull(
+            $leaf->vars()->get(self::REGION_KEY),
+            'a value must be removed once its only providing template loses the property'
+        );
+    }
+
+    /**
+     * A template losing its own direct attachment can still reach the property
+     * through one of its own imports, its value must survive too, same as it
+     * would for a descendant.
+     */
+    public function testDirectDetachSurvivesViaOwnImport(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateTwo = $this->createTemplate(self::TEMPLATE_TWO_NAME, $db);
+        $templateOne = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $templateOne, $db);
+        $this->attachProperty($property, $templateTwo, $db);
+
+        $templateOne->setImports([self::TEMPLATE_TWO_NAME]);
+        $templateOne->store($db);
+        $templateOne = IcingaHost::load(self::TEMPLATE_ONE_NAME, $db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $templateOne,
+            [self::REGION_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+
+        $this->detachProperty($property, $templateOne, $db);
+        PropertyDetachmentCleaner::removeStaleValues(
+            $templateOne,
+            [DbUtil::quoteBinaryCompat($property->get('uuid'), $db->getDbAdapter())],
+            $db
+        );
+
+        $templateOne = IcingaHost::load(self::TEMPLATE_ONE_NAME, $db);
+        $this->assertEquals(
+            'eu-west',
+            $templateOne->vars()->get(self::REGION_KEY)->getValue(),
+            'losing its own direct attachment must not wipe the value if it still imports another'
+            . ' template providing the same property'
+        );
+    }
+
     private function createProperty($db): DirectorProperty
     {
         $property = DirectorProperty::create([
@@ -276,6 +432,16 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
             'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
             'required'      => 'n',
         ]);
+    }
+
+    private function detachProperty(DirectorProperty $property, IcingaHost $template, $db): void
+    {
+        $dba = $db->getDbAdapter();
+        $dba->delete(
+            'icinga_host_property',
+            $dba->quoteInto('property_uuid = ?', DbUtil::quoteBinaryCompat($property->get('uuid'), $dba))
+            . ' AND ' . $dba->quoteInto('host_uuid = ?', DbUtil::quoteBinaryCompat($template->get('uuid'), $dba))
+        );
     }
 
     protected function tearDown(): void
