@@ -245,11 +245,15 @@ class BasketSnapshot extends DbObject
 
     /**
      * @param Db $connection
+     *
+     * @return int values kept under the old name or type, a Data Field owns
+     *             them, 0 if none
+     *
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function restoreTo(Db $connection)
+    public function restoreTo(Db $connection): int
     {
-        static::restoreJson($this->getJsonDump(), $connection);
+        return static::restoreJson($this->getJsonDump(), $connection);
     }
 
     /**
@@ -271,18 +275,25 @@ class BasketSnapshot extends DbObject
         return $snapshot;
     }
 
-    public static function restoreJson($string, Db $connection)
+    /**
+     * @return int values kept under the old name or type, a Data Field owns
+     *             them, 0 if none
+     */
+    public static function restoreJson($string, Db $connection): int
     {
-        (new static())->restoreObjects(JsonString::decode($string), $connection);
+        return (new static())->restoreObjects(JsonString::decode($string), $connection);
     }
 
     /**
+     * @return int values kept under the old name or type, a Data Field owns
+     *             them, 0 if none
+     *
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
      * @throws \Icinga\Exception\NotFoundError
      * @throws JsonDecodeException
      */
-    protected function restoreObjects(stdClass $all, Db $connection)
+    protected function restoreObjects(stdClass $all, Db $connection): int
     {
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
@@ -296,6 +307,9 @@ class BasketSnapshot extends DbObject
             foreach ($this->restoreOrder as $typeName) {
                 $this->restoreType($all, $typeName, $fieldResolver, $connection, $propertyResolver);
             }
+            // Runs last on purpose, a restored host or service still carries its
+            // own old vars, doing this any earlier just gets overwritten by that.
+            $propertyResolver->applyPendingValueMigrations();
         } catch (Throwable $e) {
             $db->rollBack();
 
@@ -303,6 +317,8 @@ class BasketSnapshot extends DbObject
         }
 
         $db->commit();
+
+        return $propertyResolver->getKeptValuesCount();
     }
 
     /**

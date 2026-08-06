@@ -2,7 +2,11 @@
 
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\PropertyChange;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
+use Icinga\Module\Director\CustomVariable\PropertyRenameOrder;
+use Icinga\Module\Director\CustomVariable\PropertySchemaDiff;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
@@ -38,6 +42,12 @@ class BasketSnapshotCustomVariableResolver
 
     /** @var bool */
     protected $readOnly;
+
+    /** @var int values left in place because a legacy Data Field still owns them */
+    protected $keptValuesCount = 0;
+
+    /** @var callable[] pending value moves and clears, run after every object is restored */
+    protected $pendingValueMigrations = [];
 
     /**
      * @param       $objects
@@ -80,8 +90,14 @@ class BasketSnapshotCustomVariableResolver
     public function storeNewProperties(): void
     {
         $this->targetProperties = null; // Clear Cache
+        $this->keptValuesCount = 0;
+        $this->pendingValueMigrations = [];
+        $cleaner = new CustomVariableValueCleaner($this->targetDb);
+
         foreach ($this->getTargetProperties() as $uuid => $property) {
             $wasModified = $property->hasBeenModified();
+
+            $this->applySchemaDiff($property, $cleaner);
             $this->storeReconciled($property);
 
             if ($wasModified) {
@@ -92,6 +108,133 @@ class BasketSnapshotCustomVariableResolver
         }
 
         $this->newPropertiesStored = true;
+    }
+
+    /**
+     * Move or clear the stored values storeNewProperties() worked out
+     *
+     * Must run after every object in this basket has been restored. A host
+     * or service still carries its own old vars, moving values any earlier
+     * just gets overwritten once that runs.
+     *
+     * @return void
+     */
+    public function applyPendingValueMigrations(): void
+    {
+        foreach ($this->pendingValueMigrations as $migration) {
+            $this->keptValuesCount += $migration();
+        }
+
+        $this->pendingValueMigrations = [];
+    }
+
+    /**
+     * How many stored values were left in place across this restore because a
+     * legacy Data Field still owns them
+     *
+     * @return int
+     */
+    public function getKeptValuesCount(): int
+    {
+        return $this->keptValuesCount;
+    }
+
+    /**
+     * Work out what a property tree's pending changes mean for its stored values
+     *
+     * Has to look this up now, before storeReconciled() changes anything below
+     * $root, ancestor names read off the database are only still the old ones
+     * until then. The write itself is deferred, see applyPendingValueMigrations().
+     *
+     * @return void
+     */
+    private function applySchemaDiff(DirectorProperty $root, CustomVariableValueCleaner $cleaner): void
+    {
+        foreach ((new PropertySchemaDiff($cleaner))->diff($root) as $change) {
+            $this->pendingValueMigrations[] = match ($change->kind) {
+                PropertyChange::RENAME => $this->deferRenameChange($change, $cleaner),
+                PropertyChange::RETYPE => $this->deferRetypeChange($change, $cleaner),
+                PropertyChange::DELETE => $this->deferDeleteChange($change, $cleaner),
+            };
+        }
+    }
+
+    /**
+     * Work out the move for a nested property's stored value
+     *
+     * If a legacy Data Field blocked it, also undo the rename in memory, so
+     * it never gets written to director_property either.
+     */
+    private function deferRenameChange(PropertyChange $change, CustomVariableValueCleaner $cleaner): callable
+    {
+        $property = $this->oldPropertyArray($change->property);
+        $parent = $this->oldParentArray($change->parent);
+        $newKeyName = $change->property->get('key_name');
+
+        if (! $change->allowed) {
+            $change->property->set('key_name', $change->property->getOriginalProperty('key_name'));
+        }
+
+        return fn () => $cleaner->renameNestedStoredValues($property, $parent, $newKeyName);
+    }
+
+    /**
+     * Work out the clear for a nested property's stored value, its old type
+     * no longer matches it
+     *
+     * If a legacy Data Field blocked the clear, also undo the retype in memory.
+     */
+    private function deferRetypeChange(PropertyChange $change, CustomVariableValueCleaner $cleaner): callable
+    {
+        $property = $this->oldPropertyArray($change->property);
+        $parent = $this->oldParentArray($change->parent);
+
+        if (! $change->allowed) {
+            $change->property->set('value_type', $change->property->getOriginalProperty('value_type'));
+        }
+
+        return fn () => max(
+            $cleaner->removeObjectCustomVars($property, $parent, true),
+            $cleaner->removeFromOverrideServiceVars($property, $parent, true)
+        );
+    }
+
+    /**
+     * Work out the clear for a dropped nested property's stored value
+     *
+     * The schema row still gets deleted either way, that's decided elsewhere.
+     * A legacy Data Field can only hold back the stored value cleanup.
+     */
+    private function deferDeleteChange(PropertyChange $change, CustomVariableValueCleaner $cleaner): callable
+    {
+        $property = $this->oldPropertyArray($change->property);
+        $parent = $this->oldParentArray($change->parent);
+
+        return fn () => max(
+            $cleaner->removeObjectCustomVars($property, $parent, false),
+            $cleaner->removeFromOverrideServiceVars($property, $parent, false)
+        );
+    }
+
+    /**
+     * @return array{key_name: ?string}
+     */
+    private function oldPropertyArray(DirectorProperty $property): array
+    {
+        return ['key_name' => $property->getOriginalProperty('key_name')];
+    }
+
+    /**
+     * @return array{key_name: ?string, uuid: string, parent_uuid: ?string, value_type: ?string}
+     */
+    private function oldParentArray(DirectorProperty $parent): array
+    {
+        return [
+            'key_name'    => $parent->getOriginalProperty('key_name'),
+            'uuid'        => DbUtil::binaryResult($parent->get('uuid')),
+            'parent_uuid' => DbUtil::binaryResult($parent->get('parent_uuid')),
+            'value_type'  => $parent->getOriginalProperty('value_type'),
+        ];
     }
 
     /**
@@ -416,39 +559,87 @@ class BasketSnapshotCustomVariableResolver
             }
         }
 
-        // Two children can swap key_name, or just shift after a delete above. Renaming
-        // one straight to its final key_name can hit a sibling that hasn't moved yet, so
-        // park every renamed row under its own uuid first, then hand out the real name
-        // once everyone's out of the way. Raw update on purpose, it's a mechanical rename,
-        // not a real one, and store() would also flush a pending retype too early.
-        $db = $this->targetDb->getDbAdapter();
-        foreach ($items as $item) {
-            if (! $item->hasBeenLoadedFromDb()) {
-                continue;
-            }
-
-            $finalKeyName = $item->get('key_name');
-            if ($item->getOriginalProperty('key_name') === $finalKeyName) {
-                continue;
-            }
-
-            $placeholder = '__director_restore__' . Uuid::fromBytes(
-                DbUtil::binaryResult($item->get('uuid'))
-            )->toString();
-
-            $db->update(
-                'director_property',
-                ['key_name' => $placeholder],
-                $db->quoteInto('uuid = ?', DbUtil::quoteBinaryCompat($item->get('uuid'), $db))
-            );
-        }
-
-        foreach ($items as $item) {
+        foreach ($this->orderForSafeRename($items) as $item) {
             if ($this->storeReconciled($item)) {
                 $modified = true;
             }
         }
 
         return $modified;
+    }
+
+    /**
+     * Order renamed children so store() can write their final key_name directly
+     *
+     * Only a real cycle (A wants B's name, B wants A's) needs a placeholder. A plain
+     * chain just needs storing tail first, so nobody takes a name still in use.
+     *
+     * @param DirectorProperty[] $items
+     *
+     * @return DirectorProperty[]
+     */
+    private function orderForSafeRename(array $items): array
+    {
+        $renames = [];
+        foreach ($items as $item) {
+            if (! $item->hasBeenLoadedFromDb()) {
+                continue;
+            }
+
+            if ($item->getOriginalProperty('key_name') === $item->get('key_name')) {
+                continue;
+            }
+
+            $renames[$this->uuidString($item)] = [
+                'old' => $item->getOriginalProperty('key_name'),
+                'new' => $item->get('key_name'),
+            ];
+        }
+
+        if (empty($renames)) {
+            return $items;
+        }
+
+        $itemsByUuid = [];
+        foreach ($items as $item) {
+            $itemsByUuid[$this->uuidString($item)] = $item;
+        }
+
+        $result = (new PropertyRenameOrder())->resolve($renames);
+
+        // Park a real cycle's members under their own uuid first, so the rename below
+        // never fights over a slot that's still taken. Raw update on purpose, store()
+        // would also flush a pending retype too early.
+        if (! empty($result['cycles'])) {
+            $db = $this->targetDb->getDbAdapter();
+            foreach ($result['cycles'] as $uuid) {
+                $db->update(
+                    'director_property',
+                    ['key_name' => '__director_restore__' . $uuid],
+                    $db->quoteInto(
+                        'uuid = ?',
+                        DbUtil::quoteBinaryCompat($itemsByUuid[$uuid]->get('uuid'), $db)
+                    )
+                );
+            }
+        }
+
+        $ordered = [];
+        foreach ($result['order'] as $uuid) {
+            $ordered[] = $itemsByUuid[$uuid];
+        }
+
+        foreach ($items as $item) {
+            if (! isset($renames[$this->uuidString($item)])) {
+                $ordered[] = $item;
+            }
+        }
+
+        return $ordered;
+    }
+
+    private function uuidString(DirectorProperty $item): string
+    {
+        return Uuid::fromBytes(DbUtil::binaryResult($item->get('uuid')))->toString();
     }
 }

@@ -18,7 +18,6 @@ use ipl\Web\Url;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Callout;
-use PDO;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Throwable;
@@ -486,37 +485,6 @@ class CustomVariableForm extends CompatForm
         return Db\DbUtil::normalizeRow($db->fetchRow($query, [], Zend_Db::FETCH_ASSOC) ?: []);
     }
 
-    /**
-     * Update the custom variable values in the database
-     *
-     * @param array $path
-     * @param array $newPath
-     * @param array $item
-     *
-     * @return void
-     */
-    private function updateObjectCustomVars(array $path, array $newPath, array &$item): void
-    {
-        $key = array_shift($path);
-        $newKey = array_shift($newPath);
-
-        if (! array_key_exists($key, $item)) {
-            return;
-        }
-
-        if (empty($path) && empty($newPath) && $key !== $newKey) {
-            $item[$newKey] = $item[$key];
-            unset($item[$key]);
-        } elseif (is_array($item[$key])) {
-            $this->updateObjectCustomVars($path, $newPath, $item[$key]);
-        }
-
-        // Remove empty array items
-        if (isset($item[$key]) && empty($item[$key])) {
-            unset($item[$key]);
-        }
-    }
-
     protected function onSuccess(): void
     {
         $values = $this->getValues();
@@ -878,7 +846,6 @@ class CustomVariableForm extends CompatForm
      */
     private function updateUsedCustomVarNames(string $storedKeyName, mixed $keyName): bool
     {
-        $db = $this->db->getDbAdapter();
         $cleaner = new CustomVariableValueCleaner($this->db);
 
         if (! $this->parentUuid) {
@@ -896,51 +863,8 @@ class CustomVariableForm extends CompatForm
         }
 
         $parent = $this->fetchProperty($this->parentUuid);
-        [$root, $oldPath] = $cleaner->resolveRootProperty(['key_name' => $storedKeyName], $parent);
-        $newPath = array_slice($oldPath, 0, -1);
-        $newPath[] = $keyName;
+        $kept = $cleaner->renameNestedStoredValues(['key_name' => $storedKeyName], $parent, (string) $keyName);
 
-        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
-
-        foreach ($objectTypes as $objectType) {
-            $objectCustomVars = $db->fetchAll(
-                $db->select()
-                   ->from(['ihv' => "icinga_{$objectType}_var"], [])
-                   ->columns([
-                       "{$objectType}_id",
-                       'varname',
-                       'varvalue'
-                   ])
-                   ->where('varname = ?', $root['key_name']),
-                [],
-                PDO::FETCH_ASSOC
-            );
-
-            foreach ($objectCustomVars as $objectCustomVar) {
-                $varValue = json_decode($objectCustomVar['varvalue'], true);
-                if ($root['value_type'] !== 'dynamic-dictionary') {
-                    $this->updateObjectCustomVars($oldPath, $newPath, $varValue);
-                } else {
-                    foreach ($varValue as $key => $value) {
-                        if (is_array($value)) {
-                            $this->updateObjectCustomVars($oldPath, $newPath, $value);
-                        }
-
-                        $varValue[$key] = $value;
-                    }
-                }
-
-                $this->db->update(
-                    "icinga_{$objectType}_var",
-                    ['varvalue' => json_encode($varValue)],
-                    Filter::matchAll(
-                        Filter::where('varname', $root['key_name']),
-                        Filter::where("{$objectType}_id", $objectCustomVar["{$objectType}_id"])
-                    )
-                );
-            }
-        }
-
-        return true;
+        return $kept === 0;
     }
 }

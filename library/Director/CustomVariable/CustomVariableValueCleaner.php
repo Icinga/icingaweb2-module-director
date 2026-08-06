@@ -116,6 +116,55 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Move a value to a new key in a nested array, in place
+     *
+     * Only the last step of the path changes, so old and new walk down together.
+     *
+     * @return void
+     */
+    private function renameDictionaryItem(array &$item, array $oldPath, array $newPath): void
+    {
+        $oldKey = array_shift($oldPath);
+        $newKey = array_shift($newPath);
+
+        if (! array_key_exists($oldKey, $item)) {
+            return;
+        }
+
+        if (empty($oldPath)) {
+            $item[$newKey] = $item[$oldKey];
+            if ($oldKey !== $newKey) {
+                unset($item[$oldKey]);
+            }
+
+            return;
+        }
+
+        if (is_array($item[$oldKey])) {
+            $this->renameDictionaryItem($item[$oldKey], $oldPath, $newPath);
+        }
+    }
+
+    /**
+     * Does the same move for every entry of a dynamic dictionary
+     *
+     * @return void
+     */
+    private function renameDictionaryItemInEveryEntry(
+        array &$dynamicDictionaryValue,
+        array $oldPath,
+        array $newPath
+    ): void {
+        foreach ($dynamicDictionaryValue as $entryKey => $entryValue) {
+            if (! is_array($entryValue)) {
+                continue;
+            }
+
+            $this->renameDictionaryItem($dynamicDictionaryValue[$entryKey], $oldPath, $newPath);
+        }
+    }
+
+    /**
      * Strip $property's value out of every host's, service's, etc. stored custom variables.
      * No-op for a root property (empty $parent), use deleteStoredValues() for that case.
      *
@@ -435,6 +484,65 @@ class CustomVariableValueCleaner
                 ['varname' => $newVarname],
                 Filter::where('varname', $oldVarname)
             );
+        }
+
+        return 0;
+    }
+
+    /**
+     * Rename a nested property's key everywhere it's stored
+     *
+     * Ancestors keep their name, only the last step of the path changes. Still
+     * checked against a legacy Data Field first, since this writes into the
+     * same stored data that field might own.
+     *
+     * @param array  $property property being renamed, needs at least 'key_name' (the old name)
+     * @param array  $parent immediate parent row, used to walk up to the root
+     * @param string $newKeyName the property's new key_name
+     *
+     * @return int Values left alone because of a legacy Data Field, 0 if renamed as usual
+     */
+    public function renameNestedStoredValues(array $property, array $parent, string $newKeyName): int
+    {
+        [$rootProp, $oldPath] = $this->resolveRootProperty($property, $parent);
+
+        if ($this->hasLegacyDatafield($rootProp['key_name'])) {
+            return $this->countStoredValues($rootProp['key_name']);
+        }
+
+        $newPath = $oldPath;
+        $newPath[array_key_last($newPath)] = $newKeyName;
+
+        $db = $this->db->getDbAdapter();
+        $rootType = $rootProp['value_type'];
+
+        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
+            $idColumn = "{$objectType}_id";
+            $varRows = $db->fetchAll(
+                $db->select()
+                   ->from(['iov' => "icinga_{$objectType}_var"], [])
+                   ->columns([$idColumn, 'varname', 'varvalue'])
+                   ->where('varname = ?', $rootProp['key_name']),
+                [],
+                Zend_Db::FETCH_ASSOC
+            );
+
+            $objectClass = DbObjectTypeRegistry::classByType($objectType);
+
+            foreach ($varRows as $varRow) {
+                $varValue = json_decode($varRow['varvalue'] ?? '', true);
+
+                if ($rootType !== 'dynamic-dictionary') {
+                    $this->renameDictionaryItem($varValue, $oldPath, $newPath);
+                } else {
+                    $this->renameDictionaryItemInEveryEntry($varValue, $oldPath, $newPath);
+                }
+
+                $object = $objectClass::loadWithAutoIncId($varRow[$idColumn], $this->db);
+                $vars = $object->vars();
+                $vars->set($varRow['varname'], $varValue);
+                $vars->storeToDb($object);
+            }
         }
 
         return 0;

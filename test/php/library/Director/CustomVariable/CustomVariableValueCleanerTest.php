@@ -21,6 +21,10 @@ class CustomVariableValueCleanerTest extends BaseTestCase
 
     private const SHARED_KEY_NAME = self::PREFIX . 'region';
 
+    private const NESTED_ROOT_KEY_NAME = self::PREFIX . 'mailing_address';
+
+    private const DYNAMIC_ROOT_KEY_NAME = self::PREFIX . 'contacts';
+
     public function testKeepPropertyInPlaceNullsFixedArraySlotWithoutReindexing(): void
     {
         if ($this->skipForMissingDb()) {
@@ -364,6 +368,213 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         );
     }
 
+    public function testRenameNestedStoredValuesMovesJsonKeyWithoutLegacyDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_nested_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.75',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => self::NESTED_ROOT_KEY_NAME,
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Address',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'street',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::NESTED_ROOT_KEY_NAME,
+            'varvalue' => json_encode(['street' => 'Main St', 'zip' => '12345']),
+            'format'   => 'json',
+        ]);
+
+        $keptCount = (new CustomVariableValueCleaner($db))->renameNestedStoredValues(
+            ['key_name' => 'street'],
+            [
+                'key_name'    => self::NESTED_ROOT_KEY_NAME,
+                'uuid'        => $rootUuid->getBytes(),
+                'parent_uuid' => null,
+                'value_type'  => 'fixed-dictionary',
+            ],
+            'road'
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::NESTED_ROOT_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            ['road' => 'Main St', 'zip' => '12345'],
+            json_decode($storedValue, true),
+            'the renamed key must move to its new name inside the stored dictionary'
+        );
+        $this->assertEquals(0, $keptCount, 'nothing was kept, so no values must be reported back');
+    }
+
+    public function testRenameNestedStoredValuesKeepsValueAliveForLegacyDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_nested_shared_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.76',
+        ], $db);
+        $host->store();
+
+        // A legacy Data Field can still own this varname, its values might be the
+        // field's, not this property tree's, so the rename has to leave it alone.
+        DirectorDatafield::create([
+            'varname'  => self::NESTED_ROOT_KEY_NAME,
+            'caption'  => 'Address',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => self::NESTED_ROOT_KEY_NAME,
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Address',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'street',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::NESTED_ROOT_KEY_NAME,
+            'varvalue' => json_encode(['street' => 'Main St']),
+            'format'   => 'json',
+        ]);
+
+        $keptCount = (new CustomVariableValueCleaner($db))->renameNestedStoredValues(
+            ['key_name' => 'street'],
+            [
+                'key_name'    => self::NESTED_ROOT_KEY_NAME,
+                'uuid'        => $rootUuid->getBytes(),
+                'parent_uuid' => null,
+                'value_type'  => 'fixed-dictionary',
+            ],
+            'road'
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::NESTED_ROOT_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            json_encode(['street' => 'Main St']),
+            $storedValue,
+            'a value must stay untouched while a legacy Data Field still claims the root varname'
+        );
+        $this->assertEquals(
+            1,
+            $keptCount,
+            'the number of values kept alive because of the conflict must be reported back'
+        );
+    }
+
+    public function testRenameNestedStoredValuesAppliesToEveryDynamicDictionaryEntry(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_nested_dynamic_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.77',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => self::DYNAMIC_ROOT_KEY_NAME,
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Contacts',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'phone',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::DYNAMIC_ROOT_KEY_NAME,
+            'varvalue' => json_encode([
+                'ops' => ['phone' => '555-0100'],
+                'noc' => ['phone' => '555-0200'],
+            ]),
+            'format'   => 'json',
+        ]);
+
+        $keptCount = (new CustomVariableValueCleaner($db))->renameNestedStoredValues(
+            ['key_name' => 'phone'],
+            [
+                'key_name'    => self::DYNAMIC_ROOT_KEY_NAME,
+                'uuid'        => $rootUuid->getBytes(),
+                'parent_uuid' => null,
+                'value_type'  => 'dynamic-dictionary',
+            ],
+            'mobile'
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::DYNAMIC_ROOT_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            [
+                'noc' => ['mobile' => '555-0200'],
+                'ops' => ['mobile' => '555-0100'],
+            ],
+            json_decode($storedValue, true),
+            'the renamed key must move for every entry of a dynamic dictionary, not just the first'
+        );
+        $this->assertEquals(0, $keptCount, 'nothing was kept, so no values must be reported back');
+    }
+
     public function testWouldDatafieldCollideWithPropertyDetectsExistingRootProperty(): void
     {
         if ($this->skipForMissingDb()) {
@@ -436,20 +647,26 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'no_conflict_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_shared_name_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_no_conflict_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_nested_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_nested_shared_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_nested_dynamic_host']);
 
-            $rows = $dba->fetchAll(
-                $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', self::ROOT_KEY_NAME)
-            );
-            foreach ($rows as $row) {
-                $rootUuid = DbUtil::binaryResult($row->uuid);
-                $dba->delete(
-                    'director_property',
-                    $dba->quoteInto('parent_uuid = ?', DbUtil::quoteBinaryCompat($rootUuid, $dba))
+            foreach ([self::ROOT_KEY_NAME, self::NESTED_ROOT_KEY_NAME, self::DYNAMIC_ROOT_KEY_NAME] as $rootKeyName) {
+                $rows = $dba->fetchAll(
+                    $dba->select()->from('director_property', ['uuid'])->where('key_name = ?', $rootKeyName)
                 );
+                foreach ($rows as $row) {
+                    $rootUuid = DbUtil::binaryResult($row->uuid);
+                    $dba->delete(
+                        'director_property',
+                        $dba->quoteInto('parent_uuid = ?', DbUtil::quoteBinaryCompat($rootUuid, $dba))
+                    );
+                }
+                $dba->delete('director_property', $dba->quoteInto('key_name = ?', $rootKeyName));
             }
-            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::ROOT_KEY_NAME));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SHARED_KEY_NAME));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::SHARED_KEY_NAME));
+            $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::NESTED_ROOT_KEY_NAME));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::PREFIX . 'zone'));
 
             $addressRows = $dba->fetchAll(

@@ -8,6 +8,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Web\Notification;
 
 class RestoreBasketForm extends QuickForm
 {
@@ -68,9 +69,21 @@ class RestoreBasketForm extends QuickForm
      */
     public function onSuccess()
     {
-        $this->snapshot->restoreTo($this->getDb());
+        $keptValuesCount = $this->snapshot->restoreTo($this->getDb());
         $this->setSuccessUrl($this->getSuccessUrl()->with('target_db', $this->getValue('target_db')));
         $this->setSuccessMessage(sprintf('Restored to %s', $this->getValue('target_db')));
+
+        if ($keptValuesCount > 0) {
+            // Schema still got restored, only the stored values themselves couldn't
+            // follow, a Data Field elsewhere still owns them under the same name.
+            Notification::warning(sprintf(
+                $this->translate(
+                    'Kept %d stored value(s) under their old name or type, a Data Field'
+                    . ' with the same name still owns them.'
+                ),
+                $keptValuesCount
+            ));
+        }
 
         parent::onSuccess();
     }

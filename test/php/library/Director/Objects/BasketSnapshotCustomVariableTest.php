@@ -423,6 +423,94 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         $this->assertEquals('0', $byUuid[$yUuid] ?? null, 'Y must have swapped into slot "0"');
     }
 
+    /**
+     * The bug this whole chain of classes exists to fix: restore used to rename
+     * director_property rows without ever touching the JSON already stored for
+     * them, leaving the old key behind in every host's stored value.
+     */
+    public function testRestoreMovesStoredValueWhenANestedPropertyIsRenamed(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+        $property->set('value_type', 'fixed-dictionary');
+        $property->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'mount_point',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $host->vars()->set(self::PROP_KEY_NAME, (object) ['mount_point' => '/data']);
+        $host->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+
+        $decoded = json_decode($json);
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
+            $item->key_name = 'path';
+        }
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restoredHost = IcingaHost::load(self::TEMPLATE_NAME, $db);
+
+        $this->assertEquals(
+            (object) ['path' => '/data'],
+            $restoredHost->vars()->get(self::PROP_KEY_NAME)->getValue(),
+            'the stored value must move to the new key, not stay behind under the old one'
+        );
+    }
+
+    public function testRestoreClearsStoredValueWhenANestedPropertyIsRetyped(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+        $property->set('value_type', 'fixed-dictionary');
+        $property->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'mount_point',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $host->vars()->set(self::PROP_KEY_NAME, (object) ['mount_point' => '/data']);
+        $host->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+
+        // A string value no longer matches once the field becomes a number, so it
+        // has to be cleared, the same way retyping through the UI would clear it.
+        $decoded = json_decode($json);
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
+            $item->value_type = 'number';
+        }
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restoredHost = IcingaHost::load(self::TEMPLATE_NAME, $db);
+
+        $this->assertNull(
+            $restoredHost->vars()->get(self::PROP_KEY_NAME),
+            'a value that no longer matches its retyped field must be cleared, not left stale'
+        );
+    }
+
     public function testRestoreRetypeCanDropAStaleSensitiveChild(): void
     {
         if ($this->skipForMissingDb()) {
