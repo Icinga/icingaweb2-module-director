@@ -181,6 +181,15 @@ class HostgroupRestriction extends ObjectRestriction
             $groups = array();
             foreach ($restrictions as $restriction) {
                 foreach ($this->gracefullySplitOnComma($restriction) as $group) {
+                    if (! $this->db->fetchOne(
+                        $this->db->select()
+                            ->from('icinga_hostgroup', 'id')
+                            ->where('object_name = ?', $group)
+                    ))
+                    {
+                        continue;
+                    }
+
                     $groups[$group] = $group;
                 }
             }
