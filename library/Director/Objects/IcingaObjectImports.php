@@ -363,6 +363,12 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
         $this->setBeingLoadedFromDb();
 
+        // the shared template tree keeps whatever inheritance it saw the
+        // first time something asked for it during this request, so once
+        // we write different rows here it has to forget that and rebuild,
+        // or anything reading ancestors afterwards keeps seeing the old rows
+        IcingaTemplateRepository::clear();
+
         return true;
     }
 
