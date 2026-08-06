@@ -295,7 +295,7 @@ matter what key an end-user later assigns to that entry.
 > `Item Type` and `List name` can no longer be changed. Remove it from
 > all templates first if it needs to change.
 
-### Attaching custom variables to objects and templates
+<a id="Attaching-custom-variables-to-objects-and-templates"></a>### Attaching custom variables to objects and templates
 
 Every object type that supports custom variables (host, service, command,
 user and notification) exposes a `Custom Variables` tab on its object and
@@ -314,6 +314,15 @@ imported templates; it has no `Add Custom Variable` action of its own.
   chain rather than overwritten. The rendered config uses `+=`, so a
   child template or the object itself can add further entries without
   losing the ones defined on parent templates.
+
+Removing an imported template can also remove a value that only got there
+because of it. If an object had overridden a value it inherited from a
+template, and that template is no longer imported (directly or through
+another template), the leftover value is removed too, unless some other
+still-imported template provides the same property. In the UI, removing a
+template that would take a value down with it shows a warning naming the
+affected variables and asks for confirmation before saving; the REST API
+applies the same cleanup without asking.
 
 <a id="Required-custom-variables"></a>### Marking a custom variable as required
 

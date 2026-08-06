@@ -9,6 +9,8 @@ use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
+use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\RestApi\IcingaObjectHandler;
 use Icinga\Module\Director\RestApi\IcingaObjectWriteRequest;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -35,6 +37,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
     private const SERVICE_HOST_B = self::PREFIX . 'web2.example.com';
     private const SHARED_SERVICE_NAME = self::PREFIX . 'ssh';
     private const SSH_PORT_KEY = self::PREFIX . 'ssh_port';
+    private const IMPORT_DROP_LEAF_HOST = self::PREFIX . 'db-server';
 
     public function testObjectChangeAndCustomVarValidationFailureRollBackTogether(): void
     {
@@ -227,6 +230,86 @@ class IcingaObjectHandlerTest extends BaseTestCase
             304,
             $response->getHttpResponseCode(),
             'A vars override that resolves to a true no-op must keep reporting 304 Not Modified'
+        );
+    }
+
+    public function testPutDroppingAnImportRemovesTheValueThatOnlyExistedBecauseOfIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
+            IcingaHost::load(self::TEMPLATE_NAME, $db)->delete();
+        }
+
+        if (IcingaHost::exists(self::IMPORT_DROP_LEAF_HOST, $db)) {
+            IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db)->delete();
+        }
+
+        $template = IcingaHost::create([
+            'object_name' => self::TEMPLATE_NAME,
+            'object_type' => 'template',
+        ]);
+        $template->store($db);
+
+        $regionProperty = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::REGION_KEY,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db);
+        $regionProperty->store();
+
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($regionProperty->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+        ]);
+
+        $leaf = IcingaHost::create([
+            'object_name' => self::IMPORT_DROP_LEAF_HOST,
+            'object_type' => 'object',
+        ]);
+        $leaf->setImports([self::TEMPLATE_NAME]);
+        $leaf->store($db);
+        $leaf = IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $leaf,
+            [self::REGION_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+
+        $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+
+        // a PUT body with no "imports" key replaces the object without any
+        // imports, same as dropping the last one in the UI
+        $writeRequest = new IcingaObjectWriteRequest(
+            $leaf,
+            ['address' => '127.0.0.1'],
+            'host',
+            'index',
+            'PUT',
+            false,
+            [],
+            false,
+            new UrlParams()
+        );
+
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest) {
+            $method->invoke($handler, $writeRequest);
+        });
+
+        $reloaded = IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db);
+        $this->assertNull(
+            $reloaded->vars()->get(self::REGION_KEY),
+            'a value only kept because of the dropped import must not survive a PUT that drops it'
         );
     }
 
@@ -483,6 +566,10 @@ class IcingaObjectHandlerTest extends BaseTestCase
         if ($this->hasDb()) {
             $db = $this->getDb();
             $dba = $db->getDbAdapter();
+
+            if (IcingaHost::exists(self::IMPORT_DROP_LEAF_HOST, $db)) {
+                IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db)->delete();
+            }
 
             if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
                 $host = IcingaHost::load(self::TEMPLATE_NAME, $db);

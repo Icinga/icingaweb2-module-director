@@ -77,6 +77,13 @@ After migration, that value is just accepted and stored, the list itself is
 never extended again. Check any Data List field using that behavior before
 running the migration.
 
+Removing an imported template from an object, whether in the UI or through
+the REST API, can now also remove a custom variable value that only
+existed because of that template. The UI asks for confirmation first; the
+REST API applies this cleanup right away. See [Attaching custom variables
+to objects and templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
+for details.
+
 <a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
 --------------------------------------------------
 

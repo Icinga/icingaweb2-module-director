@@ -6,6 +6,7 @@ use Exception;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -22,6 +23,9 @@ use Icinga\Module\Director\Resolver\TemplateTree;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
+use ipl\Html\Text;
+use ipl\Web\Common\CalloutType;
+use ipl\Web\Widget\Callout;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 use Zend_Validate_Callback;
@@ -54,6 +58,14 @@ abstract class DirectorObjectForm extends DirectorForm
     protected $displayGroups = [];
 
     protected $resolvedImports;
+
+    /** @var string[]|null Cached list of values that would lose their backing property */
+    private $atRiskValueNames;
+
+    /** @var string|null Import list the above cache was computed for */
+    private $atRiskValueNamesImportsKey;
+
+    private $importRemovalWarningRendered = false;
 
     protected $listUrl;
 
@@ -390,19 +402,27 @@ abstract class DirectorObjectForm extends DirectorForm
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
                 try {
-                    if ($key === 'imports' && ! empty($this->choiceElements)) {
-                        if (! is_array($value)) {
-                            $value = [$value];
-                        }
-                        foreach ($this->choiceElements as $element) {
-                            $chosen = $element->getValue();
-                            if (is_string($chosen)) {
-                                $value[] = $chosen;
-                            } elseif (is_array($chosen)) {
-                                foreach ($chosen as $choice) {
-                                    $value[] = $choice;
+                    if ($key === 'imports') {
+                        if (! empty($this->choiceElements)) {
+                            if (! is_array($value)) {
+                                $value = [$value];
+                            }
+                            foreach ($this->choiceElements as $element) {
+                                $chosen = $element->getValue();
+                                if (is_string($chosen)) {
+                                    $value[] = $chosen;
+                                } elseif (is_array($chosen)) {
+                                    foreach ($chosen as $choice) {
+                                        $value[] = $choice;
+                                    }
                                 }
                             }
+                        }
+
+                        // user said no to losing a value, so keep the
+                        // imports as they were and just save everything else
+                        if ($object instanceof IcingaObject && $this->isPendingImportRemovalConfirmation()) {
+                            $value = $object->imports()->listOriginalImportNames();
                         }
                     }
                     $object->set($key, $value);
@@ -520,9 +540,13 @@ abstract class DirectorObjectForm extends DirectorForm
      */
     protected function groupMainProperties($importsFirst = false)
     {
+        // these two only show up when removing an import would drop a saved
+        // value, keep them right under imports so the user notices them
         if ($importsFirst) {
             $elements = [
                 'imports',
+                'confirm_remove_imports',
+                'import_removal_warning',
                 'object_type',
                 'object_name',
             ];
@@ -531,6 +555,8 @@ abstract class DirectorObjectForm extends DirectorForm
                 'object_type',
                 'object_name',
                 'imports',
+                'confirm_remove_imports',
+                'import_removal_warning',
             ];
         }
         $elements = array_merge($elements, [
@@ -668,7 +694,21 @@ abstract class DirectorObjectForm extends DirectorForm
                 : $this->translate('A new %s has successfully been created'),
                 $this->translate($this->getObjectShortClassName())
             );
+
+            // dropping an import can leave a locally saved value with
+            // nothing backing it, so note which imports went away before
+            // saving below overwrites that history
+            $removedImportNames = $this->removedImportNames();
+
             $this->getDbObjectStore()->store($object);
+
+            if (! empty($removedImportNames)) {
+                PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
+                    $object,
+                    $removedImportNames,
+                    $this->getDb()
+                );
+            }
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -828,6 +868,7 @@ abstract class DirectorObjectForm extends DirectorForm
         if ($this->hasBeenSent()) {
             $this->handlePost();
         }
+
         try {
             $this->loadInheritedProperties();
             $this->addFields();
@@ -1332,7 +1373,143 @@ abstract class DirectorObjectForm extends DirectorForm
             ]
         ));
 
+        $this->addImportRemovalWarning();
+
         return $this;
+    }
+
+    /**
+     * Warn and ask for confirmation when removing an import would also
+     * remove a saved value that only existed because of it
+     */
+    protected function addImportRemovalWarning()
+    {
+        if ($this->importRemovalWarningRendered) {
+            return;
+        }
+
+        $atRiskValueNames = $this->valueNamesAtRiskFromCurrentImports();
+        if (empty($atRiskValueNames)) {
+            return;
+        }
+
+        $this->importRemovalWarningRendered = true;
+
+        $confirmKey = 'confirm_remove_imports';
+        if (! $this->getElement($confirmKey)) {
+            $this->addElement('YesNo', $confirmKey, [
+                'label'    => $this->translate('Confirm import removal'),
+                'required' => true,
+            ]);
+            $confirmElement = $this->getElement($confirmKey);
+            $confirmElement->setValue('n');
+            // just a form flag, not something we save on the object
+            $confirmElement->setIgnore(true);
+
+            // this element got added late, after the form already read the
+            // post, so grab its value by hand or it stays stuck on default
+            if ($this->hasBeenSent()) {
+                $post = $this->getRequest()->getPost();
+                if (array_key_exists($confirmKey, $post)) {
+                    $this->populate([$confirmKey => $post[$confirmKey]]);
+                }
+            }
+        }
+
+        if (! $this->isPendingImportRemovalConfirmation()) {
+            return;
+        }
+
+        $this->addHtml(new Callout(
+            CalloutType::Warning,
+            Text::create(sprintf(
+                $this->translate(
+                    'Removing a template can also remove custom variables that this object only'
+                    . ' had because of that template. This affects: %s. Are you sure you want to continue?'
+                ),
+                implode(', ', $atRiskValueNames)
+            ))
+        ), ['name' => 'import_removal_warning']);
+    }
+
+    /**
+     * Own values that would lose their backing if the selected imports
+     * get saved as they are
+     *
+     * Reads imports straight from the post, not from the object, since
+     * this runs before the submission gets applied to the object.
+     *
+     * @return string[]
+     */
+    protected function valueNamesAtRiskFromCurrentImports(): array
+    {
+        if (! $this->object instanceof IcingaObject) {
+            return [];
+        }
+
+        $pendingImportNames = $this->pendingImportNames();
+        $importsKey = implode("\0", $pendingImportNames);
+
+        if ($this->atRiskValueNames !== null && $this->atRiskValueNamesImportsKey === $importsKey) {
+            return $this->atRiskValueNames;
+        }
+
+        $this->atRiskValueNamesImportsKey = $importsKey;
+
+        return $this->atRiskValueNames = PropertyDetachmentCleaner::previewValueNamesAtRiskIfImportsBecome(
+            $this->object,
+            $pendingImportNames
+        );
+    }
+
+    /**
+     * The imports this object would end up with if this submission gets
+     * saved as it is, or its current imports outside of a submission
+     *
+     * @return string[]
+     */
+    protected function pendingImportNames(): array
+    {
+        if ($this->hasBeenSent()) {
+            $post = $this->getRequest()->getPost();
+            if (array_key_exists('imports', $post)) {
+                $imports = $post['imports'];
+                if (! is_array($imports)) {
+                    $imports = [$imports];
+                }
+
+                return array_values(array_filter($imports, 'strlen'));
+            }
+        }
+
+        return $this->object instanceof IcingaObject ? $this->object->getImports() : [];
+    }
+
+    /**
+     * Import names this object had before this request but not anymore
+     *
+     * @return string[]
+     */
+    protected function removedImportNames(): array
+    {
+        if (! $this->object instanceof IcingaObject || ! $this->object->hasBeenLoadedFromDb()) {
+            return [];
+        }
+
+        return array_diff($this->object->imports()->listOriginalImportNames(), $this->object->getImports());
+    }
+
+    /**
+     * Whether a value is about to be lost to a removed import and the
+     * user hasn't confirmed that yet
+     */
+    protected function isPendingImportRemovalConfirmation(): bool
+    {
+        if ($this->getValue('confirm_remove_imports') === 'y') {
+            return false;
+        }
+
+        return ! empty($this->valueNamesAtRiskFromCurrentImports());
     }
 
     protected function addDisabledElement()

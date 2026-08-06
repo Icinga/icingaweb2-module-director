@@ -230,6 +230,13 @@ director/host?name=pe2015.example.com&resolved
 
 JSON is pretty-printed per default, at least for PHP >= 5.4
 
+Dropping a template from `imports` this way can also remove a custom
+variable value, if that value only existed because of the template you
+just dropped. See [Attaching custom variables to objects and
+templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
+for details. Unlike the UI, the API does this without asking for
+confirmation.
+
 <a id="Custom-Variables"></a>Custom Variables
 ---------------------------------------------
 

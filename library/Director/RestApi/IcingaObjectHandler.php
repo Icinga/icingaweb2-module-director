@@ -7,6 +7,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
@@ -280,6 +281,11 @@ class IcingaObjectHandler extends RequestHandler
                     $object->replaceWith(IcingaObject::createByType($type, $data, $db));
                 }
 
+                // dropping an import can leave a locally saved value with
+                // nothing backing it, so note which imports went away before
+                // saving below overwrites that history
+                $removedImportNames = array_diff($object->imports()->listOriginalImportNames(), $object->getImports());
+
                 // Avoid cyclic imports for hosts and commands. The tree we check
                 // against is still built from persisted data, so a cycle only
                 // introduced by this request may not show up until store() resolves
@@ -312,6 +318,10 @@ class IcingaObjectHandler extends RequestHandler
                     }
                 } else {
                     $this->persistChanges($object);
+                }
+
+                if (! empty($removedImportNames)) {
+                    PropertyDetachmentCleaner::removeValuesLostToRemovedImports($object, $removedImportNames, $db);
                 }
             } elseif ($request->allowsOverrides && $type === 'service') {
                 if ($request->method === 'PUT') {
