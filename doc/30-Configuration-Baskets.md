@@ -97,9 +97,10 @@ current configuration.
 
 Snapshots created on a Director version that supports new [Custom Variables](12-Handling-custom-variables.md) (>= 1.12.0)
 include a `CustomVariable` element type. Restoring such a snapshot on an older Director
-version (< 1.12.0) that predates this feature will silently drop the `CustomVariable` data, since older
-versions do not know how to interpret it. This is relevant when using baskets to share or sync
-configuration between Director instances that are not on the same version, for example between
-a master and a satellite/config master. To avoid losing custom variable data, keep Director
-versions aligned across instances that exchange baskets, or upgrade the receiving instance
-before restoring a snapshot from a newer one.
+version (< 1.12.0) that predates this feature is not supported, and will fail for any
+affected object, since older versions do not know how to interpret that data. This is
+relevant when using baskets to share or sync configuration between Director instances
+that are not on the same version, for example between
+a master and a satellite/config master. To avoid a failed restore, keep Director versions
+aligned across instances that exchange baskets, or upgrade the receiving instance before
+restoring a snapshot from a newer one.
