@@ -128,4 +128,41 @@ class CustomVariableDictionaryRenderingTest extends TestCase
             $vars->toConfigString(true)
         );
     }
+
+    public function testApplyForWhitelistPropagatesIntoArrayElements(): void
+    {
+        $vars = new CustomVariables();
+        $vars->setWhiteList(['value']);
+        $vars->allowed_ports = ['$value$', '443'];
+
+        // the whitelist has to reach each array item too, not just the array itself,
+        // or $value$ stays literal instead of becoming the apply-for loop value
+        $expected = $this->indent . 'vars.allowed_ports = [ value, "443" ]' . "\n";
+
+        $this->assertEquals($expected, $vars->toConfigString(true));
+    }
+
+    public function testApplyForWhitelistLegacyConfigAliasPropagatesIntoArrayElements(): void
+    {
+        $vars = new CustomVariables();
+        // 'config' is the pre-rename alias for the apply-for loop value, kept working
+        // for strings saved before the rename (see IcingaService::vars())
+        $vars->setWhiteList(['config' => 'value']);
+        $vars->allowed_ports = ['$config$'];
+
+        $expected = $this->indent . 'vars.allowed_ports = [ value ]' . "\n";
+
+        $this->assertEquals($expected, $vars->toConfigString(true));
+    }
+
+    public function testApplyForWhitelistStripsUnknownMacroInsideArrayElement(): void
+    {
+        $vars = new CustomVariables();
+        $vars->setWhiteList(['value']);
+        $vars->allowed_ports = ['$not_whitelisted$'];
+
+        $expected = $this->indent . 'vars.allowed_ports = [ "$not_whitelisted$" ]' . "\n";
+
+        $this->assertEquals($expected, $vars->toConfigString(true));
+    }
 }

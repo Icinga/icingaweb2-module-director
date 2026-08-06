@@ -78,6 +78,12 @@ class CustomVariableArray extends CustomVariable
 
     public function toConfigString($renderExpressions = false)
     {
+        if ($this->whiteList !== null) {
+            foreach ($this->value as $k => $v) {
+                $this->value[$k] = $v->setWhiteList($this->whiteList);
+            }
+        }
+
         $parts = array();
         foreach ($this->value as $k => $v) {
             $parts[] = $v->toConfigString($renderExpressions);
