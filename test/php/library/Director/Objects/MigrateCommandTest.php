@@ -720,6 +720,16 @@ class MigrateCommandTest extends BaseTestCase
                 ->where('dp.key_name = ?', self::VAR_ENV)
         );
         $this->assertEquals(0, (int) $count, 'a filtered binding must not be migrated by default');
+
+        $propertyCount = $dba->fetchOne(
+            $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])->where('key_name = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(
+            0,
+            (int) $propertyCount,
+            'a datafield with an unmigrated var_filter must not get a director_property row at all,'
+            . ' or a later run with --allow-lossy-filters would find it already there and skip it'
+        );
     }
 
     public function testAllowLossyFiltersMigratesFilteredBinding(): void
@@ -790,6 +800,58 @@ class MigrateCommandTest extends BaseTestCase
         );
     }
 
+    public function testRetainedFilteredDatafieldCanStillBeMigratedOnALaterRun(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        // a default run leaves the filtered binding, and its datafield, untouched
+        $cmd = new TestableMigrateCommand($db, ['--delete']);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $dfCount = $dba->fetchOne(
+            $dba->select()->from('director_datafield', ['cnt' => 'COUNT(*)'])->where('varname = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(1, (int) $dfCount, 'the filtered datafield must survive the default run');
+
+        // a later run with --allow-lossy-filters --delete must be able to finish the job,
+        // this used to get stuck because the first run already created a director_property
+        // row for it, which made prepareCustomProperties() treat it as already migrated
+        $cmd = new TestableMigrateCommand($db, ['--allow-lossy-filters', '--delete']);
+        $cmd->runDatafields();
+
+        $propCount = $dba->fetchOne(
+            $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])->where('key_name = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(
+            1,
+            (int) $propCount,
+            'a later run with --allow-lossy-filters must finally create the property'
+        );
+
+        $dfCountAfter = $dba->fetchOne(
+            $dba->select()->from('director_datafield', ['cnt' => 'COUNT(*)'])->where('varname = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(
+            0,
+            (int) $dfCountAfter,
+            'once actually migrated, the legacy datafield must get deleted too'
+        );
+
+        $bindingCount = $dba->fetchOne(
+            $dba->select()->from(['ihp' => 'icinga_host_property'], ['cnt' => 'COUNT(*)'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = ihp.property_uuid', [])
+                ->where('dp.key_name = ?', self::VAR_ENV)
+        );
+        $this->assertEquals(1, (int) $bindingCount, 'the filtered binding itself must be migrated too');
+    }
+
     public function testDryRunDeleteReportsFilteredBindingAsRetained(): void
     {
         if ($this->skipForMissingDb()) {
@@ -804,16 +866,16 @@ class MigrateCommandTest extends BaseTestCase
         $output = $cmd->runDatafields();
 
         $this->assertStringContainsString(
-            'would be migrated but kept',
+            'would be left untouched',
             $output,
-            '--dry-run --delete must report a filtered binding as retained, not deletable'
+            '--dry-run --delete must report a filtered binding as left untouched, not deletable'
         );
 
         $deletedSection = strstr($output, 'would be migrated and deleted:');
-        $retainedSection = strstr($output, 'would be migrated but kept');
+        $retainedSection = strstr($output, 'would be left untouched');
         $this->assertNotFalse($deletedSection);
         $this->assertNotFalse($retainedSection);
-        $deletedSection = substr($deletedSection, 0, strpos($deletedSection, 'would be migrated but kept'));
+        $deletedSection = substr($deletedSection, 0, strpos($deletedSection, 'would be left untouched'));
 
         // match the trailing " \n" too, VAR_ENV is a substring of VAR_ENV_CHOICES and co
         $this->assertStringNotContainsString(
@@ -824,7 +886,7 @@ class MigrateCommandTest extends BaseTestCase
         $this->assertStringContainsString(
             self::VAR_ENV . " \n",
             $retainedSection,
-            '--dry-run --delete must list the filtered datafield among the ones it would keep'
+            '--dry-run --delete must list the filtered datafield among the ones it would leave untouched'
         );
         $this->assertStringContainsString(
             self::VAR_CHECK_INTERVAL . " \n",

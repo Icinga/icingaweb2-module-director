@@ -143,18 +143,17 @@ class MigrateCommand extends Command
 
         $totalSkipped = $totalDatafields - $totalMigrated;
         if ($delete) {
-            $deletedDataFields = array_diff_key($migratedDataFields, $retainedDataFields);
             if ($dryRun) {
                 echo "The following datafields would be migrated and deleted:\n";
                 if ($this->isVerbose) {
-                    foreach ($deletedDataFields as $dataField) {
+                    foreach ($migratedDataFields as $dataField) {
                         echo "$dataField \n";
                     }
                 }
 
                 if (! empty($retainedDataFields)) {
-                    echo "The following datafields would be migrated but kept, as one or more of their bindings"
-                        . " have a var_filter that was not migrated:\n";
+                    echo "The following datafields would be left untouched, as one or more of their bindings"
+                        . " has a var_filter that needs --allow-lossy-filters to migrate:\n";
                     if ($this->isVerbose) {
                         foreach ($retainedDataFields as $dataField) {
                             echo "$dataField \n";
@@ -164,14 +163,14 @@ class MigrateCommand extends Command
             } else {
                 echo "The following datafields have been migrated and deleted:\n";
                 if ($this->isVerbose) {
-                    foreach ($deletedDataFields as $dataField) {
+                    foreach ($migratedDataFields as $dataField) {
                         echo "$dataField \n";
                     }
                 }
 
                 if (! empty($retainedDataFields)) {
-                    echo "The following datafields were migrated but kept, as one or more of their bindings"
-                        . " have a var_filter that was not migrated:\n";
+                    echo "The following datafields were left untouched, as one or more of their bindings"
+                        . " has a var_filter that needs --allow-lossy-filters to migrate:\n";
                     if ($this->isVerbose) {
                         foreach ($retainedDataFields as $dataField) {
                             echo "$dataField \n";
@@ -301,9 +300,11 @@ class MigrateCommand extends Command
      * Migrate given prepared custom properties
      *
      * With $delete, legacy bindings and definitions are removed in the same transaction as
-     * the migration, so a failure on either side rolls back both. A datafield with a filtered
-     * binding that was left untouched is kept out of that deletion. Old values also get
-     * stamped with the new property's UUID, unless a filtered binding was left in place.
+     * the migration, so a failure on either side rolls back both. A datafield with a binding
+     * that has a var_filter we're not allowed to drop is left completely untouched, no property
+     * gets created for it either, or a later run with --allow-lossy-filters would find that
+     * property already there and skip the datafield for good. Old values also get stamped with
+     * the new property's UUID, unless the datafield was left untouched this way.
      *
      * @param array $customProperties
      * @param bool  $allowLossyFilters Migrate a filtered binding anyway, dropping the var_filter
@@ -311,7 +312,8 @@ class MigrateCommand extends Command
      * @return array{0: array, 1: array} [$migratedDataFields, $retainedDataFields], both as
      *         ['id' => 'datafield_name']. Filled on a dry run too, since the var_filter
      *         classification runs either way, only the actual writes are skipped.
-     *         $retainedDataFields is the part of $migratedDataFields that must not be deleted.
+     *         $retainedDataFields never overlaps with $migratedDataFields, it's the datafields
+     *         left untouched because of a filter we can't drop.
      */
     private function migrateDatafields(
         array $customProperties,
@@ -345,6 +347,14 @@ class MigrateCommand extends Command
                     continue;
                 }
 
+                $datafieldId = $customProperty['datafield_id'];
+
+                if ($this->hasUnmigratableFilterBinding($datafieldId, $varName, $allowLossyFilters)) {
+                    $retainedDataFields[$datafieldId] = $varName;
+
+                    continue;
+                }
+
                 $itemType = null;
                 if (isset($customProperty['item_type'])) {
                     $itemType = $customProperty['item_type'];
@@ -357,7 +367,6 @@ class MigrateCommand extends Command
                     unset($customProperty['datalist_uuid']);
                 }
 
-                $datafieldId = $customProperty['datafield_id'];
                 $uuidBytes = $customProperty['uuid'];
                 $propertyUuid = Uuid::fromBytes($uuidBytes);
                 $migratedDataFields[$datafieldId] = $varName;
@@ -385,7 +394,7 @@ class MigrateCommand extends Command
                     }
                 }
 
-                $hasRetainedBinding = $this->migrateDatafieldObjectTemplateBinding(
+                $this->migrateDatafieldObjectTemplateBinding(
                     $datafieldId,
                     $dryRun ? null : $propertyUuid,
                     $varName,
@@ -393,9 +402,7 @@ class MigrateCommand extends Command
                     $dryRun
                 );
 
-                if ($hasRetainedBinding) {
-                    $retainedDataFields[$datafieldId] = $varName;
-                } elseif (! $dryRun) {
+                if (! $dryRun) {
                     // old values had no UUID, stamp them now or detach won't find them later
                     $cleaner->backfillPropertyUuid($varName, $propertyUuid);
                 }
@@ -415,11 +422,9 @@ class MigrateCommand extends Command
         }
 
         if ($delete) {
-            $db->runFailSafeTransaction(function () use ($migrate, &$migratedDataFields, &$retainedDataFields) {
+            $db->runFailSafeTransaction(function () use ($migrate, &$migratedDataFields) {
                 $migrate();
-                $this->deleteMigratedDataFields(
-                    array_diff_key($migratedDataFields, $retainedDataFields)
-                );
+                $this->deleteMigratedDataFields($migratedDataFields);
             });
         } else {
             $db->runFailSafeTransaction($migrate);
@@ -634,22 +639,57 @@ class MigrateCommand extends Command
     }
 
     /**
-     * Migrate the binding of the datafield-to-object bindings
+     * Check if any of this datafield's bindings has a var_filter we can't drop
      *
      * The new property system has no var_filter equivalent, so migrating a filtered binding
-     * would turn a conditional requirement into an unconditional one. Skip it unless
-     * $allowLossyFilters is set.
+     * would turn a conditional requirement into an unconditional one. Runs regardless of
+     * $dryRun, a preview needs to report the same retained set a real run would produce.
      *
-     * Runs the var_filter classification regardless of $dryRun, so a preview reports the same
-     * retained/deleted split a real run would produce. Only the actual attachment insert is
-     * skipped on a dry run.
+     * This is a read only check, done before touching the database, so a datafield we end up
+     * leaving alone never gets a director_property row in the first place. Otherwise a later
+     * run with --allow-lossy-filters would find that property already there and skip the
+     * datafield for good, without ever migrating its filtered binding.
+     */
+    private function hasUnmigratableFilterBinding(int $datafieldId, string $varName, bool $allowLossyFilters): bool
+    {
+        if ($allowLossyFilters) {
+            return false;
+        }
+
+        $dbAdapter = $this->db()->getDbAdapter();
+        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
+        foreach ($objectTypes as $type) {
+            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], [])
+                ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['var_filter'])
+                ->where('iof.datafield_id = ?', $datafieldId);
+
+            foreach ($dbAdapter->fetchCol($query) as $varFilter) {
+                if (! empty($varFilter)) {
+                    echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
+                        . "var_filter is not supported by the new property system, so it will not be"
+                        . " migrated or deleted\n";
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Migrate the binding of the datafield-to-object bindings
+     *
+     * Only called once we already know none of this datafield's bindings has a var_filter
+     * we're not allowed to drop, see hasUnmigratableFilterBinding(). $allowLossyFilters is only
+     * used here to decide whether to warn about a filter getting dropped along the way.
      *
      * @param int                $datafieldId
      * @param UuidInterface|null $propertyUuid Unused, and may be null, when $dryRun is true
      * @param bool               $allowLossyFilters
      * @param bool               $dryRun
      *
-     * @return bool Whether at least one binding was left untouched because of its var_filter
+     * @return void
      */
     private function migrateDatafieldObjectTemplateBinding(
         int $datafieldId,
@@ -657,28 +697,18 @@ class MigrateCommand extends Command
         string $varName,
         bool $allowLossyFilters,
         bool $dryRun
-    ): bool {
+    ): void {
         $db = $this->db();
         $dbAdapter = $db->getDbAdapter();
         $propertyUuidExpr = $dryRun ? null : DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter);
         $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
-        $hasRetainedBinding = false;
         foreach ($objectTypes as $type) {
             $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid'])
                 ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['is_required', 'var_filter'])
                 ->where('iof.datafield_id = ?', $datafieldId);
 
             foreach ($dbAdapter->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
-                if (! empty($row['var_filter'])) {
-                    if (! $allowLossyFilters) {
-                        echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
-                            . "var_filter is not supported by the new property system, so this binding"
-                            . " and its datafield will not be migrated or deleted\n";
-                        $hasRetainedBinding = true;
-
-                        continue;
-                    }
-
+                if (! empty($row['var_filter']) && $allowLossyFilters) {
                     echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
                         . "var_filter is not supported by the new property system, so it will be dropped"
                         . " and the binding will be migrated without it\n";
@@ -701,8 +731,6 @@ class MigrateCommand extends Command
                 );
             }
         }
-
-        return $hasRetainedBinding;
     }
 
     /**
