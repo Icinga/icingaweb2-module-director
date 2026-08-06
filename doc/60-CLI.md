@@ -323,6 +323,7 @@ type:
 
 | Type                  | Description                                     |
 |-----------------------|-------------------------------------------------|
+| `customproperties`    | Export all Custom Property definitions          |
 | `datafields`          | Export all DataField definitions                |
 | `datalists`           | Export all DataList definitions                 |
 | `hosttemplatechoices` | Export all IcingaTemplateChoiceHost definitions |

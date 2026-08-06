@@ -68,10 +68,11 @@ A request that used to send the wrong shape and get away with it will now be
 rejected, check any script or integration relying on that endpoint if you use
 `Data List` properties.
 
-If you use `director datafield migrate` to move legacy Data Fields onto the
-new Custom Property system, note that a Data List field with the old
-`Suggest, extend list` behavior migrates to a plain `Data List Non Strict`
-property. Before, submitting a new value added it to the list for next time.
+If you use `icingacli director migrate datafields` to move legacy Data
+Fields onto the new Custom Property system, note that a Data List field
+with the old `Suggest, extend list` behavior migrates to a plain
+`Data List Non Strict` property. Before, submitting a new value added it
+to the list for next time.
 After migration, that value is just accepted and stored, the list itself is
 never extended again. Check any Data List field using that behavior before
 running the migration.
