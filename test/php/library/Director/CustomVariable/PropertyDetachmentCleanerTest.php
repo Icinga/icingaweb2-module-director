@@ -6,6 +6,7 @@ use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
 use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -19,6 +20,9 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
     private const MID_TEMPLATE_NAME = self::PREFIX . 'import-cleanup-datacenter';
     private const LEAF_HOST_NAME = self::PREFIX . 'import-cleanup-webserver';
     private const REGION_KEY = self::PREFIX . 'import_cleanup_region';
+    private const SERVICE_TEMPLATE_ONE_NAME = self::PREFIX . 'import-cleanup-svc-network';
+    private const SERVICE_TEMPLATE_TWO_NAME = self::PREFIX . 'import-cleanup-svc-storage';
+    private const SERVICE_LEAF_NAME = self::PREFIX . 'import-cleanup-svc-leaf';
 
     public function testValueSurvivesWhenAnotherRemainingImportStillProvidesTheProperty(): void
     {
@@ -56,6 +60,50 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
             'eu-west',
             $leaf->vars()->get(self::REGION_KEY)->getValue(),
             'a property still reachable through the other remaining import must keep its local value'
+        );
+    }
+
+    /**
+     * IcingaService uses a composite key, so looking up an import by name goes
+     * through a different branch than the plain single-key IcingaHost case
+     * every other test here uses.
+     */
+    public function testCompositeKeyServiceTemplateSurvivesViaOtherImport(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateOne = $this->createServiceTemplate(self::SERVICE_TEMPLATE_ONE_NAME, $db);
+        $templateTwo = $this->createServiceTemplate(self::SERVICE_TEMPLATE_TWO_NAME, $db);
+        $this->attachServiceProperty($property, $templateOne, $db);
+        $this->attachServiceProperty($property, $templateTwo, $db);
+
+        $leaf = $this->createServiceTemplate(self::SERVICE_LEAF_NAME, $db);
+        $leaf->setImports([self::SERVICE_TEMPLATE_ONE_NAME, self::SERVICE_TEMPLATE_TWO_NAME]);
+        $leaf->store($db);
+        $leaf = $this->loadServiceTemplate(self::SERVICE_LEAF_NAME, $db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $leaf,
+            [self::REGION_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+
+        $leaf->setImports([self::SERVICE_TEMPLATE_TWO_NAME]);
+        $leaf->store($db);
+
+        PropertyDetachmentCleaner::removeValuesLostToRemovedImports($leaf, [self::SERVICE_TEMPLATE_ONE_NAME], $db);
+
+        $leaf = $this->loadServiceTemplate(self::SERVICE_LEAF_NAME, $db);
+        $this->assertEquals(
+            'eu-west',
+            $leaf->vars()->get(self::REGION_KEY)->getValue(),
+            'a service template must keep a value still reachable through another imported template'
         );
     }
 
@@ -444,6 +492,41 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         );
     }
 
+    private function createServiceTemplate(string $name, $db): IcingaService
+    {
+        if ($this->serviceTemplateExists($name, $db)) {
+            $this->loadServiceTemplate($name, $db)->delete();
+        }
+
+        $service = IcingaService::create([
+            'object_name' => $name,
+            'object_type' => 'template',
+        ]);
+        $service->store($db);
+
+        return $service;
+    }
+
+    private function loadServiceTemplate(string $name, $db): IcingaService
+    {
+        return IcingaService::load(['object_name' => $name, 'object_type' => 'template'], $db);
+    }
+
+    private function serviceTemplateExists(string $name, $db): bool
+    {
+        return IcingaService::exists(['object_name' => $name, 'object_type' => 'template'], $db);
+    }
+
+    private function attachServiceProperty(DirectorProperty $property, IcingaService $template, $db): void
+    {
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_service_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'service_uuid'  => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -470,6 +553,27 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
                         )
                     );
                     $host->delete();
+                }
+            }
+
+            // leaf imports both, so it has to go first
+            $serviceNames = [
+                self::SERVICE_LEAF_NAME,
+                self::SERVICE_TEMPLATE_ONE_NAME,
+                self::SERVICE_TEMPLATE_TWO_NAME,
+            ];
+
+            foreach ($serviceNames as $serviceName) {
+                if ($this->serviceTemplateExists($serviceName, $db)) {
+                    $service = $this->loadServiceTemplate($serviceName, $db);
+                    $dba->delete(
+                        'icinga_service_property',
+                        $dba->quoteInto(
+                            'service_uuid = ?',
+                            DbUtil::quoteBinaryCompat(DbUtil::binaryResult($service->get('uuid')), $dba)
+                        )
+                    );
+                    $service->delete();
                 }
             }
 
