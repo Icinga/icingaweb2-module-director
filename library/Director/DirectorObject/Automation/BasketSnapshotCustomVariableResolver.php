@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
@@ -171,11 +172,17 @@ class BasketSnapshotCustomVariableResolver
                 fn($uuid) => Uuid::fromString($uuid)->getBytes(),
                 array_keys($existingCustomProperties)
             );
+            $quotedExistingCustomPropertyUuids = DbUtil::quoteBinaryCompat($existingCustomPropertyUuids, $db);
+
+            // a value left over from one of these can still belong to a host that
+            // never got restored, dropping the attachment alone would strand it
+            PropertyDetachmentCleaner::removeStaleValues($new, $quotedExistingCustomPropertyUuids, $this->targetDb);
+
             $db->delete(
                 $table,
                 $db->quoteInto(
                     "$objectKey = $objectUuid AND property_uuid IN (?)",
-                    DbUtil::quoteBinaryCompat($existingCustomPropertyUuids, $db)
+                    $quotedExistingCustomPropertyUuids
                 )
             );
         }

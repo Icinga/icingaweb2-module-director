@@ -12,6 +12,8 @@ use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotCustomVariabl
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
+use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
 use LogicException;
 use Ramsey\Uuid\Uuid;
@@ -31,6 +33,11 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
     private const DIFF_LIST_NAME = self::PREFIX . 'diff_only_disk_list';
     private const MOUNT_POINTS_PROD_LIST = self::PREFIX . 'mount_points_prod';
     private const MOUNT_POINTS_STAGING_LIST = self::PREFIX . 'mount_points_staging';
+
+    private const ORPHAN_TEMPLATE_NAME = self::PREFIX . 'basket-orphan-template';
+    private const ORPHAN_TEMPLATE_ALT_NAME = self::PREFIX . 'basket-orphan-template-alt';
+    private const ORPHAN_LEAF_NAME = self::PREFIX . 'basket-orphan-leaf';
+    private const ORPHAN_PROP_KEY = self::PREFIX . 'basket_orphan_region';
 
     public function testSnapshotIncludesCustomVariableSection(): void
     {
@@ -154,6 +161,64 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
             'y',
             $required,
             'An existing attachment must have its required flag updated on restore, not left stale'
+        );
+    }
+
+    /**
+     * A host that imports a template can save its own value for a property the template
+     * provides. Restoring a snapshot of that template which no longer lists the property
+     * must clean that value up too, not just the template's own attachment row.
+     */
+    public function testRestoreOrphansDescendantValueWhenSnapshotDropsAttachment(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$template, $property] = $this->createOrphanTemplateWithProperty($db);
+        $leaf = $this->createOrphanLeaf([self::ORPHAN_TEMPLATE_NAME], $db);
+        $this->applyOrphanLeafValue($leaf, $db);
+
+        $json = $this->buildOrphanSnapshotDroppingAttachment($template, $property, $db);
+
+        BasketSnapshot::restoreJson($json, $db);
+
+        $leaf = IcingaHost::load(self::ORPHAN_LEAF_NAME, $db);
+        $this->assertNull(
+            $leaf->vars()->get(self::ORPHAN_PROP_KEY),
+            'a descendant value must not survive once the restored template drops the property'
+        );
+    }
+
+    /**
+     * Same restore as above, but the host also imports a second template that keeps the
+     * property attached. That template is untouched by this basket, so the host can still
+     * reach the property through it, and its saved value must survive.
+     */
+    public function testRestoreKeepsDescendantValueWhenAnotherTemplateStillProvidesIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$template, $property] = $this->createOrphanTemplateWithProperty($db);
+        $altTemplate = $this->createOrphanTemplate(self::ORPHAN_TEMPLATE_ALT_NAME, $db);
+        $this->attachOrphanProperty($property, $altTemplate, $db);
+
+        $leaf = $this->createOrphanLeaf([self::ORPHAN_TEMPLATE_NAME, self::ORPHAN_TEMPLATE_ALT_NAME], $db);
+        $this->applyOrphanLeafValue($leaf, $db);
+
+        $json = $this->buildOrphanSnapshotDroppingAttachment($template, $property, $db);
+
+        BasketSnapshot::restoreJson($json, $db);
+
+        $leaf = IcingaHost::load(self::ORPHAN_LEAF_NAME, $db);
+        $this->assertEquals(
+            'eu-west',
+            $leaf->vars()->get(self::ORPHAN_PROP_KEY)->getValue(),
+            'a value still reachable through another template must survive the restore'
         );
     }
 
@@ -829,6 +894,29 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
             $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::DIFF_LIST_NAME));
             $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::MOUNT_POINTS_PROD_LIST));
             $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::MOUNT_POINTS_STAGING_LIST));
+
+            // leaf imports both templates, so it has to go first
+            $orphanHostNames = [
+                self::ORPHAN_LEAF_NAME,
+                self::ORPHAN_TEMPLATE_NAME,
+                self::ORPHAN_TEMPLATE_ALT_NAME,
+            ];
+
+            foreach ($orphanHostNames as $hostName) {
+                if (IcingaHost::exists($hostName, $db)) {
+                    $host = IcingaHost::load($hostName, $db);
+                    $dba->delete(
+                        'icinga_host_property',
+                        $dba->quoteInto(
+                            'host_uuid = ?',
+                            DbUtil::quoteBinaryCompat(DbUtil::binaryResult($host->get('uuid')), $dba)
+                        )
+                    );
+                    $host->delete();
+                }
+            }
+
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::ORPHAN_PROP_KEY));
         }
 
         parent::tearDown();
@@ -900,5 +988,108 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         $dba->delete('director_property', $dba->quoteInto('uuid = ?', $quotedPropUuid));
 
         IcingaHost::load(self::TEMPLATE_NAME, $db)->delete();
+    }
+
+    /**
+     * @return array{IcingaHost, DirectorProperty}
+     */
+    private function createOrphanTemplateWithProperty($db): array
+    {
+        $dba = $db->getDbAdapter();
+        $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::ORPHAN_PROP_KEY));
+
+        $template = $this->createOrphanTemplate(self::ORPHAN_TEMPLATE_NAME, $db);
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::ORPHAN_PROP_KEY,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db);
+        $property->store();
+
+        $this->attachOrphanProperty($property, $template, $db);
+
+        return [$template, $property];
+    }
+
+    private function createOrphanTemplate(string $name, $db): IcingaHost
+    {
+        if (IcingaHost::exists($name, $db)) {
+            IcingaHost::load($name, $db)->delete();
+        }
+
+        $template = IcingaHost::create([
+            'object_name' => $name,
+            'object_type' => 'template',
+        ]);
+        $template->store($db);
+
+        return $template;
+    }
+
+    private function attachOrphanProperty(DirectorProperty $property, IcingaHost $template, $db): void
+    {
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+    }
+
+    /**
+     * @param string[] $importNames
+     */
+    private function createOrphanLeaf(array $importNames, $db): IcingaHost
+    {
+        if (IcingaHost::exists(self::ORPHAN_LEAF_NAME, $db)) {
+            IcingaHost::load(self::ORPHAN_LEAF_NAME, $db)->delete();
+        }
+
+        $leaf = IcingaHost::create([
+            'object_name' => self::ORPHAN_LEAF_NAME,
+            'object_type' => 'object',
+        ]);
+        $leaf->store($db);
+        $leaf->setImports($importNames);
+        $leaf->store($db);
+
+        return IcingaHost::load(self::ORPHAN_LEAF_NAME, $db);
+    }
+
+    private function applyOrphanLeafValue(IcingaHost $leaf, $db): void
+    {
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $leaf,
+            [self::ORPHAN_PROP_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+    }
+
+    /**
+     * A snapshot of $template with its own property attachment removed from the exported
+     * customVariables list, as if the property had already been detached before the
+     * snapshot was taken.
+     */
+    private function buildOrphanSnapshotDroppingAttachment(
+        IcingaHost $template,
+        DirectorProperty $property,
+        $db
+    ): string {
+        $exporter = new Exporter($db);
+        $exportedTemplate = $exporter->export($template);
+        $propertyUuid = Uuid::fromBytes($property->get('uuid'))->toString();
+
+        $exportedTemplate->customVariables = array_values(array_filter(
+            (array) ($exportedTemplate->customVariables ?? []),
+            fn($customVariable) => $customVariable->property_uuid !== $propertyUuid
+        ));
+
+        return json_encode([
+            'HostTemplate' => [self::ORPHAN_TEMPLATE_NAME => $exportedTemplate],
+        ]);
     }
 }
