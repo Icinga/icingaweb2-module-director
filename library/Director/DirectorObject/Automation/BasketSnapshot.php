@@ -278,6 +278,9 @@ class BasketSnapshot extends DbObject
     /**
      * @return int values kept under the old name or type, a Data Field owns
      *             them, 0 if none
+     *
+     * TODO: Int return only exists for the legacy Data Field conflict count.
+     *       Make this void once Data Fields are dropped.
      */
     public static function restoreJson($string, Db $connection): int
     {
@@ -287,6 +290,9 @@ class BasketSnapshot extends DbObject
     /**
      * @return int values kept under the old name or type, a Data Field owns
      *             them, 0 if none
+     *
+     * TODO: Int return only exists for the legacy Data Field conflict count.
+     *       Make this void once Data Fields are dropped.
      *
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
