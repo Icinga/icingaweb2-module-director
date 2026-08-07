@@ -859,6 +859,77 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testResolvingADescendantDoesNotContaminateAnAncestorsInheritedCache(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___tpl-a',
+            'object_type' => 'template',
+            'vars'        => [
+                '___TEST___tags_dyn' => (object) ['from_a' => (object) ['value' => 'a']],
+            ],
+        ], $db);
+        $templateA->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'value_type' => 'dynamic-dictionary',
+            'key_name'   => '___TEST___tags_dyn',
+            'label'      => 'Tags',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba),
+        ]);
+
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___tpl-b',
+            'object_type' => 'template',
+            'vars'        => [
+                '___TEST___tags_dyn' => (object) ['from_b' => (object) ['value' => 'b']],
+            ],
+        ], $db);
+        $templateB->imports = '___TEST___tpl-a';
+        $templateB->store();
+
+        $child = IcingaHost::create([
+            'object_name' => '___TEST___tpl-c',
+            'object_type' => 'object',
+            'address'     => '10.0.1.1',
+        ], $db);
+        $child->imports = '___TEST___tpl-b';
+        $child->store();
+
+        $child = IcingaHost::load('___TEST___tpl-c', $db);
+
+        // Grab the same B instance the child's resolve() will reuse, and prime its
+        // own inherited cache before touching the child at all.
+        $sharedB = IcingaTemplateRepository::instanceByObject($child)
+            ->getTemplatesIndexedByNameFor($child, true)['___TEST___tpl-b'];
+
+        $primedInherited = $sharedB->getInheritedVars();
+        $this->assertFalse(
+            property_exists($primedInherited->___TEST___tags_dyn, 'from_b'),
+            'sanity check, B must not inherit its own direct entry'
+        );
+
+        $child->getResolvedVars();
+
+        $stillInherited = $sharedB->getInheritedVars();
+        $this->assertFalse(
+            property_exists($stillInherited->___TEST___tags_dyn, 'from_b'),
+            'resolving a descendant must not leak the descendant chain into B\'s own inherited cache'
+        );
+    }
+
     protected function loadRendered($name)
     {
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
@@ -876,6 +947,9 @@ class IcingaHostTest extends BaseTestCase
                 '___TEST___b',
                 '___TEST___db-server-01',
                 '___TEST___linux-server',
+                '___TEST___tpl-c',
+                '___TEST___tpl-b',
+                '___TEST___tpl-a',
             );
             foreach ($kill as $name) {
                 if (IcingaHost::exists($name, $db)) {
@@ -901,6 +975,10 @@ class IcingaHostTest extends BaseTestCase
                 $dba->delete('director_property', $dba->quoteInto('parent_uuid = ?', $row->uuid));
             }
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', '___TEST___disk_checks_dyn'));
+
+            foreach (['___TEST___disk_checks_origin', '___TEST___tags_dyn'] as $keyName) {
+                $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
+            }
         }
 
         IcingaTemplateRepository::clear();

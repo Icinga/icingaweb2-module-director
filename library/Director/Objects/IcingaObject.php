@@ -1344,10 +1344,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 }
 
                 // $vals[$name]->$key = $value;
-                $vals['_MERGED_']->$key = $value;
                 if (is_object($value)) {
+                    // Clone for both, $value is $object's own cached _INHERITED_ entry.
+                    // Merging a later dynamic-dictionary entry straight into _MERGED_
+                    // would otherwise mutate that cache too.
+                    $vals['_MERGED_']->$key = clone $value;
                     $vals['_INHERITED_']->$key = clone $value;
                 } else {
+                    $vals['_MERGED_']->$key = $value;
                     $vals['_INHERITED_']->$key = $value;
                 }
 
