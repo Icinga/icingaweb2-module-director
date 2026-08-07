@@ -5,24 +5,23 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 
 /**
  * Works out what a property tree's pending changes mean for its stored values,
  * before anything gets written
  *
- * Only looks at nested properties (anything with a parent). A root property's
- * own rename or delete already goes through its own varname-level checks
- * elsewhere, this class only has to worry about what sits underneath it.
+ * Builds one migration plan per root, covering the root's own rename/retype and
+ * everything nested beneath it. A plan is applied in a single pass per stored
+ * value, so a swap, a rotation, or a rename chain reads only the original value,
+ * nobody's move can overwrite a sibling's or get lost chasing a path that already
+ * moved. See PropertyValueRebuilder.
  *
- * A single blocked check covers the whole tree. Every stored value under a
- * root sits in the same JSON blob, so if a legacy Data Field owns that blob,
- * it owns all of it, not just the one nested field that happened to change.
- *
- * Doesn't care what order siblings come out in, moving a stored value only
- * ever touches its own spot in the blob, never a sibling's, so nothing here
- * needs to reason about swaps or cycles. That's a director_property write
- * order problem, not a stored value one.
+ * A legacy Data Field collision blocks the whole plan, not just one change. Every
+ * stored value under a root sits in the same JSON blob, so if a Data Field owns
+ * that blob, it owns all of it. Blocked changes get undone here too, so a schema
+ * row can never end up pointing at data that never actually moved.
  */
 class PropertySchemaDiff
 {
@@ -34,42 +33,80 @@ class PropertySchemaDiff
     }
 
     /**
-     * Work out what changed under a property tree since it was loaded
+     * Work out what changed under a property tree since it was loaded, root included
      *
      * @param DirectorProperty $root the root property to diff
      *
-     * @return PropertyChange[]
+     * @return PropertyValueMigration
      */
-    public function diff(DirectorProperty $root): array
+    public function diff(DirectorProperty $root): PropertyValueMigration
     {
         if (! $root->hasBeenLoadedFromDb()) {
             // nothing existed before this restore, so nothing can be stored
             // under it yet either
-            return [];
+            return PropertyValueMigration::nothingStoredYet();
         }
 
-        $blocked = $this->cleaner->wouldDeleteCollideWithLegacyDatafield(
-            $root->getOriginalProperty('key_name')
+        $oldVarname = $root->getOriginalProperty('key_name');
+        $newVarname = $root->get('key_name');
+        $oldRootType = $root->getOriginalProperty('value_type');
+        $newRootType = $root->get('value_type');
+        $renamed = $oldVarname !== $newVarname;
+        $retyped = $oldRootType !== $newRootType;
+
+        $blocked = $renamed
+            ? $this->cleaner->wouldRenameCollideWithLegacyDatafield($oldVarname, $newVarname)
+            : $this->cleaner->wouldDeleteCollideWithLegacyDatafield($oldVarname);
+
+        if ($blocked) {
+            if ($renamed) {
+                $root->set('key_name', $oldVarname);
+            }
+
+            if ($retyped) {
+                $root->set('value_type', $oldRootType);
+            }
+
+            $this->revertSubtree($root);
+
+            return new PropertyValueMigration($oldVarname, $oldVarname, $oldRootType, false, true, [], []);
+        }
+
+        if ($retyped) {
+            // The old value no longer matches the new schema, same as a delete would.
+            // Whatever changed underneath doesn't matter anymore, it's all going away.
+            return new PropertyValueMigration($oldVarname, $newVarname, $oldRootType, true, false, [], []);
+        }
+
+        $fixedArrayReindexes = [];
+        $children = $this->collectChanges($root, $fixedArrayReindexes);
+
+        return new PropertyValueMigration(
+            $oldVarname,
+            $newVarname,
+            $oldRootType,
+            false,
+            false,
+            $children,
+            $fixedArrayReindexes
         );
-
-        $changes = [];
-        $this->collectChanges($root, $blocked, $changes);
-
-        return $changes;
     }
 
     /**
-     * Walk a property's children and collect what changed under each of them
+     * Walk a property's children and build a change entry for each one that moved,
+     * cleared, or disappeared
      *
      * @param DirectorProperty $parent the property whose children to check
-     * @param bool $blocked whether a legacy Data Field blocks stored value cleanup
-     * @param PropertyChange[] $changes changes found so far, added to by reference
+     * @param string[] $fixedArrayReindexes raw binary parent uuids needing a reindex,
+     *                                       keyed by hex so the same parent is never
+     *                                       queued twice, added to by reference
      *
-     * @return void
+     * @return PropertyValueChange[] keyed by each child's old key_name
      */
-    private function collectChanges(DirectorProperty $parent, bool $blocked, array &$changes): void
+    private function collectChanges(DirectorProperty $parent, array &$fixedArrayReindexes): array
     {
         $items = $parent->fetchItemsFromDb();
+        $isParentFixedArray = $parent->get('value_type') === 'fixed-array';
 
         $keep = [];
         foreach ($items as $item) {
@@ -79,28 +116,76 @@ class PropertySchemaDiff
             }
         }
 
+        $changes = [];
+
         foreach ($parent->fetchExistingChildrenFromDb() as $existingChild) {
-            if (! isset($keep[$existingChild->get('uuid')])) {
-                $changes[] = PropertyChange::delete($existingChild, $parent);
+            if (isset($keep[$existingChild->get('uuid')])) {
+                continue;
+            }
+
+            $oldKey = $existingChild->get('key_name');
+            $changes[$oldKey] = new PropertyValueChange($oldKey, null, true, false, []);
+
+            if ($isParentFixedArray) {
+                // Its row is already gone by the time this runs, only the surviving
+                // siblings' numbering still needs fixing. One entry per parent is enough.
+                $rawParentUuid = DbUtil::binaryResult($parent->get('uuid'));
+                $fixedArrayReindexes[bin2hex($rawParentUuid)] = $rawParentUuid;
             }
         }
 
         foreach ($items as $item) {
             if (! $item->hasBeenLoadedFromDb()) {
-                $this->collectChanges($item, $blocked, $changes);
-
                 continue;
             }
 
-            if ($item->getOriginalProperty('key_name') !== $item->get('key_name')) {
-                $changes[] = PropertyChange::rename($item, $parent, ! $blocked);
+            $oldKey = $item->getOriginalProperty('key_name');
+            $newKey = $item->get('key_name');
+            $retyped = $item->getOriginalProperty('value_type') !== $item->get('value_type');
+
+            // A retype drops the old value outright, whatever changed further down
+            // doesn't matter anymore, same reasoning as a root retype.
+            $nested = $retyped ? [] : $this->collectChanges($item, $fixedArrayReindexes);
+
+            if ($oldKey === $newKey && ! $retyped && empty($nested)) {
+                // nothing changed here or anywhere below it, the value carries straight over
+                continue;
             }
 
-            if ($item->get('value_type') !== $item->getOriginalProperty('value_type')) {
-                $changes[] = PropertyChange::retype($item, $parent, ! $blocked);
+            $changes[$oldKey] = new PropertyValueChange(
+                $oldKey,
+                $newKey,
+                $retyped,
+                $retyped && $isParentFixedArray,
+                $nested
+            );
+        }
+
+        return $changes;
+    }
+
+    /**
+     * Undo every rename and retype under a blocked root, so nothing gets stored
+     * with a schema the data can't follow
+     */
+    private function revertSubtree(DirectorProperty $parent): void
+    {
+        foreach ($parent->fetchItemsFromDb() as $item) {
+            if (! $item->hasBeenLoadedFromDb()) {
+                continue;
             }
 
-            $this->collectChanges($item, $blocked, $changes);
+            $oldKey = $item->getOriginalProperty('key_name');
+            if ($item->get('key_name') !== $oldKey) {
+                $item->set('key_name', $oldKey);
+            }
+
+            $oldType = $item->getOriginalProperty('value_type');
+            if ($item->get('value_type') !== $oldType) {
+                $item->set('value_type', $oldType);
+            }
+
+            $this->revertSubtree($item);
         }
     }
 }

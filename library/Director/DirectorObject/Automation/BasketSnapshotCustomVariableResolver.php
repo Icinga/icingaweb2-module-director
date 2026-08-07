@@ -3,10 +3,10 @@
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
-use Icinga\Module\Director\CustomVariable\PropertyChange;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\CustomVariable\PropertyRenameOrder;
 use Icinga\Module\Director\CustomVariable\PropertySchemaDiff;
+use Icinga\Module\Director\CustomVariable\PropertyValueMigration;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
@@ -46,7 +46,7 @@ class BasketSnapshotCustomVariableResolver
     /** @var int values left in place because a legacy Data Field still owns them */
     protected $keptValuesCount = 0;
 
-    /** @var callable[] pending value moves and clears, run after every object is restored */
+    /** @var PropertyValueMigration[] one plan per root, run after every object is restored */
     protected $pendingValueMigrations = [];
 
     /**
@@ -111,7 +111,7 @@ class BasketSnapshotCustomVariableResolver
     }
 
     /**
-     * Move or clear the stored values storeNewProperties() worked out
+     * Apply the stored-value migrations storeNewProperties() worked out
      *
      * Must run after every object in this basket has been restored. A host
      * or service still carries its own old vars, moving values any earlier
@@ -121,8 +121,10 @@ class BasketSnapshotCustomVariableResolver
      */
     public function applyPendingValueMigrations(): void
     {
+        $cleaner = new CustomVariableValueCleaner($this->targetDb);
+
         foreach ($this->pendingValueMigrations as $migration) {
-            $this->keptValuesCount += $migration();
+            $this->keptValuesCount += $cleaner->applyValueMigration($migration);
         }
 
         $this->pendingValueMigrations = [];
@@ -146,95 +148,14 @@ class BasketSnapshotCustomVariableResolver
      * $root, ancestor names read off the database are only still the old ones
      * until then. The write itself is deferred, see applyPendingValueMigrations().
      *
+     * A blocked change gets undone in memory by the diff itself, so a schema row
+     * never ends up pointing at data that never actually moved.
+     *
      * @return void
      */
     private function applySchemaDiff(DirectorProperty $root, CustomVariableValueCleaner $cleaner): void
     {
-        foreach ((new PropertySchemaDiff($cleaner))->diff($root) as $change) {
-            $this->pendingValueMigrations[] = match ($change->kind) {
-                PropertyChange::RENAME => $this->deferRenameChange($change, $cleaner),
-                PropertyChange::RETYPE => $this->deferRetypeChange($change, $cleaner),
-                PropertyChange::DELETE => $this->deferDeleteChange($change, $cleaner),
-            };
-        }
-    }
-
-    /**
-     * Work out the move for a nested property's stored value
-     *
-     * If a legacy Data Field blocked it, also undo the rename in memory, so
-     * it never gets written to director_property either.
-     */
-    private function deferRenameChange(PropertyChange $change, CustomVariableValueCleaner $cleaner): callable
-    {
-        $property = $this->oldPropertyArray($change->property);
-        $parent = $this->oldParentArray($change->parent);
-        $newKeyName = $change->property->get('key_name');
-
-        if (! $change->allowed) {
-            $change->property->set('key_name', $change->property->getOriginalProperty('key_name'));
-        }
-
-        return fn () => $cleaner->renameNestedStoredValues($property, $parent, $newKeyName);
-    }
-
-    /**
-     * Work out the clear for a nested property's stored value, its old type
-     * no longer matches it
-     *
-     * If a legacy Data Field blocked the clear, also undo the retype in memory.
-     */
-    private function deferRetypeChange(PropertyChange $change, CustomVariableValueCleaner $cleaner): callable
-    {
-        $property = $this->oldPropertyArray($change->property);
-        $parent = $this->oldParentArray($change->parent);
-
-        if (! $change->allowed) {
-            $change->property->set('value_type', $change->property->getOriginalProperty('value_type'));
-        }
-
-        return fn () => max(
-            $cleaner->removeObjectCustomVars($property, $parent, true),
-            $cleaner->removeFromOverrideServiceVars($property, $parent, true)
-        );
-    }
-
-    /**
-     * Work out the clear for a dropped nested property's stored value
-     *
-     * The schema row still gets deleted either way, that's decided elsewhere.
-     * A legacy Data Field can only hold back the stored value cleanup.
-     */
-    private function deferDeleteChange(PropertyChange $change, CustomVariableValueCleaner $cleaner): callable
-    {
-        $property = $this->oldPropertyArray($change->property);
-        $parent = $this->oldParentArray($change->parent);
-
-        return fn () => max(
-            $cleaner->removeObjectCustomVars($property, $parent, false),
-            $cleaner->removeFromOverrideServiceVars($property, $parent, false)
-        );
-    }
-
-    /**
-     * @return array{key_name: ?string}
-     */
-    private function oldPropertyArray(DirectorProperty $property): array
-    {
-        return ['key_name' => $property->getOriginalProperty('key_name')];
-    }
-
-    /**
-     * @return array{key_name: ?string, uuid: string, parent_uuid: ?string, value_type: ?string}
-     */
-    private function oldParentArray(DirectorProperty $parent): array
-    {
-        return [
-            'key_name'    => $parent->getOriginalProperty('key_name'),
-            'uuid'        => DbUtil::binaryResult($parent->get('uuid')),
-            'parent_uuid' => DbUtil::binaryResult($parent->get('parent_uuid')),
-            'value_type'  => $parent->getOriginalProperty('value_type'),
-        ];
+        $this->pendingValueMigrations[] = (new PropertySchemaDiff($cleaner))->diff($root);
     }
 
     /**

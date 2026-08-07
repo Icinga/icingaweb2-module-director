@@ -576,6 +576,155 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Apply a whole root's worth of stored-value changes in one pass
+     *
+     * Every stored value under this root gets decoded once, rebuilt from the original
+     * value by PropertyValueRebuilder, and written back once. Nothing here re-reads a
+     * value it or an earlier step in this same migration already wrote, so a swap, a
+     * rotation, or a rename chain all resolve correctly without needing a write order.
+     *
+     * A fixed-array reindex only touches director_property, it runs even when the
+     * migration is otherwise blocked, same reasoning as removeObjectCustomVars(),
+     * it's schema only and has nothing to do with a Data Field's data.
+     *
+     * @return int Number of stored values left under the old varname because a legacy
+     *             Data Field owns it, 0 if there was no conflict
+     */
+    public function applyValueMigration(PropertyValueMigration $migration): int
+    {
+        foreach ($migration->fixedArrayReindexes as $rawParentUuid) {
+            $this->renumberFixedArrayItems(Uuid::fromBytes($rawParentUuid));
+        }
+
+        if ($migration->isNoop()) {
+            return 0;
+        }
+
+        if ($migration->blocked) {
+            return max(1, $this->countStoredValues($migration->oldVarname));
+        }
+
+        $rebuilder = new PropertyValueRebuilder();
+        $db = $this->db->getDbAdapter();
+
+        // Rename the row itself first, a raw column update keeps its property_uuid,
+        // format and checksum intact. What's left below only ever updates a value
+        // in place under its final varname, never deletes and recreates a row.
+        if ($migration->oldVarname !== $migration->newVarname) {
+            foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
+                $db->update(
+                    "icinga_{$objectType}_var",
+                    ['varname' => $migration->newVarname],
+                    $db->quoteInto('varname = ?', $migration->oldVarname)
+                );
+            }
+        }
+
+        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
+            $idColumn = "{$objectType}_id";
+            $varRows = $db->fetchAll(
+                $db->select()
+                   ->from(['iov' => "icinga_{$objectType}_var"], [])
+                   ->columns([$idColumn, 'varname', 'varvalue'])
+                   ->where('varname = ?', $migration->newVarname),
+                [],
+                Zend_Db::FETCH_ASSOC
+            );
+
+            $objectClass = DbObjectTypeRegistry::classByType($objectType);
+
+            foreach ($varRows as $varRow) {
+                $decoded = json_decode($varRow['varvalue'] ?? '', true);
+                $rebuilt = $rebuilder->rebuildRootValue($decoded, $migration);
+
+                $object = $objectClass::loadWithAutoIncId($varRow[$idColumn], $this->db);
+                $vars = $object->vars();
+                $vars->set($varRow['varname'], $rebuilt);
+                $vars->storeToDb($object);
+            }
+        }
+
+        $this->applyValueMigrationToOverrideServiceVars($migration, $rebuilder);
+
+        return 0;
+    }
+
+    /**
+     * Same rebuild as applyValueMigration(), but for the _override_servicevars blob
+     *
+     * That blob nests every service's vars under its own service name first, so each
+     * service's slice gets rebuilt on its own before the whole row is written back.
+     */
+    private function applyValueMigrationToOverrideServiceVars(
+        PropertyValueMigration $migration,
+        PropertyValueRebuilder $rebuilder
+    ): void {
+        $db = $this->db->getDbAdapter();
+
+        $overrideVarname = $db->fetchOne(
+            $db->select()
+               ->from('director_setting', ['setting_value'])
+               ->where('setting_name = ?', 'override_services_varname')
+        ) ?: '_override_servicevars';
+
+        $rows = $db->fetchAll(
+            $db->select()
+               ->from('icinga_host_var', ['host_id', 'varvalue'])
+               ->where('varname = ?', $overrideVarname),
+            [],
+            Zend_Db::FETCH_ASSOC
+        );
+
+        foreach ($rows as $row) {
+            $overrideVars = json_decode($row['varvalue'], true);
+            if (! is_array($overrideVars)) {
+                continue;
+            }
+
+            $modified = false;
+            foreach ($overrideVars as $serviceName => $serviceVars) {
+                if (! is_array($serviceVars) || ! array_key_exists($migration->oldVarname, $serviceVars)) {
+                    continue;
+                }
+
+                $modified = true;
+                $rebuilt = $rebuilder->rebuildRootValue($serviceVars[$migration->oldVarname], $migration);
+                unset($serviceVars[$migration->oldVarname]);
+
+                if ($rebuilt !== null) {
+                    $serviceVars[$migration->newVarname] = $rebuilt;
+                }
+
+                if (empty($serviceVars)) {
+                    unset($overrideVars[$serviceName]);
+                } else {
+                    $overrideVars[$serviceName] = $serviceVars;
+                }
+            }
+
+            if (! $modified) {
+                continue;
+            }
+
+            if (empty($overrideVars)) {
+                $db->delete('icinga_host_var', [
+                    'host_id = ?' => $row['host_id'],
+                    'varname = ?'  => $overrideVarname,
+                ]);
+            } else {
+                $db->update(
+                    'icinga_host_var',
+                    ['varvalue' => json_encode($overrideVars)],
+                    [
+                        'host_id = ?' => $row['host_id'],
+                        'varname = ?'  => $overrideVarname,
+                    ]
+                );
+            }
+        }
+    }
+
+    /**
      * Whether renaming from $oldVarname to $newVarname would collide with a legacy Data Field
      *
      * Public so a form can validate this before submit instead of only finding out after.
@@ -667,7 +816,7 @@ class CustomVariableValueCleaner
     }
 
     /**
-     * Update the items for the given fixed array
+     * Delete one fixed-array item's schema row and renumber its surviving siblings
      *
      * @return void
      */
@@ -684,6 +833,23 @@ class CustomVariableValueCleaner
                 'key_name = ?' => $propertyIndex,
             ]
         );
+
+        $this->renumberFixedArrayItems($uuid);
+    }
+
+    /**
+     * Renumber a fixed-array's surviving children so their key_names stay sequential
+     *
+     * Basket restore already deletes a dropped child's row itself while reconciling
+     * the schema, it only needs the renumbering, not another delete for a row that's
+     * already gone.
+     *
+     * @return void
+     */
+    private function renumberFixedArrayItems(UuidInterface $uuid): void
+    {
+        $db = $this->db->getDbAdapter();
+        $quotedUuid = DbUtil::quoteBinaryCompat($uuid->getBytes(), $db);
 
         $propItems = array_map(
             [DbUtil::class, 'normalizeRow'],

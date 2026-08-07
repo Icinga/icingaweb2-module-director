@@ -378,10 +378,12 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
 
         $db = $this->getDb();
         [$host, $property] = $this->createTemplateWithProperty($db);
+        $property->set('value_type', 'fixed-dictionary');
+        $property->store();
 
         $x = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => '0',
+            'key_name'    => 'city',
             'parent_uuid' => $property->get('uuid'),
             'value_type'  => 'string',
         ], $db);
@@ -389,11 +391,14 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
 
         $y = DirectorProperty::create([
             'uuid'        => Uuid::uuid4()->getBytes(),
-            'key_name'    => '1',
+            'key_name'    => 'town',
             'parent_uuid' => $property->get('uuid'),
             'value_type'  => 'string',
         ], $db);
         $y->store();
+
+        $host->vars()->set(self::PROP_KEY_NAME, (object) ['city' => 'Vienna', 'town' => 'Graz']);
+        $host->store();
 
         $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
         $json = $this->buildSnapshotJson($host, $property, $db);
@@ -401,13 +406,13 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
         $xUuid = Uuid::fromBytes($x->get('uuid'))->toString();
         $yUuid = Uuid::fromBytes($y->get('uuid'))->toString();
 
-        // No deletion here, X and Y just trade slots.
+        // No deletion here, X and Y just trade names.
         $decoded = json_decode($json);
         foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
             if ($item->uuid === $xUuid) {
-                $item->key_name = '1';
+                $item->key_name = 'town';
             } elseif ($item->uuid === $yUuid) {
-                $item->key_name = '0';
+                $item->key_name = 'city';
             }
         }
 
@@ -419,8 +424,200 @@ class BasketSnapshotCustomVariableTest extends BaseTestCase
             $byUuid[Uuid::fromBytes($item->get('uuid'))->toString()] = $item->get('key_name');
         }
 
-        $this->assertEquals('1', $byUuid[$xUuid] ?? null, 'X must have swapped into slot "1"');
-        $this->assertEquals('0', $byUuid[$yUuid] ?? null, 'Y must have swapped into slot "0"');
+        $this->assertEquals('town', $byUuid[$xUuid] ?? null, 'X must have swapped into "town"');
+        $this->assertEquals('city', $byUuid[$yUuid] ?? null, 'Y must have swapped into "city"');
+
+        $restoredHost = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            (object) ['city' => 'Graz', 'town' => 'Vienna'],
+            $restoredHost->vars()->get(self::PROP_KEY_NAME)->getValue(),
+            'the stored values must swap along with the schema, neither one may overwrite the other'
+        );
+    }
+
+    public function testRestoreRotatesThreeChildItemKeyNamesInAStoredValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+        $property->set('value_type', 'fixed-dictionary');
+        $property->store();
+
+        $a = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'a',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $a->store();
+
+        $b = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'b',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $b->store();
+
+        $c = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'c',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $c->store();
+
+        $host->vars()->set(self::PROP_KEY_NAME, (object) ['a' => '1', 'b' => '2', 'c' => '3']);
+        $host->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+        $aUuid = Uuid::fromBytes($a->get('uuid'))->toString();
+        $bUuid = Uuid::fromBytes($b->get('uuid'))->toString();
+        $cUuid = Uuid::fromBytes($c->get('uuid'))->toString();
+
+        // a takes b's name, b takes c's name, c takes a's name, nobody's ever free.
+        $decoded = json_decode($json);
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
+            if ($item->uuid === $aUuid) {
+                $item->key_name = 'b';
+            } elseif ($item->uuid === $bUuid) {
+                $item->key_name = 'c';
+            } elseif ($item->uuid === $cUuid) {
+                $item->key_name = 'a';
+            }
+        }
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restoredHost = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            (object) ['a' => '3', 'b' => '1', 'c' => '2'],
+            $restoredHost->vars()->get(self::PROP_KEY_NAME)->getValue(),
+            'a three-way rotation must resolve as one atomic move, not lose a value along the way'
+        );
+    }
+
+    public function testRestoreAppliesARenameChainInAStoredValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+        $property->set('value_type', 'fixed-dictionary');
+        $property->store();
+
+        $a = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'warn',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $a->store();
+
+        $b = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'crit',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $b->store();
+
+        $host->vars()->set(self::PROP_KEY_NAME, (object) ['warn' => '80', 'crit' => '90']);
+        $host->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+        $aUuid = Uuid::fromBytes($a->get('uuid'))->toString();
+        $bUuid = Uuid::fromBytes($b->get('uuid'))->toString();
+
+        // warn takes crit's name, crit moves on to a name nobody else holds.
+        $decoded = json_decode($json);
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
+            if ($item->uuid === $aUuid) {
+                $item->key_name = 'crit';
+            } elseif ($item->uuid === $bUuid) {
+                $item->key_name = 'unit';
+            }
+        }
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restoredHost = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            (object) ['crit' => '80', 'unit' => '90'],
+            $restoredHost->vars()->get(self::PROP_KEY_NAME)->getValue(),
+            'a rename chain must apply in one pass regardless of schema traversal order'
+        );
+    }
+
+    public function testRestoreMigratesStoredValuesForAnAncestorAndDescendantRenameTogether(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$host, $property] = $this->createTemplateWithProperty($db);
+        $property->set('value_type', 'fixed-dictionary');
+        $property->store();
+
+        // fixed-dictionary can only be used at the top level, so this middle
+        // node has to be a plain string, it's just a grouping node for this test
+        $middle = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'billing',
+            'parent_uuid' => $property->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $middle->store();
+
+        $leaf = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'iban',
+            'parent_uuid' => $middle->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $leaf->store();
+
+        $host->vars()->set(
+            self::PROP_KEY_NAME,
+            (object) ['billing' => (object) ['iban' => 'AT1234']]
+        );
+        $host->store();
+
+        $property = DirectorProperty::loadWithUniqueId(Uuid::fromBytes($property->get('uuid')), $db);
+        $json = $this->buildSnapshotJson($host, $property, $db);
+        $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+        $middleUuidString = Uuid::fromBytes($middle->get('uuid'))->toString();
+
+        // Rename the ancestor (billing -> payment) and, in the very same restore,
+        // rename the descendant underneath it (iban -> account_number).
+        $decoded = json_decode($json);
+        foreach ($decoded->CustomVariable->{$propertyUuidString}->items as $item) {
+            if ($item->uuid === $middleUuidString) {
+                $item->key_name = 'payment';
+                foreach ($item->items as $childItem) {
+                    $childItem->key_name = 'account_number';
+                }
+            }
+        }
+
+        BasketSnapshot::restoreJson(json_encode($decoded), $db);
+
+        $restoredHost = IcingaHost::load(self::TEMPLATE_NAME, $db);
+        $this->assertEquals(
+            (object) ['payment' => (object) ['account_number' => 'AT1234']],
+            $restoredHost->vars()->get(self::PROP_KEY_NAME)->getValue(),
+            'an ancestor rename and a descendant rename in the same restore must both land correctly'
+        );
     }
 
     /**
