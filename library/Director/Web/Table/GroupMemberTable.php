@@ -126,9 +126,15 @@ class GroupMemberTable extends ZfQueryBasedTable
             ];
         }
 
+        $membership = $row->membership_type;
+        // '-=' never makes it into the resolved table, so this shows '+=' only
+        if ($row->operator !== null && $row->operator !== '=') {
+            $membership .= ' (' . $row->operator . ')';
+        }
+
         $tr->add([
             $this::td($link),
-            $this::td($row->membership_type)
+            $this::td($membership)
         ]);
 
         return $tr;
@@ -163,7 +169,8 @@ class GroupMemberTable extends ZfQueryBasedTable
             'o.id',
             'o.object_type',
             'o.object_name',
-            'membership_type' => "CASE WHEN go.{$type}_id IS NULL THEN 'apply' ELSE 'direct' END"
+            'membership_type' => "CASE WHEN go.{$type}_id IS NULL THEN 'apply' ELSE 'direct' END",
+            'operator'        => 'go.operator'
         ];
 
         if ($this->group === null) {

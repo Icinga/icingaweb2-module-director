@@ -9,14 +9,33 @@ use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use InvalidArgumentException;
 use Iterator;
 use RuntimeException;
 
 class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 {
+    /** Assign group membership, rendered as "groups = [ ... ]" */
+    const OP_ASSIGN = '=';
+
+    /** Add to inherited group membership, rendered as "groups += [ ... ]" */
+    const OP_ADD = '+=';
+
+    /** Remove from inherited group membership, rendered as "groups -= [ ... ]" */
+    const OP_REMOVE = '-=';
+
+    /** All valid operators, in the order they have to be rendered */
+    const OPERATORS = array('=', '+=', '-=');
+
     protected $storedGroups = array();
 
     protected $groups = array();
+
+    /** @var array group name => operator */
+    protected $operators = array();
+
+    /** @var array group name => operator, as currently stored in the DB */
+    protected $storedOperators = array();
 
     protected $modified = false;
 
@@ -35,6 +54,108 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             $class = $this->getGroupClass();
             $class::prefetchAll($this->object->getConnection());
         }
+    }
+
+    /**
+     * @param string $operator
+     * @return string
+     */
+    protected function assertValidOperator($operator)
+    {
+        if (! in_array($operator, self::OPERATORS, true)) {
+            throw new InvalidArgumentException(sprintf(
+                'Invalid group membership operator: %s',
+                var_export($operator, true)
+            ));
+        }
+
+        return $operator;
+    }
+
+    /**
+     * The operator for a single group membership, defaults to '='
+     *
+     * @param string $name
+     * @return string
+     */
+    public function getOperator($name)
+    {
+        if (array_key_exists($name, $this->operators)) {
+            return $this->operators[$name];
+        }
+
+        return self::OP_ASSIGN;
+    }
+
+    /**
+     * Group names using exactly the given operator
+     *
+     * @param string $operator
+     * @return array
+     */
+    public function listGroupNamesForOperator($operator)
+    {
+        $this->assertValidOperator($operator);
+        $names = array();
+        foreach (array_keys($this->groups) as $name) {
+            if ($this->getOperator($name) === $operator) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * Group names using any of the given operators
+     *
+     * @param array $operators
+     * @return array
+     */
+    public function listGroupNamesForOperators(array $operators)
+    {
+        $names = array();
+        foreach ($operators as $operator) {
+            $names = array_merge($names, $this->listGroupNamesForOperator($operator));
+        }
+        sort($names);
+
+        return $names;
+    }
+
+    /**
+     * Groups this object ends up with, ignoring inheritance: '=' and '+=' minus '-='
+     *
+     * @return array
+     */
+    public function listEffectiveGroupNames()
+    {
+        return array_values(array_diff(
+            $this->listGroupNamesForOperators(array(self::OP_ASSIGN, self::OP_ADD)),
+            $this->listGroupNamesForOperator(self::OP_REMOVE)
+        ));
+    }
+
+    /**
+     * Stored (unmodified) group names using exactly the given operator
+     *
+     * @param string $operator
+     * @return array
+     */
+    public function listOriginalGroupNamesForOperator($operator)
+    {
+        $this->assertValidOperator($operator);
+        $names = array();
+        foreach (array_keys($this->storedGroups) as $name) {
+            $stored = array_key_exists($name, $this->storedOperators)
+                ? $this->storedOperators[$name]
+                : self::OP_ASSIGN;
+            if ($stored === $operator) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
     }
 
     #[\ReturnTypeWillChange]
@@ -92,52 +213,69 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     }
 
     /**
+     * Replace all memberships using the given operator
+     *
+     * Memberships with a different operator are left untouched, this is what
+     * allows the three group form fields (assign, add, remove) to coexist.
+     *
      * @param $group
+     * @param string $operator
      * @return $this
      * @throws NotFoundError
      */
-    public function set($group)
+    public function set($group, $operator = self::OP_ASSIGN)
     {
+        $this->assertValidOperator($operator);
+
         if (! is_array($group)) {
-            $group = array($group);
+            $group = $group === null ? array() : array($group);
         }
 
-        $existing = array_keys($this->groups);
-        $new = array();
         $class = $this->getGroupClass();
-        $unset = array();
+        $new = array();
 
-        foreach ($group as $k => $g) {
+        foreach ($group as $g) {
             if ($g instanceof $class) {
                 $new[] = $g->object_name;
-            } else {
-                if (empty($g)) {
-                    $unset[] = $k;
-                    continue;
-                }
-
+            } elseif (! empty($g)) {
                 $new[] = $g;
             }
         }
 
-        foreach ($unset as $k) {
-            unset($group[$k]);
-        }
-
+        // Compare against this operator only, otherwise an unrelated field
+        // would be able to wipe our memberships
+        $existing = $this->listGroupNamesForOperator($operator);
+        $compare = $new;
         sort($existing);
-        sort($new);
-        if ($existing === $new) {
+        sort($compare);
+        if ($existing === $compare) {
             return $this;
         }
 
-        $this->groups = array();
-        if (empty($group)) {
-            $this->modified = true;
-            $this->refreshIndex();
+        foreach ($this->listGroupNamesForOperator($operator) as $name) {
+            unset($this->groups[$name]);
+            unset($this->operators[$name]);
+        }
+
+        $this->modified = true;
+        $this->refreshIndex();
+
+        if (empty($new)) {
             return $this;
         }
 
-        return $this->add($group);
+        return $this->add($new, 'fail', $operator);
+    }
+
+    /**
+     * @param string $operator
+     * @param $group
+     * @return $this
+     * @throws NotFoundError
+     */
+    public function setForOperator($operator, $group)
+    {
+        return $this->set($group, $operator);
     }
 
     /**
@@ -154,6 +292,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     {
         if (array_key_exists($group, $this->groups)) {
             unset($this->groups[$group]);
+            unset($this->operators[$group]);
         }
 
         $this->modified = true;
@@ -163,22 +302,26 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     protected function refreshIndex()
     {
         ksort($this->groups);
+        ksort($this->operators);
         $this->idx = array_keys($this->groups);
     }
 
     /**
      * @param $group
      * @param string $onError
+     * @param string $operator
      * @return $this
      * @throws NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
-    public function add($group, $onError = 'fail')
+    public function add($group, $onError = 'fail', $operator = self::OP_ASSIGN)
     {
+        $this->assertValidOperator($operator);
+
         // TODO: only one query when adding array
         if (is_array($group)) {
             foreach ($group as $g) {
-                $this->add($g, $onError);
+                $this->add($g, $onError, $operator);
             }
             return $this;
         }
@@ -190,17 +333,21 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         /** @var IcingaObjectGroup $class */
         $class = $this->getGroupClass();
 
-        if ($group instanceof $class) {
-            if (array_key_exists($group->getObjectName(), $this->groups)) {
-                return $this;
+        $name = $group instanceof $class ? $group->getObjectName() : $group;
+
+        // Already a member? Then this might still be an operator change
+        if (is_string($name) && array_key_exists($name, $this->groups)) {
+            if ($this->getOperator($name) !== $operator) {
+                $this->operators[$name] = $operator;
+                $this->modified = true;
             }
 
+            return $this;
+        }
+
+        if ($group instanceof $class) {
             $this->groups[$group->object_name] = $group;
         } elseif (is_string($group)) {
-            if (array_key_exists($group, $this->groups)) {
-                return $this;
-            }
-
             $connection = $this->object->getConnection();
 
             try {
@@ -232,6 +379,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
+        $this->operators[$name] = $operator;
         $this->modified = true;
         $this->refreshIndex();
 
@@ -284,6 +432,22 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         $class = $this->getGroupClass();
         $this->groups = $class::loadAll($connection, $query, 'object_name');
+
+        // Operators cannot ride along with the query above, loadAll() would
+        // choke on a column the group object doesn't know about
+        $operatorQuery = $db->select()->from(
+            array('go' => $table . 'group_' . $type),
+            array(
+                'group_name' => 'g.object_name',
+                'operator'   => 'go.operator',
+            )
+        )->join(
+            array('g' => $table . 'group'),
+            'go.' . $type . 'group_id = g.id',
+            array()
+        )->where('go.' . $type . '_id = ?', $this->object->id);
+
+        $this->operators = $db->fetchPairs($operatorQuery);
         $this->setBeingLoadedFromDb();
 
         return $this;
@@ -320,10 +484,34 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                 $this->getGroupMemberTableName(),
                 array(
                     $objectCol => $objectId,
-                    $groupCol => $this->groups[$group]->id
+                    $groupCol => $this->groups[$group]->id,
+                    'operator' => $this->getOperator($group)
                 )
             );
         }
+
+        // A membership that stayed, but changed its operator
+        $toUpdate = array_intersect($groups, $storedGroups);
+        foreach ($toUpdate as $group) {
+            $stored = array_key_exists($group, $this->storedOperators)
+                ? $this->storedOperators[$group]
+                : self::OP_ASSIGN;
+            $current = $this->getOperator($group);
+            if ($stored === $current) {
+                continue;
+            }
+
+            $this->object->db->update(
+                $this->getGroupMemberTableName(),
+                array('operator' => $current),
+                sprintf(
+                    $objectCol . ' = %d AND ' . $groupCol . ' = %d',
+                    $objectId,
+                    $this->groups[$group]->id
+                )
+            );
+        }
+
         $this->setBeingLoadedFromDb();
 
         return true;
@@ -336,6 +524,12 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             $this->storedGroups[$k] = clone($v);
             $this->storedGroups[$k]->id = $v->id;
         }
+
+        $this->storedOperators = $this->operators;
+
+        // loadForStoredObject() doesn't call this when prefetching, so the
+        // index would otherwise stay empty and the Iterator yield nothing
+        $this->refreshIndex();
 
         $this->modified = false;
     }
@@ -350,7 +544,9 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $groups = new static($object);
 
         if (PrefetchCache::shouldBeUsed()) {
-            $groups->groups = PrefetchCache::instance()->groups($object);
+            $cache = PrefetchCache::instance();
+            $groups->groups = $cache->groups($object);
+            $groups->operators = $cache->groupOperators($object);
             $groups->setBeingLoadedFromDb();
         } else {
             $groups->loadFromDb();
@@ -361,25 +557,43 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
     public function toConfigString()
     {
-        $groups = array_keys($this->groups);
+        $config = '';
 
-        if (empty($groups)) {
-            return '';
+        // '=' has to be rendered before '+=' and '-=', hence the fixed order
+        foreach (self::OPERATORS as $operator) {
+            $groups = $this->listGroupNamesForOperator($operator);
+            if (empty($groups)) {
+                continue;
+            }
+
+            $config .= c::renderKeyOperatorValue(
+                'groups',
+                $operator,
+                c::renderArray($groups)
+            );
         }
 
-        return c::renderKeyValue('groups', c::renderArray($groups));
+        return $config;
     }
 
     public function toLegacyConfigString($additionalGroups = array())
     {
-        $groups = array_merge(array_keys($this->groups), $additionalGroups);
-        $groups = array_unique($groups);
+        // Icinga 1.x knows no += / -=, so we render what the object ends up with
+        $groups = array_merge(
+            $this->listGroupNamesForOperators(array(self::OP_ASSIGN, self::OP_ADD)),
+            $additionalGroups
+        );
+        $groups = array_values(array_diff(
+            array_unique($groups),
+            $this->listGroupNamesForOperator(self::OP_REMOVE)
+        ));
 
         if (empty($groups)) {
             return '';
         }
 
         $type = $this->object->getLegacyObjectType();
+
         return c1::renderKeyValue($type . 'groups', c1::renderArray($groups));
     }
 
@@ -407,6 +621,8 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     {
         unset($this->storedGroups);
         unset($this->groups);
+        unset($this->operators);
+        unset($this->storedOperators);
         unset($this->object);
     }
 }

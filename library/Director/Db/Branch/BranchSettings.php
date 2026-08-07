@@ -12,7 +12,15 @@ use function in_array;
 class BranchSettings
 {
     // TODO: Ranges is weird. key = scheduled_downtime_id, range_type, range_key
-    public const ENCODED_ARRAYS = ['imports', 'groups', 'ranges', 'users', 'usergroups'];
+    public const ENCODED_ARRAYS = [
+        'imports',
+        'groups',
+        'groupsadd',
+        'groupsremove',
+        'ranges',
+        'users',
+        'usergroups'
+    ];
 
     public const ENCODED_DICTIONARIES = ['vars', 'arguments'];
 

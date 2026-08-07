@@ -706,6 +706,11 @@ class IcingaServiceForm extends DirectorObjectForm
      * @return $this
      * @throws \Zend_Form_Exception
      */
+    /*
+     * Only the '=' operator is offered here, '+=' and '-=' memberships can
+     * still be maintained through Sync rules or the REST API. As setGroups()
+     * is scoped to '=', saving this form will not drop them.
+     */
     protected function addGroupsElement()
     {
         $groups = $this->enumServicegroups();

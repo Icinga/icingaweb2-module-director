@@ -538,10 +538,9 @@ abstract class GroupMembershipResolver
             }
 
             // can only be run reliably when updating for all groups
-            $groupNames = $object->get('groups');
-            if (empty($groupNames)) {
-                $groupNames = $object->listInheritedGroupNames();
-            }
+            // Honours the per-membership operator: '=' and '+=' are members,
+            // '-=' is not - not even when the group has been inherited
+            $groupNames = $object->listResolvedGroupNames();
             foreach ($groupNames as $name) {
                 $groupId = $this->getGroupId($name);
                 if (! array_key_exists($groupId, $mappings)) {
