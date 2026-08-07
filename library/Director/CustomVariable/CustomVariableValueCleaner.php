@@ -48,6 +48,33 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Count how many host/service/etc. templates currently have this property attached
+     *
+     * @return int
+     */
+    public function countAttachments(UuidInterface $uuid): int
+    {
+        $db = $this->db->getDbAdapter();
+
+        $query = $db
+            ->select()
+            ->from(['dp' => 'director_property'], [])
+            ->joinLeft(['ihp' => 'icinga_host_property'], 'ihp.property_uuid = dp.uuid', [])
+            ->joinLeft(['isp' => 'icinga_service_property'], 'isp.property_uuid = dp.uuid', [])
+            ->joinLeft(['iup' => 'icinga_user_property'], 'iup.property_uuid = dp.uuid', [])
+            ->joinLeft(['icp' => 'icinga_command_property'], 'icp.property_uuid = dp.uuid', [])
+            ->joinLeft(['inp' => 'icinga_notification_property'], 'inp.property_uuid = dp.uuid', [])
+            ->columns([
+                'used_count' => 'COUNT(ihp.property_uuid) + COUNT(isp.property_uuid)'
+                    . ' + COUNT(iup.property_uuid) + COUNT(icp.property_uuid)'
+                    . ' + COUNT(inp.property_uuid)'
+            ])
+            ->where('dp.uuid = ?', DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
+
+        return (int) $db->fetchOne($query);
+    }
+
+    /**
      * Walk parent_uuid up from $parent to the root, collecting key_names along the way.
      *
      * @return array{0: array<string, mixed>, 1: string[]}

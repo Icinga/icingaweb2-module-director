@@ -15,28 +15,13 @@ class TestableCustomVariableForm extends CustomVariableForm
 {
     private array $testValues = [];
 
-    private ?int $forcedUsedCount = null;
-
     public function setTestValues(array $values): void
     {
         $this->testValues = $values;
     }
 
-    /**
-     * assemble() is stubbed out, so there is no real used_count element to read from.
-     * Call this to fake what getValue('used_count') would return.
-     */
-    public function setForcedUsedCount(int $usedCount): void
-    {
-        $this->forcedUsedCount = $usedCount;
-    }
-
     public function getValue($name, $default = null)
     {
-        if ($name === 'used_count' && $this->forcedUsedCount !== null) {
-            return $this->forcedUsedCount;
-        }
-
         return $default;
     }
 

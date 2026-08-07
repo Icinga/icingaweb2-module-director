@@ -13,6 +13,7 @@ use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Tests\Icinga\Module\Director\Form\Lib\TestableCustomVariableForm;
 
 class CustomVariableFormTest extends BaseTestCase
@@ -518,6 +519,8 @@ class CustomVariableFormTest extends BaseTestCase
         $db = $this->getDb();
         $dba = $db->getDbAdapter();
 
+        $host = $this->createHost('___TEST___router01', '192.0.2.70');
+
         $rootUuid = Uuid::uuid4();
         DirectorProperty::create([
             'uuid'       => $rootUuid->getBytes(),
@@ -526,11 +529,11 @@ class CustomVariableFormTest extends BaseTestCase
             'label'      => 'Locked Type',
         ], $db)->store();
         $this->createdKeyNames[] = '___TEST___locked_type';
+        $this->attachPropertyToHost($rootUuid, $host, $dba);
 
         // value_type is disabled in the UI once a property is used, but disabled is just
         // a browser hint, so a crafted request could still submit a different one here.
         $form = new TestableCustomVariableForm($db, $rootUuid);
-        $form->setForcedUsedCount(1);
 
         self::callMethod($form, 'updateExistingProperty', [
             [
@@ -550,6 +553,108 @@ class CustomVariableFormTest extends BaseTestCase
             'string',
             $storedType,
             'value_type must stay put for a used property even if a different one is submitted'
+        );
+    }
+
+    public function testPropertyAttachedAfterFormWasLoadedIsStillTreatedAsUsed(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___link_speed',
+            'value_type' => 'string',
+            'label'      => 'Link Speed',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___link_speed';
+
+        // The edit page was loaded while the property was still unused, so its hidden
+        // used_count field would have said 0. A second admin attaches it to a host
+        // before this form gets submitted.
+        $form = new TestableCustomVariableForm($db, $rootUuid);
+
+        $host = $this->createHost('___TEST___switch05', '192.0.2.64');
+        $this->attachPropertyToHost($rootUuid, $host, $dba);
+
+        self::callMethod($form, 'updateExistingProperty', [
+            [
+                'key_name'    => '___TEST___link_speed',
+                'value_type'  => 'number',
+                'label'       => 'Link Speed',
+                'description' => null,
+            ]
+        ]);
+
+        $storedType = $dba->fetchOne(
+            $dba->select()->from('director_property', ['value_type'])
+                ->where('key_name = ?', '___TEST___link_speed')
+        );
+
+        $this->assertSame(
+            'string',
+            $storedType,
+            'a property attached after the form was loaded must still be treated as used'
+        );
+    }
+
+    public function testUsedFieldStaysProtectedWhenOnlyItsRootPropertyIsAttached(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = $this->createHost('___TEST___switch06', '192.0.2.65');
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___asset_info2',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Asset Info',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___asset_info2';
+
+        $fieldUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $fieldUuid->getBytes(),
+            'key_name'    => 'serial_number',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        // Only the root property is attached, a field never gets its own attachment
+        // row, so the fix has to walk up to the root to see that this is used.
+        $this->attachPropertyToHost($rootUuid, $host, $dba);
+
+        $form = new TestableCustomVariableForm($db, $fieldUuid, true, $rootUuid);
+
+        self::callMethod($form, 'updateExistingProperty', [
+            [
+                'key_name'    => 'serial_number',
+                'value_type'  => 'number',
+                'label'       => null,
+                'description' => null,
+            ]
+        ]);
+
+        $storedType = $dba->fetchOne(
+            $dba->select()->from('director_property', ['value_type'])
+                ->where('uuid = ?', DbUtil::quoteBinaryCompat($fieldUuid->getBytes(), $dba))
+        );
+
+        $this->assertSame(
+            'string',
+            $storedType,
+            'a field must count as used when its root property is attached'
         );
     }
 
@@ -600,6 +705,29 @@ class CustomVariableFormTest extends BaseTestCase
             $storedType,
             'value_type must stay put when a legacy Data Field still owns the varname'
         );
+    }
+
+    private function createHost(string $objectName, string $address): IcingaHost
+    {
+        $db = $this->getDb();
+        $host = IcingaHost::create([
+            'object_name' => $objectName,
+            'object_type' => 'object',
+            'address'     => $address,
+        ], $db);
+        $host->store();
+        $this->createdHostNames[] = $objectName;
+
+        return $host;
+    }
+
+    private function attachPropertyToHost(UuidInterface $propertyUuid, IcingaHost $host, $dba): void
+    {
+        $dba->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($host->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
     }
 
     public function tearDown(): void

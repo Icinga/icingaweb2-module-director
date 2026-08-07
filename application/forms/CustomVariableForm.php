@@ -604,15 +604,16 @@ class CustomVariableForm extends CompatForm
         array $datalist = [],
         string $itemType = ''
     ): void {
-        $used = (int) $this->getValue('used_count') > 0;
         $valueType = $values['value_type'];
         if (isset($values['used_count'])) {
             unset($values['used_count']);
         }
 
+        $cleaner = new CustomVariableValueCleaner($this->db);
+        $used = $this->isCurrentlyUsed($cleaner);
+
         if (! $used) {
             $dbProperty = $this->fetchProperty($this->uuid);
-            $cleaner = new CustomVariableValueCleaner($this->db);
 
             // The form validator should already catch this, this is just a backstop in
             // case a Data Field showed up between validation and submit.
@@ -747,6 +748,28 @@ class CustomVariableForm extends CompatForm
             $values,
             Filter::where('uuid', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()))
         );
+    }
+
+    /**
+     * Check usage fresh from the db instead of trusting used_count, a stale page
+     * or a crafted request could send the wrong value
+     *
+     * For a field, the attachment lives on its root property, not on the field
+     * itself, so walk up to the root before counting.
+     *
+     * @return bool
+     */
+    private function isCurrentlyUsed(CustomVariableValueCleaner $cleaner): bool
+    {
+        if ($this->parentUuid === null) {
+            return $cleaner->countAttachments($this->uuid) > 0;
+        }
+
+        $dbProperty = $cleaner->fetchProperty($this->uuid);
+        $parentProperty = $cleaner->fetchProperty($this->parentUuid);
+        [$rootProperty, ] = $cleaner->resolveRootProperty($dbProperty, $parentProperty);
+
+        return $cleaner->countAttachments(Uuid::fromBytes($rootProperty['uuid'])) > 0;
     }
 
     /**
