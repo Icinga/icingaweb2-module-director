@@ -26,11 +26,18 @@ use Icinga\Module\Director\Objects\DirectorProperty;
  */
 class PropertySchemaDiff
 {
+    /**
+     * @param CustomVariableValueCleaner $cleaner checks whether a legacy Data Field blocks cleanup
+     */
     public function __construct(private CustomVariableValueCleaner $cleaner)
     {
     }
 
     /**
+     * Work out what changed under a property tree since it was loaded
+     *
+     * @param DirectorProperty $root the root property to diff
+     *
      * @return PropertyChange[]
      */
     public function diff(DirectorProperty $root): array
@@ -52,7 +59,13 @@ class PropertySchemaDiff
     }
 
     /**
-     * @param PropertyChange[] $changes
+     * Walk a property's children and collect what changed under each of them
+     *
+     * @param DirectorProperty $parent the property whose children to check
+     * @param bool $blocked whether a legacy Data Field blocks stored value cleanup
+     * @param PropertyChange[] $changes changes found so far, added to by reference
+     *
+     * @return void
      */
     private function collectChanges(DirectorProperty $parent, bool $blocked, array &$changes): void
     {
@@ -75,6 +88,7 @@ class PropertySchemaDiff
         foreach ($items as $item) {
             if (! $item->hasBeenLoadedFromDb()) {
                 $this->collectChanges($item, $blocked, $changes);
+
                 continue;
             }
 

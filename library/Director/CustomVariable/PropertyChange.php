@@ -22,6 +22,14 @@ class PropertyChange
 
     public const DELETE = 'delete';
 
+    /**
+     * Store one worked out change for a nested property
+     *
+     * @param string $kind one of self::RENAME, self::RETYPE, self::DELETE
+     * @param DirectorProperty $property the property this change is about
+     * @param DirectorProperty $parent its parent property
+     * @param bool $allowed whether the stored value cleanup may go ahead
+     */
     private function __construct(
         public readonly string $kind,
         public readonly DirectorProperty $property,
@@ -30,11 +38,29 @@ class PropertyChange
     ) {
     }
 
+    /**
+     * Build a rename change
+     *
+     * @param DirectorProperty $property the property being renamed
+     * @param DirectorProperty $parent its parent property
+     * @param bool $allowed whether the stored value cleanup may go ahead
+     *
+     * @return self
+     */
     public static function rename(DirectorProperty $property, DirectorProperty $parent, bool $allowed): self
     {
         return new self(self::RENAME, $property, $parent, $allowed);
     }
 
+    /**
+     * Build a retype change
+     *
+     * @param DirectorProperty $property the property being retyped
+     * @param DirectorProperty $parent its parent property
+     * @param bool $allowed whether the stored value cleanup may go ahead
+     *
+     * @return self
+     */
     public static function retype(DirectorProperty $property, DirectorProperty $parent, bool $allowed): self
     {
         return new self(self::RETYPE, $property, $parent, $allowed);
@@ -44,6 +70,11 @@ class PropertyChange
      * A deletion always goes ahead in the schema. Only the stored value cleanup
      * can be held back by a legacy Data Field, and that's checked separately,
      * inside the cleanup call itself.
+     *
+     * @param DirectorProperty $property the property being deleted
+     * @param DirectorProperty $parent its parent property
+     *
+     * @return self
      */
     public static function delete(DirectorProperty $property, DirectorProperty $parent): self
     {

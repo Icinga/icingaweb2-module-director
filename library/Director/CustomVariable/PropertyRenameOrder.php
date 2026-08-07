@@ -19,6 +19,8 @@ namespace Icinga\Module\Director\CustomVariable;
 class PropertyRenameOrder
 {
     /**
+     * Work out a safe store order for the given renames, and flag any real cycles
+     *
      * @param array<string, array{old: string, new: string}> $renames keyed by uuid,
      *        entries where old equals new are ignored
      *
