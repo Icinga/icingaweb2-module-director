@@ -153,7 +153,7 @@ This is what the `withServices` parameter exists:
 
 The `properties` parameter also allows you to specify a list of specific
 properties. In that case, only the given properties will be returned, even
-when they have no (`null`) value:
+when they have no (`null`) value.
 
     director/host?name=hostname.example.com&properties=object_name,address,vars
 
@@ -247,9 +247,8 @@ endpoint.
     POST director/<objectType>/variables?<params>
     PUT  director/<objectType>/variables?<params>
 
-This endpoint requires `director/admin`, regardless of object type.
-
-with a JSON body whose keys are variable names and values are the new
+This endpoint requires `director/admin`, regardless of object type. Call
+it with a JSON body whose keys are variable names and values are the new
 values. Strings, numbers, booleans, arrays and nested dictionaries are
 all accepted, matching the types described in
 [Working with custom variables](12-Handling-custom-variables.md). The
