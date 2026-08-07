@@ -9,6 +9,7 @@ use Icinga\Application\Config;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\DictionaryElements\DictionaryItem;
+use Icinga\Module\Director\Forms\DictionaryElements\NestedDictionary;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Module\Director\Web\Form\Element\SensitiveElement;
@@ -800,6 +801,51 @@ class DictionaryItemTest extends BaseTestCase
         $result = $dictionaryItem->getItem();
 
         $this->assertSame('', $result['value']['auth_password']);
+    }
+
+    public function testRenamingADynamicDictionaryRowKeepsItsSensitiveValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->buildWifiNetworksDynamicDictionaryProperty();
+        $property['value'] = [
+            'office' => ['ssid' => 'corp-guest', 'passphrase' => 's3cr3t-wifi-pass'],
+        ];
+
+        // First page load, this is what the browser gets, DUMMYPASSWORD already
+        // stands in for the real secret.
+        $prepared = DictionaryItem::prepare($property);
+
+        $firstLoad = new DictionaryItem('0', $property);
+        $firstLoad->populate($prepared);
+        $firstLoad->ensureAssembled();
+
+        /** @var NestedDictionary $nestedDictionary */
+        $nestedDictionary = $firstLoad->getElement('var');
+        $row = $nestedDictionary->ensureAssembled()->getElement(0)->ensureAssembled();
+        $originalKey = $row->getElement('original_key')->getValue();
+        $this->assertSame('office', $originalKey, 'original_key must capture the key as first shown');
+
+        // User renames the row and never touches the passphrase field, so the
+        // browser resubmits everything it was given, key changed, hidden
+        // original_key carried forward, DUMMYPASSWORD still in place.
+        $resubmitted = $prepared;
+        $resubmitted['var'][0]['key'] = 'branch-office';
+        $resubmitted['var'][0]['original_key'] = $originalKey;
+
+        $secondLoad = new DictionaryItem('0', $property);
+        $secondLoad->populate($resubmitted);
+        $secondLoad->ensureAssembled();
+
+        $result = $secondLoad->getItem();
+
+        $this->assertSame(
+            's3cr3t-wifi-pass',
+            $result['value']['branch-office']['passphrase'],
+            'renaming a row must not lose its untouched sensitive child'
+        );
     }
 
     /**

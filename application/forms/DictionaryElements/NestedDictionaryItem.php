@@ -45,6 +45,10 @@ class NestedDictionaryItem extends FieldsetElement
             'required' => true
         ]);
 
+        // Keeps track of the key before a rename, so we don't lose the row.
+        $originalKey = $this->getPopulatedValue('original_key') ?? $this->getPopulatedValue('key');
+        $this->addElement('hidden', 'original_key', ['value' => $originalKey, 'ignore' => true]);
+
         $id = $this->getPopulatedValue('id');
         if ($id === null) {
             $id = uniqid('id-');

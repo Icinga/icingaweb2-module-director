@@ -783,8 +783,8 @@ class DictionaryItem extends FieldsetElement
                 $type === 'sensitive'
                 && $itemValue instanceof SensitiveElement
                 && $itemValue->wasSubmittedUnchanged()
-                && $this->fields['value'] !== null
-                && $this->fields['value'] !== ''
+                && ($this->fields['value'] ?? null) !== null
+                && ($this->fields['value'] ?? '') !== ''
             ) {
                 $values['value'] = $this->fields['value'];
             }

@@ -130,11 +130,12 @@ class NestedDictionary extends FieldsetElement
         }
 
         for ($i = 0; $i < $newCount; $i++) {
-            // Find this row's stored value by its entry key. $nestedItems is shared by
-            // every row and holds no value of its own, so a sensitive field needs this
-            // to fall back on when it comes back as the DUMMYPASSWORD placeholder.
+            // Look up by the original key, not a possibly just-renamed one, or a
+            // sensitive field loses its stored value when the row gets renamed.
             $populatedRow = $this->getPopulatedValue($i);
-            $entryKey = is_array($populatedRow) ? ($populatedRow['key'] ?? null) : null;
+            $entryKey = is_array($populatedRow)
+                ? ($populatedRow['original_key'] ?? $populatedRow['key'] ?? null)
+                : null;
             $entryValue = $entryKey !== null ? ($this->entryValues[$entryKey] ?? []) : [];
 
             $items = empty($entryValue)
