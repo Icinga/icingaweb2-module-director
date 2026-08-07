@@ -524,7 +524,6 @@ abstract class ObjectController extends ActionController
                 $this->content()->add($form);
             }
         } elseif ($form) {
-            $form->handleRequest($this->getServerRequest());
             $this->content()->add($form);
         }
 
