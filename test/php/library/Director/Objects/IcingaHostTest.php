@@ -791,6 +791,74 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testDynamicDictionaryOriginListsEachContributingTemplateOnce(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___tpl-a',
+            'object_type' => 'template',
+            'vars'        => ['env' => 'production'],
+        ], $db);
+        $templateA->store();
+
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___tpl-b',
+            'object_type' => 'template',
+            'vars'        => ['env' => 'production'],
+        ], $db);
+        $templateB->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___disk_checks_origin',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Disk Checks',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        foreach ([$templateA, $templateB] as $template) {
+            $db->insert('icinga_host_property', [
+                'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+                'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+            ]);
+        }
+
+        $templateA->vars()->set('___TEST___disk_checks_origin', (object) [
+            'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+        ]);
+        $templateA->store();
+
+        $templateB->vars()->set('___TEST___disk_checks_origin', (object) [
+            'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+            'logs' => (object) ['mount_point' => '/logs', 'warn' => '15%', 'crit' => '5%'],
+            'tmp'  => (object) ['mount_point' => '/tmp', 'warn' => '15%', 'crit' => '5%'],
+        ]);
+        $templateB->store();
+
+        $child = IcingaHost::create([
+            'object_name' => '___TEST___db-server-01',
+            'object_type' => 'object',
+            'address'     => '10.0.1.42',
+        ], $db);
+        $child->set('imports', ['___TEST___tpl-a', '___TEST___tpl-b']);
+        $child->store();
+
+        $loaded = IcingaHost::load('___TEST___db-server-01', $db);
+        $origins = $loaded->getOriginsVars();
+
+        $this->assertEquals(
+            '___TEST___tpl-a, ___TEST___tpl-b',
+            $origins->___TEST___disk_checks_origin,
+            'a template contributing several entries must show up only once in the origin list'
+        );
+    }
+
     protected function loadRendered($name)
     {
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');

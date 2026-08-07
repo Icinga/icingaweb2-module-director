@@ -1368,7 +1368,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     && array_key_exists($key, $linkedCustomProperties)
                     && $linkedCustomProperties[$key]->value_type === 'dynamic-dictionary'
                 ) {
-                    foreach ($value as $k => $v) {
+                    if (! empty((array) $value)) {
                         if (! isset($vals['_MERGED_']->$key)) {
                             $vals['_MERGED_']->$key = new stdClass();
                         }
@@ -1377,9 +1377,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                             $vals['_INHERITED_']->$key = new stdClass();
                         }
 
-                        $vals['_MERGED_']->$key->$k = $v;
-                        $vals['_INHERITED_']->$key->$k = $v;
+                        foreach ($value as $k => $v) {
+                            $vals['_MERGED_']->$key->$k = $v;
+                            $vals['_INHERITED_']->$key->$k = $v;
+                        }
 
+                        // One origin update per contributing template, not per entry,
+                        // or a template with several entries repeats itself here.
                         if (! isset($vals['_ORIGINS_']->$key)) {
                             $vals['_ORIGINS_']->$key = $name;
                         } elseif ($vals['_ORIGINS_']->$key !== $name) {
