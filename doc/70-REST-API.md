@@ -471,6 +471,10 @@ The message depends on how the variable is unknown.
   has never been configured under `Custom Variables` at all, meaning
   there is no matching top-level entry in `Custom Variables` to attach.
 
+A `null` value for an unknown or unattached key is rejected the same way a
+real value would be, it does not get treated as a no-op just because
+there is nothing to store.
+
 ```
 HTTP/1.1 404 Not Found
 Content-Type: application/json

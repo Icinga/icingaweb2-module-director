@@ -59,14 +59,15 @@ the migration afterward.
 
      psql -q -c "CREATE EXTENSION citext;"
 
-The REST API now enforces a Custom Variable's Item Type when it's a
-`Data List Strict` or `Data List Non Strict` property. Before this release, the
-`variables` endpoint accepted a single value or a list of values on either type
-of property, no matter what Item Type was configured. If Item Type is set to
-`Dynamic Array`, only a list is accepted now, otherwise only a single value is.
-A request that used to send the wrong shape and get away with it will now be
-rejected, check any script or integration relying on that endpoint if you use
-`Data List` properties.
+The `variables` endpoint enforces a Custom Variable's Item Type on a
+`Data List Strict` or `Data List Non Strict` property. If Item Type is set
+to `Dynamic Array`, only a list is accepted, otherwise only a single value
+is. Sending the other shape for that property is rejected. A `null` value
+for a variable that isn't attached to the object, or that Director doesn't
+recognize under `Custom Variables` at all, is rejected the same way a real
+value would be, it is never treated as a silent no-op. Check any script or
+integration relying on this endpoint against these rules if you use
+`Data List` properties or send `null` values.
 
 If you use `icingacli director migrate datafields` to move legacy Data
 Fields onto the new Custom Property system, note that a Data List field
@@ -77,11 +78,13 @@ After migration, that value is just accepted and stored, the list itself is
 never extended again. Check any Data List field using that behavior before
 running the migration.
 
-Removing an imported template from an object, whether in the UI or through
-the REST API, can now also remove a custom variable value that only
-existed because of that template. The UI asks for confirmation first; the
-REST API applies this cleanup right away. See [Attaching custom variables
-to objects and templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
+Removing an imported template from an object, or restoring a configuration
+basket that drops a property attachment, can now also remove a custom
+variable value that only existed because of it. Removing an import in the
+object form asks for confirmation before saving; the REST API and a basket
+restore apply the same cleanup right away, without asking. See [Attaching
+custom variables to objects and
+templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
 for details.
 
 <a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x

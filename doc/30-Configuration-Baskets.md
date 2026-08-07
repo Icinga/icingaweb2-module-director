@@ -104,3 +104,23 @@ that are not on the same version, for example between
 a master and a satellite/config master. To avoid a failed restore, keep Director versions
 aligned across instances that exchange baskets, or upgrade the receiving instance before
 restoring a snapshot from a newer one.
+
+<a id="Restoring-Custom-Variables"></a>### Restoring Custom Variable Schema Changes
+
+Restoring a snapshot applies the same cleanup to custom variable values that the
+object form and the REST API already apply, see [Attaching custom variables to
+objects and templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
+for the general rules.
+
+If the snapshot renamed or changed the type of a custom variable, restoring it
+moves or clears the values already stored on hosts, services and other objects
+to match the new name or type.
+
+If the snapshot no longer attaches a property to a template, restoring it removes
+any value that only existed because of that attachment. A value survives if some
+other template still provides the same property to the object holding it.
+
+A value that would otherwise be renamed or removed is left untouched, under its
+old name or type, when a legacy Data Field still claims that variable name. Both
+the web UI and `icingacli director basket restore` report how many values were
+kept this way once the restore finishes.

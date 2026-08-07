@@ -322,7 +322,10 @@ another template), the leftover value is removed too, unless some other
 still-imported template provides the same property. In the UI, removing a
 template that would take a value down with it shows a warning naming the
 affected variables and asks for confirmation before saving; the REST API
-applies the same cleanup without asking.
+applies the same cleanup without asking. Restoring a configuration basket
+that drops a property attachment applies the same cleanup as well, see
+[Restoring Custom Variable Schema Changes](30-Configuration-Baskets.md#Restoring-Custom-Variables)
+for that path.
 
 <a id="Required-custom-variables"></a>### Marking a custom variable as required
 
@@ -422,7 +425,10 @@ Configuration Baskets
 Configuration baskets capture custom variable definitions (and their
 nested items) together with the templates that use them, so restoring a
 basket snapshot restores both the template and the custom variable
-schema it depends on.
+schema it depends on. See [Restoring Custom Variable Schema
+Changes](30-Configuration-Baskets.md#Restoring-Custom-Variables) for how
+a restore handles values already stored under a renamed, retyped or
+detached property.
 
 > For a `datalist-strict` or `datalist-non-strict` property, only the
 > datalist's name travels with the basket, not its entries. Restoring
