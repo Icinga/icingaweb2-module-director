@@ -269,7 +269,7 @@ vars.http_vhosts += {
 ### Configuring a custom variable
 
 Go to `Custom Variables` in the Icinga Director menu and choose
-`Add Custom Variable`. The form lets you configure:
+`Create Custom Variable`. The form lets you configure:
 
 * `Property Key`: the variable name (e.g. `disk_checks`), used as
   `vars.<key>` in the rendered config
