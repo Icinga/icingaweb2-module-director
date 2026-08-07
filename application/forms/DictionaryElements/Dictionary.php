@@ -63,10 +63,11 @@ class Dictionary extends FieldsetElement
         $expectedCount = (int) $this->getPopulatedValue('item-count', 0);
         $count = 0;
 
-        // Load previously removed items from the hidden field (no session)
+        // Load previously removed items from the hidden field (no session). JSON
+        // encoded, a plain ", " join would break on a key_name that itself contains ", ".
         $removedItemsPopulated = $this->getPopulatedValue('items_removed', '');
         $removedItems = $removedItemsPopulated !== ''
-            ? array_fill_keys(explode(', ', $removedItemsPopulated), true)
+            ? array_fill_keys(json_decode($removedItemsPopulated, true) ?? [], true)
             : [];
 
         if ($this->allowItemRemoval) {
@@ -94,7 +95,7 @@ class Dictionary extends FieldsetElement
                     $this->clearPopulatedValue('items_removed');
                     $this->clearPopulatedValue($remove->getName());
                     $this->clearPopulatedValue($count);
-                    $this->populate(['items_removed' => implode(', ', array_keys($removedItems))]);
+                    $this->populate(['items_removed' => json_encode(array_keys($removedItems))]);
 
                     // Re-index populated values to ensure proper association with form data
                     foreach (range($count + 1, $expectedCount) as $i) {
@@ -115,7 +116,7 @@ class Dictionary extends FieldsetElement
             }
         }
 
-        $this->addElement('hidden', 'items_removed', ['value' => implode(', ', array_keys($removedItems))]);
+        $this->addElement('hidden', 'items_removed', ['value' => json_encode(array_keys($removedItems))]);
         $this->addElement('hidden', 'items_added', ['value' => implode(', ', $addedItems)]);
         $count = 0;
         foreach ($this->items as $item) {
@@ -203,13 +204,12 @@ class Dictionary extends FieldsetElement
     {
         $this->ensureAssembled();
         $itemsToRemove = $this->getPopulatedValue('items_removed');
+
         if (! empty($itemsToRemove)) {
-            $itemsToRemove = explode(', ', $itemsToRemove);
-        } else {
-            $itemsToRemove = [];
+            return json_decode($itemsToRemove, true) ?? [];
         }
 
-        return $itemsToRemove;
+        return [];
     }
 
     /**

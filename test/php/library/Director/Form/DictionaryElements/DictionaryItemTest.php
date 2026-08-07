@@ -848,6 +848,38 @@ class DictionaryItemTest extends BaseTestCase
         );
     }
 
+    public function testRemovingAnItemWhoseNameContainsTheDelimiterDoesNotAlsoRemoveUnrelatedItems(): void
+    {
+        // key_name allows ", ", so a property can legally be named "foo, bar". The
+        // removed-items list used to be a single ", "-joined string, which read that
+        // one name back as two separate removals, "foo" and "bar".
+        $items = [
+            'foo' => ['uuid' => '', 'key_name' => 'foo', 'value_type' => 'string', 'allow_removal' => true],
+            'bar' => ['uuid' => '', 'key_name' => 'bar', 'value_type' => 'string', 'allow_removal' => true],
+            'foo, bar' => [
+                'uuid' => '',
+                'key_name' => 'foo, bar',
+                'value_type' => 'string',
+                'allow_removal' => true,
+            ],
+        ];
+
+        $dictionary = (new Dictionary('properties', $items))->setAllowItemRemoval(true);
+        $dictionary->populate([
+            'item-count' => 3,
+            'remove_2' => 'y',
+            2 => ['name' => 'foo, bar'],
+        ]);
+        $dictionary->ensureAssembled();
+
+        $this->assertSame(['foo, bar'], $dictionary->getItemsToRemove());
+        $this->assertSame(
+            2,
+            $dictionary->getItemCount(),
+            '"foo" and "bar" must both survive, only the comma-named item is removed'
+        );
+    }
+
     /**
      * Build a fixed-dictionary DictionaryItem ("snmp_v3") with a string child
      * ("username") and a sensitive child ("auth_password"), backed by real
