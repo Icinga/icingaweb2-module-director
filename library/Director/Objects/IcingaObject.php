@@ -1175,21 +1175,59 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
+     * Apply this object's own group operators on top of the given group list
+     *
+     * This mirrors how Icinga evaluates the rendered configuration, where the
+     * last line wins: "groups = [ ... ]" resets whatever has been accumulated
+     * so far, "+=" adds to it and "-=" strips from it.
+     *
+     * @param array $groups
+     * @return array
+     * @throws NotFoundError
+     */
+    public function applyGroupOperatorsTo(array $groups)
+    {
+        $assigned = $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ASSIGN);
+        if (! empty($assigned)) {
+            $groups = $assigned;
+        }
+
+        $groups = array_merge(
+            $groups,
+            $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ADD)
+        );
+
+        return array_values(array_diff(
+            array_unique($groups),
+            $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_REMOVE)
+        ));
+    }
+
+    /**
+     * The groups inherited from all imported templates
+     *
+     * Ancestors are returned in Icinga's own evaluation order (grandparents
+     * before parents, imports in declaration order), so folding them one after
+     * another gives exactly what Icinga computes for the imports. Accumulating
+     * matters: a template removing a group must be able to strip a group that
+     * an earlier template added.
+     *
      * @return array
      * @throws NotFoundError
      */
     public function listInheritedGroupNames()
     {
-        $parents = $this->imports()->getObjects();
-        /** @var IcingaObject $parent */
-        foreach (array_reverse($parents) as $parent) {
-            $inherited = $parent->listEffectiveGroupNames();
-            if (! empty($inherited)) {
-                return $inherited;
-            }
+        if (! $this->supportsImports()) {
+            return [];
         }
 
-        return [];
+        $groups = [];
+        /** @var IcingaObject $parent */
+        foreach ($this->templates()->getTemplatesFor($this, true) as $parent) {
+            $groups = $parent->applyGroupOperatorsTo($groups);
+        }
+
+        return $groups;
     }
 
     public function setGroups($groups)
@@ -1213,25 +1251,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * The groups this object really ends up with, inheritance included
      *
-     * A local "groups = " overrides whatever has been inherited, "groups +="
-     * extends it and "groups -=" strips from it. This mirrors what Icinga
-     * itself computes when rendering the configuration.
+     * This is what Icinga will compute for the rendered object.
      *
      * @return array
      * @throws NotFoundError
      */
     public function listResolvedGroupNames()
     {
-        $assigned = $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ASSIGN);
-        $added    = $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ADD);
-        $removed  = $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_REMOVE);
-
-        $groups = empty($assigned) ? $this->listInheritedGroupNames() : $assigned;
-
-        return array_values(array_diff(
-            array_unique(array_merge($groups, $added)),
-            $removed
-        ));
+        return $this->applyGroupOperatorsTo($this->listInheritedGroupNames());
     }
 
     /**
