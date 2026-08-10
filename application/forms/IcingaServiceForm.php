@@ -15,6 +15,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
+use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\HtmlElement;
@@ -706,19 +707,16 @@ class IcingaServiceForm extends DirectorObjectForm
      * @return $this
      * @throws \Zend_Form_Exception
      */
-    /*
-     * Only the '=' operator is offered here, '+=' and '-=' memberships can
-     * still be maintained through Sync rules or the REST API. As setGroups()
-     * is scoped to '=', saving this form will not drop them.
-     */
     protected function addGroupsElement()
     {
         $groups = $this->enumServicegroups();
 
         if (! empty($groups)) {
+            $enum = $this->optionallyAddFromEnum($groups);
+
             $this->addElement('extensibleSet', 'groups', array(
                 'label'        => $this->translate('Groups'),
-                'multiOptions' => $this->optionallyAddFromEnum($groups),
+                'multiOptions' => $enum,
                 'positional'   => false,
                 'description'  => $this->translate(
                     'Service groups that should be directly assigned to this service.'
@@ -727,6 +725,28 @@ class IcingaServiceForm extends DirectorObjectForm
                     . ' either for custom dashboards or as an instrument to enforce'
                     . ' restrictions. Service groups can be directly assigned to'
                     . ' single services or to service templates.'
+                )
+            ));
+
+            $this->addElement('extensibleSet', 'groupsadd', array(
+                'label'        => $this->translate('Groups (add)'),
+                'multiOptions' => $enum,
+                'positional'   => false,
+                'description'  => $this->translate(
+                    'Service groups that should be added to the ones inherited from'
+                    . ' imported templates, rendered as "groups += [ ... ]". Use this'
+                    . ' when you want to extend the group assignment of your templates'
+                    . ' instead of replacing it.'
+                )
+            ));
+
+            $this->addElement('extensibleSet', 'groupsremove', array(
+                'label'        => $this->translate('Groups (remove)'),
+                'multiOptions' => $enum,
+                'positional'   => false,
+                'description'  => $this->translate(
+                    'Service groups that should be removed from the ones inherited from'
+                    . ' imported templates, rendered as "groups -= [ ... ]".'
                 )
             ));
         }
@@ -740,7 +760,41 @@ class IcingaServiceForm extends DirectorObjectForm
             ]);
         }
 
+        $inherited = $this->getInheritedGroups();
+        if (! empty($inherited)) {
+            /** @var BaseHtmlElement $links */
+            $links = $this->createServicegroupLinks($inherited);
+            if (count($this->object()->getGroups())) {
+                $links->addAttributes(['class' => 'strike-links']);
+                /** @var BaseHtmlElement $link */
+                foreach ($links->getContent() as $link) {
+                    if ($link instanceof BaseHtmlElement) {
+                        $link->addAttributes([
+                            'title' => $this->translate(
+                                'Group has been inherited, but will be overridden'
+                                . ' by locally assigned group(s)'
+                            )
+                        ]);
+                    }
+                }
+            }
+            $this->addElement('simpleNote', 'inherited_groups', [
+                'label'  => $this->translate('Inherited groups'),
+                'value'  => $links,
+                'ignore' => true,
+            ]);
+        }
+
         return $this;
+    }
+
+    protected function getInheritedGroups()
+    {
+        if ($this->hasObject()) {
+            return $this->object->listInheritedGroupNames();
+        }
+
+        return [];
     }
 
     /**
