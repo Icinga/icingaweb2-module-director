@@ -107,10 +107,6 @@ class MigrateCommand extends Command
                 echo "[-] Skipping migrating datafield '$varname' as it has an unsupported datatype '$dataType'\n";
             }
 
-            foreach ($this->getDatafieldsWithCategory() as $varname) {
-                echo "[-] Skipping migrating datafield '$varname' as it belongs to a category\n";
-            }
-
             foreach ($this->getDatafieldsWithDuplicateNames() as $varname => $count) {
                 printf(
                     "[-] Skipping migrating datafield '%s' as there are '%d' datafields with same name\n",
@@ -182,7 +178,7 @@ class MigrateCommand extends Command
     }
 
     /**
-     * Print the datatype/category/duplicate breakdown, and reconcile it against
+     * Print the datatype/duplicate breakdown, and reconcile it against
      * datafields that are skipped because a custom property with the same name
      * already exists, so the final migrated/skipped totals aren't a mystery.
      *
@@ -194,7 +190,6 @@ class MigrateCommand extends Command
     private function printMigrationDetails(array $customPropertiesToMigrate, array $existingCustomProperties): void
     {
         $this->checkMigrateableDatafieldTypes();
-        $this->checkDatafieldsWithCategory();
         $this->checkUnmigrateableDatafieldTypes();
         $this->checkDatafieldsWithDuplicateNames();
 
@@ -509,8 +504,7 @@ class MigrateCommand extends Command
         $query = $this->getDataFieldQuery();
         $skippedFields = array_merge(
             array_keys($this->getDatafieldsWithDuplicateNames()),
-            array_keys($this->getDatafieldsWithUnsupportedValuetype()),
-            $this->getDatafieldsWithCategory()
+            array_keys($this->getDatafieldsWithUnsupportedValuetype())
         );
 
         if (! empty($skippedFields)) {
@@ -518,20 +512,6 @@ class MigrateCommand extends Command
         }
 
         return $query;
-    }
-
-    /**
-     * Check what datafields can not be migrated because they belong to a category
-     *
-     * @return void
-     */
-    private function checkDatafieldsWithCategory(): void
-    {
-        $count = count($this->getDatafieldsWithCategory());
-
-        if ($count > 0) {
-            printf("The following number of datafields belong to a category and can not be migrated: %d\n\n", $count);
-        }
     }
 
     /**
@@ -624,20 +604,6 @@ class MigrateCommand extends Command
         }
 
         return $duplicates;
-    }
-
-    /**
-     * Get datafields with categories
-     *
-     * @return array
-     */
-    private function getDatafieldsWithCategory(): array
-    {
-        $query = $this->getDataFieldQuery();
-        $query->addFilter(Filter::fromQueryString('category_id IS NOT NULL'));
-        $query->columns(['varname']);
-
-        return $query->fetchColumn();
     }
 
     /**

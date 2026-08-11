@@ -38,6 +38,7 @@ class MigrateCommandTest extends BaseTestCase
     // Non-migratable datafield varnames
     private const VAR_SQL_QUERY    = self::PREFIX . 'sql_query_field';
 
+    // Migratable, category must carry over to the new property
     private const VAR_CATEGORIZED  = self::PREFIX . 'categorized_field';
 
     // Migratable as 'sensitive' (legacy hidden-visibility string)
@@ -70,6 +71,7 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_HIDDEN,
         self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR,
         self::VAR_ENV_CHOICES_NO_DATA_TYPE,
+        self::VAR_CATEGORIZED,
     ];
 
     private const ALL_TEST_VARS = [
@@ -365,7 +367,7 @@ class MigrateCommandTest extends BaseTestCase
         }
     }
 
-    public function testCategorizedDatafieldIsSkipped(): void
+    public function testCategorizedDatafieldMigratesWithCategory(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -378,13 +380,18 @@ class MigrateCommandTest extends BaseTestCase
         $cmd->runDatafields();
 
         $dba = $db->getDbAdapter();
-        $count = $dba->fetchOne(
-            $dba->select()->from(
-                'director_property',
-                ['cnt' => 'COUNT(*)']
-            )->where('key_name = ?', self::VAR_CATEGORIZED)
+        $property = $dba->fetchRow(
+            $dba->select()->from('director_property', ['category_id'])
+                ->where('key_name = ?', self::VAR_CATEGORIZED)
         );
-        $this->assertEquals(0, (int) $count, 'Categorized datafield must not be migrated');
+        $this->assertNotFalse($property, 'categorized_field property must be created');
+
+        $category = DirectorDatafieldCategory::load(self::CAT_NAME, $db);
+        $this->assertEquals(
+            $category->get('id'),
+            $property->category_id,
+            'migrating a categorized datafield must carry its category_id over'
+        );
     }
 
     public function testHiddenStringFieldMigratesAsSensitive(): void
@@ -1182,7 +1189,7 @@ class MigrateCommandTest extends BaseTestCase
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeSqlQuery',
         ], $db)->store();
 
-        // 7. categorized_field — has a category (skip)
+        // 7. categorized_field, has a category, migrates with category_id carried over
         $field = DirectorDatafield::create([
             'varname'     => self::VAR_CATEGORIZED,
             'caption'     => 'Categorized Field',
