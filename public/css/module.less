@@ -1444,6 +1444,22 @@ tr.branch_modified {
   color: @color-pending;
 }
 
+table.activity-log.pdf-export {
+    td {
+      max-height: none;
+    }
+
+    div.range-comment-container {
+      position: static;
+      height: auto;
+    }
+
+    a.range-comment {
+      height: auto;
+      overflow: visible;
+    }
+}
+
 table.config-diff {
 
     tr th:first-child {
