@@ -162,8 +162,10 @@ class ConfigController extends ActionController
         $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog')->extend(new OutputFormat());
         $this->addTitle($this->translate('Activity Log'));
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
+        $isPdfExport = $this->url()->getParam('format') === 'pdf';
         $table = new ActivityLogTable($this->db());
         $table->setLastDeployedId($lastDeployedId);
+        $table->setIsPdfExport($isPdfExport);
         if ($idRangeEx = $this->url()->getParam('idRangeEx')) {
             $table->applyFilter(Filter::fromQueryString($idRangeEx));
         }
@@ -211,7 +213,7 @@ class ConfigController extends ActionController
         }
 
         // export should contain the whole filtered log, not just the current page
-        if ($this->url()->getParam('format') === 'pdf' && ! $this->url()->hasParam('limit')) {
+        if ($isPdfExport && ! $this->url()->hasParam('limit')) {
             $table->getQuery()->limit(count($table));
             // drop it here too, otherwise the paginator below still offsets by whatever page we were on
             $this->url()->shift('page');
