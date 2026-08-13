@@ -291,6 +291,11 @@ abstract class ActionController extends Controller implements ControlsAndContent
             $html
         );
 
+        // core's page number relies on a CSS counter neither dompdf nor a headless
+        // browser print engine ever increments here, so it always shows "Page 0"
+        // and its border sits right on top of the last row. just drop it for now.
+        $html = str_replace('<div class="page-number"></div>', '', $html);
+
         $request = $this->getRequest();
         $filename = sprintf('%s-%s-%d', $request->getControllerName(), $request->getActionName(), time());
 

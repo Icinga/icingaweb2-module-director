@@ -1458,6 +1458,15 @@ table.activity-log.pdf-export {
       height: auto;
       overflow: visible;
     }
+
+    // the day divider thead repeats on every page dompdf breaks this table
+    // across, but body's padding-top that reserves space for the fixed page
+    // header only paints on page 1. give the divider the same top padding so
+    // it clears the logo whenever it gets redrawn on later pages too. core's
+    // pdf layout reserves 37px for the header on a 9pt (12px) base font.
+    th.table-header-day {
+      padding-top: (37px / 12px) * 1em;
+    }
 }
 
 table.config-diff {
