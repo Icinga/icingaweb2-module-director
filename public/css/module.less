@@ -1367,6 +1367,51 @@ th.table-header-day {
   text-align: right;
 }
 
+// Green for created, amber for modified, red for deleted
+@activity-created: @color-ok;
+@activity-modified: @color-warning;
+@activity-deleted: @color-critical;
+
+.bulk-activity-summary {
+  margin-bottom: 2em;
+
+  p.activity-counts {
+    margin-bottom: 0.5em;
+
+    strong {
+      margin-right: 1em;
+    }
+  }
+
+  // A restore turns the change around, so a create ends up red and a delete green
+  .activity-badge {
+    display: inline-block;
+    margin-right: 0.5em;
+    padding: 0 0.75em;
+    border: 1px solid @gray-light;
+    border-radius: 1em;
+
+    &.action-create, &.undo-delete {
+      border-color: @activity-created;
+      background-color: fade(@activity-created, 15%);
+    }
+
+    &.action-modify, &.undo-modify {
+      border-color: @activity-modified;
+      background-color: fade(@activity-modified, 15%);
+    }
+
+    &.action-delete, &.undo-create {
+      border-color: @activity-deleted;
+      background-color: fade(@activity-deleted, 15%);
+    }
+
+    &.undo-skipped {
+      background-color: @gray-lighter;
+    }
+  }
+}
+
 table.activity-log {
     td {
       max-height: 2em;
@@ -1396,19 +1441,19 @@ table.activity-log {
 
     tr.action-create td:first-child::before {
         // icon-plus
-        color: @color-pending;
+        color: @activity-created;
         content: '\e805';
     }
 
     tr.action-modify td:first-child::before {
         // icon-wrench
-        color: @color-ok;
+        color: @activity-modified;
         content: '\e83d';
     }
 
     tr.action-delete td:first-child::before {
         // icon-cancel
-        color: @color-critical;
+        color: @activity-deleted;
         content: '\e804';
     }
 
@@ -1946,13 +1991,13 @@ div.exception {
 }
 
 h2.action-create::before {
-  color: @color-pending;
+  color: @activity-created;
 }
 h2.action-modify::before {
-  color: @color-ok;
+  color: @activity-modified;
 }
 h2.action-delete::before {
-  color: @color-critical;
+  color: @activity-deleted;
 }
 
 /* Special components */

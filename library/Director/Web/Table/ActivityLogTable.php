@@ -7,6 +7,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use DateTime;
 use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Util;
 use IntlDateFormatter;
@@ -15,6 +16,8 @@ use ipl\Html\HtmlElement;
 
 class ActivityLogTable extends IntlZfQueryBasedTable
 {
+    use MultiSelect;
+
     protected $filters = [];
 
     protected $lastDeployedId;
@@ -54,6 +57,10 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         $this->getAttributes()->add('class', 'activity-log');
         if ($this->isPdfExport) {
             $this->getAttributes()->add('class', 'pdf-export');
+        } elseif (Util::hasPermission(Permission::SHOW_CONFIG)) {
+            // Rows only get a row link with this permission, without it the
+            // remark's href="#" would be used as the row link
+            $this->enableMultiSelect('director/config/activities-bulk', 'director/config/activities', ['id']);
         }
     }
 
@@ -260,7 +267,10 @@ class ActivityLogTable extends IntlZfQueryBasedTable
                     $row->action,
                     'director/config/activity',
                     array_merge(['id' => $row->id], $this->extraParams),
-                    ['title' => $this->translate('Show details related to this change')]
+                    [
+                        'title' => $this->translate('Show details related to this change'),
+                        'class' => 'rowaction',
+                    ]
                 ),
                 str_replace('_', ' ', $type),
                 $object

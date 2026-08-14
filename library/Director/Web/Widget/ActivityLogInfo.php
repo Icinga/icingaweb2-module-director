@@ -60,6 +60,9 @@ class ActivityLogInfo extends HtmlDocument
     /** @var int */
     protected $id;
 
+    /** @var bool Shown inside the multiselect view */
+    protected $embedded = false;
+
     public function __construct(Db $db, $type = null, $name = null)
     {
         $this->db = $db;
@@ -67,6 +70,16 @@ class ActivityLogInfo extends HtmlDocument
             $this->setType($type);
         }
         $this->name = $name;
+    }
+
+    /**
+     * Hide the restore button, the multiselect view has one for all entries
+     */
+    public function setEmbedded(bool $embedded)
+    {
+        $this->embedded = $embedded;
+
+        return $this;
     }
 
     public function setType($type)
@@ -166,9 +179,16 @@ class ActivityLogInfo extends HtmlDocument
      */
     protected function getRestoreForm()
     {
+        $action = $this->entry->action_name;
+        $isCreate = $action === DirectorActivityLog::ACTION_CREATE;
+        $isModify = $action === DirectorActivityLog::ACTION_MODIFY;
+
         return RestoreObjectForm::load()
             ->setDb($this->db)
-            ->setObject($this->oldObject())
+            ->setObject($isCreate ? $this->newObject() : $this->oldObject())
+            // After a rename the live object has the new name, find it by that
+            ->setLookupObject($isModify ? $this->newObject() : null)
+            ->setDelete($isCreate)
             ->handleRequest();
     }
 
@@ -581,7 +601,8 @@ class ActivityLogInfo extends HtmlDocument
             $entry->checksum
         );
 
-        if ($this->canRestoreFormerObject()) {
+        $isCreate = $this->entry->action_name === DirectorActivityLog::ACTION_CREATE;
+        if (! $this->embedded && ($this->canRestoreFormerObject() || $isCreate)) {
             $table->addNameValueRow(
                 $this->translate('Actions'),
                 $this->getRestoreForm()
@@ -666,9 +687,32 @@ class ActivityLogInfo extends HtmlDocument
      */
     protected function createObject($type, $props)
     {
+        return static::createObjectFromProperties($type, $props, $this->db, $this->entry->object_name);
+    }
+
+    /**
+     * Build an object from the properties saved in a log entry
+     *
+     * The multiselect view uses this too.
+     *
+     * @param string $type
+     * @param string $props Saved properties as json
+     * @param Db $db
+     * @param string|null $fallbackName Name to use when the properties have none
+     *
+     * @return IcingaObject
+     *
+     * @throws \Icinga\Exception\IcingaException
+     */
+    public static function createObjectFromProperties(
+        string $type,
+        string $props,
+        Db $db,
+        ?string $fallbackName = null
+    ) {
         $props = json_decode($props);
         // Older entries that only saved custom variables have no name in them
-        $newProps = ['object_name' => $props->object_name ?? $this->entry->object_name];
+        $newProps = ['object_name' => $props->object_name ?? $fallbackName];
         if (property_exists($props, 'object_type')) {
             $newProps['object_type'] = $props->object_type;
         }
@@ -676,7 +720,7 @@ class ActivityLogInfo extends HtmlDocument
         $object = IcingaObject::createByType(
             $type,
             $newProps,
-            $this->db
+            $db
         );
 
         if ($type === 'icinga_service_set' && isset($props->services)) {
@@ -685,7 +729,7 @@ class ActivityLogInfo extends HtmlDocument
                 $services[$service->object_name] = IcingaObject::createByType(
                     'icinga_service',
                     (array) $service,
-                    $this->db
+                    $db
                 );
             }
 
