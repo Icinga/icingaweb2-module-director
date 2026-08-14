@@ -6,6 +6,7 @@ use gipfl\Diff\HtmlRenderer\SideBySideDiff;
 use gipfl\Diff\PhpDiff;
 use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Auth\Permission;
@@ -26,6 +27,7 @@ use Icinga\Module\Director\Web\Table\GeneratedConfigFileTable;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Tabs\InfraTabs;
 use Icinga\Module\Director\Web\Widget\ActivityLogInfo;
+use Icinga\Module\Director\Web\Widget\BulkActivityLogInfo;
 use Icinga\Module\Director\Web\Widget\DeployedConfigInfoHeader;
 use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
@@ -249,6 +251,65 @@ class ConfigController extends ActionController
         $this->addTitle($info->getTitle());
         $this->controls()->prepend($info->getPagination($this->url()));
         $this->content()->add($info);
+    }
+
+    /**
+     * Shows a combined diff for multiple activity log entries selected in the
+     * activity log table, with an option to restore all of them at once,
+     * newest change first, so that on a shared object the oldest one wins
+     *
+     * @throws \Icinga\Security\SecurityException
+     */
+    public function activitiesBulkAction()
+    {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
+        $this->assertPermission('director/showconfig');
+        $ids = $this->getBulkSelectedActivityIds();
+        if (empty($ids)) {
+            throw new NotFoundError('No activity log entries have been selected');
+        }
+
+        $this->addSingleTab($this->translate('Bulk activity view'))
+            ->addTitle($this->translate('%d selected activities'), count($ids));
+
+        $info = new BulkActivityLogInfo($this->db(), $ids);
+        // forces the restore form in there to handle its request now, while we're
+        // still in the action, not lazily once the view gets rendered
+        $info->ensureAssembled();
+        $this->content()->add($info);
+    }
+
+    /**
+     * Extracts the ids from the multiselect filter query, newest first. Sorted
+     * explicitly rather than trusting the query string order, that one just
+     * follows whatever order the table happened to list rows in
+     *
+     * @return int[]
+     */
+    protected function getBulkSelectedActivityIds()
+    {
+        $ids = [];
+        foreach (Filter::fromQueryString($this->params->toString())->filters() as $sub) {
+            if ($sub instanceof FilterExpression) {
+                if ($sub->getColumn() === 'id') {
+                    $ids[] = (int) $sub->getExpression();
+                }
+
+                continue;
+            }
+
+            foreach ($sub->filters() as $expression) {
+                if ($expression->getColumn() === 'id') {
+                    $ids[] = (int) $expression->getExpression();
+                }
+            }
+        }
+
+        rsort($ids, SORT_NUMERIC);
+
+        return $ids;
     }
 
     /**
