@@ -60,6 +60,9 @@ class ActivityLogInfo extends HtmlDocument
     /** @var int */
     protected $id;
 
+    /** @var bool whether this is rendered as part of a bulk activity log view */
+    protected $embedded = false;
+
     public function __construct(Db $db, $type = null, $name = null)
     {
         $this->db = $db;
@@ -67,6 +70,17 @@ class ActivityLogInfo extends HtmlDocument
             $this->setType($type);
         }
         $this->name = $name;
+    }
+
+    /**
+     * A single restore button per entry doesn't make sense when this is embedded
+     * in a bulk view, that one gets a combined restore form instead
+     */
+    public function setEmbedded(bool $embedded)
+    {
+        $this->embedded = $embedded;
+
+        return $this;
     }
 
     public function setType($type)
@@ -166,9 +180,17 @@ class ActivityLogInfo extends HtmlDocument
      */
     protected function getRestoreForm()
     {
+        $action = $this->entry->action_name;
+        $isCreate = $action === DirectorActivityLog::ACTION_CREATE;
+        $isModify = $action === DirectorActivityLog::ACTION_MODIFY;
+
         return RestoreObjectForm::load()
             ->setDb($this->db)
-            ->setObject($this->oldObject())
+            ->setObject($isCreate ? $this->newObject() : $this->oldObject())
+            // a rename means the live object now sits under its new name, we
+            // need that one to find it, not the old name we're restoring to
+            ->setLookupObject($isModify ? $this->newObject() : null)
+            ->setDelete($isCreate)
             ->handleRequest();
     }
 
@@ -581,7 +603,8 @@ class ActivityLogInfo extends HtmlDocument
             $entry->checksum
         );
 
-        if ($this->canRestoreFormerObject()) {
+        $isCreate = $this->entry->action_name === DirectorActivityLog::ACTION_CREATE;
+        if (! $this->embedded && ($this->canRestoreFormerObject() || $isCreate)) {
             $table->addNameValueRow(
                 $this->translate('Actions'),
                 $this->getRestoreForm()
@@ -666,9 +689,25 @@ class ActivityLogInfo extends HtmlDocument
      */
     protected function createObject($type, $props)
     {
+        return static::createObjectFromProperties($type, $props, $this->db, $this->entry->object_name);
+    }
+
+    /**
+     * Build an IcingaObject from a decoded old_properties/new_properties snapshot
+     * as stored in the activity log. Shared with the bulk activity log view.
+     *
+     * @param string $type
+     * @param string $props json-encoded property snapshot
+     * @param Db $db
+     * @param string|null $fallbackName Name to use when the snapshot has none
+     * @return IcingaObject
+     * @throws \Icinga\Exception\IcingaException
+     */
+    public static function createObjectFromProperties($type, $props, Db $db, $fallbackName = null)
+    {
         $props = json_decode($props);
         // Older entries that only saved custom variables have no name in them
-        $newProps = ['object_name' => $props->object_name ?? $this->entry->object_name];
+        $newProps = ['object_name' => $props->object_name ?? $fallbackName];
         if (property_exists($props, 'object_type')) {
             $newProps['object_type'] = $props->object_type;
         }
@@ -676,7 +715,7 @@ class ActivityLogInfo extends HtmlDocument
         $object = IcingaObject::createByType(
             $type,
             $newProps,
-            $this->db
+            $db
         );
 
         if ($type === 'icinga_service_set' && isset($props->services)) {
@@ -685,7 +724,7 @@ class ActivityLogInfo extends HtmlDocument
                 $services[$service->object_name] = IcingaObject::createByType(
                     'icinga_service',
                     (array) $service,
-                    $this->db
+                    $db
                 );
             }
 
