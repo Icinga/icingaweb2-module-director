@@ -21,7 +21,8 @@ final readonly class IcingaObjectWriteRequest
      * @param string $actionName The dispatched action, e.g. "index" or "variables"
      * @param string $method HTTP method, "POST" or "PUT"
      * @param bool $replaceAll Whether a POST body's "vars" is a full replacement
-     * @param array $overRiddenCustomVars 2-dimensional array of key => value
+     * @param array<string, mixed> $overRiddenCustomVars key => value, value can be a
+     *        scalar or a nested array/object for dictionary and array typed vars
      * @param bool $allowsOverrides Whether the "allowOverrides" request param was set
      * @param UrlParams $params The request's URL parameters
      */

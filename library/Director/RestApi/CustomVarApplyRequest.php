@@ -12,7 +12,8 @@ final readonly class CustomVarApplyRequest
 {
     /**
      * @param IcingaObject $object The object the overrides apply to
-     * @param array $overRiddenCustomVars 2-dimensional array of key => value
+     * @param array<string, mixed> $overRiddenCustomVars key => value, value can be a
+     *        scalar or a nested array/object for dictionary and array typed vars
      * @param string $actionName Endpoint name, e.g. "index" or "variables"
      * @param string $method HTTP method, "POST" or "PUT"
      * @param bool $replaceAll Whether this is a full "vars" replacement
