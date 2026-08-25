@@ -391,7 +391,7 @@ class CustomVariableForm extends CompatForm
                 CalloutType::Warning,
                 Text::create($this->translate(
                     'There are objects with this custom variable. Renaming changes the name of the'
-                    . ' custom variable in those objects. And this may break the apply rules. Are you'
+                    . ' custom variable in those objects. This may break the apply rules. Are you'
                     . ' sure you want to rename the custom variable?'
                 ))
             ));
