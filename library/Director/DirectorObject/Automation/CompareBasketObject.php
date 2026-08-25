@@ -58,7 +58,7 @@ class CompareBasketObject
 
             // Empty and missing mean the same thing here. A live object always
             // carries these keys, an old basket just skips them. Drop the empty ones.
-            foreach (['customVariables', 'fields'] as $property) {
+            foreach (['customVariables', 'fields', 'items'] as $property) {
                 if (isset($value->$property) && empty($value->$property)) {
                     unset($value->$property);
                 }
