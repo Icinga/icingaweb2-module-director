@@ -612,6 +612,23 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * List the keys of every var that is set right now but has no uuid yet
+     *
+     * @return string[]
+     */
+    public function listKeysWithoutUuid(): array
+    {
+        $keys = [];
+        foreach ($this->vars as $key => $var) {
+            if (! $var->hasBeenDeleted() && $var->getUuid() === null) {
+                $keys[] = $key;
+            }
+        }
+
+        return $keys;
+    }
+
     public function __toString()
     {
         try {
