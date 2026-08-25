@@ -95,7 +95,7 @@ class ExportCommand extends Command
     }
 
     /**
-     * Export all CustomProperty definitions
+     * Export all Custom Property definitions
      *
      * USAGE
      *
