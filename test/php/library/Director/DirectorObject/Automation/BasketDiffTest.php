@@ -55,6 +55,145 @@ class BasketDiffTest extends BaseTestCase
             $diff->hasChangedFor('CustomVariable', $propertyUuidString, $rootUuid),
             'the diff must not report a change when nothing was actually modified'
         );
+
+        $this->assertTrue(
+            $diff->getCustomPropertyMigrationPreview($propertyUuidString)->isNoop(),
+            'the migration preview must be a no-op when nothing was actually modified'
+        );
+    }
+
+    /**
+     * A live property always exports an "items" list, even an empty one. An
+     * older basket that never recorded that key at all must still diff as
+     * unchanged for a plain, childless property, missing and empty mean the
+     * same thing here.
+     */
+    public function testDiffReportsUnchangedWhenBasketOmitsEmptyItemsForAScalarProperty(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $keyName = self::PREFIX . 'scalar_prop';
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => $keyName,
+            'value_type' => 'string',
+            'label'      => 'Scalar Prop',
+        ], $db);
+        $property->store();
+
+        try {
+            $propertyUuidString = Uuid::fromBytes($property->get('uuid'))->toString();
+            $exportedProperty = DirectorProperty::loadWithUniqueId(
+                Uuid::fromString($propertyUuidString),
+                $db
+            )->export();
+            unset($exportedProperty->items);
+
+            $basket = Basket::create(['uuid' => Uuid::uuid4()->getBytes(), 'basket_name' => self::PREFIX . 'basket7']);
+            $snapshot = BasketSnapshot::forBasketFromJson(
+                $basket,
+                json_encode(['CustomVariable' => [$propertyUuidString => $exportedProperty]])
+            );
+
+            $diff = new BasketDiff($snapshot, $db);
+
+            $this->assertFalse(
+                $diff->hasChangedFor('CustomVariable', $propertyUuidString, Uuid::fromString($propertyUuidString)),
+                'a scalar property must not be reported as modified just because the basket '
+                . 'never recorded an empty items list'
+            );
+        } finally {
+            $dba = $db->getDbAdapter();
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
+        }
+    }
+
+    public function testMigrationPreviewDescribesANestedRenameAndCountsStoredValues(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $templateName = self::PREFIX . 'contact-template';
+
+        $host = IcingaHost::create([
+            'object_name' => $templateName,
+            'object_type' => 'template',
+        ]);
+        $host->store($db);
+
+        $root = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::PREFIX . 'contact_info',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Contact Info',
+        ], $db);
+        $root->store();
+
+        $child = DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'phone',
+            'parent_uuid' => $root->get('uuid'),
+            'value_type'  => 'string',
+        ], $db);
+        $child->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($root->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($host->get('uuid'), $dba),
+        ]);
+
+        $host->vars()->set(self::PREFIX . 'contact_info', (object) ['phone' => '555']);
+        $host->store();
+
+        $rootUuidString = Uuid::fromBytes($root->get('uuid'))->toString();
+        $exportedRoot = DirectorProperty::loadWithUniqueId(Uuid::fromString($rootUuidString), $db)->export();
+        // simulate the basket renaming the nested field, same shape storeNewProperties() sees
+        // while a real restore is pending
+        foreach ($exportedRoot->items as $item) {
+            if ($item->key_name === 'phone') {
+                $item->key_name = 'mobile';
+            }
+        }
+
+        try {
+            $basket = Basket::create(['uuid' => Uuid::uuid4()->getBytes(), 'basket_name' => self::PREFIX . 'basket6']);
+            $snapshot = BasketSnapshot::forBasketFromJson(
+                $basket,
+                json_encode(['CustomVariable' => [$rootUuidString => $exportedRoot]])
+            );
+
+            $diff = new BasketDiff($snapshot, $db);
+            $migration = $diff->getCustomPropertyMigrationPreview($rootUuidString);
+
+            $this->assertFalse($migration->isNoop(), 'a nested rename must not be reported as a no-op');
+            $this->assertCount(1, $migration->children, 'exactly one nested field changed');
+
+            $change = array_values($migration->children)[0];
+            $this->assertSame('phone', $change->oldKey);
+            $this->assertSame('mobile', $change->newKey);
+
+            $this->assertSame(
+                1,
+                $diff->countStoredCustomVariableValues($migration->oldVarname),
+                'exactly one host already has a value stored under this property'
+            );
+        } finally {
+            $dba->delete(
+                'icinga_host_property',
+                $dba->quoteInto('host_uuid = ?', DbUtil::quoteBinaryCompat($host->get('uuid'), $dba))
+            );
+            $host->delete();
+            $rootUuid = DbUtil::quoteBinaryCompat($root->get('uuid'), $dba);
+            $dba->delete('director_property', $dba->quoteInto('parent_uuid = ?', $rootUuid));
+            $dba->delete('director_property', $dba->quoteInto('uuid = ?', $rootUuid));
+        }
     }
 
     /**

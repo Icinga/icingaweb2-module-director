@@ -3,6 +3,9 @@
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use gipfl\Json\JsonString;
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\PropertySchemaDiff;
+use Icinga\Module\Director\CustomVariable\PropertyValueMigration;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
@@ -72,6 +75,38 @@ class BasketDiff
         }
 
         return $this->customPropertyResolver;
+    }
+
+    /**
+     * Work out what restoring this property would do to its stored values
+     *
+     * Runs the exact same check a real restore does, just never followed by a
+     * write, so this is safe to call from a preview screen.
+     *
+     * @param string $uuid the property's uuid as used in the basket's own CustomVariable map
+     *
+     * @return PropertyValueMigration
+     */
+    public function getCustomPropertyMigrationPreview(string $uuid): PropertyValueMigration
+    {
+        $property = $this->getCustomPropertyResolver()->getTargetProperty($uuid);
+        if ($property === null) {
+            return PropertyValueMigration::nothingStoredYet();
+        }
+
+        $cleaner = new CustomVariableValueCleaner($this->db);
+
+        return (new PropertySchemaDiff($cleaner))->diff($property);
+    }
+
+    /**
+     * Count how many hosts, services and so on already have a value stored under this varname
+     *
+     * @return int
+     */
+    public function countStoredCustomVariableValues(string $varname): int
+    {
+        return (new CustomVariableValueCleaner($this->db))->countStoredValues($varname);
     }
 
     protected function getCurrent(string $type, string $key, ?UuidInterface $uuid = null): ?stdClass

@@ -785,9 +785,12 @@ class CustomVariableValueCleaner
     /**
      * Count how many stored values exist under this varname, across every object type
      *
+     * Public so a preview can show how many hosts, services and so on already have
+     * a value under a property before a restore actually touches anything.
+     *
      * @return int
      */
-    private function countStoredValues(string $varname): int
+    public function countStoredValues(string $varname): int
     {
         $db = $this->db->getDbAdapter();
         $total = 0;

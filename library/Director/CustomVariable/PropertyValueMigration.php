@@ -16,8 +16,9 @@ final class PropertyValueMigration
 {
     /**
      * @param string $oldVarname varname the value is currently stored under
-     * @param string $newVarname varname it should end up under, same as $oldVarname
-     *                           unless the root itself renamed and that rename went through
+     * @param string $newVarname varname the rename was aiming for, matches the current name
+     *                           unless the root itself renamed. Stays set this way even when
+     *                           blocked, so the block can still be explained
      * @param string $oldRootType the root's value_type before this restore, decides how
      *                             the stored JSON is shaped (plain vs. dynamic-dictionary)
      * @param bool $wholeValueCleared true if the root itself retyped, the old value can't

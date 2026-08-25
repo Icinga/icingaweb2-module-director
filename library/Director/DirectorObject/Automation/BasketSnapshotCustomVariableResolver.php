@@ -375,6 +375,18 @@ class BasketSnapshotCustomVariableResolver
     }
 
     /**
+     * Get the target property for one basket uuid, null if there is none
+     *
+     * @param string $uuid the property's uuid as used in the basket's own CustomVariable map
+     *
+     * @return ?DirectorProperty
+     */
+    public function getTargetProperty(string $uuid): ?DirectorProperty
+    {
+        return $this->getTargetProperties()[$uuid] ?? null;
+    }
+
+    /**
      * Get the UUID map for object property UUIDs.
      *
      * @return array

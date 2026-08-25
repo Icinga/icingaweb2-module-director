@@ -67,9 +67,12 @@ class PropertySchemaDiff
 
             $this->revertSubtree($root);
 
+            // This still keeps the name the basket actually asked for, even though the
+            // rename never happens. Whoever explains the block later needs to know
+            // what it would have been.
             return new PropertyValueMigration(
                 oldVarname: $oldVarname,
-                newVarname: $oldVarname,
+                newVarname: $newVarname,
                 oldRootType: $oldRootType,
                 wholeValueCleared: false,
                 blocked: true,

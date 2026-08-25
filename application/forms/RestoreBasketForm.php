@@ -76,10 +76,11 @@ class RestoreBasketForm extends QuickForm
         if ($keptValuesCount > 0) {
             // Schema still got restored, only the stored values themselves couldn't
             // follow, a Data Field elsewhere still owns them under the same name.
+            // Adds every blocked property together into this one number.
             Notification::warning(sprintf(
                 $this->translate(
-                    'Kept %d stored value(s) under their old name or type, a Data Field'
-                    . ' with the same name still owns them.'
+                    'Kept %d stored value(s) in total under their old name or type, a Data'
+                    . ' Field with the same name still owns them somewhere in this basket.'
                 ),
                 $keptValuesCount
             ));

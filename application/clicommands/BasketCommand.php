@@ -101,9 +101,10 @@ class BasketCommand extends Command
         }
         echo "Objects from Basket Snapshot have been restored\n";
         if ($keptValuesCount > 0) {
+            // Adds every blocked property together into this one number.
             printf(
-                "Kept %d stored value(s) under their old name or type, a Data Field with the"
-                . " same name still owns them.\n",
+                "Kept %d stored value(s) in total under their old name or type, a Data Field"
+                . " with the same name still owns them somewhere in this basket.\n",
                 $keptValuesCount
             );
         }

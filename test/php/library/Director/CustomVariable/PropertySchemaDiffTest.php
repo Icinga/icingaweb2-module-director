@@ -278,6 +278,12 @@ class PropertySchemaDiffTest extends BaseTestCase
             $imported->get('key_name'),
             'a root rename blocked by a legacy Data Field must be undone in memory'
         );
+        $this->assertEquals(
+            $newName,
+            $migration->newVarname,
+            'a blocked migration must still say what the rename would have been, '
+            . 'not just repeat the old name, a caller needs that to explain the block'
+        );
 
         $dba = $db->getDbAdapter();
         $dba->delete('director_datafield', $dba->quoteInto('varname = ?', $newName));
