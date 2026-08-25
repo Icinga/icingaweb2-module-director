@@ -9,19 +9,17 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 
 /**
- * Works out what a property tree's pending changes mean for its stored values,
- * before anything gets written
+ * Figures out what a property tree's changes mean for its stored values, before
+ * anything gets written
  *
- * Builds one migration plan per root, covering the root's own rename/retype and
- * everything nested beneath it. A plan is applied in a single pass per stored
- * value, so a swap, a rotation, or a rename chain reads only the original value,
- * nobody's move can overwrite a sibling's or get lost chasing a path that already
- * moved. See PropertyValueRebuilder.
+ * Builds one migration plan per root, covering the root and everything nested
+ * below it. The plan runs in one pass per value, so a swap, a rotation or a
+ * rename chain only ever reads the original value and never overwrites a
+ * sibling's move.
  *
- * A legacy Data Field collision blocks the whole plan, not just one change. Every
- * stored value under a root sits in the same JSON blob, so if a Data Field owns
- * that blob, it owns all of it. Blocked changes get undone here too, so a schema
- * row can never end up pointing at data that never actually moved.
+ * A legacy Data Field collision blocks the whole plan, not just one change,
+ * since a root's stored values all live in the same JSON blob. Blocked changes
+ * get undone here too, so a schema row never points at data that never moved.
  */
 class PropertySchemaDiff
 {
@@ -69,26 +67,42 @@ class PropertySchemaDiff
 
             $this->revertSubtree($root);
 
-            return new PropertyValueMigration($oldVarname, $oldVarname, $oldRootType, false, true, [], []);
+            return new PropertyValueMigration(
+                oldVarname: $oldVarname,
+                newVarname: $oldVarname,
+                oldRootType: $oldRootType,
+                wholeValueCleared: false,
+                blocked: true,
+                children: [],
+                fixedArrayReindexes: []
+            );
         }
 
         if ($retyped) {
             // The old value no longer matches the new schema, same as a delete would.
             // Whatever changed underneath doesn't matter anymore, it's all going away.
-            return new PropertyValueMigration($oldVarname, $newVarname, $oldRootType, true, false, [], []);
+            return new PropertyValueMigration(
+                oldVarname: $oldVarname,
+                newVarname: $newVarname,
+                oldRootType: $oldRootType,
+                wholeValueCleared: true,
+                blocked: false,
+                children: [],
+                fixedArrayReindexes: []
+            );
         }
 
         $fixedArrayReindexes = [];
         $children = $this->collectChanges($root, $fixedArrayReindexes);
 
         return new PropertyValueMigration(
-            $oldVarname,
-            $newVarname,
-            $oldRootType,
-            false,
-            false,
-            $children,
-            $fixedArrayReindexes
+            oldVarname: $oldVarname,
+            newVarname: $newVarname,
+            oldRootType: $oldRootType,
+            wholeValueCleared: false,
+            blocked: false,
+            children: $children,
+            fixedArrayReindexes: $fixedArrayReindexes
         );
     }
 
@@ -124,7 +138,13 @@ class PropertySchemaDiff
             }
 
             $oldKey = $existingChild->get('key_name');
-            $changes[$oldKey] = new PropertyValueChange($oldKey, null, true, false, []);
+            $changes[$oldKey] = new PropertyValueChange(
+                oldKey: $oldKey,
+                newKey: null,
+                valueCleared: true,
+                preserveIndex: false,
+                children: []
+            );
 
             if ($isParentFixedArray) {
                 // Its row is already gone by the time this runs, only the surviving
@@ -153,11 +173,11 @@ class PropertySchemaDiff
             }
 
             $changes[$oldKey] = new PropertyValueChange(
-                $oldKey,
-                $newKey,
-                $retyped,
-                $retyped && $isParentFixedArray,
-                $nested
+                oldKey: $oldKey,
+                newKey: $newKey,
+                valueCleared: $retyped,
+                preserveIndex: $retyped && $isParentFixedArray,
+                children: $nested
             );
         }
 

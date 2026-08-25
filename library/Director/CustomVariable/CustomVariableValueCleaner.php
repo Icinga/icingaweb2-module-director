@@ -18,6 +18,8 @@ use Zend_Db;
  */
 class CustomVariableValueCleaner
 {
+    private const OBJECT_TYPES = ['host', 'service', 'notification', 'command', 'user', 'service_set'];
+
     public function __construct(protected DbConnection $db)
     {
     }
@@ -90,6 +92,59 @@ class CustomVariableValueCleaner
         }
 
         return [$current, $path];
+    }
+
+    /**
+     * Loop over every object type's var table
+     *
+     * Rename, delete and update by varname all hit the same six tables.
+     * One loop here beats nine copies of it.
+     *
+     * @param callable $fn runs once per table
+     *
+     * @return void
+     */
+    private function forEachObjectVarTable(callable $fn): void
+    {
+        foreach (self::OBJECT_TYPES as $objectType) {
+            $fn("icinga_{$objectType}_var");
+        }
+    }
+
+    /**
+     * Loop through every stored var row for a varname, rebuild the value, save it back
+     *
+     * @param callable $transform gets the old value, returns the new one, null clears it
+     *
+     * @return void
+     */
+    private function forEachMatchingVarRow(string $varname, callable $transform): void
+    {
+        $db = $this->db->getDbAdapter();
+
+        foreach (self::OBJECT_TYPES as $objectType) {
+            $idColumn = "{$objectType}_id";
+            $varRows = $db->fetchAll(
+                $db->select()
+                   ->from(['iov' => "icinga_{$objectType}_var"], [])
+                   ->columns([$idColumn, 'varname', 'varvalue'])
+                   ->where('varname = ?', $varname),
+                [],
+                Zend_Db::FETCH_ASSOC
+            );
+
+            $objectClass = DbObjectTypeRegistry::classByType($objectType);
+
+            foreach ($varRows as $varRow) {
+                $decoded = json_decode($varRow['varvalue'] ?? '', true);
+                $newValue = $transform($decoded);
+
+                $object = $objectClass::loadWithAutoIncId($varRow[$idColumn], $this->db);
+                $vars = $object->vars();
+                $vars->set($varRow['varname'], $newValue);
+                $vars->storeToDb($object);
+            }
+        }
     }
 
     /**
@@ -230,62 +285,46 @@ class CustomVariableValueCleaner
             return $this->countStoredValues($rootProp['key_name']);
         }
 
-        $db = $this->db->getDbAdapter();
         $rootUuid = Uuid::fromBytes($rootProp['uuid']);
         $rootType = $rootProp['value_type'];
         $isRootFixedArray = $rootType === 'fixed-array';
         $preserveIndex = $keepPropertyInPlace && $isParentFixedArray;
 
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
-            $idColumn = "{$objectType}_id";
-            // Match by varname, not property_uuid, root key_names are unique and property_uuid
-            // is only ever an optional hint that isn't reliably populated on every stored row.
-            $varRows = $db->fetchAll(
-                $db->select()
-                   ->from(['iov' => "icinga_{$objectType}_var"], [])
-                   ->columns([$idColumn, 'varname', 'varvalue'])
-                   ->where('varname = ?', $rootProp['key_name']),
-                [],
-                Zend_Db::FETCH_ASSOC
-            );
-
-            $objectClass = DbObjectTypeRegistry::classByType($objectType);
-
-            foreach ($varRows as $varRow) {
-                $varValue = json_decode($varRow['varvalue'] ?? '', true);
-
-                if ($rootType !== 'dynamic-dictionary') {
-                    $this->removeDictionaryItem($varValue, $path, $preserveIndex);
-                } else {
-                    $this->removeDictionaryItemFromEveryEntry($varValue, $path, $preserveIndex);
-                    foreach ($varValue as $entryKey => $entryValue) {
-                        if ($entryValue === []) {
-                            $varValue[$entryKey] = (object) [];
-                        }
+        // Match by varname, not property_uuid, root key_names are unique and property_uuid
+        // is only ever an optional hint that isn't reliably populated on every stored row.
+        $this->forEachMatchingVarRow($rootProp['key_name'], function ($varValue) use (
+            $path,
+            $rootType,
+            $preserveIndex,
+            $isRootFixedArray,
+            $isParentFixedArray,
+            $rootUuid,
+            $parentUuid
+        ) {
+            if ($rootType !== 'dynamic-dictionary') {
+                $this->removeDictionaryItem($varValue, $path, $preserveIndex);
+            } else {
+                $this->removeDictionaryItemFromEveryEntry($varValue, $path, $preserveIndex);
+                foreach ($varValue as $entryKey => $entryValue) {
+                    if ($entryValue === []) {
+                        $varValue[$entryKey] = (object) [];
                     }
                 }
-
-                $object = $objectClass::loadWithAutoIncId($varRow[$idColumn], $this->db);
-                $vars = $object->vars();
-
-                if (empty($varValue)) {
-                    $vars->set($varRow['varname'], null);
-                    $vars->storeToDb($object);
-
-                    continue;
-                }
-
-                if (
-                    ! $preserveIndex
-                    && ($isRootFixedArray || ($isParentFixedArray && $rootUuid->equals($parentUuid)))
-                ) {
-                    $varValue = array_values($varValue);
-                }
-
-                $vars->set($varRow['varname'], $varValue);
-                $vars->storeToDb($object);
             }
-        }
+
+            if (empty($varValue)) {
+                return null;
+            }
+
+            if (
+                ! $preserveIndex
+                && ($isRootFixedArray || ($isParentFixedArray && $rootUuid->equals($parentUuid)))
+            ) {
+                $varValue = array_values($varValue);
+            }
+
+            return $varValue;
+        });
 
         return 0;
     }
@@ -430,9 +469,7 @@ class CustomVariableValueCleaner
             return $this->countStoredValues($varname);
         }
 
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
-            $this->db->delete("icinga_{$object}_var", Filter::where('varname', $varname));
-        }
+        $this->forEachObjectVarTable(fn($table) => $this->db->delete($table, Filter::where('varname', $varname)));
 
         return 0;
     }
@@ -448,13 +485,11 @@ class CustomVariableValueCleaner
      */
     public function detachStoredValues(string $varname): void
     {
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
-            $this->db->update(
-                "icinga_{$object}_var",
-                ['property_uuid' => null],
-                Filter::where('varname', $varname)
-            );
-        }
+        $this->forEachObjectVarTable(fn($table) => $this->db->update(
+            $table,
+            ['property_uuid' => null],
+            Filter::where('varname', $varname)
+        ));
     }
 
     /**
@@ -472,16 +507,14 @@ class CustomVariableValueCleaner
     {
         $propertyUuidExpr = DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $this->db->getDbAdapter());
 
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
-            $this->db->update(
-                "icinga_{$object}_var",
-                ['property_uuid' => $propertyUuidExpr],
-                Filter::matchAll(
-                    Filter::where('varname', $varname),
-                    Filter::fromQueryString('property_uuid IS NULL')
-                )
-            );
-        }
+        $this->forEachObjectVarTable(fn($table) => $this->db->update(
+            $table,
+            ['property_uuid' => $propertyUuidExpr],
+            Filter::matchAll(
+                Filter::where('varname', $varname),
+                Filter::fromQueryString('property_uuid IS NULL')
+            )
+        ));
     }
 
     /**
@@ -505,13 +538,11 @@ class CustomVariableValueCleaner
             return max(1, $this->countStoredValues($oldVarname));
         }
 
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
-            $this->db->update(
-                "icinga_{$object}_var",
-                ['varname' => $newVarname],
-                Filter::where('varname', $oldVarname)
-            );
-        }
+        $this->forEachObjectVarTable(fn($table) => $this->db->update(
+            $table,
+            ['varname' => $newVarname],
+            Filter::where('varname', $oldVarname)
+        ));
 
         return 0;
     }
@@ -539,38 +570,17 @@ class CustomVariableValueCleaner
 
         $newPath = $oldPath;
         $newPath[array_key_last($newPath)] = $newKeyName;
-
-        $db = $this->db->getDbAdapter();
         $rootType = $rootProp['value_type'];
 
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
-            $idColumn = "{$objectType}_id";
-            $varRows = $db->fetchAll(
-                $db->select()
-                   ->from(['iov' => "icinga_{$objectType}_var"], [])
-                   ->columns([$idColumn, 'varname', 'varvalue'])
-                   ->where('varname = ?', $rootProp['key_name']),
-                [],
-                Zend_Db::FETCH_ASSOC
-            );
-
-            $objectClass = DbObjectTypeRegistry::classByType($objectType);
-
-            foreach ($varRows as $varRow) {
-                $varValue = json_decode($varRow['varvalue'] ?? '', true);
-
-                if ($rootType !== 'dynamic-dictionary') {
-                    $this->renameDictionaryItem($varValue, $oldPath, $newPath);
-                } else {
-                    $this->renameDictionaryItemInEveryEntry($varValue, $oldPath, $newPath);
-                }
-
-                $object = $objectClass::loadWithAutoIncId($varRow[$idColumn], $this->db);
-                $vars = $object->vars();
-                $vars->set($varRow['varname'], $varValue);
-                $vars->storeToDb($object);
+        $this->forEachMatchingVarRow($rootProp['key_name'], function ($varValue) use ($rootType, $oldPath, $newPath) {
+            if ($rootType !== 'dynamic-dictionary') {
+                $this->renameDictionaryItem($varValue, $oldPath, $newPath);
+            } else {
+                $this->renameDictionaryItemInEveryEntry($varValue, $oldPath, $newPath);
             }
-        }
+
+            return $varValue;
+        });
 
         return 0;
     }
@@ -604,45 +614,23 @@ class CustomVariableValueCleaner
             return max(1, $this->countStoredValues($migration->oldVarname));
         }
 
-        $rebuilder = new PropertyValueRebuilder();
-        $db = $this->db->getDbAdapter();
-
         // Rename the row itself first, a raw column update keeps its property_uuid,
         // format and checksum intact. What's left below only ever updates a value
         // in place under its final varname, never deletes and recreates a row.
         if ($migration->oldVarname !== $migration->newVarname) {
-            foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
-                $db->update(
-                    "icinga_{$objectType}_var",
-                    ['varname' => $migration->newVarname],
-                    $db->quoteInto('varname = ?', $migration->oldVarname)
-                );
-            }
+            $db = $this->db->getDbAdapter();
+            $this->forEachObjectVarTable(fn($table) => $db->update(
+                $table,
+                ['varname' => $migration->newVarname],
+                $db->quoteInto('varname = ?', $migration->oldVarname)
+            ));
         }
 
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $objectType) {
-            $idColumn = "{$objectType}_id";
-            $varRows = $db->fetchAll(
-                $db->select()
-                   ->from(['iov' => "icinga_{$objectType}_var"], [])
-                   ->columns([$idColumn, 'varname', 'varvalue'])
-                   ->where('varname = ?', $migration->newVarname),
-                [],
-                Zend_Db::FETCH_ASSOC
-            );
-
-            $objectClass = DbObjectTypeRegistry::classByType($objectType);
-
-            foreach ($varRows as $varRow) {
-                $decoded = json_decode($varRow['varvalue'] ?? '', true);
-                $rebuilt = $rebuilder->rebuildRootValue($decoded, $migration);
-
-                $object = $objectClass::loadWithAutoIncId($varRow[$idColumn], $this->db);
-                $vars = $object->vars();
-                $vars->set($varRow['varname'], $rebuilt);
-                $vars->storeToDb($object);
-            }
-        }
+        $rebuilder = new PropertyValueRebuilder();
+        $this->forEachMatchingVarRow(
+            $migration->newVarname,
+            fn($decoded) => $rebuilder->rebuildRootValue($decoded, $migration)
+        );
 
         $this->applyValueMigrationToOverrideServiceVars($migration, $rebuilder);
 
@@ -804,13 +792,13 @@ class CustomVariableValueCleaner
         $db = $this->db->getDbAdapter();
         $total = 0;
 
-        foreach (['host', 'service', 'notification', 'command', 'user', 'service_set'] as $object) {
+        $this->forEachObjectVarTable(function ($table) use ($db, $varname, &$total) {
             $total += (int) $db->fetchOne(
                 $db->select()
-                   ->from("icinga_{$object}_var", ['cnt' => 'COUNT(*)'])
+                   ->from($table, ['cnt' => 'COUNT(*)'])
                    ->where('varname = ?', $varname)
             );
-        }
+        });
 
         return $total;
     }
