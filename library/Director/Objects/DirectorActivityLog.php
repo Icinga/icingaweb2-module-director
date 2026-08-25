@@ -191,6 +191,11 @@ class DirectorActivityLog extends DbObject
         string $newProps,
         Db $db
     ) {
+        if ($oldProps === $newProps) {
+            // Nothing actually changed, skip logging a fake modification.
+            return false;
+        }
+
         $data = [
             'object_name'     => $name,
             'action_name'     => self::ACTION_MODIFY,
