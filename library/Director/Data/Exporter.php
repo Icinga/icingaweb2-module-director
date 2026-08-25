@@ -78,8 +78,12 @@ class Exporter
 
             $props = $chosen;
         }
+
         if ($column = $object->getUuidColumn()) {
-            if ($uuid = $object->get($column)) {
+            // Skip it on a filtered set unless it was actually asked for, otherwise
+            // properties=vars would come back with a uuid nobody requested.
+            $wantsUuid = $this->chosenProperties === null || in_array($column, $this->chosenProperties, true);
+            if ($wantsUuid && $uuid = $object->get($column)) {
                 $props[$column] = Uuid::fromBytes(Db\DbUtil::binaryResult($uuid))->toString();
             }
         }
