@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\Db;
@@ -711,6 +712,14 @@ class IcingaService extends IcingaObject implements ExportInterface
         return $where;
     }
 
+    /**
+     * Get this service's vars, locked down to the apply-for whitelist
+     *
+     * An apply-for service can only use specific var paths like value or
+     * host.*, everything else stays blocked so nothing leaks through
+     *
+     * @return CustomVariables
+     */
     public function vars()
     {
         $vars = parent::vars();
