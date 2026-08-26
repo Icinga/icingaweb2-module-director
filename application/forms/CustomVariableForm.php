@@ -78,6 +78,13 @@ class CustomVariableForm extends CompatForm
         return $this;
     }
 
+    /**
+     * Set the key name this property currently has in the database
+     *
+     * @param string $keyName
+     *
+     * @return $this
+     */
     public function setStoredKeyName(string $keyName): self
     {
         $this->storedKeyName = $keyName;
@@ -85,11 +92,24 @@ class CustomVariableForm extends CompatForm
         return $this;
     }
 
+    /**
+     * Get the key name this property currently has in the database
+     *
+     * @return string
+     */
     public function getStoredKeyName(): string
     {
         return $this->storedKeyName;
     }
 
+    /**
+     * Whether the form needs a rename confirmation before it can be submitted
+     *
+     * True once the key name changed, the property is already used
+     * somewhere, and the user hasn't confirmed the change yet
+     *
+     * @return bool
+     */
     public function isPendingRenameConfirmation(): bool
     {
         return $this->uuid !== null
