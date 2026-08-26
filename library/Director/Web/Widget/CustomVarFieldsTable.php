@@ -23,6 +23,11 @@ class CustomVarFieldsTable extends Table
         'data-base-target' => '_next',
     ];
 
+    /**
+     * @param array $properties    Rows to render, one per property
+     * @param bool  $isFieldsTable Marks a nested fields table instead of the top level list,
+     *                             currently has no effect inside this class
+     */
     public function __construct(
         protected array $properties,
         protected bool $isFieldsTable = false
