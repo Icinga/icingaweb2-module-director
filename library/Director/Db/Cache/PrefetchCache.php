@@ -117,6 +117,10 @@ class PrefetchCache
      * Skipping the cache for whitelisted vars would be simpler, but apply-for is
      * where caching pays off most. Many hosts inheriting one dictionary would render
      * it over and over instead of once. Hashing the whitelist in keeps that win.
+     *
+     * @param CustomVariable $var The var whose active whitelist gets hashed
+     *
+     * @return string
      */
     private function whiteListKey(CustomVariable $var): string
     {
