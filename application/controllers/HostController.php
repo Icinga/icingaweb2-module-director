@@ -708,6 +708,14 @@ class HostController extends ObjectController
         $this->commonForServices();
     }
 
+    /**
+     * Custom variable form submit handler
+     *
+     * @param CustomVariablesForm $form
+     * @param IcingaObject $host
+     *
+     * @return void
+     */
     private function customVarFormOnSubmit(CustomVariablesForm $form, IcingaObject $host): void
     {
         $form
