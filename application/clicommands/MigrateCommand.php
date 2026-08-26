@@ -298,6 +298,8 @@ class MigrateCommand extends Command
      * the new property's UUID, unless the datafield was left untouched this way.
      *
      * @param array $customProperties
+     * @param bool  $dryRun            Classify everything but skip the actual writes
+     * @param bool  $delete            Also remove the migrated legacy bindings and definitions
      * @param bool  $allowLossyFilters Migrate a filtered binding anyway, dropping the var_filter
      * @param bool  $reportProgress    Print per-field lines, off when a caller already prints its
      *                                 own summary and doesn't need every field listed twice
@@ -617,6 +619,13 @@ class MigrateCommand extends Command
      * leaving alone never gets a director_property row in the first place. Otherwise a later
      * run with --allow-lossy-filters would find that property already there and skip the
      * datafield for good, without ever migrating its filtered binding.
+     *
+     * @param int    $datafieldId
+     * @param string $varName
+     * @param bool   $allowLossyFilters Treat a var_filter as droppable instead of unmigratable
+     * @param bool   $reportProgress    Print a line when a filtered binding is found
+     *
+     * @return bool
      */
     private function hasUnmigratableFilterBinding(
         int $datafieldId,
@@ -660,6 +669,7 @@ class MigrateCommand extends Command
      *
      * @param int                $datafieldId
      * @param UuidInterface|null $propertyUuid Unused, and may be null, when $dryRun is true
+     * @param string             $varName
      * @param bool               $allowLossyFilters
      * @param bool               $dryRun
      *
