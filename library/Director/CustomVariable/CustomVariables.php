@@ -432,6 +432,14 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * Render every var in this set as Icinga DSL
+     *
+     * @param bool          $renderExpressions
+     * @param ?IcingaObject $object
+     *
+     * @return string
+     */
     public function toConfigString($renderExpressions = false, ?IcingaObject $object = null)
     {
         $out = '';
