@@ -17,6 +17,14 @@ use InvalidArgumentException;
 use LogicException;
 use Ramsey\Uuid\Uuid;
 
+/**
+ * Reconciles custom properties when restoring a basket snapshot
+ *
+ * Matches properties from the snapshot against what's already in the
+ * target database, works out renames and type changes, remaps uuids and
+ * migrates stored values, so a restore doesn't just wipe out variables
+ * that only changed name or type
+ */
 class BasketSnapshotCustomVariableResolver
 {
     /** @var BasketSnapshot */

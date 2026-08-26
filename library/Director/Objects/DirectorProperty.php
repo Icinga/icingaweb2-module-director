@@ -10,6 +10,13 @@ use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 use stdClass;
 
+/**
+ * A custom property definition, the new replacement for Data Fields
+ *
+ * A property can nest, a fixed-array or dictionary property owns child
+ * properties for its items or keys. Also handles linking to a datalist
+ * and deciding which value types get masked when shown
+ */
 class DirectorProperty extends DbObject
 {
     /** Value types that may never be used for a nested (non-top-level) property */
