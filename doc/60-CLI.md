@@ -487,8 +487,10 @@ icingacli director migrate datafields --delete --verbose
 ```
 
 A Data Field gets skipped when its type isn't supported yet, when a
-Custom Variable with that name already exists, or when one of its
-bindings has a var_filter and you didn't pass `--allow-lossy-filters`.
+Custom Variable with that name already exists, when another Data Field
+has the same name, or when one of its bindings has a var_filter and
+you didn't pass `--allow-lossy-filters`.
+
 Run with `--verbose` to see the reason for each one.
 
 
