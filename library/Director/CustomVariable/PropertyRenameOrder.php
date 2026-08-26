@@ -69,6 +69,7 @@ class PropertyRenameOrder
      *
      * Stops at a free name, an already handled item, or a loop back onto itself.
      *
+     * @param string $startUuid Where to start walking from
      * @param array<string, array{old: string, new: string}> $renames
      * @param array<string, string> $holderOf
      * @param array<string, bool> $done
