@@ -36,6 +36,8 @@ class MigrateCommand extends Command
      * USAGE
      *
      * icingacli director migrate summary
+     *
+     * @return void
      */
     public function summaryAction()
     {
@@ -73,6 +75,8 @@ class MigrateCommand extends Command
      *                         By default such bindings and their datafield are left alone.
      *
      *  --verbose              Show detailed migration results
+     *
+     * @return void
      */
     public function datafieldsAction()
     {
