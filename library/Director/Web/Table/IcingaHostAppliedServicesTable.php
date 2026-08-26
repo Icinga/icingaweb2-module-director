@@ -126,6 +126,13 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         return $this::row([$link], $attributes);
     }
 
+    /**
+     * Whether to use deprecated links instead of the new links for the services
+     *
+     * @param bool $useDeprecatedLink
+     *
+     * @return $this
+     */
     public function useDeprecatedLink(bool $useDeprecatedLink = true): self
     {
         $this->useDeprecatedLink = $useDeprecatedLink;
