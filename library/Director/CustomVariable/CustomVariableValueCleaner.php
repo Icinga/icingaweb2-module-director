@@ -27,6 +27,8 @@ class CustomVariableValueCleaner
     /**
      * Fetch property for the given UUID
      *
+     * @param UuidInterface $uuid The property to fetch
+     *
      * @return array<string, mixed>
      */
     public function fetchProperty(UuidInterface $uuid): array
@@ -51,6 +53,8 @@ class CustomVariableValueCleaner
 
     /**
      * Count how many host/service/etc. templates currently have this property attached
+     *
+     * @param UuidInterface $uuid The property to count attachments for
      *
      * @return int
      */
@@ -79,6 +83,9 @@ class CustomVariableValueCleaner
     /**
      * Walk parent_uuid up from $parent to the root, collecting key_names along the way.
      *
+     * @param array<string, mixed> $property The property whose root we want
+     * @param array<string, mixed> $parent   Its direct parent row, we walk up from here
+     *
      * @return array{0: array<string, mixed>, 1: string[]}
      */
     public function resolveRootProperty(array $property, array $parent): array
@@ -100,7 +107,7 @@ class CustomVariableValueCleaner
      * Rename, delete and update by varname all hit the same six tables.
      * One loop here beats nine copies of it.
      *
-     * @param callable $fn runs once per table
+     * @param callable $fn Runs once per table
      *
      * @return void
      */
@@ -114,7 +121,8 @@ class CustomVariableValueCleaner
     /**
      * Loop through every stored var row for a varname, rebuild the value, save it back
      *
-     * @param callable $transform gets the old value, returns the new one, null clears it
+     * @param string   $varname   The varname to match rows on
+     * @param callable $transform Gets the old value, returns the new one, null clears it
      *
      * @return void
      */
@@ -150,7 +158,9 @@ class CustomVariableValueCleaner
     /**
      * Remove dictionary item from the given data array
      *
-     * @param bool $preserveIndex null out the terminal key instead of unsetting it, so a
+     * @param array $item          The data to remove the item from, modified in place
+     * @param array $path          Nested keys leading to the item to remove
+     * @param bool  $preserveIndex Null out the terminal key instead of unsetting it, so a
      *                             fixed-array's sibling positions don't shift
      *
      * @return void
@@ -181,6 +191,11 @@ class CustomVariableValueCleaner
     /**
      * Strip $path out of every entry in a dynamic dictionary, in place.
      *
+     * @param array $dynamicDictionaryValue The dictionary, modified in place
+     * @param array $path                   Nested keys leading to the item to remove
+     * @param bool  $preserveIndex          Null out the terminal key instead of unsetting it,
+     *                                      so a fixed-array's sibling positions don't shift
+     *
      * @return void
      */
     private function removeDictionaryItemFromEveryEntry(
@@ -201,6 +216,10 @@ class CustomVariableValueCleaner
      * Move a value to a new key in a nested array, in place
      *
      * Only the last step of the path changes, so old and new walk down together.
+     *
+     * @param array $item    The data to rename the item in, modified in place
+     * @param array $oldPath Nested keys leading to the current key
+     * @param array $newPath Nested keys leading to the new key
      *
      * @return void
      */
@@ -230,6 +249,10 @@ class CustomVariableValueCleaner
     /**
      * Does the same move for every entry of a dynamic dictionary
      *
+     * @param array $dynamicDictionaryValue The dictionary, modified in place
+     * @param array $oldPath                Nested keys leading to the current key
+     * @param array $newPath                Nested keys leading to the new key
+     *
      * @return void
      */
     private function renameDictionaryItemInEveryEntry(
@@ -255,7 +278,10 @@ class CustomVariableValueCleaner
      * schema renumbering still happens either way, it's property schema only and has
      * nothing to do with the Data Field's data.
      *
-     * @param bool $keepPropertyInPlace true when only $property's type is changing, not removed
+     * @param array  $property            The property being removed or retyped
+     * @param ?array $parent              Its direct parent row, null for a root property
+     * @param bool   $keepPropertyInPlace True when only the type is changing and nothing is
+     *                                    actually being removed
      *
      * @return int Number of stored values left in place because of a legacy Data Field, 0
      *             if there was no conflict and the values were updated as usual
@@ -335,7 +361,10 @@ class CustomVariableValueCleaner
      * Does nothing if a legacy Data Field owns the root ancestor's varname, same reasoning
      * as removeObjectCustomVars().
      *
-     * @param bool $keepPropertyInPlace see removeObjectCustomVars()
+     * @param array $property            The property being removed or retyped
+     * @param array $parent              Its direct parent row
+     * @param bool  $keepPropertyInPlace True when only the type is changing and nothing is
+     *                                   actually being removed
      *
      * @return int Number of stored values left in place because of a legacy Data Field, 0
      *             if there was no conflict and the values were updated as usual
@@ -456,7 +485,7 @@ class CustomVariableValueCleaner
      * property's. The admin has to rename or remove that field first, then delete this
      * property again to actually clear it.
      *
-     * @param string $varname the root property's own key_name. Only call this for a root
+     * @param string $varname The root property's own key_name. Only call this for a root
      *                        property, a nested property's key_name isn't guaranteed unique
      *                        and could collide with an unrelated root variable
      *
@@ -477,7 +506,7 @@ class CustomVariableValueCleaner
     /**
      * Detach every stored value for a root property outright, across every object type.
      *
-     * @param string $varname the root property's own key_name. Only call this for a root
+     * @param string $varname The root property's own key_name. Only call this for a root
      *                        property, a nested property's key_name isn't guaranteed unique
      *                        and could collide with an unrelated root variable
      *
@@ -498,8 +527,8 @@ class CustomVariableValueCleaner
      * Migrated values had no UUID before, so a later detach would miss them and
      * leave them behind. This makes sure detach finds them.
      *
-     * @param string $varname the root property's own key_name, not a nested one
-     * @param UuidInterface $propertyUuid
+     * @param string        $varname      The root property's own key_name, not a nested one
+     * @param UuidInterface $propertyUuid The uuid to stamp matching rows with
      *
      * @return void
      */
@@ -524,8 +553,8 @@ class CustomVariableValueCleaner
      * old name its values might be the field's, not this property's. Under the new name it
      * would collide with the field's own row (host_id/varname is a primary key here).
      *
-     * @param string $oldVarname the root property's varname before the rename
-     * @param string $newVarname the root property's varname after the rename
+     * @param string $oldVarname The root property's varname before the rename
+     * @param string $newVarname The root property's varname after the rename
      *
      * @return int Number of stored values left under the old varname because of a conflict,
      *             0 if there was no conflict and the values were renamed as usual
@@ -554,9 +583,9 @@ class CustomVariableValueCleaner
      * checked against a legacy Data Field first, since this writes into the
      * same stored data that field might own.
      *
-     * @param array  $property property being renamed, needs at least 'key_name' (the old name)
-     * @param array  $parent immediate parent row, used to walk up to the root
-     * @param string $newKeyName the property's new key_name
+     * @param array  $property Property being renamed, needs at least 'key_name' (the old name)
+     * @param array  $parent Immediate parent row, used to walk up to the root
+     * @param string $newKeyName The property's new key_name
      *
      * @return int Values left alone because of a legacy Data Field, 0 if renamed as usual
      */
@@ -596,6 +625,8 @@ class CustomVariableValueCleaner
      * A fixed-array reindex only touches director_property, it runs even when the
      * migration is otherwise blocked, same reasoning as removeObjectCustomVars(),
      * it's schema only and has nothing to do with a Data Field's data.
+     *
+     * @param PropertyValueMigration $migration The plan to apply
      *
      * @return int Number of stored values left under the old varname because a legacy
      *             Data Field owns it, 0 if there was no conflict
@@ -642,6 +673,11 @@ class CustomVariableValueCleaner
      *
      * That blob nests every service's vars under its own service name first, so each
      * service's slice gets rebuilt on its own before the whole row is written back.
+     *
+     * @param PropertyValueMigration $migration The plan to apply
+     * @param PropertyValueRebuilder $rebuilder Does the actual per-value rebuild
+     *
+     * @return void
      */
     private function applyValueMigrationToOverrideServiceVars(
         PropertyValueMigration $migration,
@@ -717,6 +753,9 @@ class CustomVariableValueCleaner
      *
      * Public so a form can validate this before submit instead of only finding out after.
      *
+     * @param string $oldVarname The varname before the rename
+     * @param string $newVarname The varname after the rename
+     *
      * @return bool
      */
     public function wouldRenameCollideWithLegacyDatafield(string $oldVarname, string $newVarname): bool
@@ -729,6 +768,8 @@ class CustomVariableValueCleaner
      *
      * Public so a form can validate this before submit instead of only finding out after.
      *
+     * @param string $varname The varname to check
+     *
      * @return bool
      */
     public function wouldDeleteCollideWithLegacyDatafield(string $varname): bool
@@ -738,6 +779,8 @@ class CustomVariableValueCleaner
 
     /**
      * Whether a legacy Data Field still exists under this exact varname
+     *
+     * @param string $varname The varname to check
      *
      * @return bool
      */
@@ -758,6 +801,8 @@ class CustomVariableValueCleaner
      *
      * Public so a form can validate this before submit instead of only finding out after.
      *
+     * @param string $varname The varname to check
+     *
      * @return bool
      */
     public function wouldDatafieldCollideWithProperty(string $varname): bool
@@ -767,6 +812,8 @@ class CustomVariableValueCleaner
 
     /**
      * Whether a root property still exists under this exact key_name
+     *
+     * @param string $varname The key_name to check
      *
      * @return bool
      */
@@ -788,6 +835,8 @@ class CustomVariableValueCleaner
      * Public so a preview can show how many hosts, services and so on already have
      * a value under a property before a restore actually touches anything.
      *
+     * @param string $varname The varname to count
+     *
      * @return int
      */
     public function countStoredValues(string $varname): int
@@ -808,6 +857,9 @@ class CustomVariableValueCleaner
 
     /**
      * Delete one fixed-array item's schema row and renumber its surviving siblings
+     *
+     * @param UuidInterface $uuid          The fixed-array parent's uuid
+     * @param string        $propertyIndex The removed item's key_name (its position)
      *
      * @return void
      */
@@ -834,6 +886,8 @@ class CustomVariableValueCleaner
      * Basket restore already deletes a dropped child's row itself while reconciling
      * the schema, it only needs the renumbering, not another delete for a row that's
      * already gone.
+     *
+     * @param UuidInterface $uuid The fixed-array parent's uuid
      *
      * @return void
      */
