@@ -56,6 +56,12 @@ class CustomvarController extends CompatController
         );
     }
 
+    /**
+     * Show and handle the edit form for one property
+     *
+     * Works for a top-level custom variable and for a nested field inside
+     * a dictionary or array, parent_uuid tells the two apart
+     */
     public function indexAction(): void
     {
         $uuid = $this->uuid;
@@ -306,6 +312,12 @@ class CustomvarController extends CompatController
         return in_array($type, ['fixed-array', 'fixed-dictionary', 'dynamic-dictionary'], true);
     }
 
+    /**
+     * Show and handle the form to add a new field to a property
+     *
+     * Only makes sense for properties that hold fields, like a fixed
+     * array or a dictionary
+     */
     public function addFieldAction(): void
     {
         $uuid = $this->uuid;
