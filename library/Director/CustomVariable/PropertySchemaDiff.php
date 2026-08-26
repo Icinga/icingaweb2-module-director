@@ -24,7 +24,7 @@ use Icinga\Module\Director\Objects\DirectorProperty;
 class PropertySchemaDiff
 {
     /**
-     * @param CustomVariableValueCleaner $cleaner checks whether a legacy Data Field blocks cleanup
+     * @param CustomVariableValueCleaner $cleaner Checks whether a legacy Data Field blocks cleanup
      */
     public function __construct(private CustomVariableValueCleaner $cleaner)
     {
@@ -33,7 +33,7 @@ class PropertySchemaDiff
     /**
      * Work out what changed under a property tree since it was loaded, root included
      *
-     * @param DirectorProperty $root the root property to diff
+     * @param DirectorProperty $root The root property to diff
      *
      * @return PropertyValueMigration
      */
@@ -113,8 +113,8 @@ class PropertySchemaDiff
      * Walk a property's children and build a change entry for each one that moved,
      * cleared, or disappeared
      *
-     * @param DirectorProperty $parent the property whose children to check
-     * @param string[] $fixedArrayReindexes raw binary parent uuids needing a reindex,
+     * @param DirectorProperty $parent The property whose children to check
+     * @param string[] $fixedArrayReindexes Raw binary parent uuids needing a reindex,
      *                                       keyed by hex so the same parent is never
      *                                       queued twice, added to by reference
      *
@@ -190,6 +190,8 @@ class PropertySchemaDiff
     /**
      * Undo every rename and retype under a blocked root, so nothing gets stored
      * with a schema the data can't follow
+     *
+     * @param DirectorProperty $parent The property whose children to revert
      */
     private function revertSubtree(DirectorProperty $parent): void
     {
