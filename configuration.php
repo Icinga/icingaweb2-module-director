@@ -14,7 +14,6 @@ if ($this->getConfig()->get('frontend', 'disabled', 'no') === 'yes') {
 $monitoringExists = Module::exists('monitoring');
 $icingadbExists = Module::exists('icingadb');
 
-$this->providePermission(Permission::ALL_PERMISSIONS, $this->translate('Allow unrestricted access to Icinga Director'));
 $this->providePermission(Permission::API, $this->translate('Allow to access the director API'));
 $this->providePermission(Permission::AUDIT, $this->translate('Allow to access the full audit log'));
 $this->providePermission(Permission::DEPLOY, $this->translate('Allow to deploy configuration'));
