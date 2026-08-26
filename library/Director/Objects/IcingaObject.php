@@ -1516,6 +1516,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->vars;
     }
 
+    /**
+     * Get custom properties linked to this object's templates, keyed by name
+     *
+     * Used to spot which vars are dynamic-dictionary type, so their entries
+     * get merged across templates instead of just being overwritten
+     *
+     * @return array
+     */
     public function fetchAllLinkedCustomProperties(): array
     {
         $type = $this->getShortTableName();
