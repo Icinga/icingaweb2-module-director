@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\ProvidedHook\Icingadb;
 
+use gipfl\ZfDb\Adapter\Adapter;
 use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
@@ -30,6 +31,7 @@ use ipl\Html\ValidHtml;
 use ipl\Orm\Model;
 use PDO;
 use Throwable;
+use Zend_Db_Adapter_Abstract;
 
 class CustomVarRenderer extends CustomVarRendererHook
 {
@@ -362,6 +364,8 @@ class CustomVarRenderer extends CustomVarRendererHook
     /**
      * Get custom properties for the host.
      *
+     * @param IcingaObject $object The host or service to fetch properties for
+     *
      * @return array
      */
     protected function getObjectCustomProperties(IcingaObject $object): array
@@ -551,8 +555,8 @@ class CustomVarRenderer extends CustomVarRendererHook
      * its bare key_name, or two unrelated properties sharing a name would stomp on
      * each other's captions.
      *
-     * @param \Zend_Db_Adapter_Abstract|\gipfl\ZfDb\Adapter\Adapter $dbAdapter
-     * @param array $properties uuid (raw binary) => ['key_name' => ..., 'scope' => ?string, ...]
+     * @param Zend_Db_Adapter_Abstract|Adapter $dbAdapter
+     * @param array $properties Uuid (raw binary) => ['key_name' => ..., 'scope' => ?string, ...]
      *
      * @return void
      */
@@ -635,6 +639,15 @@ class CustomVarRenderer extends CustomVarRendererHook
         return $valueType !== null && str_ends_with($valueType, '-dictionary');
     }
 
+    /**
+     * Render a custom variable key as a label, with its full key as a title tooltip
+     *
+     * @param string $key
+     * @param ?string $parentKey
+     * @param ?string $grandparentKey
+     *
+     * @return ?ValidHtml
+     */
     public function renderCustomVarKey(string $key, ?string $parentKey = null, ?string $grandparentKey = null)
     {
         try {
@@ -658,6 +671,16 @@ class CustomVarRenderer extends CustomVarRendererHook
         return null;
     }
 
+    /**
+     * Render one custom variable value, masking it if it's sensitive
+     *
+     * @param string $key
+     * @param mixed $value
+     * @param ?string $parentKey
+     * @param ?string $grandparentKey
+     *
+     * @return ?ValidHtml
+     */
     public function renderCustomVarValue(
         string $key,
         $value,
@@ -895,6 +918,8 @@ class CustomVarRenderer extends CustomVarRendererHook
      *
      * @param HtmlElement|string $name
      * @param array $array
+     * @param ?string $key Set when the value being rendered is actually a dictionary, so it
+     *                     gets labeled "(Dictionary)" instead of "(Array)"
      *
      * @return void
      */
