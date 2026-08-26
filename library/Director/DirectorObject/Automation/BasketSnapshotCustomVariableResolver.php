@@ -50,10 +50,11 @@ class BasketSnapshotCustomVariableResolver
     protected $pendingValueMigrations = [];
 
     /**
-     * @param       $objects
-     * @param Db    $targetDb
-     * @param bool  $readOnly True for a diff/comparison, which never calls storeNewProperties()
-     *                        on this resolver and so must not let import() persist a new datalist
+     * @param BasketSnapshot|BasketSnapshot[] $objects  One or more snapshot objects to resolve
+     * @param Db                              $targetDb
+     * @param bool                            $readOnly True for a diff/comparison, which never calls
+     *                                                   storeNewProperties() on this resolver and so
+     *                                                   must not let import() persist a new datalist
      */
     public function __construct($objects, Db $targetDb, bool $readOnly = false)
     {
@@ -151,6 +152,9 @@ class BasketSnapshotCustomVariableResolver
      * A blocked change gets undone in memory by the diff itself, so a schema row
      * never ends up pointing at data that never actually moved.
      *
+     * @param DirectorProperty           $root
+     * @param CustomVariableValueCleaner $cleaner
+     *
      * @return void
      */
     private function applySchemaDiff(DirectorProperty $root, CustomVariableValueCleaner $cleaner): void
@@ -161,8 +165,9 @@ class BasketSnapshotCustomVariableResolver
     /**
      * Relink custom properties to the new object.
      *
-     * @param IcingaObject $new
-     * @param $object
+     * @param IcingaObject $new    The object that was just restored
+     * @param object       $object The matching data from the snapshot, might not carry any custom
+     *                             variables at all
      *
      * @return void
      */
@@ -347,7 +352,7 @@ class BasketSnapshotCustomVariableResolver
     /**
      * Get all objects of a certain type.
      *
-     * @param $type
+     * @param string $type The kind of object we're looking for, like host or service
      *
      * @return object[]
      */
@@ -377,7 +382,7 @@ class BasketSnapshotCustomVariableResolver
     /**
      * Get the target property for one basket uuid, null if there is none
      *
-     * @param string $uuid the property's uuid as used in the basket's own CustomVariable map
+     * @param string $uuid The property's uuid as used in the basket's own CustomVariable map
      *
      * @return ?DirectorProperty
      */
@@ -436,6 +441,8 @@ class BasketSnapshotCustomVariableResolver
      * one needs to store first, or a child turning sensitive fails its own check against
      * the still-old parent type. Runs at every level, since a nested item can retype
      * the same way its own children can.
+     *
+     * @param DirectorProperty $node
      */
     private function storeReconciled(DirectorProperty $node): bool
     {
@@ -571,6 +578,13 @@ class BasketSnapshotCustomVariableResolver
         return $ordered;
     }
 
+    /**
+     * Returns a string representation of the given item's uuid.
+     *
+     * @param DirectorProperty $item
+     *
+     * @return string
+     */
     private function uuidString(DirectorProperty $item): string
     {
         return Uuid::fromBytes(DbUtil::binaryResult($item->get('uuid')))->toString();
