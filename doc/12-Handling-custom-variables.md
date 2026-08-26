@@ -78,7 +78,8 @@ types:
 > is no way to mask individual entries in that kind of list.
 >
 > For `fixed-array`, all positions must be supplied on the object. None
-> may be omitted.
+> may be omitted. This is enforced by the web form, the REST API only
+> checks that the value is a list, it doesn't check how many entries it has.
 
 #### Examples for each type
 
@@ -138,11 +139,11 @@ vars.snmp_community = "s3cr3t-community"
 vars.pagerduty_token = "u+abc123def456"
 ```
 
-A `sensitive` field nested inside a `fixed-array` or `fixed-dictionary` is masked the
-same way. Masking is scoped to that field's exact position in its own property
-definition, so two unrelated properties can each have a nested field with the same
-name (e.g. both defining a `credentials.password`) without one accidentally unmasking
-the other.
+A `sensitive` field nested inside a `fixed-array`, `fixed-dictionary` or
+`dynamic-dictionary` is masked the same way. Masking is scoped to that field's exact
+position in its own property definition, so two unrelated properties can each have a
+nested field with the same name (e.g. both defining a `credentials.password`) without
+one accidentally unmasking the other.
 
 ##### `fixed-array`
 An ordered list with a predefined structure. Each position has a fixed meaning configured in the property schema. The Icinga 2 config stores this as an array without keys.
@@ -282,7 +283,9 @@ Go to `Custom Variables` in the Icinga Director menu and choose
   selects which Director datalist supplies the allowed values
 * `Item Type`: for `dynamic-array` and for the array variant of a
   datalist type, selects whether items are scalar values or, for
-  datalists, a `dynamic-array` of values
+  datalists, a `dynamic-array` of values. A plain `dynamic-array` only
+  offers `string` and `number` as item type, `bool` and `sensitive`
+  items aren't supported
 
 Once a `fixed-array`, `fixed-dictionary`, `dynamic-array` or
 `dynamic-dictionary` property has been created, use its detail page to add
