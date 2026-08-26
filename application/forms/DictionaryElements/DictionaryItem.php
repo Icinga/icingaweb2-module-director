@@ -51,6 +51,13 @@ class DictionaryItem extends FieldsetElement
         return Db::fromResourceName(Config::module('director')->get('db', 'resource'))->getDbAdapter();
     }
 
+    /**
+     * Fetch the item type of a dynamic-array/datalist for a given property uuid.
+     *
+     * @param UuidInterface $uuid
+     *
+     * @return ?string
+     */
     private static function fetchItemType(UuidInterface $uuid): ?string
     {
         $db = static::getDb();
