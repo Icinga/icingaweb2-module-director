@@ -276,6 +276,9 @@ class BasketSnapshot extends DbObject
     }
 
     /**
+     * @param string $string The snapshot, as JSON
+     * @param Db     $connection
+     *
      * @return int values kept under the old name or type, a Data Field owns
      *             them, 0 if none
      *
@@ -288,6 +291,11 @@ class BasketSnapshot extends DbObject
     }
 
     /**
+     * Restores objects from the json decoded snapshot
+     *
+     * @param stdClass $all The decoded snapshot
+     * @param Db       $connection
+     *
      * @return int values kept under the old name or type, a Data Field owns
      *             them, 0 if none
      *
@@ -328,6 +336,17 @@ class BasketSnapshot extends DbObject
     }
 
     /**
+     * Restores the given type of objects from the snapshot
+     *
+     * @param stdClass                             $all
+     * @param string                               $typeName
+     * @param BasketSnapshotFieldResolver          $fieldResolver
+     * @param Db                                   $connection
+     * @param ?BasketSnapshotCustomVariableResolver $customPropertyResolver Brings back the custom
+     *                                                                      variables for this kind
+     *                                                                      of object, skipped if
+     *                                                                      not given at all
+     *
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
