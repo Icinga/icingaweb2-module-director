@@ -13,6 +13,9 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 
+/**
+ * Lists top level custom variables and lets you create a new one
+ */
 class VariablesController extends CompatController
 {
     protected function prepareInit()

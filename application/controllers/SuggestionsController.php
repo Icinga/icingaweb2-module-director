@@ -12,11 +12,20 @@ use ipl\Web\FormElement\SearchSuggestions;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
+/**
+ * Serves autocomplete suggestions for datalist entries used as property values
+ */
 class SuggestionsController extends CompatController
 {
     /** @var Db */
     protected $db;
 
+    /**
+     * List datalist entries for the property given by uuid, for autocomplete
+     *
+     * exclude is a comma separated list of entry names to leave out, so an
+     * already picked value doesn't show up again in the suggestions
+     */
     public function datalistEntryAction(): void
     {
         $excludes = iplFilter::none();
