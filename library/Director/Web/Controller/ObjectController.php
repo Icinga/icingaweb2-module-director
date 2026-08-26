@@ -974,8 +974,11 @@ abstract class ObjectController extends ActionController
     /**
      * Get custom properties for the object, including session-added ones.
      *
-     * @param string[] $addedVarUuids    UUID strings of properties added this session
-     * @param string[] $requiredVarUuids UUID strings of properties marked required this session
+     * @param IcingaObject $object
+     * @param bool         $isOverrideVars   Whether to fetch service override vars instead of
+     *                                       the object's own
+     * @param string[]     $addedVarUuids    UUID strings of properties added this session
+     * @param string[]     $requiredVarUuids UUID strings of properties marked required this session
      *
      * @return array
      */
