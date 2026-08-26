@@ -371,8 +371,10 @@ class DirectorProperty extends DbObject
     }
 
     /**
-     * @param bool $persist Pass false for a diff/comparison lookup, so a not-yet-existing
-     *                       datalist stays in memory instead of getting stored
+     * @param stdClass $plain   The decoded property, as exported
+     * @param Db       $db      Database connection
+     * @param bool     $persist Pass false for a diff/comparison lookup, so a not-yet-existing
+     *                          datalist stays in memory instead of getting stored
      *
      * @throws NotFoundError
      */
@@ -546,6 +548,8 @@ class DirectorProperty extends DbObject
      *
      * Walks up from the proposed parent. Landing back on our own uuid means
      * that parent is really one of our descendants, which would close a loop.
+     *
+     * @param string $parentUuid The proposed parent's uuid, raw binary
      *
      * @throws InvalidArgumentException
      */
