@@ -35,6 +35,8 @@ class CustomVariableValueApplier
      * used for a POST carrying a full "vars" dictionary at the base
      * object endpoint.
      *
+     * @param CustomVarApplyRequest $request
+     *
      * @return bool Whether anything was actually wiped or written. A PUT always
      *              counts as a change since it replaces the full set regardless
      *              of the end result. Otherwise this reflects CustomVariables'
@@ -160,6 +162,13 @@ class CustomVariableValueApplier
     /**
      * Apply a single key value override, attaching the underlying
      * director_property to a template on the fly when needed
+     *
+     * @param CustomVarApplyRequest $request
+     * @param CustomVariables $objectVars
+     * @param array $customProperties
+     * @param string $key
+     * @param mixed $value
+     * @param array $preservedDirectAttachments
      *
      * @return void
      *
@@ -290,7 +299,11 @@ class CustomVariableValueApplier
      * Re-create a direct attachment wiped earlier in this request, and store
      * its value too unless it was cleared
      *
+     * @param IcingaObject $object
+     * @param string $key
+     * @param mixed $value
      * @param array{uuid: string, value_type: string, required: string} $attachment
+     * @param CustomVariables $objectVars
      */
     private function reattachPreservedProperty(
         IcingaObject $object,
@@ -339,6 +352,8 @@ class CustomVariableValueApplier
      *
      * Tells "replacing an attached property" apart from "attaching a new one"
      * once a PUT has wiped this object's own attachment rows.
+     *
+     * @param IcingaObject $object
      *
      * @return array<string, array{uuid: string, value_type: string, required: string}>
      */
