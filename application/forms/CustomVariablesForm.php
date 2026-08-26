@@ -221,6 +221,13 @@ class CustomVariablesForm extends CompatForm
         return $this;
     }
 
+    /**
+     * Set the host the inherited service was generated for
+     *
+     * @param string $hostname
+     *
+     * @return $this
+     */
     public function setInheritedServiceFrom(string $hostname): static
     {
         $this->inheritedServiceFrom = $hostname;
