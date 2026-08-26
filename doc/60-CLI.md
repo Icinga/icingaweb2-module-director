@@ -438,6 +438,60 @@ The `kickstart` and the `migration` command are handled in the [automation secti
 so they are skipped here.
 
 
+Migrate legacy Data Fields
+---------------------------
+
+Older Director versions store custom variable definitions as Data Fields.
+They're being replaced by a new Custom Property system. Use
+`icingacli director migrate <action>` to move your existing Data Fields
+over to Custom Properties.
+
+| Action       | Description                                     |
+|--------------|--------------------------------------------------|
+| `summary`    | Show what would be migrated, nothing gets touched |
+| `datafields` | Run the migration                                 |
+
+### Show what would be migrated
+
+`icingacli director migrate summary`
+
+Prints how many Data Fields have a type that can be migrated, how many
+are skipped because a Custom Variable with the same name already exists,
+and totals for what would be migrated versus skipped.
+
+### Run the migration
+
+#### Usage
+
+`icingacli director migrate datafields [options]`
+
+#### Options
+
+| Option                  | Description                                       |
+|--------------------------|---------------------------------------------------|
+| `--dry-run`              | Preview the migration, nothing gets written        |
+| `--delete`               | Remove a Data Field once it's been migrated        |
+|                          | (has no effect together with `--dry-run`)          |
+| `--allow-lossy-filters`  | Migrate a binding even if it has a var_filter,      |
+|                          | dropping the filter. Left alone by default          |
+| `--verbose`              | Print every Data Field as it's migrated or skipped |
+
+#### Examples
+
+```shell
+icingacli director migrate datafields --dry-run --verbose
+```
+
+```shell
+icingacli director migrate datafields --delete --verbose
+```
+
+A Data Field gets skipped when its type isn't supported yet, when a
+Custom Variable with that name already exists, or when one of its
+bindings has a var_filter and you didn't pass `--allow-lossy-filters`.
+Run with `--verbose` to see the reason for each one.
+
+
 Configuration handling
 ----------------------
 
