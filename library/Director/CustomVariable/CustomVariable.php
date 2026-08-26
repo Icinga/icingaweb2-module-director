@@ -135,6 +135,16 @@ abstract class CustomVariable implements IcingaConfigRenderer
         ));
     }
 
+    /**
+     * Set which macro names may resolve as expressions inside this value
+     *
+     * Used for apply-for services, to limit which vars a custom variable
+     * string is allowed to reference
+     *
+     * @param array $whiteList
+     *
+     * @return $this
+     */
     public function setWhiteList(array $whiteList): self
     {
         $this->whiteList = $whiteList;
@@ -189,6 +199,11 @@ abstract class CustomVariable implements IcingaConfigRenderer
         }
     }
 
+    /**
+     * Get the allowed macro names, empty means expressions aren't rendered at all
+     *
+     * @return array
+     */
     public function getWhiteList(): array
     {
         return $this->whiteList;

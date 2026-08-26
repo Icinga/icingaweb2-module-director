@@ -221,7 +221,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     }
 
     /**
-     * Set the values to be used as whitelist
+     * Set which macro names are allowed to resolve as expressions
+     *
+     * Gets passed to each variable right before it's rendered, used for
+     * apply-for services to restrict what a variable string can reference
      *
      * @param array $whitelist
      *
