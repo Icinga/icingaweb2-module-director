@@ -757,6 +757,8 @@ class CustomVariableForm extends CompatForm
      * For a field, the attachment lives on its root property, not on the field
      * itself, so walk up to the root before counting.
      *
+     * @param CustomVariableValueCleaner $cleaner
+     *
      * @return bool
      */
     private function isCurrentlyUsed(CustomVariableValueCleaner $cleaner): bool
