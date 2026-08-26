@@ -7,7 +7,6 @@ use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaObject;
 use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
-use Icinga\Module\Director\Objects\IcingaServiceSet;
 
 class ObjectTabs extends Tabs
 {
