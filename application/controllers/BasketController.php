@@ -373,7 +373,8 @@ class BasketController extends ActionController
      * Shows every custom variable a restore can't rename or retype because a
      * Data Field already owns that name
      *
-     * @param PropertyValueMigration[] $blockedMigrations keyed by the property's own name
+     * @param PropertyValueMigration[] $blockedMigrations Keyed by the property's own name
+     * @param BasketDiff $diff
      *
      * @return BaseHtmlElement
      */
@@ -418,6 +419,10 @@ class BasketController extends ActionController
     /**
      * A Data Field can own either the old or the new name. Say what the rename
      * would have been instead of guessing which one it collided with
+     *
+     * @param PropertyValueMigration $migration
+     *
+     * @return string
      */
     private function describeBlockedCustomPropertyReason(PropertyValueMigration $migration): string
     {
@@ -439,6 +444,9 @@ class BasketController extends ActionController
      * Describe what restoring one custom variable would do to its stored values
      *
      * Comes back null if nothing would actually change
+     *
+     * @param BasketDiff $diff
+     * @param string $uuid
      *
      * @return ?BaseHtmlElement
      */
@@ -465,6 +473,9 @@ class BasketController extends ActionController
     /**
      * Same idea, but for a plan the caller already has on hand, and only ever
      * used once it's known not to be blocked
+     *
+     * @param PropertyValueMigration $migration
+     * @param BasketDiff $diff
      *
      * @return ?BaseHtmlElement
      */
@@ -506,7 +517,8 @@ class BasketController extends ActionController
      * Turns a plan's nested changes into plain language lines
      *
      * @param PropertyValueChange[] $changes
-     * @param string[] $lines added to as we go
+     * @param string[] $lines Added to as we go
+     * @param string $prefix Path of the parent key, empty at the top level
      *
      * @return void
      */
