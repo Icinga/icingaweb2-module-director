@@ -351,6 +351,12 @@ abstract class ObjectController extends ActionController
         }
     }
 
+    /**
+     * Show the add-a-variable modal and handle its submit
+     *
+     * Carries the added and required var uuids along on the redirect,
+     * so the variables tab still knows about them after the reload
+     */
     public function addVarAction(): void
     {
         $this->assertPermission('director/admin');
@@ -422,6 +428,12 @@ abstract class ObjectController extends ActionController
         $table->renderTo($this);
     }
 
+    /**
+     * Show the Custom Variables tab and handle saving it
+     *
+     * Also picks up the added and required var uuids passed along by
+     * addVarAction, so a var added there still shows up after the redirect
+     */
     public function variablesAction(): void
     {
         // attach is gated separately in CustomVariablesForm::assertCanAttachNewVariable()
