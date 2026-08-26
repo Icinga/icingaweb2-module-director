@@ -96,6 +96,11 @@ class CustomVariableValueValidator
     /**
      * Reject a value whose shape doesn't match the datalist's own item type child
      *
+     * @param string        $key
+     * @param mixed         $value
+     * @param UuidInterface $propertyUuid
+     * @param Db            $db
+     *
      * @throws InvalidArgumentException
      */
     private static function assertDatalistShapeMatchesItemType(
@@ -127,6 +132,11 @@ class CustomVariableValueValidator
 
     /**
      * Whether the datalist's item type child says it holds a list, not a single value
+     *
+     * @param UuidInterface $propertyUuid
+     * @param Db            $db
+     *
+     * @return bool
      */
     private static function datalistAcceptsArray(UuidInterface $propertyUuid, Db $db): bool
     {
