@@ -259,6 +259,8 @@ class IcingaObjectHandler extends RequestHandler
      * custom-variable step must not leave the object's own property changes
      * committed on their own.
      *
+     * @param IcingaObjectWriteRequest $request
+     *
      * @return ?IcingaObject The object to respond with, or null if a response has
      *                       already been sent (the service-override branch)
      */
