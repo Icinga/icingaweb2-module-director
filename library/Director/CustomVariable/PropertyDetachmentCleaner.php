@@ -26,7 +26,9 @@ class PropertyDetachmentCleaner
      * its own direct attachment, so each one gets checked first. Logged and
      * deleted per holder, since two holders can lose a different subset.
      *
-     * @param string[] $quotedPropertyUuids Already quoted with DbUtil::quoteBinaryCompat()
+     * @param IcingaObject $object              The object losing these properties
+     * @param string[]     $quotedPropertyUuids These uuids, already quoted for use in a query
+     * @param Db           $db                  Database connection
      */
     public static function removeStaleValues(IcingaObject $object, array $quotedPropertyUuids, Db $db): void
     {
@@ -115,7 +117,9 @@ class PropertyDetachmentCleaner
      * Wipe values that only existed because of a template import which
      * just got removed
      *
-     * @param string[] $removedImportNames Imports this object lost, compared to what's in the database
+     * @param IcingaObject $object             The object whose imports changed
+     * @param string[]     $removedImportNames Imports this object lost, compared to what's in the database
+     * @param Db           $db                 Database connection
      */
     public static function removeValuesLostToRemovedImports(
         IcingaObject $object,
@@ -153,7 +157,8 @@ class PropertyDetachmentCleaner
      * Takes the pending imports as an argument instead of reading them
      * off the object, since a form calls this before applying anything.
      *
-     * @param string[] $pendingImportNames
+     * @param IcingaObject $object             The object to check
+     * @param string[]     $pendingImportNames
      *
      * @return string[]
      */
@@ -194,8 +199,10 @@ class PropertyDetachmentCleaner
      * Properties only reachable through the lost ids, and not through the
      * object itself or any of its new ancestors
      *
-     * @param int[] $lostAncestorIds
-     * @param int[] $newAncestorIds
+     * @param IcingaObject $object          The object to check
+     * @param int[]        $lostAncestorIds
+     * @param int[]        $newAncestorIds
+     * @param mixed        $dbAdapter       The database adapter to run the lookup with
      *
      * @return string[] Raw binary property uuids, keyed by hex
      */
@@ -222,7 +229,8 @@ class PropertyDetachmentCleaner
      * Ancestor ids reachable through the given import names, loaded fresh
      * from the database
      *
-     * @param string[] $importNames
+     * @param IcingaObject $object      The object to check
+     * @param string[]     $importNames
      *
      * @return int[]
      */
@@ -264,7 +272,9 @@ class PropertyDetachmentCleaner
      * Keyed by hex so a uuid attached to more than one of these ids only
      * shows up once.
      *
-     * @param int[] $ids
+     * @param int[]  $ids
+     * @param string $type      Short table name, e.g. "host"
+     * @param mixed  $dbAdapter The database adapter to run the lookup with
      *
      * @return string[]
      */
@@ -291,6 +301,8 @@ class PropertyDetachmentCleaner
     /**
      * Turn a set of custom variables into a plain key/value object, the
      * same shape the activity log expects for its before/after snapshots
+     *
+     * @param iterable $vars The vars to flatten
      *
      * @return stdClass
      */
