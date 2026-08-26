@@ -102,6 +102,8 @@ class BasketDiff
     /**
      * Count how many hosts, services and so on already have a value stored under this varname
      *
+     * @param string $varname
+     *
      * @return int
      */
     public function countStoredCustomVariableValues(string $varname): int
