@@ -503,14 +503,17 @@ class BasketController extends ActionController
             $items[] = Html::tag('li', $line);
         }
 
-        return Html::tag('div', ['class' => 'basket-property-migration'], [
-            Html::tag('ul', $items),
-            Html::tag('p', sprintf(
-                $this->translate('%d host/service/etc already have a value stored under "%s"'),
-                $affected,
-                $migration->oldVarname
-            )),
-        ]);
+        return new Callout(
+            CalloutType::Warning,
+            (new HtmlDocument())->addHtml(
+                Html::tag('ul', ['class' => 'basket-property-migration'], $items),
+                Html::tag('p', sprintf(
+                    $this->translate('%d host/service/etc already have a value stored under "%s"'),
+                    $affected,
+                    $migration->oldVarname
+                ))
+            )
+        );
     }
 
     /**
