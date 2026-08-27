@@ -14,6 +14,10 @@ namespace Icinga\Module\Director\CustomVariable;
  * same untouched original, nobody's move can overwrite a sibling's or chase a path
  * that's already moved.
  *
+ * If a rename's new key is already taken by something that isn't part of the
+ * same move, that's a real conflict. Whatever was already there keeps its key,
+ * the incoming rename gets dropped and counted instead.
+ *
  * dynamic-dictionary, fixed-dictionary and fixed-array may only ever be a root's
  * own type (see DirectorProperty::NON_NESTABLE_TYPES), so the root-type branching
  * only happens once, at the top. Everything nested below that is always a plain
@@ -21,6 +25,19 @@ namespace Icinga\Module\Director\CustomVariable;
  */
 class PropertyValueRebuilder
 {
+    /** @var int Count of renamed values dropped because their new key was taken */
+    private int $conflictCount = 0;
+
+    /**
+     * How many renamed values got dropped because their new key was already taken
+     *
+     * @return int
+     */
+    public function getConflictCount(): int
+    {
+        return $this->conflictCount;
+    }
+
     /**
      * Rebuild one decoded stored value for its root's migration
      *
@@ -65,6 +82,9 @@ class PropertyValueRebuilder
      * null value. Everything else keeps or moves its value under its new key,
      * recursing first if anything changed further down.
      *
+     * If a key is already taken by something that never moved, that value wins.
+     * The incoming rename gets dropped instead of overwriting it.
+     *
      * @param array $item
      * @param PropertyValueChange[] $changesByOldKey
      *
@@ -72,6 +92,10 @@ class PropertyValueRebuilder
      */
     private function rebuildContainer(array $item, array $changesByOldKey): array
     {
+        // Worked out once up front, so the result never depends on the order
+        // of the stored data.
+        $untouchedKeys = array_diff_key($item, $changesByOldKey);
+
         $result = [];
 
         foreach ($item as $key => $value) {
@@ -89,7 +113,11 @@ class PropertyValueRebuilder
 
             if ($change->valueCleared) {
                 if ($change->preserveIndex) {
-                    $result[$change->newKey] = null;
+                    if ($this->isTaken($change->newKey, $untouchedKeys, $result)) {
+                        $this->conflictCount++;
+                    } else {
+                        $result[$change->newKey] = null;
+                    }
                 }
 
                 continue;
@@ -106,10 +134,31 @@ class PropertyValueRebuilder
                 continue;
             }
 
+            if ($this->isTaken($change->newKey, $untouchedKeys, $result)) {
+                $this->conflictCount++;
+
+                continue;
+            }
+
             $result[$change->newKey] = $newValue;
         }
 
         return $result;
+    }
+
+    /**
+     * Whether this key is already taken, either by something that never moved
+     * or by an earlier rename in this same pass
+     *
+     * @param string $key
+     * @param array  $untouchedKeys
+     * @param array  $result
+     *
+     * @return bool
+     */
+    private function isTaken(string $key, array $untouchedKeys, array $result): bool
+    {
+        return array_key_exists($key, $untouchedKeys) || array_key_exists($key, $result);
     }
 
     /**

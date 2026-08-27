@@ -656,8 +656,9 @@ class CustomVariableValueCleaner
      *
      * @param PropertyValueMigration $migration The plan to apply
      *
-     * @return int Number of stored values left under the old varname because a legacy
-     *             Data Field owns it, 0 if there was no conflict
+     * @return int Number of values kept under their old name or key, either an old
+     *             Data Field owns the whole name, or a value's new key was taken,
+     *             0 if all clean
      */
     public function applyValueMigration(PropertyValueMigration $migration): int
     {
@@ -693,7 +694,7 @@ class CustomVariableValueCleaner
 
         $this->applyValueMigrationToOverrideServiceVars($migration, $rebuilder);
 
-        return 0;
+        return $rebuilder->getConflictCount();
     }
 
     /**

@@ -74,13 +74,15 @@ class RestoreBasketForm extends QuickForm
         $this->setSuccessMessage(sprintf('Restored to %s', $this->getValue('target_db')));
 
         if ($keptValuesCount > 0) {
-            // Schema still got restored, only the stored values themselves couldn't
-            // follow, a Data Field elsewhere still owns them under the same name.
-            // Adds every blocked property together into this one number.
+            // The schema still restored fine, only some values couldn't follow.
+            // Either an old Data Field still owns them, or a rename's new key
+            // was already taken. Adds up every kept or dropped value into one
+            // number.
             Notification::warning(sprintf(
                 $this->translate(
-                    'Kept %d stored value(s) in total under their old name or type, a Data'
-                    . ' Field with the same name still owns them somewhere in this basket.'
+                    '%d stored value(s) were kept under their old name or dropped in'
+                    . ' this basket, either a Data Field still owns the name, or a'
+                    . ' renamed value\'s new key was already taken.'
                 ),
                 $keptValuesCount
             ));

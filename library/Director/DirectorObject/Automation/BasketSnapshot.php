@@ -246,8 +246,8 @@ class BasketSnapshot extends DbObject
     /**
      * @param Db $connection
      *
-     * @return int values kept under the old name or type, a Data Field owns
-     *             them, 0 if none
+     * @return int values kept under their old name or dropped, either an old
+     *             Data Field owns them or a rename's new key was taken, 0 if none
      *
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -279,11 +279,12 @@ class BasketSnapshot extends DbObject
      * @param string $string The snapshot, as JSON
      * @param Db     $connection
      *
-     * @return int values kept under the old name or type, a Data Field owns
-     *             them, 0 if none
+     * @return int values kept under their old name or dropped, either an old
+     *             Data Field owns them or a rename's new key was taken, 0 if none
      *
-     * TODO: Int return only exists for the legacy Data Field conflict count.
-     *       Make this void once Data Fields are dropped.
+     * TODO: this number now also counts renamed values that got dropped, not
+     *       just old Data Fields, so it can't become void once Data Fields
+     *       go away.
      */
     public static function restoreJson($string, Db $connection): int
     {
@@ -296,11 +297,12 @@ class BasketSnapshot extends DbObject
      * @param stdClass $all The decoded snapshot
      * @param Db       $connection
      *
-     * @return int values kept under the old name or type, a Data Field owns
-     *             them, 0 if none
+     * @return int values kept under their old name or dropped, either an old
+     *             Data Field owns them or a rename's new key was taken, 0 if none
      *
-     * TODO: Int return only exists for the legacy Data Field conflict count.
-     *       Make this void once Data Fields are dropped.
+     * TODO: this number now also counts renamed values that got dropped, not
+     *       just old Data Fields, so it can't become void once Data Fields
+     *       go away.
      *
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
