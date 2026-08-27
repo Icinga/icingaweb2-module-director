@@ -125,7 +125,7 @@ class CustomvarController extends CompatController
                 ) {
                     $keyName = $form->getStoredKeyName();
                 } else {
-                    $keyName = $form->getValue('key_name');
+                    $keyName = $form->getPersistedKeyName();
                 }
 
                 Notification::success(sprintf(

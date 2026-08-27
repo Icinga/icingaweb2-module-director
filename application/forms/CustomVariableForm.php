@@ -38,6 +38,9 @@ class CustomVariableForm extends CompatForm
     /** @var int Count of values that stayed under their old name because the new name was taken */
     private int $renameCollisionCount = 0;
 
+    /** @var ?string Name of the Data Field that blocked the last rename attempt, null if none did */
+    private ?string $renameBlockedByDatafield = null;
+
     public function __construct(
         protected DbConnection $db,
         protected ?UuidInterface $uuid = null,
@@ -103,6 +106,24 @@ class CustomVariableForm extends CompatForm
     public function getStoredKeyName(): string
     {
         return $this->storedKeyName;
+    }
+
+    /**
+     * Get the key name that actually ended up stored after this submit
+     *
+     * Usually just the submitted key name, but a rename blocked by a Data Field
+     * keeps the old one instead, so a caller reporting success after submit
+     * should use this instead of the raw submitted value.
+     *
+     * @return string
+     */
+    public function getPersistedKeyName(): string
+    {
+        if ($this->renameBlockedByDatafield !== null) {
+            return $this->storedKeyName;
+        }
+
+        return (string) $this->getValue('key_name');
     }
 
     /**
@@ -765,7 +786,17 @@ class CustomVariableForm extends CompatForm
                     $values['key_name'] = $storedKeyName;
                 }
 
-                if ($this->renameCollisionCount > 0) {
+                if ($this->renameBlockedByDatafield !== null) {
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Could not rename "%s" to "%s", a Data Field named "%s" still'
+                            . ' exists. Rename or remove it first.'
+                        ),
+                        $storedKeyName,
+                        $newKeyName,
+                        $this->renameBlockedByDatafield
+                    ));
+                } elseif ($this->renameCollisionCount > 0) {
                     Notification::warning(sprintf(
                         $this->translate(
                             'Kept %d stored value(s) under their old key "%s", "%s" was'
@@ -907,18 +938,26 @@ class CustomVariableForm extends CompatForm
      */
     private function updateUsedCustomVarNames(string $storedKeyName, mixed $keyName): bool
     {
+        $this->renameBlockedByDatafield = null;
         $cleaner = new CustomVariableValueCleaner($this->db);
 
         if (! $this->parentUuid) {
             $root = $this->fetchProperty($this->uuid);
+            $newRootName = (string) $keyName;
 
             // The form validator should already catch this, this is just a backstop
             // in case a Data Field showed up between validation and submit.
-            if ($cleaner->wouldRenameCollideWithLegacyDatafield($root['key_name'], (string) $keyName)) {
+            if ($cleaner->wouldRenameCollideWithLegacyDatafield($root['key_name'], $newRootName)) {
+                // Either the old or the new name could be the one a Data Field
+                // owns, report whichever one it actually is.
+                $this->renameBlockedByDatafield = $cleaner->wouldDeleteCollideWithLegacyDatafield($newRootName)
+                    ? $newRootName
+                    : $root['key_name'];
+
                 return false;
             }
 
-            $cleaner->renameStoredValues($root['key_name'], (string) $keyName);
+            $cleaner->renameStoredValues($root['key_name'], $newRootName);
 
             return true;
         }
@@ -926,6 +965,13 @@ class CustomVariableForm extends CompatForm
         $parent = $this->fetchProperty($this->parentUuid);
         $kept = $cleaner->renameNestedStoredValues(['key_name' => $storedKeyName], $parent, (string) $keyName);
         $this->renameCollisionCount = $cleaner->getRenameCollisionCount();
+
+        if ($kept > 0) {
+            // The block is keyed off the root's own varname, walk up to find it, this
+            // child's own key never collides with a Data Field on its own.
+            [$rootProp, ] = $cleaner->resolveRootProperty(['key_name' => $storedKeyName], $parent);
+            $this->renameBlockedByDatafield = $rootProp['key_name'];
+        }
 
         return $kept === 0;
     }

@@ -707,6 +707,154 @@ class CustomVariableFormTest extends BaseTestCase
         );
     }
 
+    public function testRenameBlockedWhenNewNameOwnedByDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        DirectorDatafield::create([
+            'varname'  => '___TEST___new_tag_name',
+            'caption'  => 'New Tag Name',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+        $this->createdDatafieldNames[] = '___TEST___new_tag_name';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___old_tag_name',
+            'value_type' => 'string',
+            'label'      => 'Old Tag Name',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___old_tag_name';
+
+        $form = new TestableCustomVariableForm($db, $rootUuid);
+        $form->setStoredKeyName('___TEST___old_tag_name');
+
+        $renamed = self::callMethod(
+            $form,
+            'updateUsedCustomVarNames',
+            ['___TEST___old_tag_name', '___TEST___new_tag_name']
+        );
+
+        $this->assertFalse($renamed, 'rename must be refused, a Data Field already owns the new name');
+        $this->assertSame(
+            '___TEST___old_tag_name',
+            $form->getPersistedKeyName(),
+            'the persisted name must stay the old one'
+        );
+    }
+
+    public function testRenameBlockedWhenOldNameOwnedByDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        DirectorDatafield::create([
+            'varname'  => '___TEST___old_tag_name2',
+            'caption'  => 'Old Tag Name',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+        $this->createdDatafieldNames[] = '___TEST___old_tag_name2';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___old_tag_name2',
+            'value_type' => 'string',
+            'label'      => 'Old Tag Name',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___old_tag_name2';
+
+        $form = new TestableCustomVariableForm($db, $rootUuid);
+        $form->setStoredKeyName('___TEST___old_tag_name2');
+
+        $renamed = self::callMethod(
+            $form,
+            'updateUsedCustomVarNames',
+            ['___TEST___old_tag_name2', '___TEST___new_tag_name2']
+        );
+
+        $this->assertFalse($renamed, 'rename must be refused, a Data Field still owns the old name too');
+        $this->assertSame(
+            '___TEST___old_tag_name2',
+            $form->getPersistedKeyName(),
+            'the persisted name must stay the old one'
+        );
+    }
+
+    public function testNestedRenameBlockedByRootDatafield(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = $this->createHost('___TEST___switch07', '192.0.2.66');
+
+        DirectorDatafield::create([
+            'varname'  => '___TEST___shared_dict',
+            'caption'  => 'Shared Dict',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+        $this->createdDatafieldNames[] = '___TEST___shared_dict';
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___shared_dict',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Shared Dict',
+        ], $db)->store();
+        $this->createdKeyNames[] = '___TEST___shared_dict';
+
+        $fieldUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $fieldUuid->getBytes(),
+            'key_name'    => 'old_child',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => '___TEST___shared_dict',
+            'varvalue' => json_encode(['old_child' => 'switch']),
+            'format'   => 'json',
+        ]);
+
+        $form = new TestableCustomVariableForm($db, $fieldUuid, true, $rootUuid);
+        $form->setStoredKeyName('old_child');
+
+        $renamed = self::callMethod($form, 'updateUsedCustomVarNames', ['old_child', 'new_child']);
+
+        $this->assertFalse($renamed, 'rename must be refused, a Data Field owns the root varname');
+        $this->assertSame(
+            'old_child',
+            $form->getPersistedKeyName(),
+            'the persisted name must stay the old one'
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '___TEST___shared_dict')
+        );
+        $this->assertEquals(
+            ['old_child' => 'switch'],
+            json_decode($storedValue, true),
+            'the stored value must not move while a Data Field owns the root varname'
+        );
+    }
+
     private function createHost(string $objectName, string $address): IcingaHost
     {
         $db = $this->getDb();
