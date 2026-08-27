@@ -145,6 +145,10 @@ position in its own property definition, so two unrelated properties can each ha
 nested field with the same name (e.g. both defining a `credentials.password`) without
 one accidentally unmasking the other.
 
+> Masking a `sensitive` value that's inherited from a template, or referenced by
+> name in an apply-for macro rule, isn't supported yet. It can render unmasked
+> in Icinga DB. A fix is planned.
+
 ##### `fixed-array`
 An ordered list with a predefined structure. Each position has a fixed meaning configured in the property schema. The Icinga 2 config stores this as an array without keys.
 
@@ -266,6 +270,10 @@ vars.http_vhosts += {
     }
 }
 ```
+
+> A `dynamic-dictionary` key made up only of digits (e.g. `"0"`) isn't supported.
+> It gets miscast into a plain list and loses its name. Avoid purely numeric
+> keys.
 
 ### Configuring a custom variable
 

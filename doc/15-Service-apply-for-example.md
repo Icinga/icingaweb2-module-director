@@ -194,6 +194,10 @@ apply Service "disk-check" for (key => value in host.vars.disk_checks) {
    The `Apply For` page shows a hint listing all `$value.<field>$` (or `$value["field-name"]$` for
    field names that aren't valid identifiers) expressions available for the selected dictionary.
 
+   > Field names containing a quote, backslash, or dollar sign aren't supported in
+   > `$value["field-name"]$` interpolation. They aren't escaped, and can produce
+   > invalid or unexpected config. Avoid those characters in field names used this way.
+
 The `$key$` macro in the name pattern now forces Icinga Director to render `name` as a separate
 computed expression rather than an inline string; `check_command` still comes from the imported
 `disk-template` rather than being repeated on the apply rule. Custom variables render in
