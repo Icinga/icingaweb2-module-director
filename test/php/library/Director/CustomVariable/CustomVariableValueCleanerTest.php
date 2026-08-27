@@ -575,6 +575,146 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         $this->assertEquals(0, $keptCount, 'nothing was kept, so no values must be reported back');
     }
 
+    public function testRenameRefusesOccupiedDestination(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_collision_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.78',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => self::NESTED_ROOT_KEY_NAME,
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Address',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'road',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::NESTED_ROOT_KEY_NAME,
+            'varvalue' => json_encode(['street' => 'Main St', 'road' => 'Elm St']),
+            'format'   => 'json',
+        ]);
+
+        $cleaner = new CustomVariableValueCleaner($db);
+        $keptCount = $cleaner->renameNestedStoredValues(
+            ['key_name' => 'road'],
+            [
+                'key_name'    => self::NESTED_ROOT_KEY_NAME,
+                'uuid'        => $rootUuid->getBytes(),
+                'parent_uuid' => null,
+                'value_type'  => 'fixed-dictionary',
+            ],
+            'street'
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::NESTED_ROOT_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            ['street' => 'Main St', 'road' => 'Elm St'],
+            json_decode($storedValue, true),
+            'a value must not be silently overwritten when its new key is already taken'
+        );
+        $this->assertEquals(0, $keptCount, 'a collision is not a Data Field block, it must not be reported here');
+        $this->assertEquals(
+            1,
+            $cleaner->getRenameCollisionCount(),
+            'the skipped value must be counted so the admin can be told about it'
+        );
+    }
+
+    public function testDynamicRenameRefusesOccupiedDestination(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_collision_dynamic_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.79',
+        ], $db);
+        $host->store();
+
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => self::DYNAMIC_ROOT_KEY_NAME,
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Contacts',
+        ], $db)->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'phone',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::DYNAMIC_ROOT_KEY_NAME,
+            'varvalue' => json_encode([
+                'ops' => ['mobile' => 'already here', 'phone' => '555-0100'],
+                'noc' => ['phone' => '555-0200'],
+            ]),
+            'format'   => 'json',
+        ]);
+
+        $cleaner = new CustomVariableValueCleaner($db);
+        $keptCount = $cleaner->renameNestedStoredValues(
+            ['key_name' => 'phone'],
+            [
+                'key_name'    => self::DYNAMIC_ROOT_KEY_NAME,
+                'uuid'        => $rootUuid->getBytes(),
+                'parent_uuid' => null,
+                'value_type'  => 'dynamic-dictionary',
+            ],
+            'mobile'
+        );
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::DYNAMIC_ROOT_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            [
+                'noc' => ['mobile' => '555-0200'],
+                'ops' => ['mobile' => 'already here', 'phone' => '555-0100'],
+            ],
+            json_decode($storedValue, true),
+            'only the colliding entry keeps its old key, an unaffected entry still renames'
+        );
+        $this->assertEquals(0, $keptCount);
+        $this->assertEquals(1, $cleaner->getRenameCollisionCount());
+    }
+
     public function testWouldDatafieldCollideWithPropertyDetectsExistingRootProperty(): void
     {
         if ($this->skipForMissingDb()) {

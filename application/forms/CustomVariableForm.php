@@ -35,6 +35,9 @@ class CustomVariableForm extends CompatForm
     /** @var ?string The key name as stored in the database, used to detect pending renames */
     private ?string $storedKeyName = null;
 
+    /** @var int Count of values that stayed under their old name because the new name was taken */
+    private int $renameCollisionCount = 0;
+
     public function __construct(
         protected DbConnection $db,
         protected ?UuidInterface $uuid = null,
@@ -754,11 +757,24 @@ class CustomVariableForm extends CompatForm
             $values['value_type'] = $dbProperty['value_type'];
 
             if ($storedKeyName !== $values['key_name']) {
-                $renamed = $this->updateUsedCustomVarNames($storedKeyName, $values['key_name']);
+                $newKeyName = $values['key_name'];
+                $renamed = $this->updateUsedCustomVarNames($storedKeyName, $newKeyName);
                 if (! $renamed) {
                     // Values can't follow, so keep the old name too, no point renaming
                     // the property and orphaning its values.
                     $values['key_name'] = $storedKeyName;
+                }
+
+                if ($this->renameCollisionCount > 0) {
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Kept %d stored value(s) under their old key "%s", "%s" was'
+                            . ' already in use there.'
+                        ),
+                        $this->renameCollisionCount,
+                        $storedKeyName,
+                        $newKeyName
+                    ));
                 }
             }
         }
@@ -909,6 +925,7 @@ class CustomVariableForm extends CompatForm
 
         $parent = $this->fetchProperty($this->parentUuid);
         $kept = $cleaner->renameNestedStoredValues(['key_name' => $storedKeyName], $parent, (string) $keyName);
+        $this->renameCollisionCount = $cleaner->getRenameCollisionCount();
 
         return $kept === 0;
     }

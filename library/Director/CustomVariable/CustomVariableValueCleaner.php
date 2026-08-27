@@ -20,8 +20,21 @@ class CustomVariableValueCleaner
 {
     private const OBJECT_TYPES = ['host', 'service', 'notification', 'command', 'user', 'service_set'];
 
+    /** @var int Count of values that stayed under their old name because the new name was taken */
+    private int $renameCollisionCount = 0;
+
     public function __construct(protected DbConnection $db)
     {
+    }
+
+    /**
+     * How many values could not move to their new name because it was already taken
+     *
+     * @return int
+     */
+    public function getRenameCollisionCount(): int
+    {
+        return $this->renameCollisionCount;
     }
 
     /**
@@ -216,6 +229,8 @@ class CustomVariableValueCleaner
      * Move a value to a new key in a nested array, in place
      *
      * Only the last step of the path changes, so old and new walk down together.
+     * If that key is already taken, leave the value where it was instead of
+     * replacing what's there.
      *
      * @param array $item    The data to rename the item in, modified in place
      * @param array $oldPath Nested keys leading to the current key
@@ -233,10 +248,18 @@ class CustomVariableValueCleaner
         }
 
         if (empty($oldPath)) {
-            $item[$newKey] = $item[$oldKey];
-            if ($oldKey !== $newKey) {
-                unset($item[$oldKey]);
+            if ($oldKey === $newKey) {
+                return;
             }
+
+            if (array_key_exists($newKey, $item)) {
+                $this->renameCollisionCount++;
+
+                return;
+            }
+
+            $item[$newKey] = $item[$oldKey];
+            unset($item[$oldKey]);
 
             return;
         }
@@ -583,6 +606,9 @@ class CustomVariableValueCleaner
      * checked against a legacy Data Field first, since this writes into the
      * same stored data that field might own.
      *
+     * If a value's new key is already used by something else, that one value
+     * stays behind, it doesn't block the rest of the rename.
+     *
      * @param array  $property Property being renamed, needs at least 'key_name' (the old name)
      * @param array  $parent Immediate parent row, used to walk up to the root
      * @param string $newKeyName The property's new key_name
@@ -591,6 +617,8 @@ class CustomVariableValueCleaner
      */
     public function renameNestedStoredValues(array $property, array $parent, string $newKeyName): int
     {
+        $this->renameCollisionCount = 0;
+
         [$rootProp, $oldPath] = $this->resolveRootProperty($property, $parent);
 
         if ($this->hasLegacyDatafield($rootProp['key_name'])) {
