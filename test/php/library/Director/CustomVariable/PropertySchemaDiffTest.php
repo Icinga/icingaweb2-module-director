@@ -164,6 +164,38 @@ class PropertySchemaDiffTest extends BaseTestCase
         $this->assertTrue($change->valueCleared, 'the old value can not survive under the new type either way');
     }
 
+    public function testUnchangedTreeWithARetainedLegacyDatafieldIsStillANoop(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        [$root, ] = $this->createAddressWithChildren($db, ['street', 'zip']);
+
+        // Nothing here changed, so a Data Field that happens to share the root's
+        // varname must not turn this into a blocked migration, it was never going
+        // to touch that data in the first place.
+        DirectorDatafield::create([
+            'varname'  => self::ROOT_KEY_NAME,
+            'caption'  => 'Address',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeString',
+        ], $db)->store();
+
+        $plain = $root->export();
+        $imported = DirectorProperty::import($plain, $db, true);
+        $migration = (new PropertySchemaDiff(new CustomVariableValueCleaner($db)))->diff($imported);
+
+        $this->assertTrue(
+            $migration->isNoop(),
+            'an untouched property must stay a no-op even if an unrelated Data Field shares its name'
+        );
+        $this->assertFalse(
+            $migration->blocked,
+            'nothing was pending, so there was nothing for the Data Field to block'
+        );
+    }
+
     public function testChangesAreNotAllowedWhenARootLegacyDatafieldOwnsTheData(): void
     {
         if ($this->skipForMissingDb()) {

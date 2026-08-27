@@ -20,6 +20,9 @@ use Icinga\Module\Director\Objects\DirectorProperty;
  * A legacy Data Field collision blocks the whole plan, not just one change,
  * since a root's stored values all live in the same JSON blob. Blocked changes
  * get undone here too, so a schema row never points at data that never moved.
+ *
+ * That check only runs if something actually changed. A property left
+ * untouched is skipped, even if an old Data Field still shares its name.
  */
 class PropertySchemaDiff
 {
@@ -32,6 +35,9 @@ class PropertySchemaDiff
 
     /**
      * Work out what changed under a property tree since it was loaded, root included
+     *
+     * If nothing changed, this does nothing, even if an old Data Field still has
+     * the same name.
      *
      * @param DirectorProperty $root The root property to diff
      *
@@ -51,6 +57,30 @@ class PropertySchemaDiff
         $newRootType = $root->get('value_type');
         $renamed = $oldVarname !== $newVarname;
         $retyped = $oldRootType !== $newRootType;
+
+        $fixedArrayReindexes = [];
+        $children = [];
+        $childrenCollected = false;
+
+        if (! $renamed && ! $retyped) {
+            // Name and type stayed the same, so only a child change is left to
+            // check. Do that first, an old Data Field must not block a property
+            // that isn't actually changing.
+            $children = $this->collectChanges($root, $fixedArrayReindexes);
+            $childrenCollected = true;
+
+            if (empty($children) && empty($fixedArrayReindexes)) {
+                return new PropertyValueMigration(
+                    oldVarname: $oldVarname,
+                    newVarname: $newVarname,
+                    oldRootType: $oldRootType,
+                    wholeValueCleared: false,
+                    blocked: false,
+                    children: [],
+                    fixedArrayReindexes: []
+                );
+            }
+        }
 
         $blocked = $renamed
             ? $this->cleaner->wouldRenameCollideWithLegacyDatafield($oldVarname, $newVarname)
@@ -95,8 +125,9 @@ class PropertySchemaDiff
             );
         }
 
-        $fixedArrayReindexes = [];
-        $children = $this->collectChanges($root, $fixedArrayReindexes);
+        if (! $childrenCollected) {
+            $children = $this->collectChanges($root, $fixedArrayReindexes);
+        }
 
         return new PropertyValueMigration(
             oldVarname: $oldVarname,
