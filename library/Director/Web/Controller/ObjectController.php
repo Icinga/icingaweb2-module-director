@@ -16,7 +16,7 @@ use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
-use Icinga\Module\Director\Db\Branch\UuidLookup;
+use Icinga\Module\Director\Db\Lookup\UuidLookup;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;

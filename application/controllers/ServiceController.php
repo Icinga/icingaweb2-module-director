@@ -9,7 +9,7 @@ use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
-use Icinga\Module\Director\Db\Branch\UuidLookup;
+use Icinga\Module\Director\Db\Lookup\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
