@@ -6,7 +6,6 @@ use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
@@ -21,8 +20,6 @@ use Zend_Db_Select as ZfSelect;
 
 class ApplyRulesTable extends ZfQueryBasedTable
 {
-    use TableWithBranchSupport;
-
     protected $searchColumns = [
         'o.object_name',
         'o.assign_filter',
@@ -124,8 +121,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
             $this->getQuery(),
             $template,
             'o',
-            $inheritance,
-            $this->branchUuid
+            $inheritance
         );
 
         return $this;
@@ -206,10 +202,6 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     protected function getRowClasses($row)
     {
-        // TODO: remove isset, to figure out where it is missing
-        if (isset($row->branch_uuid) && $row->branch_uuid !== null) {
-            return ['branch_modified'];
-        }
         return [];
     }
 
@@ -243,75 +235,13 @@ class ApplyRulesTable extends ZfQueryBasedTable
             $columns['apply_for'] = 'o.apply_for';
         }
 
-        $conn = $this->connection();
         $query = $this->db()->select()->from(
             ['o' => $table],
             $columns
         )->order('o.object_name');
 
-        if ($this->branchUuid) {
-            $columns = $this->branchifyColumns($columns);
-            $columns['branch_uuid'] = 'bo.branch_uuid';
-            if ($conn->isPgsql()) {
-                $columns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
-                    . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
-            } else {
-                $columns['imports'] = 'CONCAT(\'[\', '
-                    . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
-            }
-
-            $this->stripSearchColumnAliases();
-
-            $query->reset('columns');
-            $right = clone($query);
-
-            $query->columns($columns)
-                ->joinLeft(
-                    ['oi' => $table . '_inheritance'],
-                    'o.id = oi.' . $this->getType() . '_id',
-                    []
-                )->joinLeft(
-                    ['sub_o' => $table],
-                    'sub_o.id = oi.parent_' . $this->getType() . '_id',
-                    []
-                )->group(['o.id', 'bo.uuid', 'bo.branch_uuid']);
-
-            $query->joinLeft(
-                ['bo' => "branched_$table"],
-                // TODO: PgHexFunc
-                $this->db()->quoteInto(
-                    'bo.uuid = o.uuid AND bo.branch_uuid = ?',
-                    DbUtil::quoteBinaryLegacy($this->branchUuid->getBytes(), $this->db())
-                ),
-                []
-            )->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
-
-            if ($this->type === 'service') {
-                $query->where('o.service_set_id IS NULL AND bo.service_set IS NULL');
-            }
-
-            $columns['imports'] = 'bo.imports';
-
-            $right->columns($columns)
-                ->joinRight(
-                    ['bo' => "branched_$table"],
-                    'bo.uuid = o.uuid',
-                    []
-                )
-                ->where('o.uuid IS NULL')
-                ->where('bo.branch_uuid = ?', $conn->quoteBinary($this->branchUuid->getBytes()));
-
-            $query = $this->db()->select()->union([
-                'l' => new DbSelectParenthesis($query),
-                'r' => new DbSelectParenthesis($right),
-            ]);
-
-            $query = $this->db()->select()->from(['u' => $query]);
-            $query->order('object_name')->limit(100);
-        } else {
-            if ($this->type === 'service') {
-                $query->where('service_set_id IS NULL');
-            }
+        if ($this->type === 'service') {
+            $query->where('service_set_id IS NULL');
         }
 
         $query->where(

@@ -207,13 +207,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     protected function getServiceObjectsForSet(IcingaServiceSet $set)
     {
         $connection = $this->getConnection();
-        if (self::$dbObjectStore !== null) {
-            $branchUuid = self::$dbObjectStore->getBranch()->getUuid();
-        } else {
-            $branchUuid = null;
-        }
-
-        $builder = new ServiceSetQueryBuilder($connection, $branchUuid);
+        $builder = new ServiceSetQueryBuilder($connection);
         return $builder->fetchServicesWithQuery($builder->selectServicesForSet($set));
     }
 
@@ -511,12 +505,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
      */
     public function fetchServices(): array
     {
-        if ($store = self::$dbObjectStore) {
-            $uuid = $store->getBranch()->getUuid();
-        } else {
-            $uuid = null;
-        }
-        $builder = new ServiceSetQueryBuilder($this->getConnection(), $uuid);
+        $builder = new ServiceSetQueryBuilder($this->getConnection());
         return $builder->fetchServicesWithQuery($builder->selectServicesForSet($this));
     }
 

@@ -25,10 +25,8 @@ class ServiceTemplateUsageTable extends TemplateUsageTable
                 $templateType,
                 $connection
             ),
-            'objects'    => ObjectsTable::create($templateType, $connection, $this->auth)
-                ->setBranchUuid($this->branchUuid),
-            'applyrules' => ApplyRulesTable::create($templateType, $connection)
-                ->setBranchUuid($this->branchUuid),
+            'objects'    => ObjectsTable::create($templateType, $connection, $this->auth),
+            'applyrules' => ApplyRulesTable::create($templateType, $connection),
             'setmembers' => ObjectsTableSetMembers::create(
                 $templateType,
                 $connection,

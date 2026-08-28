@@ -22,7 +22,6 @@ class DependencyTemplateUsageTable extends TemplateUsageTable
                 $connection
             ),
             'applyrules' => ApplyRulesTable::create($templateType, $connection)
-                ->setBranchUuid($this->branchUuid)
         ];
     }
 }
