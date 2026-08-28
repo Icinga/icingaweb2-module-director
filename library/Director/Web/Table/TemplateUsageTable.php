@@ -8,7 +8,6 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Authentication\Auth;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use gipfl\IcingaWeb2\Link;
@@ -18,8 +17,6 @@ use ipl\I18n\Translation;
 class TemplateUsageTable extends Table
 {
     use Translation;
-
-    use TableWithBranchSupport;
 
     /** @var Auth */
     protected $auth;
@@ -40,20 +37,19 @@ class TemplateUsageTable extends Table
 
     /**
      * @param IcingaObject $template
-     * @param ?Branch $branch
      *
      * @return TemplateUsageTable
      *
      * @throws ProgrammingError
      */
-    public static function forTemplate(IcingaObject $template, Auth $auth, ?Branch $branch = null)
+    public static function forTemplate(IcingaObject $template, Auth $auth)
     {
         $type = ucfirst($template->getShortTableName());
         $class = __NAMESPACE__ . "\\{$type}TemplateUsageTable";
         if (class_exists($class)) {
-            return new $class($template, $auth, $branch);
+            return new $class($template, $auth);
         } else {
-            return new static($template, $auth, $branch);
+            return new static($template, $auth);
         }
     }
 
@@ -67,7 +63,7 @@ class TemplateUsageTable extends Table
         ];
     }
 
-    protected function __construct(IcingaObject $template, Auth $auth, ?Branch $branch = null)
+    protected function __construct(IcingaObject $template, Auth $auth)
     {
         $this->auth = $auth;
 
@@ -78,7 +74,6 @@ class TemplateUsageTable extends Table
             );
         }
 
-        $this->setBranch($branch);
         $this->objectType = $objectType = $template->getShortTableName();
         $types = $this->getTypes();
         $usage = $this->getUsageSummary($template);
@@ -162,7 +157,6 @@ class TemplateUsageTable extends Table
                 $connection
             ),
             'objects'   => ObjectsTable::create($templateType, $connection, $this->auth)
-                ->setBranchUuid($this->branchUuid)
         ];
     }
 }
