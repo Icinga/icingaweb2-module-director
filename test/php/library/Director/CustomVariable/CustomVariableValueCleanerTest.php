@@ -790,6 +790,8 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_nested_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_nested_shared_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_nested_dynamic_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_collision_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_collision_dynamic_host']);
 
             foreach ([self::ROOT_KEY_NAME, self::NESTED_ROOT_KEY_NAME, self::DYNAMIC_ROOT_KEY_NAME] as $rootKeyName) {
                 $rows = $dba->fetchAll(
