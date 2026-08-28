@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
@@ -14,13 +13,10 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Ramsey\Uuid\Uuid;
-use Zend_Db_Adapter_Pdo_Pgsql;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable
 {
-    use TableWithBranchSupport;
-
     /** @var ObjectRestriction[] */
     protected $objectRestrictions;
 
@@ -43,10 +39,6 @@ class ObjectsTable extends ZfQueryBasedTable
 
     /** @var IcingaObject */
     protected $dummyObject;
-
-    protected $leftSubQuery;
-
-    protected $rightSubQuery;
 
     /** @var Auth */
     private $auth;
@@ -117,17 +109,11 @@ class ObjectsTable extends ZfQueryBasedTable
         IcingaObject $template,
         $inheritance = Db\IcingaObjectFilterHelper::INHERIT_DIRECT
     ) {
-        if ($this->branchUuid) {
-            $tableAlias = 'u';
-        } else {
-            $tableAlias = 'o';
-        }
         IcingaObjectFilterHelper::filterByTemplate(
             $this->getQuery(),
             $template,
-            $tableAlias,
-            $inheritance,
-            $this->branchUuid
+            'o',
+            $inheritance
         );
 
         return $this;
@@ -183,21 +169,11 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected function getRowClasses($row)
     {
-        // TODO: remove isset, to figure out where it is missing
-        if (isset($row->branch_uuid) && $row->branch_uuid !== null) {
-            return ['branch_modified'];
-        }
         return [];
     }
 
-    protected function applyObjectTypeFilter(ZfSelect $query, ?ZfSelect $right = null)
+    protected function applyObjectTypeFilter(ZfSelect $query)
     {
-        if ($right) {
-            $right->where(
-                'bo.object_type = ?',
-                $this->filterObjectType
-            );
-        }
         return $query->where(
             'o.object_type = ?',
             $this->filterObjectType
@@ -251,89 +227,12 @@ class ObjectsTable extends ZfQueryBasedTable
     protected function prepareQuery()
     {
         $table = $this->getDummyObject()->getTableName();
-        if ($this->branchUuid) {
-            $this->columns['branch_uuid'] = 'bo.branch_uuid';
-        }
-
         $columns = $this->getColumns();
-        if ($this->branchUuid) {
-            $columns = $this->branchifyColumns($columns);
-            $this->stripSearchColumnAliases();
-        }
         $query = $this->db()->select()->from(['o' => $table], $columns);
 
-        if ($this->branchUuid) {
-            $right = clone($query);
-            // Hint: Right part has only those with object = null
-            //       This means that restrictions on $right would hide all
-            //       new rows. Dedicated restriction logic for the branch-only
-            //       part of thw union are not required, we assume that restrictions
-            //       for new objects have been checked once they have been created
-            $query = $this->applyRestrictions($query);
-            /** @var Db $conn */
-            $conn = $this->connection();
-            $query->joinLeft(
-                ['bo' => "branched_$table"],
-                // TODO: PgHexFunc
-                $this->db()->quoteInto(
-                    'bo.uuid = o.uuid AND bo.branch_uuid = ?',
-                    $conn->quoteBinary($this->branchUuid->getBytes())
-                ),
-                []
-            );
-
-            // keep the imported templates as columns
-            $leftColumns = $columns;
-            $rightColumns = $columns;
-
-            if ($this->db() instanceof Zend_Db_Adapter_Pdo_Pgsql) {
-                $leftColumns['imports'] = 'CONCAT(\'[\', ARRAY_TO_STRING(ARRAY_AGG'
-                    . '(CONCAT(\'"\', sub_o.object_name, \'"\')), \',\'), \']\')';
-            } else {
-                $leftColumns['imports'] = 'CONCAT(\'[\', '
-                    . 'GROUP_CONCAT(CONCAT(\'"\', sub_o.object_name, \'"\')), \']\')';
-            }
-
-            $query->reset('columns');
-
-            $query->columns($leftColumns)
-                ->joinLeft(
-                    ['oi' => $table . '_inheritance'],
-                    'o.id = oi.' . $this->getType() . '_id',
-                    []
-                )->joinLeft(
-                    ['sub_o' => $table],
-                    'sub_o.id = oi.parent_' . $this->getType() . '_id',
-                    []
-                )->group(['o.id', 'bo.uuid', 'bo.branch_uuid']);
-
-            $rightColumns['imports'] = 'bo.imports';
-
-            $right->reset('columns');
-            $right->columns($rightColumns);
-
-            $query->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
-            $this->applyObjectTypeFilter($query, $right);
-            $right->joinRight(
-                ['bo' => "branched_$table"],
-                'bo.uuid = o.uuid',
-                []
-            )
-            ->where('o.uuid IS NULL')
-            ->where('bo.branch_uuid = ?', $conn->quoteBinary($this->branchUuid->getBytes()));
-            $this->leftSubQuery = $query;
-            $this->rightSubQuery = $right;
-            $query = $this->db()->select()->union([
-                'l' => new DbSelectParenthesis($query),
-                'r' => new DbSelectParenthesis($right),
-            ]);
-            $query = $this->db()->select()->from(['u' => $query]);
-            $query->order('object_name')->limit(100);
-        } else {
-            $this->applyObjectTypeFilter($query);
-            $query = $this->applyRestrictions($query);
-            $query->order('o.object_name')->limit(100);
-        }
+        $this->applyObjectTypeFilter($query);
+        $query = $this->applyRestrictions($query);
+        $query->order('o.object_name')->limit(100);
 
         return $query;
     }

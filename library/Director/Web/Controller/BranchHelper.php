@@ -2,12 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
-use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\PreferredBranchSupport;
-use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Widget\NotInBranchedHint;
 use Ramsey\Uuid\UuidInterface;
 
@@ -61,13 +58,6 @@ trait BranchHelper
     protected function hasBranch(): bool
     {
         return $this->getBranchUuid() !== null;
-    }
-
-    protected function enableStaticObjectLoader($table): void
-    {
-        if (BranchSupport::existsForTableName($table)) {
-            IcingaObject::setDbObjectStore(new DbObjectStore($this->db(), $this->getBranch()));
-        }
     }
 
     /**

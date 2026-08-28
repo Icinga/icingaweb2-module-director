@@ -187,66 +187,50 @@ class ObjectsTableService extends ObjectsTable
     public function prepareQuery()
     {
         $query = parent::prepareQuery();
-        if ($this->branchUuid) {
-            $queries = [$this->leftSubQuery, $this->rightSubQuery];
-        } else {
-            $queries = [$query];
-        }
 
-        foreach ($queries as $subQuery) {
-            $subQuery->joinLeft(
-                ['h' => 'icinga_host'],
-                'o.host_id = h.id',
+        $query->joinLeft(
+            ['h' => 'icinga_host'],
+            'o.host_id = h.id',
+            []
+        );
+
+        if ($this->inheritedBy) {
+            $ancestors = $this->inheritedBy->listAncestorIds();
+            $ancestors[] = $this->inheritedBy->get('id');
+
+            $query->joinLeft(
+                ['hi' => 'icinga_host_inheritance'],
+                'h.id = hi.parent_host_id',
+                []
+            )->joinLeft(
+                ['hc' => 'icinga_host'],
+                'hi.host_id = hc.id',
+                []
+            )->joinLeft(
+                ['hsb' => 'icinga_host_service_blacklist'],
+                $this->db()->quoteInto('hsb.service_id = o.id AND hsb.host_id IN (?)', $ancestors),
+                []
+            )->where('hc.id IN (?)', $ancestors);
+
+            $query->where('o.service_set_id IS NULL')
+                ->group(['o.id', 'o.object_name'])
+                ->order('o.object_name')->order('h.object_name');
+        } else {
+            $query->joinLeft(
+                ['hsb' => 'icinga_host_service_blacklist'],
+                'hsb.service_id = o.id AND hsb.host_id = o.host_id',
                 []
             );
 
-            if ($this->inheritedBy) {
-                $ancestors = $this->inheritedBy->listAncestorIds();
-                $ancestors[] = $this->inheritedBy->get('id');
+            $query->where('o.service_set_id IS NULL');
+        }
 
-                $subQuery->joinLeft(
-                    ['hi' => 'icinga_host_inheritance'],
-                    'h.id = hi.parent_host_id',
-                    []
-                )->joinLeft(
-                    ['hc' => 'icinga_host'],
-                    'hi.host_id = hc.id',
-                    []
-                )->joinLeft(
-                    ['hsb' => 'icinga_host_service_blacklist'],
-                    $this->db()->quoteInto('hsb.service_id = o.id AND hsb.host_id IN (?)', $ancestors),
-                    []
-                )->where('hc.id IN (?)', $ancestors);
+        $query
+            ->group(['o.id', 'h.id', 'o.object_name', 'h.object_name', 'hsb.service_id', 'hsb.host_id'])
+            ->order('o.object_name')->order('h.object_name');
 
-                $subQuery->where('o.service_set_id IS NULL')
-                    ->group(['o.id', 'o.object_name'])
-                    ->order('o.object_name')->order('h.object_name');
-            } else {
-                $subQuery->joinLeft(
-                    ['hsb' => 'icinga_host_service_blacklist'],
-                    'hsb.service_id = o.id AND hsb.host_id = o.host_id',
-                    []
-                );
-
-                $subQuery->where('o.service_set_id IS NULL');
-            }
-
-            $subQuery
-                ->group(['o.id', 'h.id', 'o.object_name', 'h.object_name', 'hsb.service_id', 'hsb.host_id'])
-                ->order('o.object_name')->order('h.object_name');
-
-            if ($this->branchUuid) {
-                $subQuery->where('bo.service_set IS NULL')
-                    ->group(['bo.uuid', 'bo.branch_uuid']);
-            }
-
-            if ($this->host) {
-                if ($this->branchUuid) {
-                    $subQuery->where('COALESCE(h.object_name, bo.host) = ?', $this->host->getObjectName());
-                } else {
-                    $subQuery->where('h.id = ?', $this->host->get('id'));
-                }
-            }
+        if ($this->host) {
+            $query->where('h.id = ?', $this->host->get('id'));
         }
 
         return $query;
