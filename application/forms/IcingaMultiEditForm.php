@@ -165,11 +165,10 @@ class IcingaMultiEditForm extends DirectorObjectForm
     protected function storeModifiedObjects()
     {
         $modified = 0;
-        $store = $this->getDbObjectStore();
         foreach ($this->objects as $object) {
             if ($object->hasBeenModified()) {
                 $modified++;
-                $store->store($object);
+                $object->store();
             }
         }
 
@@ -328,9 +327,8 @@ class IcingaMultiEditForm extends DirectorObjectForm
             $this->translate($this->object->getShortTableName())
         );
 
-        $store = $this->getDbObjectStore();
         foreach ($this->objects as $object) {
-            $store->delete($object);
+            $object->delete();
         }
 
         if ($this->listUrl) {

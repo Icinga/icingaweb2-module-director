@@ -143,13 +143,8 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
         $url = $this->getSuccessUrl()->without('argument_id')->without('argument');
 
         $cmd->arguments()->remove($object->argument_name);
-        if ($this->branch->isBranch()) {
-            $this->getDbObjectStore()->store($cmd);
+        if ($cmd->store()) {
             $this->setSuccessUrl($url);
-        } else {
-            if ($cmd->store()) {
-                $this->setSuccessUrl($url);
-            }
         }
 
         $this->redirectOnSuccess($msg);
@@ -173,7 +168,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
                 $this->translate('The argument %s has successfully been stored'),
                 $object->get('argument_name')
             );
-            $this->getDbObjectStore()->store($cmd);
+            $cmd->store();
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);

@@ -7,10 +7,8 @@ use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -89,24 +87,16 @@ class Sync
     /** @var HostGroupMembershipResolver|bool */
     protected $hostGroupMembershipResolver;
 
-    /** @var ?DbObjectStore */
-    protected $store;
-
     /** @var IcingaObjectGroup[] */
     protected $modifiedGroups = [];
 
     /** @var IcingaObject[] */
     protected $modifiedGroupObjects = [];
 
-    /**
-     * @param SyncRule $rule
-     * @param ?DbObjectStore $store
-     */
-    public function __construct(SyncRule $rule, ?DbObjectStore $store = null)
+    public function __construct(SyncRule $rule)
     {
         $this->rule = $rule;
         $this->db = $rule->getConnection();
-        $this->store = $store;
     }
 
     /**
@@ -402,12 +392,7 @@ class Sync
         if ($this->rule->hasCombinedKey()) {
             $this->objects = [];
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
-            $table = DbObjectTypeRegistry::tableNameByType($ruleObjectType);
-            if ($this->store && BranchSupport::existsForTableName($table)) {
-                $objects = $this->store->loadAll($table);
-            } else {
-                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
-            }
+            $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
 
             foreach ($objects as $object) {
                 if ($object instanceof IcingaService) {
@@ -443,33 +428,27 @@ class Sync
                 $this->objects[$key] = $object;
             }
         } else {
-            if ($this->store) {
-                $objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType), 'object_name');
-            } else {
-                $keyColumn = null;
-                $query = null;
-                // We enforce named index for combined-key templates (Services and Sets) and applied Sets
-                if ($ruleObjectType === 'service' || $ruleObjectType === 'serviceSet') {
-                    foreach ($this->syncProperties as $prop) {
-                        $configuredObjectType = $prop->get('source_expression');
-                        if (
-                            $prop->get('destination_field') === 'object_type'
-                            && (
-                                $configuredObjectType === 'template'
-                                || ($configuredObjectType === 'apply' && $ruleObjectType === 'serviceSet')
-                            )
-                        ) {
-                            $keyColumn = 'object_name';
-                            $table = $ruleObjectType === 'service'
-                                ? BranchSupport::TABLE_ICINGA_SERVICE
-                                : BranchSupport::TABLE_ICINGA_SERVICE_SET;
-                            $query = $this->db->getDbAdapter()->select()
-                                ->from($table)->where('object_type = ?', $configuredObjectType);
-                        }
+            $keyColumn = null;
+            $query = null;
+            // We enforce named index for combined-key templates (Services and Sets) and applied Sets
+            if ($ruleObjectType === 'service' || $ruleObjectType === 'serviceSet') {
+                foreach ($this->syncProperties as $prop) {
+                    $configuredObjectType = $prop->get('source_expression');
+                    if (
+                        $prop->get('destination_field') === 'object_type'
+                        && (
+                            $configuredObjectType === 'template'
+                            || ($configuredObjectType === 'apply' && $ruleObjectType === 'serviceSet')
+                        )
+                    ) {
+                        $keyColumn = 'object_name';
+                        $table = DbObjectTypeRegistry::tableNameByType($ruleObjectType);
+                        $query = $this->db->getDbAdapter()->select()
+                            ->from($table)->where('object_type = ?', $configuredObjectType);
                     }
                 }
-                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db, $query, $keyColumn);
             }
+            $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db, $query, $keyColumn);
 
             if ($useLowerCaseKeys) {
                 $this->objects = [];
@@ -859,9 +838,7 @@ class Sync
         $objects = $this->prepare();
         $db = $this->db;
         $dba = $db->getDbAdapter();
-        if (! $this->store) { // store has it's own transaction
-            $dba->beginTransaction();
-        }
+        $dba->beginTransaction();
 
         $object = null;
         $updateOnly = $this->rule->get('update_policy') === 'update-only';
@@ -879,11 +856,7 @@ class Sync
             foreach ($objects as $object) {
                 $this->setResolver($object);
                 if (! $updateOnly && $object->shouldBeRemoved()) {
-                    if ($this->store) {
-                        $this->store->delete($object);
-                    } else {
-                        $object->delete();
-                    }
+                    $object->delete();
                     $deleted++;
                     continue;
                 }
@@ -894,18 +867,10 @@ class Sync
                     }
                     $existing = $object->hasBeenLoadedFromDb();
                     if ($existing) {
-                        if ($this->store) {
-                            $this->store->store($object);
-                        } else {
-                            $object->store($db);
-                        }
+                        $object->store($db);
                         $modified++;
                     } elseif ($allowCreate) {
-                        if ($this->store) {
-                            $this->store->store($object);
-                        } else {
-                            $object->store($db);
-                        }
+                        $object->store($db);
                         $created++;
                     }
                 }
@@ -926,27 +891,19 @@ class Sync
             }
 
             $this->run->setProperties($runProperties);
-            if (!$this->store || !$this->store->getBranch()->isBranch()) {
-                $this->run->store();
-            }
+            $this->run->store();
             $this->notifyResolvers();
-            if (! $this->store) {
-                $dba->commit();
-            }
+            $dba->commit();
 
             // Store duration after commit, as the commit might take some time
             $this->run->set('duration_ms', (int) round(
                 (microtime(true) - $this->runStartTime) * 1000
             ));
-            if (!$this->store || !$this->store->getBranch()->isBranch()) {
-                $this->run->store();
-            }
+            $this->run->store();
 
             Benchmark::measure('Done applying objects');
         } catch (Exception $e) {
-            if (! $this->store) {
-                $dba->rollBack();
-            }
+            $dba->rollBack();
 
             if ($object instanceof IcingaObject) {
                 throw new IcingaException(
@@ -966,9 +923,6 @@ class Sync
 
     protected function prepareCache()
     {
-        if ($this->store) {
-            return $this;
-        }
         PrefetchCache::initialize($this->db);
         IcingaTemplateRepository::clear();
 

@@ -176,7 +176,7 @@ class IcingaAddServiceForm extends DirectorObjectForm
         foreach ($this->hosts as $host) {
             $service = IcingaService::fromPlainObject($plain, $db)
                 ->set('host_id', $host->get('id'));
-            $this->getDbObjectStore()->store($service);
+            $service->store();
         }
 
         $msg = sprintf(

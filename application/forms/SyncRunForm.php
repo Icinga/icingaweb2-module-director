@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use gipfl\Web\Form;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Import\Sync;
 use Icinga\Module\Director\Objects\SyncRule;
 use ipl\I18n\Translation;
@@ -20,24 +19,15 @@ class SyncRunForm extends Form
     /** @var SyncRule */
     protected $rule;
 
-    /** @var DbObjectStore */
-    protected $store;
-
-    public function __construct(SyncRule $rule, DbObjectStore $store)
+    public function __construct(SyncRule $rule)
     {
         $this->rule = $rule;
-        $this->store = $store;
     }
 
     public function assemble()
     {
-        if ($this->store->getBranch()->isBranch()) {
-            $label = sprintf($this->translate('Sync to Branch: %s'), $this->store->getBranch()->getName());
-        } else {
-            $label = $this->translate('Trigger this Sync');
-        }
         $this->addElement('submit', 'submit', [
-            'label' => $label,
+            'label' => $this->translate('Trigger this Sync'),
         ]);
     }
 
@@ -51,7 +41,7 @@ class SyncRunForm extends Form
 
     public function onSuccess()
     {
-        $sync = new Sync($this->rule, $this->store);
+        $sync = new Sync($this->rule);
         if ($sync->hasModifications()) {
             if ($sync->apply()) {
                 // and changed
