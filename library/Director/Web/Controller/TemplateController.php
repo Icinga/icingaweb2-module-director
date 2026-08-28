@@ -25,8 +25,6 @@ abstract class TemplateController extends CompatController
 {
     use DirectorDb;
 
-    use BranchHelper;
-
     /** @var IcingaObject */
     protected $template;
 
@@ -44,7 +42,6 @@ abstract class TemplateController extends CompatController
             )->addBackToUsageLink($template);
 
         ObjectsTable::create($this->getType(), $this->db(), $this->Auth())
-            ->setBranch($this->getBranch())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
             ->filterTemplate($template, $this->getInheritance())
             ->renderTo($this);
@@ -65,7 +62,6 @@ abstract class TemplateController extends CompatController
 
         ObjectsTableSetMembers::create($this->getType(), $this->db(), $this->Auth())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
-            ->setBranch($this->getBranch())
             ->filterTemplate($template, $this->getInheritance())
             ->renderTo($this);
     }
@@ -84,7 +80,6 @@ abstract class TemplateController extends CompatController
 
         ApplyRulesTable::create($type, $this->db())
             ->setBaseObjectUrl($this->getBaseObjectUrl())
-            ->setBranch($this->getBranch())
             ->filterTemplate($template, $this->params->get('inheritance', 'direct'))
             ->renderTo($this);
     }
@@ -213,7 +208,7 @@ abstract class TemplateController extends CompatController
 
         try {
             $this->content()->add(
-                TemplateUsageTable::forTemplate($template, $this->Auth(), $this->getBranch())
+                TemplateUsageTable::forTemplate($template, $this->Auth())
             );
         } catch (NestingError $e) {
             $this->content()->add(Hint::error($e->getMessage()));

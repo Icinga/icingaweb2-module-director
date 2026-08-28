@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Objects\IcingaCommandArgument;
-use Icinga\Module\Director\Web\Table\BranchedIcingaCommandArgumentTable;
 use ipl\Html\Html;
 use Icinga\Module\Director\Forms\IcingaCommandArgumentForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -24,11 +23,7 @@ class CommandController extends ObjectController
         parent::init();
         $o = $this->object;
         if ($o && ! $o->isExternal()) {
-            if ($this->getBranch()->isBranch()) {
-                $urlParams = ['uuid' => $o->getUniqueId()->toString()];
-            } else {
-                $urlParams = ['name' => $o->getObjectName()];
-            }
+            $urlParams = ['name' => $o->getObjectName()];
             $this->tabs()->add('arguments', [
                 'url'       => 'director/command/arguments',
                 'urlParams' => $urlParams,
@@ -91,32 +86,20 @@ class CommandController extends ObjectController
         $this->tabs()->activate('arguments');
         $this->addTitle($this->translate('Command arguments: %s'), $o->getObjectName());
         $form = (new IcingaCommandArgumentForm())
-            ->setBranch($this->getBranch())
             ->setCommandObject($o);
         if ($argument = $p->shift('argument')) {
             $this->addBackLink('director/command/arguments', [
                 'name' => $p->get('name')
             ]);
-            if ($this->branch->isBranch()) {
-                $arguments = $o->arguments();
-                $argument = $arguments->get($argument);
-                // IcingaCommandArgument::create((array) $arguments->get($argument)->toFullPlainObject());
-                // $argument->setBeingLoadedFromDb();
-            } else {
-                $argument = IcingaCommandArgument::load([
-                    'command_id' => $o->get('id'),
-                    'argument_name' => $argument
-                ], $this->db());
-            }
+            $argument = IcingaCommandArgument::load([
+                'command_id' => $o->get('id'),
+                'argument_name' => $argument
+            ], $this->db());
             $form->setObject($argument);
         }
         $form->handleRequest();
         $this->content()->add([$form]);
-        if ($this->branch->isBranch()) {
-            (new BranchedIcingaCommandArgumentTable($o, $this->getBranch()))->renderTo($this);
-        } else {
-            (new IcingaCommandArgumentTable($o, $this->getBranch()))->renderTo($this);
-        }
+        (new IcingaCommandArgumentTable($o))->renderTo($this);
     }
 
     protected function hasBasketSupport()

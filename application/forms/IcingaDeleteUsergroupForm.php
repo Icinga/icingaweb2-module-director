@@ -2,9 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Session;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -16,8 +14,7 @@ class IcingaDeleteUsergroupForm extends CompatForm
 
     public function __construct(
         protected IcingaObject $object,
-        protected Db $db,
-        protected ?Branch $branch = null
+        protected Db $db
     ) {
     }
 
@@ -32,6 +29,6 @@ class IcingaDeleteUsergroupForm extends CompatForm
 
     protected function onSuccess(): void
     {
-        (new DbObjectStore($this->db, $this->branch))->delete($this->object);
+        $this->object->delete();
     }
 }

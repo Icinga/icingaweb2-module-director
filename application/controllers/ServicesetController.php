@@ -73,7 +73,6 @@ class ServicesetController extends ObjectController
         ));
 
         IcingaServiceSetServiceTable::load($set)
-            ->setBranch($this->getBranch())
             ->renderTo($this);
     }
 
@@ -108,9 +107,6 @@ class ServicesetController extends ObjectController
             'urlParams' => ['uuid' => $hexUuid],
             'label'     => 'Services'
         ]);
-        if ($this->branch->isBranch()) {
-            return $this;
-        }
         $tabs->add('hosts', [
             'url'       => 'director/serviceset/hosts',
             'urlParams' => ['uuid' => $hexUuid],

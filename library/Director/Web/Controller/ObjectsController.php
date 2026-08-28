@@ -7,7 +7,6 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\IcingaMultiEditForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -27,13 +26,11 @@ use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
 use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
-use Icinga\Module\Director\Web\Widget\BranchedObjectsHint;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 
 abstract class ObjectsController extends ActionController
 {
-    use BranchHelper;
     use ObjectRestrictions;
 
     protected $isApified = true;
@@ -133,8 +130,6 @@ abstract class ObjectsController extends ActionController
             ->addTitle($this->translate(ucfirst($this->getPluralType())))
             ->actions(new ObjectsActionBar($this->getBaseObjectUrl(), $this->url()));
 
-        $this->content()->add(new BranchedObjectsHint($this->getBranch(), $this->Auth(), $this->hasPreferredBranch()));
-
         if ($type === 'command' && $this->params->get('type') === 'external_object') {
             $this->tabs()->activate('external');
         }
@@ -153,7 +148,6 @@ abstract class ObjectsController extends ActionController
     protected function getTable()
     {
         $table = ObjectsTable::create($this->getType(), $this->db(), $this->getAuth())
-            ->setBranchUuid($this->getBranchUuid())
             ->setBaseObjectUrl($this->getBaseObjectUrl());
 
         return $table;
@@ -165,7 +159,7 @@ abstract class ObjectsController extends ActionController
      */
     protected function getApplyRulesTable()
     {
-        $table = (new ApplyRulesTable($this->db()))->setBranch($this->getBranch());
+        $table = new ApplyRulesTable($this->db());
         $table->setType($this->getType())
             ->setBaseObjectUrl($this->getBaseObjectUrl());
         $this->eventuallyFilterCommand($table);
@@ -206,7 +200,6 @@ abstract class ObjectsController extends ActionController
         }
         $formName = 'icinga' . $type;
         $form = IcingaMultiEditForm::load()
-            ->setBranch($this->getBranch())
             ->setObjects($objects)
             ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
         if ($type === 'Service') {
@@ -376,7 +369,6 @@ abstract class ObjectsController extends ActionController
         );
 
         ObjectSetTable::create($type, $this->db(), $this->getAuth())
-            ->setBranch($this->getBranch())
             ->renderTo($this);
     }
 
@@ -391,8 +383,6 @@ abstract class ObjectsController extends ActionController
         $objects = array();
         $db = $this->db();
         $class = DbObjectTypeRegistry::classByType($type);
-        $table = DbObjectTypeRegistry::tableNameByType($type);
-        $store = new DbObjectStore($db, $this->getBranch());
 
         /** @var $filter FilterChain */
         foreach ($filter->filters() as $sub) {
@@ -416,7 +406,7 @@ abstract class ObjectsController extends ActionController
                         $name = $ex->getExpression();
                         $objects[$name] = $class::load($name, $db);
                     } elseif ($col === 'uuid') {
-                        $object = $store->load($table, Uuid::fromString($ex->getExpression()));
+                        $object = $class::loadWithUniqueId(Uuid::fromString($ex->getExpression()), $db);
                         if ($object instanceof IcingaService) {
                             $host = $object->getRelated('host');
                             $objects[$host->getObjectName() . ': ' . $object->getObjectName()] = $object;

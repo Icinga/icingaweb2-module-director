@@ -41,7 +41,7 @@ class UsergroupController extends ObjectController
         }
 
         $this->content()->add(
-            (new IcingaDeleteUsergroupForm($this->object, $this->db(), $this->branch))
+            (new IcingaDeleteUsergroupForm($this->object, $this->db()))
                 ->on(IcingaDeleteUsergroupForm::ON_SUBMIT, function () {
                     Notification::success(sprintf(
                         $this->translate('User group %s has been deleted.'),

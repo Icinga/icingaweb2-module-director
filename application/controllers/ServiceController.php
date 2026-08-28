@@ -6,7 +6,7 @@ use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
-use Icinga\Module\Director\Db\Branch\UuidLookup;
+use Icinga\Module\Director\Db\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
@@ -42,9 +42,6 @@ class ServiceController extends ObjectController
 
     public function init()
     {
-        // This happens in parent::init() too, but is required to take place before the next two lines
-        $this->enableStaticObjectLoader($this->getTableName());
-
         // Hint: having Host and Set loaded first is important for UUID lookups with legacy URLs
         $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
         $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');
@@ -62,7 +59,7 @@ class ServiceController extends ObjectController
         }
         if ($key !== null) {
             $table = DbObjectTypeRegistry::tableNameByType($type);
-            $key = UuidLookup::findUuidForKey($key, $table, $this->db(), $this->getBranch());
+            $key = UuidLookup::findUuidForKey($key, $table, $this->db());
             return $this->loadSpecificObject($table, $key);
         }
 
@@ -100,7 +97,7 @@ class ServiceController extends ObjectController
         }
 
         $table = DbObjectTypeRegistry::tableNameByType($relation);
-        $uuid = UuidLookup::findUuidForKey($key, $table, $this->db(), $this->getBranch());
+        $uuid = UuidLookup::findUuidForKey($key, $table, $this->db());
         return $this->loadSpecificObject($table, $uuid);
     }
 
@@ -151,12 +148,8 @@ class ServiceController extends ObjectController
         /** @var IcingaService $object */
         $object = $this->object;
         $this->addTitle($object->getObjectName());
-        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Modifying Templates'))) {
-            return;
-        }
 
         $form = IcingaServiceForm::load()->setDb($this->db());
-        $form->setBranch($this->getBranch());
 
         if ($this->host) {
             $this->actions()->add(Link::create(
@@ -263,7 +256,7 @@ class ServiceController extends ObjectController
 
         $key = $this->getLegacyKey();
         // Hint: not passing 'object' as type, we still have name-based links in previews and similar
-        $uuid = UuidLookup::findServiceUuid($this->db(), $this->getBranch(), null, $key, $this->host, $this->set);
+        $uuid = UuidLookup::findServiceUuid($this->db(), null, $key, $this->host, $this->set);
         if ($uuid === null) {
             if (! $this->params->get('allowOverrides')) {
                 throw new NotFoundError('Not found');

@@ -2,12 +2,9 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use gipfl\Web\Widget\Hint;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -22,25 +19,8 @@ class IcingaCloneObjectForm extends DirectorForm
 
     protected $baseObjectUrl;
 
-    /** @var Branch */
-    protected $branch;
-
     public function setup()
     {
-        $isBranch = $this->branch && $this->branch->isBranch();
-        $branchOnly = $this->object->get('id') === null;
-
-        if (
-            $isBranch
-            && $this->object->isTemplate()
-            && ! $this->object instanceof IcingaServiceSet
-        ) {
-            $this->addHtml(Hint::error($this->translate(
-                'Templates cannot be cloned in Configuration Branches'
-            )));
-            $this->submitLabel = false;
-            return;
-        }
         $name = $this->object->getObjectName();
         $this->addElement('text', 'new_object_name', array(
             'label'    => $this->translate('New name'),
@@ -48,7 +28,7 @@ class IcingaCloneObjectForm extends DirectorForm
             'value'    => $name,
         ));
 
-        if (!$branchOnly && Acl::instance()->hasPermission(Permission::ADMIN)) {
+        if (Acl::instance()->hasPermission(Permission::ADMIN)) {
             $this->addElement('select', 'clone_type', array(
                 'label'        => 'Clone type',
                 'required'     => true,
@@ -60,8 +40,8 @@ class IcingaCloneObjectForm extends DirectorForm
         }
 
         if (
-            !$branchOnly && ($this->object instanceof IcingaHost
-            || $this->object instanceof IcingaServiceSet)
+            $this->object instanceof IcingaHost
+            || $this->object instanceof IcingaServiceSet
         ) {
             $this->addBoolean('clone_services', [
                 'label'       => $this->translate('Clone Services'),
@@ -71,7 +51,7 @@ class IcingaCloneObjectForm extends DirectorForm
             ], 'y');
         }
 
-        if (!$branchOnly && $this->object instanceof IcingaHost) {
+        if ($this->object instanceof IcingaHost) {
             $this->addBoolean('clone_service_sets', [
                 'label'       => $this->translate('Clone Service Sets'),
                 'description' => $this->translate(
@@ -121,13 +101,6 @@ class IcingaCloneObjectForm extends DirectorForm
         );
     }
 
-    public function setBranch(Branch $branch)
-    {
-        $this->branch = $branch;
-
-        return $this;
-    }
-
     public function setObjectBaseUrl($url)
     {
         $this->baseObjectUrl = $url;
@@ -152,16 +125,6 @@ class IcingaCloneObjectForm extends DirectorForm
             $newName,
             $object->getObjectName()
         );
-
-        $isBranch = $this->branch && $this->branch->isBranch();
-
-        if (
-            $isBranch
-            && $this->object->isTemplate()
-            && ! $this->object instanceof IcingaServiceSet
-        ) {
-            throw new IcingaException('Cloning templates is not available for Branches');
-        }
 
         if ($object->isTemplate() && $object->getObjectName() === $newName) {
             throw new IcingaException(
@@ -212,8 +175,7 @@ class IcingaCloneObjectForm extends DirectorForm
             $fields = [];
         }
 
-        $store = new DbObjectStore($connection, $this->branch);
-        if ($store->store($new)) {
+        if ($new->store()) {
             $newId = $new->get('id');
             foreach ($services as $service) {
                 $clone = IcingaService::fromPlainObject(
@@ -222,20 +184,12 @@ class IcingaCloneObjectForm extends DirectorForm
                 );
 
                 if ($new instanceof IcingaHost) {
-                    if ($isBranch) {
-                        $clone->set('host', $newName);
-                    } else {
-                        $clone->set('host_id', $newId);
-                    }
+                    $clone->set('host_id', $newId);
                 } elseif ($new instanceof IcingaServiceSet) {
-                    if ($isBranch) {
-                        $clone->set('service_set', $newName);
-                    } else {
-                        $clone->set('service_set_id', $newId);
-                    }
+                    $clone->set('service_set_id', $newId);
                 }
 
-                $store->store($clone);
+                $clone->store();
             }
 
             foreach ($sets as $set) {
@@ -244,13 +198,9 @@ class IcingaCloneObjectForm extends DirectorForm
                     $connection
                 );
 
-                if ($isBranch) {
-                    $newSet->set('host', $newName);
-                } else {
-                    $newSet->set('host_id', $newId);
-                }
+                $newSet->set('host_id', $newId);
 
-                $store->store($newSet);
+                $newSet->store();
             }
 
             foreach ($fields as $row) {

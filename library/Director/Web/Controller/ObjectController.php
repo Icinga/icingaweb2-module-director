@@ -9,10 +9,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
-use Icinga\Module\Director\Db\Branch\Branch;
-use Icinga\Module\Director\Db\Branch\BranchedObject;
-use Icinga\Module\Director\Db\Branch\BranchSupport;
-use Icinga\Module\Director\Db\Branch\UuidLookup;
+use Icinga\Module\Director\Db\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
@@ -30,20 +27,16 @@ use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\ObjectPreview;
 use Icinga\Module\Director\Web\Table\ActivityLogTable;
-use Icinga\Module\Director\Web\Table\BranchActivityTable;
 use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
-use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
-use ipl\Html\Html;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 abstract class ObjectController extends ActionController
 {
     use ObjectRestrictions;
-    use BranchHelper;
 
     /** @var IcingaObject */
     protected $object;
@@ -64,7 +57,6 @@ abstract class ObjectController extends ActionController
 
     public function init()
     {
-        $this->enableStaticObjectLoader($this->getTableName());
         if (! $this->getRequest()->isApiRequest()) {
             $this->loadOptionalObject();
         }
@@ -146,21 +138,9 @@ abstract class ObjectController extends ActionController
             $form->setPreferredObjectType($oType);
         }
         if ($oType === 'template') {
-            if ($this->showNotInBranch($this->translate('Creating Templates'))) {
-                $this->addTitle($this->translate('Create a new Template'));
-                return;
-            }
-
             $this->addTemplate();
         } else {
             $this->addObject();
-        }
-        $branch = $this->getBranch();
-        if (! $this->getRequest()->isApiRequest()) {
-            $hasPreferred = $this->hasPreferredBranch();
-            if ($branch->isBranch() || $hasPreferred) {
-                $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), null, $hasPreferred));
-            }
         }
 
         $form->handleRequest();
@@ -175,17 +155,6 @@ abstract class ObjectController extends ActionController
         $object = $this->requireObject();
         $this->tabs()->activate('modify');
         $this->addObjectTitle();
-        // Hint: Service Sets are 'templates' (as long as not being assigned to a host
-        if (
-            $this->getTableName() !== 'icinga_service_set'
-            && $object->isTemplate()
-            && $this->showNotInBranch($this->translate('Modifying Templates'))
-        ) {
-            return;
-        }
-        if ($object->isApplyRule() && $this->showNotInBranch($this->translate('Modifying Apply Rules'))) {
-            return;
-        }
 
         $this->addObjectForm($object)
              ->addActionClone()
@@ -220,18 +189,7 @@ abstract class ObjectController extends ActionController
         $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
             ->addBackToObjectLink();
 
-        if (! $object instanceof IcingaServiceSet) {
-            if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Templates'))) {
-                return;
-            }
-
-            if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Apply Rules'))) {
-                return;
-            }
-        }
-
         $form = IcingaCloneObjectForm::load()
-            ->setBranch($this->getBranch())
             ->setObject($object)
             ->setObjectBaseUrl($this->getObjectBaseUrl())
             ->handleRequest();
@@ -259,9 +217,6 @@ abstract class ObjectController extends ActionController
             $object->getObjectName()
         );
         $this->tabs()->activate('fields');
-        if ($this->showNotInBranch($this->translate('Managing Fields'))) {
-            return;
-        }
 
         try {
             $this->addFieldsFormAndTable($object, $type);
@@ -319,7 +274,6 @@ abstract class ObjectController extends ActionController
         if ($host = $this->params->get('host')) {
             $table->filterHost($host);
         }
-        $this->showOptionalBranchActivity($table);
         $table->renderTo($this);
     }
 
@@ -557,30 +511,20 @@ abstract class ObjectController extends ActionController
             throw new ProgrammingError('Loading an object twice is not very efficient');
         }
 
-        $this->object = $this->loadSpecificObject($this->getTableName(), $this->getUuidFromUrl(), true);
+        $this->object = $this->loadSpecificObject($this->getTableName(), $this->getUuidFromUrl());
     }
 
-    protected function loadSpecificObject($tableName, $key, $showHint = false)
+    protected function loadSpecificObject($tableName, $key)
     {
-        $branch = $this->getBranch();
-        $branchedObject = BranchedObject::load($this->db(), $tableName, $key, $branch);
-        $object = $branchedObject->getBranchedDbObject($this->db());
+        $class = DbObjectTypeRegistry::classByType($tableName);
+        $object = $class::loadWithUniqueId($key, $this->db());
+        if ($object === null) {
+            throw new NotFoundError('Not found');
+        }
         assert($object instanceof IcingaObject);
         $object->setBeingLoadedFromDb();
         if (! $this->allowsObject($object)) {
             throw new NotFoundError('No such object available');
-        }
-        if ($showHint) {
-            $hasPreferredBranch = $this->hasPreferredBranch();
-            if (
-                ($hasPreferredBranch || $branch->isBranch())
-                && $object->isObject()
-                && ! $this->getRequest()->isApiRequest()
-            ) {
-                $this->content()->add(
-                    new BranchedObjectHint($branch, $this->Auth(), $branchedObject, $hasPreferredBranch)
-                );
-            }
         }
 
         return $object;
@@ -589,7 +533,7 @@ abstract class ObjectController extends ActionController
     protected function requireUuid($key)
     {
         if (! $key instanceof UuidInterface) {
-            $key = UuidLookup::findUuidForKey($key, $this->getTableName(), $this->db(), $this->getBranch());
+            $key = UuidLookup::findUuidForKey($key, $this->getTableName(), $this->db());
             if ($key === null) {
                 throw new NotFoundError('No such object available');
             }
@@ -610,48 +554,34 @@ abstract class ObjectController extends ActionController
             $info->setObject($this->object);
 
             if (! $this->getRequest()->isApiRequest()) {
-                if ($this->getBranch()->isBranch()) {
-                    $this->actions()->add($this->linkToMergeBranch($this->getBranch()));
-                } else {
-                    $this->actions()->add(
-                        DeploymentLinkForm::create(
-                            $this->db(),
-                            $info,
-                            $this->Auth(),
-                            $this->api()
-                        )
-                            ->callOnSuccess(function () {
-                                $this->getResponse()->setHeader('X-Icinga-Extra-Updates', '#col1');
-                            })
-                            ->handleRequest()
-                    );
+                $this->actions()->add(
+                    DeploymentLinkForm::create(
+                        $this->db(),
+                        $info,
+                        $this->Auth(),
+                        $this->api()
+                    )
+                        ->callOnSuccess(function () {
+                            $this->getResponse()->setHeader('X-Icinga-Extra-Updates', '#col1');
+                        })
+                        ->handleRequest()
+                );
 
-                    if (
-                        DirectorDeploymentLog::hasDeployments($this->db())
-                        && (new DeploymentDashlet($this->db()))->lastDeploymentPending()
-                    ) {
-                        $this->actions()->prependHtml(
-                            Hint::warning($this->translate(
-                                'There is an active deployment running, please wait until it is finished'
-                                . ' before creating a new deployment.'
-                            ))
-                        );
-                    }
+                if (
+                    DirectorDeploymentLog::hasDeployments($this->db())
+                    && (new DeploymentDashlet($this->db()))->lastDeploymentPending()
+                ) {
+                    $this->actions()->prependHtml(
+                        Hint::warning($this->translate(
+                            'There is an active deployment running, please wait until it is finished'
+                            . ' before creating a new deployment.'
+                        ))
+                    );
                 }
             }
         } catch (IcingaException $e) {
             // pass (deployment may not be set up yet)
         }
-    }
-
-    protected function linkToMergeBranch(Branch $branch)
-    {
-        $link = Branch::requireHook()->linkToBranch($branch, $this->Auth(), $this->translate('Merge'));
-        if ($link instanceof Link) {
-            $link->addAttributes(['class' => 'icon-flapping']);
-        }
-
-        return $link;
     }
 
     protected function addBackToObjectLink()
@@ -701,9 +631,6 @@ abstract class ObjectController extends ActionController
         if ($object !== null) {
             $form->setObject($object);
         }
-        if (true || $form->supportsBranches()) {
-            $form->setBranch($this->getBranch());
-        }
 
         $this->onObjectFormLoaded($form);
 
@@ -740,31 +667,5 @@ abstract class ObjectController extends ActionController
         }
 
         return $this->object;
-    }
-
-    protected function showOptionalBranchActivity($activityTable)
-    {
-        $branch = $this->getBranch();
-        if ($branch->isBranch() && (int) $this->params->get('page', '1') === 1) {
-            $table = new BranchActivityTable($branch->getUuid(), $this->db(), $this->object->getUniqueId());
-            if (count($table) > 0) {
-                $this->content()->add(Hint::info(Html::sprintf($this->translate(
-                    'The following modifications are visible in this %s only...'
-                ), Branch::requireHook()->linkToBranch(
-                    $branch,
-                    $this->Auth(),
-                    $this->translate('configuration branch')
-                ))));
-                $this->content()->add($table);
-                if (count($activityTable) === 0) {
-                    return;
-                }
-                $this->content()->add(Html::tag('br'));
-                $this->content()->add(Hint::ok($this->translate(
-                    '...and the modifications below are already in the main branch:'
-                )));
-                $this->content()->add(Html::tag('br'));
-            }
-        }
     }
 }
