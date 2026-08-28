@@ -397,7 +397,6 @@ class IcingaService extends IcingaObject implements ExportInterface
      */
     public function hasBeenAssignedToHostTemplate()
     {
-        // Branches would fail
         if ($this->properties['host_id'] === null) {
             return null;
         }

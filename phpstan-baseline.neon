@@ -1,29 +1,9 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: application/controllers/BranchController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/BranchController.php
-
-		-
 			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Table\\\\ObjectsTable\\:\\:setType\\(\\)\\.$#"
 			count: 1
 			path: application/controllers/CommandsController.php
-
-		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: application/controllers/ConfigController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/ConfigController.php
 
 		-
 			message: "#^Call to an undefined method Icinga\\\\Web\\\\View\\:\\:formSelect\\(\\)\\.$#"
@@ -46,36 +26,6 @@ parameters:
 			path: application/controllers/HostsController.php
 
 		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: application/controllers/ImportsourceController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/ImportsourceController.php
-
-		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: application/controllers/JobController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/JobController.php
-
-		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: application/controllers/KickstartController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/KickstartController.php
-
-		-
 			message: "#^Variable \\$tab in PHPDoc tag @var does not exist\\.$#"
 			count: 1
 			path: application/controllers/NotificationController.php
@@ -86,29 +36,9 @@ parameters:
 			path: application/controllers/ServiceController.php
 
 		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: application/controllers/SyncruleController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/SyncruleController.php
-
-		-
 			message: "#^Variable \\$after might not be defined\\.$#"
 			count: 3
 			path: application/controllers/SyncruleController.php
-
-		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: application/controllers/TemplatechoiceController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/TemplatechoiceController.php
 
 		-
 			message: "#^Call to an undefined method Zend_View_Interface\\:\\:icon\\(\\)\\.$#"
@@ -251,11 +181,6 @@ parameters:
 			path: library/Director/Daemon/JobRunner.php
 
 		-
-			message: "#^Variable \\$hook in PHPDoc tag @var does not exist\\.$#"
-			count: 1
-			path: library/Director/Dashboard/BranchesDashboard.php
-
-		-
 			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Restriction\\\\HostgroupRestriction\\:\\:applyToHostGroupsQuery\\(\\)\\.$#"
 			count: 1
 			path: library/Director/Dashboard/Dashboard.php
@@ -326,31 +251,6 @@ parameters:
 			path: library/Director/DataType/DataTypeDatalist.php
 
 		-
-			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getRequest\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Db/Branch/Branch.php
-
-		-
-			message: "#^PHPDoc tag @param references unknown parameter\\: \\$db$#"
-			count: 1
-			path: library/Director/Db/Branch/Branch.php
-
-		-
-			message: "#^PHPDoc tag @var has invalid value \\(@var string\\)\\: Unexpected token \"@var\", expected type at offset 9$#"
-			count: 1
-			path: library/Director/Db/Branch/Branch.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Db\\\\Branch\\\\Branch\\:\\:getBytes\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Db/Branch/BranchMerger.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:toPlainObject\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Db/Branch/BranchedObject.php
-
-		-
 			message: "#^Call to an undefined method Zend_Db_Adapter_Abstract\\:\\:exec\\(\\)\\.$#"
 			count: 4
 			path: library/Director/Db/Housekeeping.php
@@ -374,11 +274,6 @@ parameters:
 			message: "#^Binary operation \"\\|\" between string\\|false and string results in an error\\.$#"
 			count: 1
 			path: library/Director/Filter/CidrExpression.php
-
-		-
-			message: "#^Class Icinga\\\\Module\\\\Director\\\\Db\\\\Branch\\\\BranchStore referenced with incorrect case\\: Icinga\\\\Module\\\\Director\\\\Db\\\\Branch\\\\BranchSTore\\.$#"
-			count: 3
-			path: library/Director/Hook/BranchSupportHook.php
 
 		-
 			message: "#^Call to an undefined method Icinga\\\\Application\\\\ApplicationBootstrap\\:\\:getRequest\\(\\)\\.$#"
@@ -506,32 +401,12 @@ parameters:
 			path: library/Director/Web/Controller/ActionController.php
 
 		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: library/Director/Web/Controller/ObjectController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Web/Controller/ObjectController.php
-
-		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: library/Director/Web/Controller/ObjectsController.php
-
-		-
 			message: "#^Call to an undefined method Icinga\\\\Data\\\\Filter\\\\Filter\\:\\:filters\\(\\)\\.$#"
 			count: 1
 			path: library/Director/Web/Controller/ObjectsController.php
 
 		-
 			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getObjectName\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Web/Controller/ObjectsController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
 			count: 1
 			path: library/Director/Web/Controller/ObjectsController.php
 
@@ -549,16 +424,6 @@ parameters:
 			message: "#^PHPDoc tag @var has invalid value \\(\\$sub FilterChain\\)\\: Unexpected token \"\\$sub\", expected type at offset 9$#"
 			count: 1
 			path: library/Director/Web/Controller/ObjectsController.php
-
-		-
-			message: "#^Access to an undefined property Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:\\$branch\\.$#"
-			count: 1
-			path: library/Director/Web/Controller/TemplateController.php
-
-		-
-			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Web\\\\Controller\\\\ActionController\\:\\:getBranchStore\\(\\)\\.$#"
-			count: 1
-			path: library/Director/Web/Controller/TemplateController.php
 
 		-
 			message: "#^Call to an undefined method Icinga\\\\Module\\\\Director\\\\Data\\\\Db\\\\DbObject\\:\\:getShortTableName\\(\\)\\.$#"

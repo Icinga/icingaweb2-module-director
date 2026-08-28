@@ -8,8 +8,6 @@ use Icinga\Application\Icinga;
 use Icinga\Application\Web;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Db\Branch\Branch;
-use Icinga\Module\Director\Db\Branch\BranchStore;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
@@ -100,21 +98,6 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
             $this->message = $this->translate(
                 'No API user configured, you might run the kickstart helper'
             );
-
-            return;
-        }
-
-        $branch = Branch::detect(new BranchStore($this->db()));
-        if ($branch->isBranch()) {
-            $count = $branch->getActivityCount();
-            if ($count > 0) {
-                $this->directorState = self::STATE_PENDING;
-                $this->count = $count;
-                $this->message = sprintf(
-                    $this->translate('%s config changes are available in your configuration branch'),
-                    $count
-                );
-            }
 
             return;
         }

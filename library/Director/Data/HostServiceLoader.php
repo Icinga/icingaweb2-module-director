@@ -153,7 +153,6 @@ class HostServiceLoader
     {
         $query = $table->getQuery();
         if ($query instanceof Select || $query instanceof Zend_Db_Select) {
-            // What about SimpleQuery? IcingaHostAppliedServicesTable with branch in place?
             $query->reset(Select::LIMIT_COUNT);
             $query->reset(Select::LIMIT_OFFSET);
             $rows = $this->db->fetchAll($query);

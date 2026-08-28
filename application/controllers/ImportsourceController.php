@@ -3,16 +3,13 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
-use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Data\Exporter;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Web\Controller\BranchHelper;
 use Icinga\Module\Director\Web\Form\CloneImportSourceForm;
 use Icinga\Module\Director\Web\Table\ImportrunTable;
 use Icinga\Module\Director\Web\Table\ImportsourceHookTable;
@@ -22,12 +19,9 @@ use Icinga\Module\Director\Web\Widget\ImportSourceDetails;
 use InvalidArgumentException;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Error;
-use ipl\Html\Html;
 
 class ImportsourceController extends ActionController
 {
-    use BranchHelper;
-
     /** @var ImportSource|null */
     private $importSource;
 
@@ -92,23 +86,12 @@ class ImportsourceController extends ActionController
             $this->translate('Import source: %s'),
             $source->get('source_name')
         )->setAutorefreshInterval(10);
-        $branch = $this->getBranch();
-        if ($this->getBranch()->isBranch()) {
-            $this->content()->add(Hint::info(Html::sprintf($this->translate(
-                'Please note that importing data will take place in your main Branch.'
-                . ' Modifications to Import Sources are not allowed while being in a Configuration Branch.'
-                . ' To get the full functionality, please deactivate %s'
-            ), Branch::requireHook()->linkToBranch($branch, $this->getAuth(), $branch->getName()))));
-        }
         $this->content()->add(new ImportSourceDetails($source));
     }
 
     public function addAction()
     {
         $this->addTitle($this->translate('Add import source'));
-        if ($this->showNotInBranch($this->translate('Creating Import Sources'))) {
-            return;
-        }
 
         $this->content()->add(
             ImportSourceForm::load()->setDb($this->db())
@@ -124,9 +107,6 @@ class ImportsourceController extends ActionController
     {
         $this->addMainActions();
         $this->activateTabWithPostfix($this->translate('Modify'));
-        if ($this->showNotInBranch($this->translate('Modifying Import Sources'))) {
-            return;
-        }
         $form = ImportSourceForm::load()
             ->setObject($this->getImportSource())
             ->setListUrl('director/importsources')
@@ -146,9 +126,6 @@ class ImportsourceController extends ActionController
     {
         $this->addMainActions();
         $this->activateTabWithPostfix($this->translate('Clone'));
-        if ($this->showNotInBranch($this->translate('Cloning Import Sources'))) {
-            return;
-        }
         $source = $this->getImportSource();
         $this->addTitle('Clone: %s', $source->get('source_name'));
         $form = new CloneImportSourceForm($source);
@@ -230,11 +207,7 @@ class ImportsourceController extends ActionController
     {
         $source = $this->getImportSource();
         $table = PropertymodifierTable::load($source, $this->url());
-        if ($this->getBranch()->isBranch()) {
-            $table->setReadOnly();
-        } else {
-            $table->handleSortPriorityActions($this->getRequest(), $this->getResponse());
-        }
+        $table->handleSortPriorityActions($this->getRequest(), $this->getResponse());
         $table->renderTo($this);
 
         return $source;
@@ -280,10 +253,6 @@ class ImportsourceController extends ActionController
         )->addBackToModifiersLink($source);
         $this->tabs()->activate('modifier');
 
-        if ($this->showNotInBranch($this->translate('Modifying Import Sources'))) {
-            return;
-        }
-
         $this->content()->prepend(
             ImportRowModifierForm::load()->setDb($this->db())
                 ->setSource($source)
@@ -310,9 +279,6 @@ class ImportsourceController extends ActionController
         )->addBackToModifiersLink($source);
         $source = $this->requireImportSourceAndAddModifierTable();
         $this->tabs()->activate('modifier');
-        if ($this->showNotInBranch($this->translate('Modifying Import Sources'))) {
-            return;
-        }
 
         $listUrl = 'director/importsource/modifier?source_id='
             . (int) $source->get('id');
