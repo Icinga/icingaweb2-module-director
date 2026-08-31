@@ -360,6 +360,13 @@ object. The individual keys inside it are not yet validated against the
 property's configured keys and per-key types, so a request using the wrong
 keys can still be accepted.
 
+A `dynamic-dictionary` works the same way, but its top-level keys are chosen
+by whoever sends the request instead of coming from the property's schema.
+The same limitation from [Handling custom
+variables](12-Handling-custom-variables.md) applies here too, a key made up
+only of digits (e.g. `"0"`) isn't supported and gets miscast into a plain
+list, so avoid purely numeric keys in the JSON body as well.
+
 #### Setting several variables at once
 
     POST director/host/variables?name=apitest
