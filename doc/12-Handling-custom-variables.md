@@ -430,6 +430,13 @@ command, user and notification templates that used the original field.
 > exception is a field left out due to a retained `var_filter` binding (see above):
 > its values keep their old, UUID-less shape until you migrate that binding as well.
 
+> Renaming a property's `Property Key` also checks whether the new name is already
+> taken by a value stored under a different, unrelated property on the same object.
+> If it is, that stored value is left under its old name instead of being
+> overwritten, and the form warns how many values were kept this way. This is
+> separate from the Data field case above, it can happen even without any Data
+> fields involved.
+
 Configuration Baskets
 ---------------------
 
