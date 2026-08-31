@@ -509,6 +509,8 @@ class ActivityLogInfo extends HtmlDocument
             $controller = 'serviceset';
         } elseif ($controller === 'scheduled_downtime') {
             $controller = 'scheduled-downtime';
+        } elseif (str_ends_with($controller, '_template_choice')) {
+            $controller = 'templatechoice/' . substr($controller, 0, -strlen('_template_choice'));
         }
 
         return Link::create(
