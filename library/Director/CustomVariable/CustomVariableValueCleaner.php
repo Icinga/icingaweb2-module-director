@@ -740,6 +740,17 @@ class CustomVariableValueCleaner
                     continue;
                 }
 
+                // Same service already has its own value under the new name, leave it
+                // alone instead of overwriting it with what's moving in.
+                if (
+                    $migration->oldVarname !== $migration->newVarname
+                    && array_key_exists($migration->newVarname, $serviceVars)
+                ) {
+                    $rebuilder->noteRootConflict();
+
+                    continue;
+                }
+
                 $modified = true;
                 $rebuilt = $rebuilder->rebuildRootValue($serviceVars[$migration->oldVarname], $migration);
                 unset($serviceVars[$migration->oldVarname]);

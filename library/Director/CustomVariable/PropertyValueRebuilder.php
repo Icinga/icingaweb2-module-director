@@ -39,6 +39,19 @@ class PropertyValueRebuilder
     }
 
     /**
+     * Let the caller report a conflict it spotted on its own
+     *
+     * Some callers have to check a value's new spot before they even hand
+     * it over here, so they need a way to add that conflict to the count too.
+     *
+     * @return void
+     */
+    public function noteRootConflict(): void
+    {
+        $this->conflictCount++;
+    }
+
+    /**
      * Rebuild one decoded stored value for its root's migration
      *
      * @param mixed $decodedValue the value as currently stored, already json_decoded

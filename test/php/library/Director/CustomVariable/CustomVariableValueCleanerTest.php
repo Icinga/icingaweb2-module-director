@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\PropertyValueMigration;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -715,6 +716,72 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         $this->assertEquals(1, $cleaner->getRenameCollisionCount());
     }
 
+    public function testOverrideServiceVarsRefuseOccupiedDestination(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'override_collision_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.80',
+        ], $db);
+        $host->store();
+
+        // https-check already overrides both names, one is the rename's source,
+        // the other is a value that was never part of this rename to begin with.
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => '_override_servicevars',
+            'varvalue' => json_encode([
+                'https-check' => [
+                    self::PREFIX . 'escalation_contact' => 'secops-oncall@example.com',
+                    self::PREFIX . 'oncall_contact'      => 'sre-team-oncall@example.com',
+                ],
+            ]),
+            'format'   => 'json',
+        ]);
+
+        $migration = new PropertyValueMigration(
+            oldVarname: self::PREFIX . 'escalation_contact',
+            newVarname: self::PREFIX . 'oncall_contact',
+            oldRootType: 'string',
+            wholeValueCleared: false,
+            blocked: false,
+            children: [],
+            fixedArrayReindexes: []
+        );
+
+        $cleaner = new CustomVariableValueCleaner($db);
+        $conflictCount = $cleaner->applyValueMigration($migration);
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', '_override_servicevars')
+        );
+
+        $this->assertEquals(
+            [
+                'https-check' => [
+                    self::PREFIX . 'escalation_contact' => 'secops-oncall@example.com',
+                    self::PREFIX . 'oncall_contact'      => 'sre-team-oncall@example.com',
+                ],
+            ],
+            json_decode($storedValue, true),
+            'a service override must not lose its own value because an unrelated rename landed on the same key'
+        );
+        $this->assertEquals(
+            1,
+            $conflictCount,
+            'the skipped override must be counted so the admin can be told about it'
+        );
+    }
+
     public function testWouldDatafieldCollideWithPropertyDetectsExistingRootProperty(): void
     {
         if ($this->skipForMissingDb()) {
@@ -792,6 +859,7 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_nested_dynamic_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_collision_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_collision_dynamic_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'override_collision_host']);
 
             foreach ([self::ROOT_KEY_NAME, self::NESTED_ROOT_KEY_NAME, self::DYNAMIC_ROOT_KEY_NAME] as $rootKeyName) {
                 $rows = $dba->fetchAll(
