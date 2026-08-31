@@ -195,11 +195,10 @@ class HostgroupRestriction extends ObjectRestriction
      * Give a list of restricted Hostgroups that exist in the database.
      *
      * This filters out Hostgroups that are configured in the restriction but
-     * do not exist in Icinga DB.
+     * do not exist in Director database.
      *
      * @return array
      */
-
     protected function listRestrictedHostgroupsFromDb()
     {
         $groups = $this->listRestrictedHostgroups();
