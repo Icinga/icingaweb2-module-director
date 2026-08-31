@@ -121,6 +121,9 @@ any value that only existed because of that attachment. A value survives if some
 other template still provides the same property to the object holding it.
 
 A value that would otherwise be renamed or removed is left untouched, under its
-old name or type, when a legacy Data Field still claims that variable name. Both
-the web UI and `icingacli director basket restore` report how many values were
-kept this way once the restore finishes.
+old name or type, when a legacy Data Field still claims that variable name. The
+same thing happens when a rename's new name or key is already taken by another
+value on the same object, the existing value wins and the incoming one keeps
+its old spot instead of overwriting it. Both the web UI and
+`icingacli director basket restore` report how many values were kept this way
+once the restore finishes, without telling the two cases apart.
