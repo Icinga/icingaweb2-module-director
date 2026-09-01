@@ -472,14 +472,17 @@ The message depends on how the variable is unknown.
 * On `POST`, or on `PUT` to a non-template object, a variable that isn't
   yet attached to the object gets the same "should be first added..."
   error shown above, whether or not it has been configured under `Custom
-  Variables` elsewhere.
+  Variables` elsewhere. This applies whether the value sent is `null` or
+  real, a `null` value does not change the outcome on these paths.
 * Only `PUT` to a **template** distinguishes the case where the variable
   has never been configured under `Custom Variables` at all, meaning
   there is no matching top-level entry in `Custom Variables` to attach.
-
-A `null` value for an unknown or unattached key is rejected the same way a
-real value would be, it does not get treated as a no-op just because
-there is nothing to store.
+  An unknown key like this is rejected below, whether or not the value
+  is `null`.
+* A `null` value in a template `PUT` for a key that **is** configured
+  under `Custom Variables`, just not yet attached to this template, is a
+  silent no-op: nothing is attached, nothing is rejected. Only a
+  non-`null` value on this path actually attaches the property.
 
 ```
 HTTP/1.1 404 Not Found
