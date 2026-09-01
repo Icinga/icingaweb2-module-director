@@ -63,11 +63,15 @@ The `variables` endpoint enforces a Custom Variable's Item Type on a
 `Data List Strict` or `Data List Non Strict` property. If Item Type is set
 to `Dynamic Array`, only a list is accepted, otherwise only a single value
 is. Sending the other shape for that property is rejected. A `null` value
-for a variable that isn't attached to the object, or that Director doesn't
-recognize under `Custom Variables` at all, is rejected the same way a real
-value would be, it is never treated as a silent no-op. Check any script or
-integration relying on this endpoint against these rules if you use
-`Data List` properties or send `null` values.
+for a variable Director doesn't recognize under `Custom Variables` at all
+is rejected the same way a real value would be. On a template `PUT`
+specifically, a `null` value for a variable that **is** configured but not
+yet attached to that template is a silent no-op instead, it does not get
+attached. See [the REST API's "Variable not
+configured"](70-REST-API.md#Custom-Variables-not-configured) section for
+the full matrix. Check any script or integration relying on this endpoint
+against these rules if you use `Data List` properties or send `null`
+values.
 
 If you use `icingacli director migrate datafields` to move legacy Data
 Fields onto the new Custom Property system, note that a Data List field
