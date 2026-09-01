@@ -726,7 +726,7 @@ class HostController extends ObjectController
                         Notification::success(
                             sprintf(
                                 $this->translate(
-                                    "Custom variables have been successfully overriden"
+                                    "Custom variables have been successfully overridden"
                                     . " for service '%s' on host '%s'"
                                 ),
                                 $form->object->getObjectName(),
