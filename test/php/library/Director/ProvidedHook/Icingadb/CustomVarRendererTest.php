@@ -206,6 +206,27 @@ class CustomVarRendererTest extends BaseTestCase
         );
     }
 
+    public function testFixedArrayListValuedDatalistMapsEachPickedEntry(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "targets" is a fixed-array under "network_a". Position "0" is a list-valued
+        // datalist (its item type is a dynamic-array), so its stored value is itself
+        // an array of picks rather than a single string. Position "1" is a plain
+        // scalar with no datalist of its own.
+        $renderer->seedDictionaryChild('network_a', 'targets', ['label' => 'Targets']);
+        $renderer->seedDatalistEntry('0', 'prod', 'Production DC', 'targets', 'network_a');
+        $renderer->seedDatalistEntry('0', 'staging', 'Staging DC', 'targets', 'network_a');
+
+        $rendered = $renderer->renderCustomVarValue('targets', [['prod', 'staging', 'unknown'], 'db1'], 'network_a');
+
+        $this->assertInstanceOf(ValidHtml::class, $rendered[0][0]);
+        $this->assertStringContainsString('Production DC', $rendered[0][0]->render());
+        $this->assertStringContainsString('Staging DC', $rendered[0][1]->render());
+        $this->assertEquals('unknown', $rendered[0][2], 'A pick with no matching entry must render raw');
+        $this->assertEquals('db1', $rendered[1], 'A plain sibling position must still render raw as before');
+    }
+
     public function testDynamicDictionaryEntriesMaskSensitiveChildrenAcrossEveryEntry(): void
     {
         $renderer = new TestableCustomVarRenderer();

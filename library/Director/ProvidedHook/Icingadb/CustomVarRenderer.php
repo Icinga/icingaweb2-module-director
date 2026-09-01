@@ -718,21 +718,25 @@ class CustomVarRenderer extends CustomVarRendererHook
                         continue;
                     }
 
+                    $itemScope = $this->scopeKey($arrayScope, (string) $k);
+
+                    if (is_array($v)) {
+                        // A fixed-array position can itself be a list-valued datalist (a
+                        // datalist whose item type is a dynamic-array), map each picked
+                        // entry through that position's own list, not the array's shared one.
+                        $renderedValue[$k] = isset($this->datalistMaps[$itemScope])
+                            ? $this->renderDatalistArrayItems($this->datalistMaps[$itemScope], $v)
+                            : $v;
+
+                        continue;
+                    }
+
                     $caption = null;
                     if (is_string($v)) {
-                        $itemScope = $this->scopeKey($arrayScope, (string) $k);
                         $caption = $this->datalistMaps[$itemScope][$v] ?? $this->datalistMaps[$arrayScope][$v] ?? null;
                     }
 
-                    if ($caption !== null) {
-                        $renderedValue[$k] = new HtmlElement(
-                            'span',
-                            Attributes::create(['title' => "$caption [$v]"]),
-                            Text::create($caption)
-                        );
-                    } else {
-                        $renderedValue[$k] = $v;
-                    }
+                    $renderedValue[$k] = $caption !== null ? $this->captionSpan($caption, $v) : $v;
                 }
 
                 return $renderedValue;
@@ -740,11 +744,7 @@ class CustomVarRenderer extends CustomVarRendererHook
 
             $ownScope = $this->ownScopeKey($key, $parentKey, $grandparentKey);
             if (is_string($value) && isset($this->datalistMaps[$ownScope][$value])) {
-                return new HtmlElement(
-                    'span',
-                    Attributes::create(['title' => $this->datalistMaps[$ownScope][$value] . " [$value]"]),
-                    Text::create($this->datalistMaps[$ownScope][$value])
-                );
+                return $this->captionSpan($this->datalistMaps[$ownScope][$value], $value);
             } elseif ($value !== null && $this->isDictionaryValueType($key, $parentKey, $grandparentKey)) {
                 return $this->renderDictionaryVal($key, (array) $value);
             }
@@ -757,6 +757,41 @@ class CustomVarRenderer extends CustomVarRendererHook
             // how to render it. Mask it, showing it raw would defeat sensitive fields.
             return '***';
         }
+    }
+
+    /**
+     * Map every string entry of a list-valued datalist through its own caption map
+     *
+     * @param array $map    entry_name => caption, scoped to this one position
+     * @param array $values raw picks stored at this position
+     *
+     * @return array
+     */
+    private function renderDatalistArrayItems(array $map, array $values): array
+    {
+        $rendered = [];
+        foreach ($values as $k => $v) {
+            $rendered[$k] = is_string($v) && isset($map[$v]) ? $this->captionSpan($map[$v], $v) : $v;
+        }
+
+        return $rendered;
+    }
+
+    /**
+     * Wrap a raw value in a span showing its datalist caption, raw value as tooltip
+     *
+     * @param string $caption
+     * @param string $rawValue
+     *
+     * @return ValidHtml
+     */
+    private function captionSpan(string $caption, string $rawValue): ValidHtml
+    {
+        return new HtmlElement(
+            'span',
+            Attributes::create(['title' => "$caption [$rawValue]"]),
+            Text::create($caption)
+        );
     }
 
     public function identifyCustomVarGroup(string $key): ?string
