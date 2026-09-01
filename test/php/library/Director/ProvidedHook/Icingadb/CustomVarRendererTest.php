@@ -397,6 +397,37 @@ class CustomVarRendererTest extends BaseTestCase
         $this->assertStringContainsString('(Dictionary)', $html);
     }
 
+    public function testDictionaryDirectArrayChildGetsItsOwnArraySuffix(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "gateway1" is a direct child of "network", not a further-nested grandchild.
+        // Only a grandchild ever got the "(Array)" suffix and its configured label,
+        // a direct child used to render with the raw key and no suffix at all.
+        $renderer->seedDictionaryChild('network', 'gateway1', ['label' => 'Gateway 1']);
+
+        $html = $renderer->renderDictionaryValForTest('network', [
+            'gateway1' => ['primary', 'secondary'],
+        ])->render();
+
+        $this->assertStringContainsString('Gateway 1 (Array)', $html);
+    }
+
+    public function testDictionaryDirectDictionaryChildGetsItsOwnDictionarySuffix(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // "credentials" is a direct child of "network", declared as its own
+        // fixed-dictionary. It must read "(Dictionary)", not "(Array)".
+        $renderer->seedDictionaryChild('network', 'credentials', ['label' => 'Credentials'], null, 'fixed-dictionary');
+
+        $html = $renderer->renderDictionaryValForTest('network', [
+            'credentials' => ['username' => 'admin'],
+        ])->render();
+
+        $this->assertStringContainsString('Credentials (Dictionary)', $html);
+    }
+
     public function testAppliedForArrayUsesItsValuesAsNameSuffix(): void
     {
         $renderer = new CustomVarRenderer();

@@ -854,12 +854,14 @@ class CustomVarRenderer extends CustomVarRendererHook
 
                 $val = (array) $val;
                 $numChildItems = count($val);
+                $ownLabel = $this->renderCustomVarKey($k, $key) ?? Html::wantHtml($k);
+                $ownLabel = $this->decorateArrayOrDictionaryName($ownLabel, $this->isDictionaryValueType($k, $key));
 
                 $this->dictionaryBody->addHtml(
                     new HtmlElement(
                         'tr',
                         Attributes::create(['class' => "level-{$this->dictionaryLevel}"]),
-                        new HtmlElement('th', null, Html::wantHtml($k)),
+                        new HtmlElement('th', null, Html::wantHtml($ownLabel)),
                         new HtmlElement(
                             'td',
                             null,
@@ -949,6 +951,27 @@ class CustomVarRenderer extends CustomVarRendererHook
     }
 
     /**
+     * Append " (Array)" or " (Dictionary)" to a row label
+     *
+     * @param HtmlElement|ValidHtml|string $name
+     * @param bool $isDictionary
+     *
+     * @return HtmlElement|HtmlDocument
+     */
+    private function decorateArrayOrDictionaryName($name, bool $isDictionary)
+    {
+        $suffix = $isDictionary ? ' (Dictionary)' : ' (Array)';
+
+        if ($name instanceof HtmlElement) {
+            $name->addHtml(Text::create($suffix));
+
+            return $name;
+        }
+
+        return (new HtmlDocument())->addHtml(Html::wantHtml($name), Text::create($suffix));
+    }
+
+    /**
      * Render an array, if the passed key is a part of dictionary, then render as a dictionary
      *
      * @param HtmlElement|string $name
@@ -961,21 +984,7 @@ class CustomVarRenderer extends CustomVarRendererHook
     protected function renderArrayVal($name, array $array, ?string $key = null): void
     {
         $numItems = count($array);
-
-        if ($key) {
-            $prefix = ' (Dictionary)';
-        } else {
-            $prefix = ' (Array)';
-        }
-
-        if ($name instanceof HtmlElement) {
-            $name->addHtml(Text::create($prefix));
-        } else {
-            $name = (new HtmlDocument())->addHtml(
-                Html::wantHtml($name),
-                Text::create($prefix)
-            );
-        }
+        $name = $this->decorateArrayOrDictionaryName($name, $key !== null);
 
         $this->dictionaryBody->addHtml(
             new HtmlElement(
