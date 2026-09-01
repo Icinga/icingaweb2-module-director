@@ -9,6 +9,7 @@ use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\DirectorObject\Automation\BasketDiff;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
+use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -374,6 +375,84 @@ class BasketDiffTest extends BaseTestCase
             $host->delete();
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PREFIX . 'host'));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PREFIX . 'env'));
+        }
+    }
+
+    /**
+     * Resolving one property's target uuid must not corrupt another property's decoded
+     * snapshot data, both are read from the same cached object graph, so import() mutating
+     * one in place used to strip the other's items or datalist before it got its own turn.
+     */
+    public function testResolvingAPropertyDoesNotCorruptASibling(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $listName = self::PREFIX . 'env_values';
+
+        $dict = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::PREFIX . 'net_settings',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Net Settings',
+        ], $db);
+        $dict->store();
+
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'key_name'    => 'vlan',
+            'parent_uuid' => $dict->get('uuid'),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $env = DirectorProperty::import((object) [
+            'uuid'        => Uuid::uuid4()->toString(),
+            'key_name'    => self::PREFIX . 'environment',
+            'value_type'  => 'datalist-strict',
+            'label'       => 'Environment',
+            'parent_uuid' => null,
+            'category'    => null,
+            'description' => null,
+            'datalist'    => $listName,
+            'items'       => [],
+        ], $db);
+        $env->store();
+
+        try {
+            $dictUuid = Uuid::fromBytes($dict->get('uuid'))->toString();
+            $envUuid = Uuid::fromBytes($env->get('uuid'))->toString();
+
+            $basket = Basket::create(['uuid' => Uuid::uuid4()->getBytes(), 'basket_name' => self::PREFIX . 'basket6']);
+            $snapshot = BasketSnapshot::forBasketFromJson(
+                $basket,
+                json_encode([
+                    'CustomVariable' => [
+                        $dictUuid => DirectorProperty::loadWithUniqueId(Uuid::fromString($dictUuid), $db)->export(),
+                        $envUuid  => DirectorProperty::loadWithUniqueId(Uuid::fromString($envUuid), $db)->export(),
+                    ],
+                ])
+            );
+
+            $diff = new BasketDiff($snapshot, $db);
+
+            // Only looks at the dictionary, but this is what makes the resolver walk and
+            // resolve every CustomVariable in the snapshot, env included.
+            $diff->getCustomPropertyMigrationPreview($dictUuid);
+
+            $this->assertFalse(
+                $diff->hasChangedFor('CustomVariable', $envUuid, Uuid::fromString($envUuid)),
+                'an untouched datalist property must not turn up as "modified" just because a '
+                . 'sibling property was resolved first'
+            );
+        } finally {
+            $this->deletePropertyTree($dba, $dict->get('uuid'));
+            $this->deletePropertyTree($dba, $env->get('uuid'));
+            if (DirectorDatalist::exists($listName, $db)) {
+                DirectorDatalist::load($listName, $db)->delete();
+            }
         }
     }
 

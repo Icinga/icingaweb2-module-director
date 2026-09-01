@@ -387,6 +387,9 @@ class DirectorProperty extends DbObject
      */
     public static function import(stdClass $plain, Db $db, bool $persist = true): DirectorProperty
     {
+        // clone it, callers like the basket diff keep this exact object around and
+        // reuse it elsewhere, we can't unset stuff on it below
+        $plain = clone $plain;
         $dba = $db->getDbAdapter();
         $uuid = $plain->uuid ?? null;
         $datalist = null;
@@ -661,6 +664,8 @@ class DirectorProperty extends DbObject
 
         $itemCandidates = [];
         foreach ($items as $key => $value) {
+            // same deal as in import(), don't touch the caller's copy
+            $value = clone $value;
             $itemUUid = $value->uuid ?? null;
             $nestedItems = (array) ($value->items ?? []);
             unset($value->items);
