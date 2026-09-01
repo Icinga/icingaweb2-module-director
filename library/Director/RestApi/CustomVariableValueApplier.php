@@ -225,9 +225,11 @@ class CustomVariableValueApplier
             return;
         }
 
-        // base endpoint only touches properties already reachable above, an
-        // unknown key here is a no-op either way. The variables endpoint
-        // rejects one instead, null must not skip that check below.
+        // base endpoint keeps the old behavior of setting any var by name,
+        // attached or not, it just skips the attachment checks below. A
+        // real value still gets stored as a plain, uuid-less variable.
+        // The variables endpoint rejects an unknown key instead, null
+        // must not skip that check below.
         if ($request->actionName !== 'variables') {
             return;
         }
