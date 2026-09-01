@@ -321,18 +321,15 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             if ($var->hasBeenDeleted()) {
                 $db->delete($table, $where);
             } elseif ($var->hasBeenModified()) {
-                $data = [
-                    'varvalue' => $var->getDbValue(),
-                    'format'   => $var->getDbFormat()
-                ];
-
-                if ($uuid) {
-                    $data['property_uuid'] = Db\DbUtil::quoteBinaryCompat($uuid, $db);
-                }
-
+                // always write property_uuid here, a dropped one has to reach the db as
+                // null too, not just get skipped like it never changed
                 $db->update(
                     $table,
-                    $data,
+                    [
+                        'varvalue'      => $var->getDbValue(),
+                        'format'        => $var->getDbFormat(),
+                        'property_uuid' => $uuid ? Db\DbUtil::quoteBinaryCompat($uuid, $db) : null
+                    ],
                     $where
                 );
             }
@@ -638,6 +635,39 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
 
         return $keys;
+    }
+
+    /**
+     * List the keys of every var that is set right now, uuid or not
+     *
+     * @return string[]
+     */
+    public function listKeys(): array
+    {
+        $keys = [];
+        foreach ($this->vars as $key => $var) {
+            if (! $var->hasBeenDeleted()) {
+                $keys[] = $key;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Drop the uuid of the given var, it stays around as a plain value
+     *
+     * @param string $key
+     *
+     * @return $this
+     */
+    public function clearVarUuid(string $key): static
+    {
+        if (isset($this->vars[$key])) {
+            $this->vars[$key]->clearUuid();
+        }
+
+        return $this;
     }
 
     public function __toString()

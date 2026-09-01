@@ -115,6 +115,19 @@ abstract class CustomVariable implements IcingaConfigRenderer
     }
 
     /**
+     * Drop the uuid, the var stays around as a plain value with no property behind it
+     *
+     * @return $this
+     */
+    public function clearUuid(): static
+    {
+        $this->uuid = null;
+        $this->modified = true;
+
+        return $this;
+    }
+
+    /**
      * @param $value
      * @return $this
      */

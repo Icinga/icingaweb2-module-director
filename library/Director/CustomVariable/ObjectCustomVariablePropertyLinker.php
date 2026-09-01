@@ -19,6 +19,12 @@ use Zend_Db;
  * This checks, for every synced object at once, whether that name is
  * already attached somewhere up its own ancestry, and links the value to
  * it if so, the same way basket restore already does for its own objects.
+ *
+ * A value already linked from an earlier run never gets re-checked, unless
+ * this run actually changed the object's imports. Only then can a name that
+ * used to resolve to a property stop doing so, or start resolving to one it
+ * didn't reach before, so that is the only time it's worth paying for a
+ * full re-check instead of just looking at the still-unlinked values.
  */
 class ObjectCustomVariablePropertyLinker
 {
@@ -39,7 +45,8 @@ class ObjectCustomVariablePropertyLinker
                 continue;
             }
 
-            $keys = $object->vars()->listKeysWithoutUuid();
+            $importsChanged = $object->imports()->hasBeenModified();
+            $keys = $importsChanged ? $object->vars()->listKeys() : $object->vars()->listKeysWithoutUuid();
             if (empty($keys)) {
                 continue;
             }
@@ -57,7 +64,7 @@ class ObjectCustomVariablePropertyLinker
      *
      * @param string $type the object type's short name, host, service and so on
      * @param array<int, array{0: IcingaObject, 1: string[]}> $entries one entry per object,
-     *        paired with the keys that object still has no uuid for
+     *        paired with the keys that need a reachability check
      * @param Db $db the target database this sync run is writing to
      *
      * @return void
@@ -101,15 +108,20 @@ class ObjectCustomVariablePropertyLinker
             }
 
             foreach ($keys as $key) {
-                if (! isset($uuidsByKey[$key])) {
+                $reachable = isset($uuidsByKey[$key]) && self::isAttachedToAny($attachedIdsByKey[$key], $ids);
+                $currentUuid = $object->vars()->get($key)?->getUuid();
+
+                if (! $reachable) {
+                    if ($currentUuid !== null) {
+                        $object->vars()->clearVarUuid($key);
+                    }
+
                     continue;
                 }
 
-                if (! self::isAttachedToAny($attachedIdsByKey[$key], $ids)) {
-                    continue;
+                if ($currentUuid === null || ! $currentUuid->equals(Uuid::fromBytes($uuidsByKey[$key]))) {
+                    $object->vars()->registerVarUuid($key, Uuid::fromBytes($uuidsByKey[$key]));
                 }
-
-                $object->vars()->registerVarUuid($key, Uuid::fromBytes($uuidsByKey[$key]));
             }
         }
     }

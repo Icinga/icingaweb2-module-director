@@ -248,6 +248,31 @@ class CustomVariableTest extends TestCase
         $this->assertNull($var->getUuid());
     }
 
+    public function testClearUuidRemovesAnAlreadySetUuid(): void
+    {
+        $var = CustomVariable::create('env', 'production');
+        $var->setUuid(Uuid::uuid4());
+
+        $var->clearUuid();
+
+        $this->assertNull($var->getUuid());
+    }
+
+    public function testClearUuidMarksTheVarAsModified(): void
+    {
+        $row = (object) [
+            'format'        => 'string',
+            'varname'       => 'env',
+            'varvalue'      => 'prod',
+            'property_uuid' => Uuid::uuid4()->getBytes(),
+        ];
+        $var = CustomVariable::fromDbRow($row);
+
+        $var->clearUuid();
+
+        $this->assertTrue($var->hasBeenModified());
+    }
+
     public function testFromDbRowMarksVarAsLoadedFromDb(): void
     {
         $row = (object) [
