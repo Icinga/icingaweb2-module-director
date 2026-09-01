@@ -385,11 +385,12 @@ Only fields matching **all** of the following are migrated; everything
 else is skipped and reported:
 
 * data type is one of `String`, `Number`, `Boolean`, `Array`, `Datalist`
-* the field has no category
 * there is no other field sharing the same variable name
 * no custom variable with the same key already exists
 * the field's binding on a template has no `var_filter` set, unless
   `--allow-lossy-filters` is given (see below)
+
+A field's `Category` migrates along with the field.
 
 | Data field type | Custom variable type |
 |------------------|-----------------------|
