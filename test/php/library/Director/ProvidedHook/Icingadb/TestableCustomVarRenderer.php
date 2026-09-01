@@ -62,6 +62,11 @@ class TestableCustomVarRenderer extends CustomVarRenderer
         $this->customVariableConfig[$key]['value_type'] = $valueType;
     }
 
+    public function seedCustomVariableLabel(string $key, string $label): void
+    {
+        $this->customVariableConfig[$key]['label'] = $label;
+    }
+
     public function seedCustomPropertyDictionary(string $key, array $children = []): void
     {
         $this->customPropertyDictionaries[$key] = $children;

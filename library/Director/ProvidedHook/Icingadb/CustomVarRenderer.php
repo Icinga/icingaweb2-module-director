@@ -659,11 +659,19 @@ class CustomVarRenderer extends CustomVarRendererHook
                 return null;
             }
 
-            return new HtmlElement(
+            $span = new HtmlElement(
                 'span',
                 Attributes::create(['title' => $label . " [$key]"]),
                 Text::create($label)
             );
+
+            // Icingadb tags a raw array itself but can't see inside our pre-rendered
+            // dictionary HTML, so only the variable's own row needs tagging here.
+            if ($parentKey === null && $this->isDictionaryValueType($key, null)) {
+                return $this->decorateArrayOrDictionaryName($span, true);
+            }
+
+            return $span;
         } catch (Throwable $e) {
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
         }

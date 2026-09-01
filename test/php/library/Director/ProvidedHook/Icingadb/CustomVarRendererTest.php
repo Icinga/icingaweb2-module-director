@@ -428,6 +428,33 @@ class CustomVarRendererTest extends BaseTestCase
         $this->assertStringContainsString('Credentials (Dictionary)', $html);
     }
 
+    public function testTopLevelDictionaryKeyGetsItsOwnDictionarySuffix(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // Icingadb calls this with no parent key for the variable's own row, and
+        // can't tag a dictionary itself since all it sees is pre-rendered HTML.
+        $renderer->seedDictionaryName('network');
+        $renderer->seedCustomVariableLabel('network', 'Network');
+
+        $rendered = $renderer->renderCustomVarKey('network');
+
+        $this->assertStringContainsString('Network (Dictionary)', $rendered->render());
+    }
+
+    public function testTopLevelArrayKeyGetsNoSuffixOfItsOwn(): void
+    {
+        $renderer = new TestableCustomVarRenderer();
+
+        // Icingadb already tags a raw array itself, tagging it here too would double it.
+        $renderer->seedCustomVariableLabel('gateways', 'Gateways');
+        $renderer->seedPropertyValueType('gateways', 'fixed-array');
+
+        $rendered = $renderer->renderCustomVarKey('gateways');
+
+        $this->assertStringNotContainsString('(Array)', $rendered->render());
+    }
+
     public function testAppliedForArrayUsesItsValuesAsNameSuffix(): void
     {
         $renderer = new CustomVarRenderer();
