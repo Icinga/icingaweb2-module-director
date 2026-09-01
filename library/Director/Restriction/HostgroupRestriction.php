@@ -60,7 +60,7 @@ class HostgroupRestriction extends ObjectRestriction
 
         // Hint: branched hosts have no id
         if (! $host->hasBeenLoadedFromDb() || $host->hasModifiedGroups() || $host->get('id') === null) {
-            foreach ($this->listRestrictedHostgroups() as $group) {
+            foreach ($this->listRestrictedHostgroupsFromDb() as $group) {
                 if ($host->hasGroup($group) || $this->matchesHostGroupFilter($group, $host)) {
                     return true;
                 }
@@ -133,14 +133,14 @@ class HostgroupRestriction extends ObjectRestriction
         IcingaObjectFilterHelper::filterByResolvedHostgroups(
             $query,
             'host',
-            $this->listRestrictedHostgroups(),
+            $this->listRestrictedHostgroupsFromDb(),
             $tableAlias
         );
     }
 
     public function filterRestrictedHostgroups(array $groups)
     {
-        return array_intersect($groups, $this->listRestrictedHostgroups());
+        return array_intersect($groups, $this->listRestrictedHostgroupsFromDb());
     }
 
     /**
@@ -158,7 +158,7 @@ class HostgroupRestriction extends ObjectRestriction
         if (! $this->isRestricted()) {
             return;
         }
-        $groups = $this->listRestrictedHostgroups();
+        $groups = $this->listRestrictedHostgroupsFromDb();
 
         if (empty($groups)) {
             $query->where('(1 = 0)');
@@ -189,5 +189,28 @@ class HostgroupRestriction extends ObjectRestriction
         } else {
             return null;
         }
+    }
+
+    /**
+     * Give a list of restricted Hostgroups that exist in the database.
+     *
+     * This filters out Hostgroups that are configured in the restriction but
+     * do not exist in Director database.
+     *
+     * @return array
+     */
+    protected function listRestrictedHostgroupsFromDb()
+    {
+        $groups = $this->listRestrictedHostgroups();
+        if (empty($groups)) {
+            return [];
+        }
+
+        $query = $this->db->select()->from(
+            ['icinga_hostgroup'],
+            ['object_name']
+        )->where('object_name IN (?)', $groups);
+
+        return $this->db->fetchCol($query);
     }
 }
