@@ -43,7 +43,9 @@ class ObjectsTableService extends ObjectsTable
 
     protected $searchColumns = [
         'o.object_name',
-        'h.object_name'
+        'o.display_name',
+        'h.object_name',
+        'h.display_name'
     ];
 
     public function assemble()
