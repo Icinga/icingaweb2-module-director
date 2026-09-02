@@ -8,6 +8,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
+use Icinga\Module\Director\Forms\IcingaServiceDictionaryMemberForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Resolver\OverriddenVarsResolver;
@@ -239,8 +240,11 @@ class DirectorDatafield extends DbObjectWithSettings
             $uuids[] = $object->get('uuid');
         }
 
+        // A dictionary member field ends up nested under the dictionary's own
+        // custom variable, never at the object's own vars root, so it can't
+        // really collide with a root level custom variable of the same name.
         $hasCustomVariableWithSameName = false;
-        if (! empty($uuids)) {
+        if (! empty($uuids) && ! $form instanceof IcingaServiceDictionaryMemberForm) {
             $dbAdapter = $db->getDbAdapter();
             $query = $dbAdapter
                 ->select()
