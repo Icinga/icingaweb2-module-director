@@ -862,8 +862,30 @@ class CustomVarRenderer extends CustomVarRendererHook
 
                 $val = (array) $val;
                 $numChildItems = count($val);
+
+                // For a fixed-dictionary/fixed-array, $k is itself a declared schema child of
+                // $key, so the config for its own fields lives under scope ($k under $key). A
+                // dynamic-dictionary's keys are end-user-created entries with no schema identity
+                // of their own though, so its fields are declared directly under $key, not under
+                // $k. Since dynamic-dictionary can never be nested, $key has no scope of its own
+                // here either.
+                $isDynamicDictionary = ($this->customVariableConfig[$key]['value_type'] ?? null)
+                    === 'dynamic-dictionary';
+                if ($isDynamicDictionary) {
+                    $fieldParentKey = $key;
+                    $fieldGrandparentKey = null;
+                } else {
+                    $fieldParentKey = $k;
+                    $fieldGrandparentKey = $key;
+                }
+
                 $ownLabel = $this->renderCustomVarKey($k, $key) ?? Html::wantHtml($k);
-                $ownLabel = $this->decorateArrayOrDictionaryName($ownLabel, $this->isDictionaryValueType($k, $key));
+                // User picked entry names have no schema to check, but every entry of a
+                // dynamic-dictionary is itself a dictionary, never a plain list.
+                $ownLabel = $this->decorateArrayOrDictionaryName(
+                    $ownLabel,
+                    $isDynamicDictionary || $this->isDictionaryValueType($k, $key)
+                );
 
                 $this->dictionaryBody->addHtml(
                     new HtmlElement(
@@ -877,20 +899,6 @@ class CustomVarRenderer extends CustomVarRendererHook
                         )
                     )
                 );
-
-                // For a fixed-dictionary/fixed-array, $k is itself a declared schema child of
-                // $key, so the config for its own fields lives under scope ($k under $key). A
-                // dynamic-dictionary's keys are end-user-created entries with no schema identity
-                // of their own though, so its fields are declared directly under $key, not under
-                // $k. Since dynamic-dictionary can never be nested, $key has no scope of its own
-                // here either.
-                if (($this->customVariableConfig[$key]['value_type'] ?? null) === 'dynamic-dictionary') {
-                    $fieldParentKey = $key;
-                    $fieldGrandparentKey = null;
-                } else {
-                    $fieldParentKey = $k;
-                    $fieldGrandparentKey = $key;
-                }
 
                 $this->dictionaryLevel++;
                 foreach ($val as $childKey => $childVal) {
