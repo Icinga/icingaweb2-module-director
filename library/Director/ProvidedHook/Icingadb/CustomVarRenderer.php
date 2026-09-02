@@ -344,7 +344,9 @@ class CustomVarRenderer extends CustomVarRendererHook
             Logger::error("%s\n%s", $e, $e->getTraceAsString());
             $this->prefetchFailed = true;
 
-            return false;
+            // Stay registered anyway, or Icinga DB never asks us to render at all and
+            // a sensitive value shows up raw instead of masked.
+            return true;
         }
     }
 

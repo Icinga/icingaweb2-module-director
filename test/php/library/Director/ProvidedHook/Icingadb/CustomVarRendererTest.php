@@ -10,6 +10,7 @@ use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\ProvidedHook\Icingadb\CustomVarRenderer;
 use Icinga\Module\Director\Test\BaseTestCase;
+use Icinga\Module\Icingadb\Model\Host;
 use ipl\Html\ValidHtml;
 use ReflectionMethod;
 use Ramsey\Uuid\Uuid;
@@ -316,6 +317,27 @@ class CustomVarRendererTest extends BaseTestCase
         $result = $renderer->renderCustomVarValue('api_token', 's3cr3t-value');
 
         $this->assertSame('***', $result);
+    }
+
+    public function testPrefetchForObjectStaysRegisteredEvenWhenItFails(): void
+    {
+        try {
+            // No usable db resource, so the prefetch blows up on its own.
+            Config::module('director')->setSection('db', ['resource' => '']);
+
+            $renderer = new CustomVarRenderer();
+            $host = new Host(['name' => self::PREFIX . 'unreachable-host']);
+
+            // Icinga DB only renders through hooks whose prefetch came back true.
+            // False here would drop us from the pipeline and show secrets raw.
+            $this->assertTrue($renderer->prefetchForObject($host));
+        } finally {
+            if ($this->hasDb()) {
+                Config::module('director')->setSection('db', ['resource' => static::getDbResourceName()]);
+            } else {
+                Config::module('director')->removeSection('db');
+            }
+        }
     }
 
     public function testRenderCustomVarValueMasksOnRenderFailure(): void
