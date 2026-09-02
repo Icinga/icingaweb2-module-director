@@ -33,11 +33,11 @@ class IcingaTemplateChoiceFormTest extends BaseTestCase
 
         $associatedTemplates = $form
             ->getElement('required_template_id')
-            ->getMultiOptions();
+            ->getAttrib('multiOptions');
 
         $members = $form
             ->getElement('members')
-            ->getMultiOptions();
+            ->getAttrib('multiOptions');
 
         $this->assertArrayHasKey(
             $this->templateId,
