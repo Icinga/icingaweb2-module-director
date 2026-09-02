@@ -870,16 +870,17 @@ class CustomVarRenderer extends CustomVarRendererHook
 
                 $ownLabel = $this->renderCustomVarKey($k, $key) ?? Html::wantHtml($k);
 
-                if (! $isDictionary) {
-                    // Just a plain array here, same as any other, so render it the exact
-                    // same way, including the bracketed position numbers.
+                // Only a genuine list of positions gets the same treatment as any other
+                // array. A schema-less field with named entries (an old style data field,
+                // say) still needs its own keys shown as is, not as list positions.
+                if (! $isDictionary && array_is_list($val)) {
                     $this->renderArrayVal($ownLabel, $val);
 
                     continue;
                 }
 
                 $numChildItems = count($val);
-                $ownLabel = $this->decorateArrayOrDictionaryName($ownLabel, true);
+                $ownLabel = $this->decorateArrayOrDictionaryName($ownLabel, $isDictionary);
 
                 $this->dictionaryBody->addHtml(
                     new HtmlElement(
