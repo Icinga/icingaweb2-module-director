@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -92,26 +91,20 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
             'value' => 1,
         ));
 
-        $this->addElement('select', 'required_template', [
+        $this->addElement('select', 'required_template_id', [
             'label'        => $this->translate('Associated Template'),
             'description'  => $this->translate(
                 'Choose Choice Associated Template'
             ),
             'required'     => true,
-            'multiOptions' => $this->fetchUnboundTemplates(),
+            'multiOptions' => $this->fetchUnboundTemplates(true),
         ]);
 
         $this->setButtons();
     }
 
-    protected function setDefaultsFromObject(DbObject $object)
-    {
-        parent::setDefaultsFromObject($object);
 
-        $this->getElement('required_template')->setValue($object->get('required_template'));
-    }
-
-    protected function fetchUnboundTemplates()
+    protected function fetchUnboundTemplates($useIdAsKey = false)
     {
         /** @var IcingaTemplateChoice $object */
         $object = $this->object();
@@ -120,7 +113,7 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
         $query = $db->select()->from(
             ['o' => $table],
             [
-                'k' => 'o.object_name',
+                'k' => $useIdAsKey ? 'o.id' : 'o.object_name',
                 'v' => 'o.object_name',
             ]
         )->where("o.object_type = 'template'");
