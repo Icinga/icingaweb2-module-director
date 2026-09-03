@@ -484,6 +484,16 @@ class BasketSnapshotCustomVariableResolver
         return $modified;
     }
 
+    /**
+     * Reconcile a property's children against the snapshot, then store what's left
+     *
+     * Removed children go first, so a survivor reusing a freed slot doesn't
+     * collide with the row still sitting there.
+     *
+     * @param DirectorProperty $property
+     *
+     * @return bool True if anything was deleted or stored
+     */
     private function reconcileChildren(DirectorProperty $property): bool
     {
         $items = $property->fetchItemsFromDb();
