@@ -656,9 +656,9 @@ class CustomVariableValueCleaner
      *
      * @param PropertyValueMigration $migration The plan to apply
      *
-     * @return int Number of values kept under their old name or key, either an old
-     *             Data Field owns the whole name, or a value's new key was taken,
-     *             0 if all clean
+     * @return int Number of affected values, either kept under their old name or key
+     *             or dropped, either an old Data Field owns the whole name, or a
+     *             value's new key was taken, 0 if all clean
      */
     public function applyValueMigration(PropertyValueMigration $migration): int
     {

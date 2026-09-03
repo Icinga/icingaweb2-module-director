@@ -376,8 +376,9 @@ Use `icingacli director basket restore < exported-basket.json` to restore object
 from a specific basket. Take a snapshot or a backup first to be on the safe side.
 If a restored custom variable was renamed or retyped but a legacy Data Field
 still owns the old name, or its new name or key was already taken by another
-value, `restore` prints how many stored values were kept under their old name
-or type, see [Restoring Custom Variable Schema
+value, `restore` prints how many stored values were affected, kept under
+their old name or type, or dropped depending on the case, see [Restoring
+Custom Variable Schema
 Changes](30-Configuration-Baskets.md#Restoring-Custom-Variables) for details.
 
 This feature is available since v1.6.0.
