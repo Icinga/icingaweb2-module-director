@@ -1174,6 +1174,115 @@ class DeleteCustomVariableFormTest extends BaseTestCase
         $dba->delete('director_datafield', ['varname = ?' => '___TEST___switch_snmp']);
     }
 
+    public function testDeletePreviewResolvesRootFourLevelsDeep(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        // four levels deep: root, datacenter, row, rack. The field's parent is itself
+        // nested, which is what used to trip up the old one-level-up walk to the root.
+        $rootUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'       => $rootUuid->getBytes(),
+            'key_name'   => '___TEST___rack_location',
+            'value_type' => 'fixed-dictionary',
+            'label'      => 'Rack Location',
+        ], $db)->store();
+
+        $datacenterUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $datacenterUuid->getBytes(),
+            'key_name'    => 'datacenter',
+            'parent_uuid' => $rootUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $rowUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $rowUuid->getBytes(),
+            'key_name'    => 'row',
+            'parent_uuid' => $datacenterUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $rackUuid = Uuid::uuid4();
+        DirectorProperty::create([
+            'uuid'        => $rackUuid->getBytes(),
+            'key_name'    => 'rack',
+            'parent_uuid' => $rowUuid->getBytes(),
+            'value_type'  => 'string',
+        ], $db)->store();
+
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___nested_delete_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.64',
+        ], $db);
+        $host->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'       => $host->get('id'),
+            'varname'       => '___TEST___rack_location',
+            'varvalue'      => json_encode(['datacenter' => ['row' => ['rack' => 'R42']]]),
+            'format'        => 'json',
+            'property_uuid' => DbUtil::quoteBinaryCompat($rootUuid->getBytes(), $dba),
+        ]);
+
+        $form = new DeleteCustomVariableForm(
+            $db,
+            [
+                'uuid'        => $rackUuid->getBytes(),
+                'key_name'    => 'rack',
+                'value_type'  => 'string',
+                'label'       => null,
+                'description' => null,
+                'parent_uuid' => $rowUuid->getBytes(),
+            ],
+            [
+                'uuid'        => $rowUuid->getBytes(),
+                'key_name'    => 'row',
+                'value_type'  => 'string',
+                'parent_uuid' => $datacenterUuid->getBytes(),
+            ]
+        );
+
+        $usage = self::callMethod($form, 'fetchCustomVarUsage', []);
+        $this->assertCount(
+            1,
+            $usage,
+            'the host holding a value four levels below the root must show up as usage,'
+            . ' not get missed because the preview stopped one level short of the root'
+        );
+        $this->assertEquals('___TEST___nested_delete_host', $usage[0]->name);
+
+        $html = (string) $form->render();
+        $this->assertStringContainsString(
+            'custom variable &quot;___TEST___rack_location&quot;',
+            $html,
+            'the confirmation text must name the true root, not an intermediate property'
+        );
+        $this->assertStringNotContainsString(
+            'custom variable &quot;row&quot;',
+            $html,
+            'the confirmation text must not name the field\'s immediate parent as if it were the root'
+        );
+        $this->assertStringNotContainsString(
+            'not in use',
+            $html,
+            'a field with a real stored value must never be reported as safe to delete'
+        );
+
+        $dba->delete('icinga_host', ['object_name = ?' => '___TEST___nested_delete_host']);
+        $dba->delete('director_property', ['key_name = ?' => 'rack']);
+        $dba->delete('director_property', ['key_name = ?' => 'row']);
+        $dba->delete('director_property', ['key_name = ?' => 'datacenter']);
+        $dba->delete('director_property', ['key_name = ?' => '___TEST___rack_location']);
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {

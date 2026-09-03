@@ -17,7 +17,6 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\ListItem;
-use Ramsey\Uuid\Uuid;
 use Zend_Db_Expr;
 
 class DeleteCustomVariableForm extends CompatForm
@@ -34,12 +33,33 @@ class DeleteCustomVariableForm extends CompatForm
     /** @var CustomVariableValueCleaner */
     protected $cleaner;
 
+    /** @var ?array The field's root property, resolved and cached on first use */
+    private ?array $rootProperty = null;
+
     public function __construct(
         protected Db $db,
         protected array $property,
         protected array $parent = []
     ) {
         $this->cleaner = new CustomVariableValueCleaner($db);
+    }
+
+    /**
+     * Walk up to the field's root property, however deep it's nested
+     *
+     * Usage checks and stored values are always keyed by the root, never an intermediate level.
+     *
+     * @return array
+     */
+    private function resolveRoot(): array
+    {
+        if ($this->rootProperty === null) {
+            $this->rootProperty = $this->parent
+                ? $this->cleaner->resolveRootProperty($this->property, $this->parent)[0]
+                : $this->property;
+        }
+
+        return $this->rootProperty;
     }
 
     /**
@@ -50,17 +70,7 @@ class DeleteCustomVariableForm extends CompatForm
     private function fetchCustomVarUsage(): array
     {
         $db = $this->db->getDbAdapter();
-        if ($this->parent) {
-            if ($this->parent['parent_uuid'] !== null) {
-                $uuid = $this->parent['parent_uuid'];
-            } else {
-                $uuid = $this->parent['uuid'];
-            }
-        } else {
-            $uuid = $this->property['uuid'];
-        }
-
-        $uuid = DbUtil::quoteBinaryCompat($uuid, $db);
+        $uuid = DbUtil::quoteBinaryCompat($this->resolveRoot()['uuid'], $db);
 
         $objectClasses = ['host', 'service', 'notification', 'command', 'user'];
         $usage = [];
@@ -115,14 +125,14 @@ class DeleteCustomVariableForm extends CompatForm
                             . ' the corresponding custom variables from the below templates and objects.'
                             . ' Are you sure you want to delete it?'
                         ),
-                        $this->cleaner->fetchProperty(Uuid::fromBytes($this->parent['parent_uuid']))['key_name']
+                        $this->resolveRoot()['key_name']
                     );
                 } else {
                     $info = sprintf($this->translate(
                         'Deleting this field from custom variable "%s" will remove this field in'
                         . ' the corresponding custom variable from the below templates and objects.'
                         . ' Are you sure you want to delete it?'
-                    ), $this->parent['key_name']);
+                    ), $this->resolveRoot()['key_name']);
                 }
             } else {
                 $info = $this->translate(
