@@ -1300,6 +1300,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $default;
     }
 
+    /**
+     * Merge inherited and own values across all imported templates
+     *
+     * Later templates normally overwrite earlier ones. A dynamic dictionary
+     * custom variable merges key by key instead, and its origin lists every
+     * contributing template rather than just the last one.
+     *
+     * @param string $what
+     *
+     * @return object
+     */
     protected function resolve($what)
     {
         if ($this->hasResolveCached($what)) {
