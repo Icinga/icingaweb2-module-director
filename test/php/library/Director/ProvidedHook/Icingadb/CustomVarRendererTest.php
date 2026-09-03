@@ -4,6 +4,7 @@ namespace Tests\Icinga\Module\Director\ProvidedHook\Icingadb;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
+use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -321,6 +322,10 @@ class CustomVarRendererTest extends BaseTestCase
 
     public function testPrefetchForObjectStaysRegisteredEvenWhenItFails(): void
     {
+        $originalWriter = Logger::getInstance()->getWriter();
+        $writer = new CapturingLogWriter();
+        Logger::replaceRunningInstance($writer);
+
         try {
             // No usable db resource, so the prefetch blows up on its own.
             Config::module('director')->setSection('db', ['resource' => '']);
@@ -331,7 +336,13 @@ class CustomVarRendererTest extends BaseTestCase
             // Icinga DB only renders through hooks whose prefetch came back true.
             // False here would drop us from the pipeline and show secrets raw.
             $this->assertTrue($renderer->prefetchForObject($host));
+
+            // The failure must actually get logged too, or nobody would ever notice
+            // the db went unreachable.
+            $this->assertTrue($writer->hasMessageContaining('Cannot identify director db'));
         } finally {
+            Logger::replaceRunningInstance($originalWriter);
+
             if ($this->hasDb()) {
                 Config::module('director')->setSection('db', ['resource' => static::getDbResourceName()]);
             } else {
@@ -342,18 +353,27 @@ class CustomVarRendererTest extends BaseTestCase
 
     public function testRenderCustomVarValueMasksOnRenderFailure(): void
     {
-        $renderer = new TestableCustomVarRenderer();
+        $originalWriter = Logger::getInstance()->getWriter();
+        $writer = new CapturingLogWriter();
+        Logger::replaceRunningInstance($writer);
 
-        // A var we do recognize as ours, but something breaks while working out how
-        // to render it. Falling back to null here would show the raw value instead.
-        $renderer->seedDictionaryName('servers');
-        $renderer->seedPropertyValueType('servers', 'dynamic-dictionary');
-        $renderer->seedCustomPropertyDictionary('servers');
-        $renderer->forceRenderFailure();
+        try {
+            $renderer = new TestableCustomVarRenderer();
 
-        $result = $renderer->renderCustomVarValue('servers', ['primary' => ['password' => 'hunter2']]);
+            // A var we do recognize as ours, but something breaks while working out how
+            // to render it. Falling back to null here would show the raw value instead.
+            $renderer->seedDictionaryName('servers');
+            $renderer->seedPropertyValueType('servers', 'dynamic-dictionary');
+            $renderer->seedCustomPropertyDictionary('servers');
+            $renderer->forceRenderFailure();
 
-        $this->assertSame('***', $result);
+            $result = $renderer->renderCustomVarValue('servers', ['primary' => ['password' => 'hunter2']]);
+
+            $this->assertSame('***', $result);
+            $this->assertTrue($writer->hasMessageContaining('forced failure for test'));
+        } finally {
+            Logger::replaceRunningInstance($originalWriter);
+        }
     }
 
     public function testSensitiveFixedArrayItemMasksInFullyRenderedHtml(): void
