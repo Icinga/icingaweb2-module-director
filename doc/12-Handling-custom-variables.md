@@ -282,10 +282,13 @@ Go to `Custom Variables` in the Icinga Director menu and choose
 
 * `Property Key`: the variable name (e.g. `disk_checks`), used as
   `vars.<key>` in the rendered config
-* `Property Label` and `Property Description`: optional, shown in
-  object forms and the apply-for hint text
-* `Category`: optional, groups related properties in object forms,
-  same as with `Data fields`
+* `Property Label`: optional, shown in object forms and the apply-for
+  hint text
+* `Property Description`: optional, for documentation purposes; not
+  currently displayed anywhere in Icinga Web 2
+* `Category`: optional, groups properties when custom variables are
+  displayed on a host or service's detail page; the object edit form
+  doesn't group by category yet
 * `Property Type`: one of the types listed above
 * `List name`: only for `datalist-strict` / `datalist-non-strict`,
   selects which Director datalist supplies the allowed values
