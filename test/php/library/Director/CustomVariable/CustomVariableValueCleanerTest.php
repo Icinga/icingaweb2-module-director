@@ -922,6 +922,59 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         $this->assertEquals(1, $conflictCount, 'the collision must be counted');
     }
 
+    public function testMigrationKeepsPlainStringValueIntact(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $oldKeyName = self::PREFIX . 'zone';
+        $newKeyName = self::PREFIX . 'region';
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'migration_string_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.85',
+        ], $db);
+        $host->store();
+
+        // a plain string is stored as-is, not json encoded, this is how a real
+        // string property's value actually sits in the database
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => $oldKeyName,
+            'varvalue' => 'us-east-1a',
+            'format'   => 'string',
+        ]);
+
+        $migration = new PropertyValueMigration(
+            oldVarname: $oldKeyName,
+            newVarname: $newKeyName,
+            oldRootType: 'string',
+            wholeValueCleared: false,
+            blocked: false,
+            children: [],
+            fixedArrayReindexes: []
+        );
+
+        $conflictCount = (new CustomVariableValueCleaner($db))->applyValueMigration($migration);
+
+        $storedValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', $newKeyName)
+        );
+
+        $this->assertEquals(
+            'us-east-1a',
+            $storedValue,
+            'a plain string value must survive a clean rename, treating it as invalid json must not wipe it'
+        );
+        $this->assertEquals(0, $conflictCount, 'a clean rename with nothing in the way has nothing to report');
+    }
+
     public function testOverrideServiceVarsRefuseOccupiedDestination(): void
     {
         if ($this->skipForMissingDb()) {
@@ -1070,6 +1123,7 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_blocked_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_clean_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'migration_plain_collision_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'migration_string_host']);
 
             foreach ([self::ROOT_KEY_NAME, self::NESTED_ROOT_KEY_NAME, self::DYNAMIC_ROOT_KEY_NAME] as $rootKeyName) {
                 $rows = $dba->fetchAll(

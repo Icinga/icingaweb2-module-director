@@ -148,7 +148,7 @@ class CustomVariableValueCleaner
             $varRows = $db->fetchAll(
                 $db->select()
                    ->from(['iov' => "icinga_{$objectType}_var"], [])
-                   ->columns([$idColumn, 'varname', 'varvalue'])
+                   ->columns([$idColumn, 'varname', 'varvalue', 'format'])
                    ->where('varname = ?', $varname),
                 [],
                 Zend_Db::FETCH_ASSOC
@@ -157,7 +157,10 @@ class CustomVariableValueCleaner
             $objectClass = DbObjectTypeRegistry::classByType($objectType);
 
             foreach ($varRows as $varRow) {
-                $decoded = json_decode($varRow['varvalue'] ?? '', true);
+                // a plain string is stored as-is, decoding it as json would just null it out
+                $decoded = $varRow['format'] === 'json'
+                    ? json_decode($varRow['varvalue'] ?? '', true)
+                    : $varRow['varvalue'];
                 $newValue = $transform($decoded);
 
                 $object = $objectClass::loadWithAutoIncId($varRow[$idColumn], $this->db);
