@@ -165,4 +165,39 @@ class CustomVariableDictionaryRenderingTest extends TestCase
 
         $this->assertEquals($expected, $vars->toConfigString(true));
     }
+
+    public function testApplyForWhitelistPropagatesIntoArrayNestedInDictionary(): void
+    {
+        $vars = new CustomVariables();
+        $vars->setWhiteList(['value']);
+        $vars->datacenters = ['dc1' => ['allowed_ports' => ['$value$', '443']]];
+
+        // the whitelist has to survive an array sitting inside a dictionary too, not
+        // just an array at the top level or a string directly under a dictionary
+        $expected = $this->indent . 'vars.datacenters = {' . "\n"
+            . $this->indent . $this->indent . 'dc1 = {' . "\n"
+            . $this->indent . $this->indent . $this->indent . 'allowed_ports = [ value, "443" ]' . "\n"
+            . $this->indent . $this->indent . '}' . "\n"
+            . $this->indent . '}' . "\n";
+
+        $this->assertEquals($expected, $vars->toConfigString(true));
+    }
+
+    public function testApplyForWhitelistPropagatesIntoDictionaryNestedInDictionary(): void
+    {
+        $vars = new CustomVariables();
+        $vars->setWhiteList(['value']);
+        $vars->datacenters = ['dc1' => ['proxy' => ['target' => '$value$']]];
+
+        // same as the array case above, but the nested child is another dictionary
+        $expected = $this->indent . 'vars.datacenters = {' . "\n"
+            . $this->indent . $this->indent . 'dc1 = {' . "\n"
+            . $this->indent . $this->indent . $this->indent . 'proxy = {' . "\n"
+            . $this->indent . $this->indent . $this->indent . $this->indent . 'target = value' . "\n"
+            . $this->indent . $this->indent . $this->indent . '}' . "\n"
+            . $this->indent . $this->indent . '}' . "\n"
+            . $this->indent . '}' . "\n";
+
+        $this->assertEquals($expected, $vars->toConfigString(true));
+    }
 }

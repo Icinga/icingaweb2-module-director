@@ -127,8 +127,15 @@ class CustomVariableDictionary extends CustomVariable implements Countable
             }
         }
 
-        // TODO
-        return c::renderDictionary($this->value);
+        // Render each child through its own logic first, or an array or
+        // dictionary child falls back to a plain string cast and quietly
+        // loses the apply-for whitelist.
+        $rendered = [];
+        foreach ($this->value as $key => $value) {
+            $rendered[$key] = $value->toConfigString($renderExpressions);
+        }
+
+        return c::renderDictionary($rendered);
     }
 
     public function toLegacyConfigString()
