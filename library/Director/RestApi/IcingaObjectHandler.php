@@ -223,19 +223,15 @@ class IcingaObjectHandler extends RequestHandler
                 );
 
                 // Object persistence and custom-variable validation/application must
-                // succeed or fail together: without this, a request with an invalid
-                // custom variable could still leave unrelated object changes committed.
-                // persistObjectAndApplyVars() returns null once it has already sent its
-                // own response (the service-override branch), or the object to respond
-                // with otherwise.
+                // succeed or fail together, otherwise a bad custom variable could
+                // leave unrelated object changes committed on their own. Sending the
+                // response has to wait until after the transaction actually commits.
                 $responseObject = null;
                 $db->runFailSafeTransaction(function () use (&$responseObject, $writeRequest) {
                     $responseObject = $this->persistObjectAndApplyVars($writeRequest);
                 });
 
-                if ($responseObject !== null) {
-                    $this->sendJson($responseObject->toPlainObject(false, true));
-                }
+                $this->sendJson($responseObject->toPlainObject(false, true));
 
                 break;
             case 'GET':
@@ -257,14 +253,14 @@ class IcingaObjectHandler extends RequestHandler
      *
      * Called from within a transaction (see handleApiRequest()): a failure in the
      * custom-variable step must not leave the object's own property changes
-     * committed on their own.
+     * committed on their own. Must not send any response itself, the caller
+     * only does that once the transaction has actually committed.
      *
      * @param IcingaObjectWriteRequest $request
      *
-     * @return ?IcingaObject The object to respond with, or null if a response has
-     *                       already been sent (the service-override branch)
+     * @return IcingaObject The object to respond with
      */
-    protected function persistObjectAndApplyVars(IcingaObjectWriteRequest $request): ?IcingaObject
+    protected function persistObjectAndApplyVars(IcingaObjectWriteRequest $request): IcingaObject
     {
         $db = $this->db;
         $object = $request->object;
@@ -331,13 +327,12 @@ class IcingaObjectHandler extends RequestHandler
                 }
 
                 $data['vars'] = $request->overRiddenCustomVars;
-                $this->setServiceProperties(
+
+                return $this->setServiceProperties(
                     $request->params->getRequired('host'),
                     $request->params->getRequired('name'),
                     $data
                 );
-
-                return null;
             } else {
                 $object = IcingaObject::createByType($type, $data, $db);
                 $this->persistChanges($object);
@@ -387,20 +382,22 @@ class IcingaObjectHandler extends RequestHandler
         }
     }
 
-    protected function setServiceProperties($hostname, $serviceName, $properties)
+    protected function setServiceProperties($hostname, $serviceName, $properties): IcingaHost
     {
         $host = IcingaHost::load($hostname, $this->db);
         $service = ServiceFinder::find($host, $serviceName);
         if ($service === false) {
             throw new NotFoundError('Not found');
         }
+
         if ($service->requiresOverrides()) {
             unset($properties['host']);
             OverrideHelper::applyOverriddenVars($host, $serviceName, $properties);
             $this->persistChanges($host);
-            $this->sendJson($host->toPlainObject(false, true));
-        } else {
-            throw new RuntimeException('Found a single service, which should have been found (and dealt with) before');
+
+            return $host;
         }
+
+        throw new RuntimeException('Found a single service, which should have been found (and dealt with) before');
     }
 }

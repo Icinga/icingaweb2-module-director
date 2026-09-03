@@ -406,6 +406,73 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
     }
 
+    public function testServiceOverrideDoesNotRespondBeforeItIsActuallyPersisted(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->deleteServiceFixtures($db);
+
+        $host = IcingaHost::create([
+            'object_name' => self::SERVICE_HOST_A,
+            'object_type' => 'object',
+            'address'     => '127.0.0.1',
+        ]);
+        $host->store($db);
+
+        $service = IcingaService::create([
+            'object_name'            => self::SHARED_SERVICE_NAME,
+            'object_type'            => 'object',
+            'host_id'                => $host->get('id'),
+            'vars.use_var_overrides' => 'y',
+        ]);
+        $service->store($db);
+
+        $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+
+        // No object could be resolved up front, host and name come from the
+        // query string instead, same as a real POST with allowOverrides=1.
+        $params = new UrlParams();
+        $params->set('host', self::SERVICE_HOST_A);
+        $params->set('name', self::SHARED_SERVICE_NAME);
+
+        $writeRequest = new IcingaObjectWriteRequest(
+            null,
+            [],
+            'service',
+            'index',
+            'POST',
+            false,
+            [self::SSH_PORT_KEY => '2222'],
+            true,
+            $params
+        );
+
+        $result = null;
+        ob_start();
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest, &$result) {
+            $result = $method->invoke($handler, $writeRequest);
+        });
+        $output = ob_get_clean();
+
+        // this used to send the JSON response from inside the transaction,
+        // so a commit failure right after could still leave the client
+        // thinking the override was saved
+        $this->assertSame('', $output, 'persisting a service override must not send a response itself');
+        $this->assertInstanceOf(IcingaHost::class, $result, 'the caller needs the host back to build the response');
+
+        $reloaded = IcingaHost::load(self::SERVICE_HOST_A, $db);
+        $overrides = $reloaded->getOverriddenServiceVars(self::SHARED_SERVICE_NAME);
+        $this->assertEquals(
+            '2222',
+            $overrides->{self::SSH_PORT_KEY},
+            'the override must actually have been persisted'
+        );
+    }
+
     public function testRejectsVariablesOnAnObjectThatWasNeverCreated(): void
     {
         if ($this->skipForMissingDb()) {
