@@ -44,11 +44,13 @@ class PropertyValueRebuilder
      * Some callers have to check a value's new spot before they even hand
      * it over here, so they need a way to add that conflict to the count too.
      *
+     * @param int $count How many conflicts to add
+     *
      * @return void
      */
-    public function noteRootConflict(): void
+    public function noteRootConflict(int $count = 1): void
     {
-        $this->conflictCount++;
+        $this->conflictCount += $count;
     }
 
     /**

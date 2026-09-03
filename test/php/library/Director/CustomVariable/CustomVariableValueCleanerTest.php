@@ -369,6 +369,144 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         );
     }
 
+    public function testRenameKeepsSourceWhenDestinationTaken(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $oldKeyName = self::PREFIX . 'zone';
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_plain_collision_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.81',
+        ], $db);
+        $host->store();
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => $oldKeyName,
+            'value_type' => 'string',
+            'label'      => 'Zone',
+        ], $db)->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => $oldKeyName,
+            'varvalue' => json_encode('us-east-1a'),
+            'format'   => 'json',
+        ]);
+
+        // an ordinary value, nothing to do with a Property or a Data Field
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => self::SHARED_KEY_NAME,
+            'varvalue' => json_encode('us-east'),
+            'format'   => 'json',
+        ]);
+
+        $keptCount = (new CustomVariableValueCleaner($db))->renameStoredValues($oldKeyName, self::SHARED_KEY_NAME);
+
+        $oldValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', $oldKeyName)
+        );
+        $destValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', self::SHARED_KEY_NAME)
+        );
+
+        $this->assertEquals(
+            json_encode('us-east-1a'),
+            $oldValue,
+            'a value must stay under the old varname when the new one is already taken on this host'
+        );
+        $this->assertEquals(
+            json_encode('us-east'),
+            $destValue,
+            'the value already sitting under the new name must survive untouched'
+        );
+        $this->assertEquals(1, $keptCount, 'the collision must be reported back');
+    }
+
+    public function testRenameStillAppliesToUnaffectedHost(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $oldKeyName = self::PREFIX . 'zone';
+
+        $blockedHost = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_blocked_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.82',
+        ], $db);
+        $blockedHost->store();
+
+        $cleanHost = IcingaHost::create([
+            'object_name' => self::PREFIX . 'rename_clean_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.83',
+        ], $db);
+        $cleanHost->store();
+
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => $oldKeyName,
+            'value_type' => 'string',
+            'label'      => 'Zone',
+        ], $db)->store();
+
+        foreach ([$blockedHost, $cleanHost] as $host) {
+            $dba->insert('icinga_host_var', [
+                'host_id'  => $host->get('id'),
+                'varname'  => $oldKeyName,
+                'varvalue' => json_encode('us-east-1a'),
+                'format'   => 'json',
+            ]);
+        }
+
+        // only the blocked host already has something under the destination name
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $blockedHost->get('id'),
+            'varname'  => self::SHARED_KEY_NAME,
+            'varvalue' => json_encode('us-east'),
+            'format'   => 'json',
+        ]);
+
+        (new CustomVariableValueCleaner($db))->renameStoredValues($oldKeyName, self::SHARED_KEY_NAME);
+
+        $cleanHostRenamed = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $cleanHost->get('id'))
+                ->where('varname = ?', self::SHARED_KEY_NAME)
+        );
+        $blockedHostStillOld = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $blockedHost->get('id'))
+                ->where('varname = ?', $oldKeyName)
+        );
+
+        $this->assertEquals(
+            json_encode('us-east-1a'),
+            $cleanHostRenamed,
+            'a host without a conflict must still get renamed even though another host collided'
+        );
+        $this->assertEquals(
+            json_encode('us-east-1a'),
+            $blockedHostStillOld,
+            'the colliding host must keep its value under the old name'
+        );
+    }
+
     public function testRenameNestedStoredValuesMovesJsonKeyWithoutLegacyDatafield(): void
     {
         if ($this->skipForMissingDb()) {
@@ -716,6 +854,74 @@ class CustomVariableValueCleanerTest extends BaseTestCase
         $this->assertEquals(1, $cleaner->getRenameCollisionCount());
     }
 
+    public function testMigrationKeepsSourceWhenDestinationTaken(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $oldKeyName = self::PREFIX . 'escalation_contact';
+        $newKeyName = self::PREFIX . 'oncall_contact';
+
+        $host = IcingaHost::create([
+            'object_name' => self::PREFIX . 'migration_plain_collision_host',
+            'object_type' => 'object',
+            'address'     => '192.0.2.84',
+        ], $db);
+        $host->store();
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => $oldKeyName,
+            'varvalue' => json_encode('secops-oncall@example.com'),
+            'format'   => 'json',
+        ]);
+
+        $dba->insert('icinga_host_var', [
+            'host_id'  => $host->get('id'),
+            'varname'  => $newKeyName,
+            'varvalue' => json_encode('sre-team-oncall@example.com'),
+            'format'   => 'json',
+        ]);
+
+        $migration = new PropertyValueMigration(
+            oldVarname: $oldKeyName,
+            newVarname: $newKeyName,
+            oldRootType: 'string',
+            wholeValueCleared: false,
+            blocked: false,
+            children: [],
+            fixedArrayReindexes: []
+        );
+
+        $conflictCount = (new CustomVariableValueCleaner($db))->applyValueMigration($migration);
+
+        $oldValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', $oldKeyName)
+        );
+        $destValue = $dba->fetchOne(
+            $dba->select()->from('icinga_host_var', ['varvalue'])
+                ->where('host_id = ?', $host->get('id'))
+                ->where('varname = ?', $newKeyName)
+        );
+
+        $this->assertEquals(
+            json_encode('secops-oncall@example.com'),
+            $oldValue,
+            'the source value must stay under its old name when the destination is taken'
+        );
+        $this->assertEquals(
+            json_encode('sre-team-oncall@example.com'),
+            $destValue,
+            'the value already sitting under the new name must survive untouched'
+        );
+        $this->assertEquals(1, $conflictCount, 'the collision must be counted');
+    }
+
     public function testOverrideServiceVarsRefuseOccupiedDestination(): void
     {
         if ($this->skipForMissingDb()) {
@@ -860,6 +1066,10 @@ class CustomVariableValueCleanerTest extends BaseTestCase
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_collision_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_collision_dynamic_host']);
             $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'override_collision_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_plain_collision_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_blocked_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'rename_clean_host']);
+            $dba->delete('icinga_host', ['object_name = ?' => self::PREFIX . 'migration_plain_collision_host']);
 
             foreach ([self::ROOT_KEY_NAME, self::NESTED_ROOT_KEY_NAME, self::DYNAMIC_ROOT_KEY_NAME] as $rootKeyName) {
                 $rows = $dba->fetchAll(
@@ -875,6 +1085,7 @@ class CustomVariableValueCleanerTest extends BaseTestCase
                 $dba->delete('director_property', $dba->quoteInto('key_name = ?', $rootKeyName));
             }
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::SHARED_KEY_NAME));
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::PREFIX . 'zone'));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::SHARED_KEY_NAME));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::NESTED_ROOT_KEY_NAME));
             $dba->delete('director_datafield', $dba->quoteInto('varname = ?', self::PREFIX . 'zone'));

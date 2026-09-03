@@ -169,6 +169,51 @@ class CustomVariableValueCleaner
     }
 
     /**
+     * Rename a varname across every object type, but never onto a holder that already has one
+     *
+     * Each table's primary key is holder id plus varname, so a holder that already has a
+     * value under the new name would blow up a wholesale rename. This skips just that
+     * holder, renames everyone else, and counts what got left behind.
+     *
+     * @param string $oldVarname The varname before the rename
+     * @param string $newVarname The varname after the rename
+     *
+     * @return int Number of holders left under the old varname because the new one was
+     *             already taken there
+     */
+    private function renameRootVarnamePerHolder(string $oldVarname, string $newVarname): int
+    {
+        $db = $this->db->getDbAdapter();
+        $collisions = 0;
+
+        foreach (self::OBJECT_TYPES as $objectType) {
+            $table = "icinga_{$objectType}_var";
+            $idColumn = "{$objectType}_id";
+
+            $destIds = $db->fetchCol($db->select()->from($table, [$idColumn])->where('varname = ?', $newVarname));
+
+            if (empty($destIds)) {
+                $this->db->update($table, ['varname' => $newVarname], Filter::where('varname', $oldVarname));
+
+                continue;
+            }
+
+            $sourceIds = $db->fetchCol($db->select()->from($table, [$idColumn])->where('varname = ?', $oldVarname));
+            $safeIds = array_diff($sourceIds, $destIds);
+            $collisions += count($sourceIds) - count($safeIds);
+
+            if (! empty($safeIds)) {
+                $this->db->update($table, ['varname' => $newVarname], Filter::matchAll(
+                    Filter::where('varname', $oldVarname),
+                    Filter::where($idColumn, $safeIds)
+                ));
+            }
+        }
+
+        return $collisions;
+    }
+
+    /**
      * Remove dictionary item from the given data array
      *
      * @param array $item          The data to remove the item from, modified in place
@@ -576,6 +621,9 @@ class CustomVariableValueCleaner
      * old name its values might be the field's, not this property's. Under the new name it
      * would collide with the field's own row (host_id/varname is a primary key here).
      *
+     * A holder that already has an ordinary value under the new name gets the same
+     * treatment, it keeps its old value instead of colliding on that same primary key.
+     *
      * @param string $oldVarname The root property's varname before the rename
      * @param string $newVarname The root property's varname after the rename
      *
@@ -590,13 +638,7 @@ class CustomVariableValueCleaner
             return max(1, $this->countStoredValues($oldVarname));
         }
 
-        $this->forEachObjectVarTable(fn($table) => $this->db->update(
-            $table,
-            ['varname' => $newVarname],
-            Filter::where('varname', $oldVarname)
-        ));
-
-        return 0;
+        return $this->renameRootVarnamePerHolder($oldVarname, $newVarname);
     }
 
     /**
@@ -674,19 +716,19 @@ class CustomVariableValueCleaner
             return max(1, $this->countStoredValues($migration->oldVarname));
         }
 
-        // Rename the row itself first, a raw column update keeps its property_uuid,
-        // format and checksum intact. What's left below only ever updates a value
-        // in place under its final varname, never deletes and recreates a row.
+        $rebuilder = new PropertyValueRebuilder();
+
+        // Rename the row itself first, this keeps its property_uuid, format and checksum
+        // intact. What's left below only ever updates a value in place under its final
+        // varname, never deletes and recreates a row.
         if ($migration->oldVarname !== $migration->newVarname) {
-            $db = $this->db->getDbAdapter();
-            $this->forEachObjectVarTable(fn($table) => $db->update(
-                $table,
-                ['varname' => $migration->newVarname],
-                $db->quoteInto('varname = ?', $migration->oldVarname)
-            ));
+            $rootCollisions = $this->renameRootVarnamePerHolder($migration->oldVarname, $migration->newVarname);
+
+            if ($rootCollisions > 0) {
+                $rebuilder->noteRootConflict($rootCollisions);
+            }
         }
 
-        $rebuilder = new PropertyValueRebuilder();
         $this->forEachMatchingVarRow(
             $migration->newVarname,
             fn($decoded) => $rebuilder->rebuildRootValue($decoded, $migration)

@@ -957,7 +957,7 @@ class CustomVariableForm extends CompatForm
                 return false;
             }
 
-            $cleaner->renameStoredValues($root['key_name'], $newRootName);
+            $this->renameCollisionCount = $cleaner->renameStoredValues($root['key_name'], $newRootName);
 
             return true;
         }
