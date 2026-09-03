@@ -316,6 +316,8 @@ class SyncPropertyForm extends DirectorObjectForm
             }
             if ($dummy->supportsGroups()) {
                 $special['groups']  = $this->translate('Group membership');
+                $special['groupsadd']  = $this->translate('Group membership (Add)');
+                $special['groupsremove']  = $this->translate('Group membership (Remove)');
             }
             if ($dummy->supportsRanges()) {
                 $special['ranges']  = $this->translate('Time ranges');

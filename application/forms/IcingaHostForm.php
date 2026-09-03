@@ -235,6 +235,25 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
+        $this->addElement('extensibleSet', 'groupsadd', array(
+            'label'        => $this->translate('Groups (add)'),
+            'suggest'      => 'hostgroupnames',
+            'description'  => $this->translate(
+                'Hostgroups that should be added to the ones inherited from imported templates,'
+                . ' rendered as "groups += [ ... ]". Use this when you want to extend the group'
+                . ' assignment of your templates instead of replacing it.'
+            )
+        ));
+
+        $this->addElement('extensibleSet', 'groupsremove', array(
+            'label'        => $this->translate('Groups (remove)'),
+            'suggest'      => 'hostgroupnames',
+            'description'  => $this->translate(
+                'Hostgroups that should be removed from the ones inherited from imported'
+                . ' templates, rendered as "groups -= [ ... ]".'
+            )
+        ));
+
         $applied = $this->getAppliedGroups();
         if ($this->hasHostGroupRestriction()) {
             $applied = (new HostgroupRestriction($this->getDb(), $this->getAuth()))

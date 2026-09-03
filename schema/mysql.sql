@@ -979,6 +979,7 @@ CREATE TABLE icinga_servicegroup_inheritance (
 CREATE TABLE icinga_servicegroup_service (
   servicegroup_id INT(10) UNSIGNED NOT NULL,
   service_id INT(10) UNSIGNED NOT NULL,
+  operator ENUM('=', '+=', '-=') NOT NULL DEFAULT '=',
   PRIMARY KEY (servicegroup_id, service_id),
   CONSTRAINT icinga_servicegroup_service_service
     FOREIGN KEY service (service_id)
@@ -1011,6 +1012,7 @@ CREATE TABLE icinga_servicegroup_service_resolved (
 CREATE TABLE icinga_hostgroup_host (
   hostgroup_id INT(10) UNSIGNED NOT NULL,
   host_id INT(10) UNSIGNED NOT NULL,
+  operator ENUM('=', '+=', '-=') NOT NULL DEFAULT '=',
   PRIMARY KEY (hostgroup_id, host_id),
   CONSTRAINT icinga_hostgroup_host_host
     FOREIGN KEY host (host_id)
@@ -1219,6 +1221,7 @@ CREATE TABLE icinga_usergroup_inheritance (
 CREATE TABLE icinga_usergroup_user (
   usergroup_id INT(10) UNSIGNED NOT NULL,
   user_id INT(10) UNSIGNED NOT NULL,
+  operator ENUM('=', '+=', '-=') NOT NULL DEFAULT '=',
   PRIMARY KEY (usergroup_id, user_id),
   CONSTRAINT icinga_usergroup_user_user
     FOREIGN KEY icinga_user (user_id)
@@ -2010,6 +2013,8 @@ CREATE TABLE branched_icinga_host (
 
   imports TEXT DEFAULT NULL,
   `groups` TEXT DEFAULT NULL,
+  groupsadd TEXT DEFAULT NULL,
+  groupsremove TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -2117,6 +2122,8 @@ CREATE TABLE branched_icinga_user (
 
   imports TEXT DEFAULT NULL,
   `groups` TEXT DEFAULT NULL,
+  groupsadd TEXT DEFAULT NULL,
+  groupsremove TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -2304,6 +2311,8 @@ CREATE TABLE branched_icinga_service (
 
   imports TEXT DEFAULT NULL,
   `groups` TEXT DEFAULT NULL,
+  groupsadd TEXT DEFAULT NULL,
+  groupsremove TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -2466,4 +2475,4 @@ CREATE TABLE icinga_usergroup_user_resolved
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (192, NOW());
+  VALUES (193, NOW());

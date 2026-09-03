@@ -16,6 +16,9 @@ class GroupMembershipCache
 
     protected $memberships;
 
+    /** @var array object id => (group name => operator) */
+    protected $operators;
+
     /** @var Db Director database connection */
     protected $connection;
 
@@ -37,6 +40,7 @@ class GroupMembershipCache
     {
         $db = $this->connection->getDbAdapter();
         $this->memberships = array();
+        $this->operators = array();
 
         $type  = $this->type;
         $table = $this->table;
@@ -47,6 +51,7 @@ class GroupMembershipCache
                 'object_id'   => 'o.id',
                 'group_id'    => 'g.id',
                 'group_name'  => 'g.object_name',
+                'operator'    => 'go.operator',
             )
         )->join(
             array('go' => $table . 'group_' . $type),
@@ -61,9 +66,11 @@ class GroupMembershipCache
         foreach ($db->fetchAll($query) as $row) {
             if (! array_key_exists($row->object_id, $this->memberships)) {
                 $this->memberships[$row->object_id] = array();
+                $this->operators[$row->object_id] = array();
             }
 
             $this->memberships[$row->object_id][$row->group_id] = $row->group_name;
+            $this->operators[$row->object_id][$row->group_name] = $row->operator;
         }
     }
 
@@ -80,6 +87,21 @@ class GroupMembershipCache
     {
         if (array_key_exists($object->id, $this->memberships)) {
             return array_keys($this->memberships[$object->id]);
+        }
+
+        return array();
+    }
+
+    /**
+     * Group membership operators for the given object, keyed by group name
+     *
+     * @param IcingaObject $object
+     * @return array
+     */
+    public function getOperatorsForObject(IcingaObject $object)
+    {
+        if (array_key_exists($object->id, $this->operators)) {
+            return $this->operators[$object->id];
         }
 
         return array();

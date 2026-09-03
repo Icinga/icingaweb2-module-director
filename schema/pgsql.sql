@@ -47,6 +47,7 @@ CREATE TYPE enum_sync_state AS ENUM(
 );
 CREATE TYPE enum_host_service AS ENUM('host', 'service');
 CREATE TYPE enum_owner_type AS ENUM('user', 'usergroup', 'role');
+CREATE TYPE enum_group_membership_operator AS ENUM('=', '+=', '-=');
 CREATE DOMAIN d_smallint AS integer CHECK (VALUE >= 0) CHECK (VALUE < 65536);
 
 CREATE OR REPLACE FUNCTION unix_timestamp(timestamp with time zone) RETURNS bigint AS '
@@ -1204,6 +1205,7 @@ CREATE INDEX servicegroup_inheritance_servicegroup_parent ON icinga_servicegroup
 CREATE TABLE icinga_servicegroup_service (
   servicegroup_id integer NOT NULL,
   service_id integer NOT NULL,
+  operator enum_group_membership_operator NOT NULL DEFAULT '=',
   PRIMARY KEY (servicegroup_id, service_id),
   CONSTRAINT icinga_servicegroup_service_service
   FOREIGN KEY (service_id)
@@ -1224,6 +1226,7 @@ CREATE INDEX servicegroup_service_servicegroup ON icinga_servicegroup_service (s
 CREATE TABLE icinga_hostgroup_host (
   hostgroup_id integer NOT NULL,
   host_id integer NOT NULL,
+  operator enum_group_membership_operator NOT NULL DEFAULT '=',
   PRIMARY KEY (hostgroup_id, host_id),
   CONSTRAINT icinga_hostgroup_host_host
   FOREIGN KEY (host_id)
@@ -1454,6 +1457,7 @@ CREATE INDEX usergroup_inheritance_usergroup_parent ON icinga_usergroup_inherita
 CREATE TABLE icinga_usergroup_user (
   usergroup_id integer NOT NULL,
   user_id integer NOT NULL,
+  operator enum_group_membership_operator NOT NULL DEFAULT '=',
   PRIMARY KEY (usergroup_id, user_id),
   CONSTRAINT icinga_usergroup_user_user
   FOREIGN KEY (user_id)
@@ -2317,6 +2321,8 @@ CREATE TABLE branched_icinga_host (
 
   imports TEXT DEFAULT NULL,
   groups TEXT DEFAULT NULL,
+  groupsadd TEXT DEFAULT NULL,
+  groupsremove TEXT DEFAULT NULL,
   vars TEXT DEFAULT NULL,
 
   set_null TEXT DEFAULT NULL,
@@ -2426,6 +2432,8 @@ CREATE TABLE branched_icinga_user (
 
   imports TEXT DEFAULT NULL,
   groups TEXT DEFAULT NULL,
+  groupsadd TEXT DEFAULT NULL,
+  groupsremove TEXT DEFAULT NULL,
   vars TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -2626,6 +2634,8 @@ CREATE TABLE branched_icinga_service (
 
   imports TEXT DEFAULT NULL,
   groups TEXT DEFAULT NULL,
+  groupsadd TEXT DEFAULT NULL,
+  groupsremove TEXT DEFAULT NULL,
   vars TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -2803,4 +2813,4 @@ CREATE INDEX usergroup_user_resolved_usergroup ON icinga_usergroup_user_resolved
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (192, NOW());
+  VALUES (193, NOW());

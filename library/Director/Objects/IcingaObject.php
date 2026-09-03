@@ -1132,50 +1132,133 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
+     * Groups assigned with the '=' operator
+     *
      * This is mostly for magic getters
      * @return array
      */
     public function getGroups()
     {
-        return $this->groups()->listGroupNames();
+        return $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ASSIGN);
     }
 
     /**
+     * Groups added with the '+=' operator
+     *
+     * This is mostly for magic getters
+     * @return array
+     */
+    public function getGroupsadd()
+    {
+        return $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ADD);
+    }
+
+    /**
+     * Groups removed with the '-=' operator
+     *
+     * This is mostly for magic getters
+     * @return array
+     */
+    public function getGroupsremove()
+    {
+        return $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_REMOVE);
+    }
+
+    /**
+     * Groups this object ends up with on its own: '=' and '+=' minus '-='
+     *
+     * @return array
+     */
+    public function listEffectiveGroupNames()
+    {
+        return $this->groups()->listEffectiveGroupNames();
+    }
+
+    /**
+     * Apply this object's own group operators on top of the given group list
+     *
+     * This mirrors how Icinga evaluates the rendered configuration, where the
+     * last line wins: "groups = [ ... ]" resets whatever has been accumulated
+     * so far, "+=" adds to it and "-=" strips from it.
+     *
+     * @param array $groups
+     * @return array
+     * @throws NotFoundError
+     */
+    public function applyGroupOperatorsTo(array $groups)
+    {
+        $assigned = $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ASSIGN);
+        if (! empty($assigned)) {
+            $groups = $assigned;
+        }
+
+        $groups = array_merge(
+            $groups,
+            $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_ADD)
+        );
+
+        return array_values(array_diff(
+            array_unique($groups),
+            $this->groups()->listGroupNamesForOperator(IcingaObjectGroups::OP_REMOVE)
+        ));
+    }
+
+    /**
+     * The groups inherited from all imported templates
+     *
+     * Ancestors are returned in Icinga's own evaluation order (grandparents
+     * before parents, imports in declaration order), so folding them one after
+     * another gives exactly what Icinga computes for the imports. Accumulating
+     * matters: a template removing a group must be able to strip a group that
+     * an earlier template added.
+     *
      * @return array
      * @throws NotFoundError
      */
     public function listInheritedGroupNames()
     {
-        $parents = $this->imports()->getObjects();
-        /** @var IcingaObject $parent */
-        foreach (array_reverse($parents) as $parent) {
-            $inherited = $parent->getGroups();
-            if (! empty($inherited)) {
-                return $inherited;
-            }
+        if (! $this->supportsImports()) {
+            return [];
         }
 
-        return [];
+        $groups = [];
+        /** @var IcingaObject $parent */
+        foreach ($this->templates()->getTemplatesFor($this, true) as $parent) {
+            $groups = $parent->applyGroupOperatorsTo($groups);
+        }
+
+        return $groups;
     }
 
     public function setGroups($groups)
     {
-        $this->groups()->set($groups);
+        $this->groups()->set($groups, IcingaObjectGroups::OP_ASSIGN);
+        return $this;
+    }
+
+    public function setGroupsadd($groups)
+    {
+        $this->groups()->set($groups, IcingaObjectGroups::OP_ADD);
+        return $this;
+    }
+
+    public function setGroupsremove($groups)
+    {
+        $this->groups()->set($groups, IcingaObjectGroups::OP_REMOVE);
         return $this;
     }
 
     /**
+     * The groups this object really ends up with, inheritance included
+     *
+     * This is what Icinga will compute for the rendered object.
+     *
      * @return array
      * @throws NotFoundError
      */
     public function listResolvedGroupNames()
     {
-        $groups = $this->groups()->listGroupNames();
-        if (empty($groups)) {
-            return $this->listInheritedGroupNames();
-        }
-
-        return $groups;
+        return $this->applyGroupOperatorsTo($this->listInheritedGroupNames());
     }
 
     /**
@@ -2808,7 +2891,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($object->supportsGroups()) {
             $groups = $object->getGroups();
+            $groupsAdd = $object->getGroupsadd();
+            $groupsRemove = $object->getGroupsremove();
             $object->set('groups', []);
+            $object->set('groupsadd', []);
+            $object->set('groupsremove', []);
         }
 
         if ($object->supportsImports()) {
@@ -2817,7 +2904,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         $plain = (array) $object->toPlainObject(false, false);
-        unset($plain['vars'], $plain['groups'], $plain['imports']);
+        unset(
+            $plain['vars'],
+            $plain['groups'],
+            $plain['groupsadd'],
+            $plain['groupsremove'],
+            $plain['imports']
+        );
         foreach ($plain as $p => $v) {
             if ($v === null) {
                 // We want default values, but no null values
@@ -2842,6 +2935,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($object->supportsGroups()) {
             if (! empty($groups)) {
                 $this->set('groups', $groups);
+            }
+            if (! empty($groupsAdd)) {
+                $this->set('groupsadd', $groupsAdd);
+            }
+            if (! empty($groupsRemove)) {
+                $this->set('groupsremove', $groupsRemove);
             }
         }
 
@@ -2928,13 +3027,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->supportsGroups()) {
-            // TODO: resolve
-            $groups = $this->groups()->listGroupNames();
-            if ($resolved && empty($groups)) {
-                $groups = $this->listInheritedGroupNames();
+            if ($resolved) {
+                // Flattened: the groups this object really ends up with. This
+                // is what apply rules match against, so it must stay a plain
+                // list of names without any operator information
+                $props['groups'] = $this->listResolvedGroupNames();
+            } else {
+                // Round-trippable: one list per operator
+                $props['groups'] = $this->getGroups();
+                $props['groupsadd'] = $this->getGroupsadd();
+                $props['groupsremove'] = $this->getGroupsremove();
             }
-
-            $props['groups'] = $groups;
         }
 
         foreach ($this->loadAllMultiRelations() as $key => $rel) {
@@ -2983,8 +3086,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     unset($props['vars']);
                 }
             }
-            if (empty($props['groups'])) {
-                unset($props['groups']);
+            foreach (['groups', 'groupsadd', 'groupsremove'] as $key) {
+                if (array_key_exists($key, $props) && empty($props[$key])) {
+                    unset($props[$key]);
+                }
             }
         }
 
@@ -3192,9 +3297,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
         if ($this->supportsGroups()) {
-            $groups = $this->groups()->listOriginalGroupNames();
-            if (! empty($groups)) {
-                $props['groups'] = $groups;
+            $originalGroups = [
+                'groups'       => IcingaObjectGroups::OP_ASSIGN,
+                'groupsadd'    => IcingaObjectGroups::OP_ADD,
+                'groupsremove' => IcingaObjectGroups::OP_REMOVE,
+            ];
+            foreach ($originalGroups as $key => $operator) {
+                $groups = $this->groups()->listOriginalGroupNamesForOperator($operator);
+                if (! empty($groups)) {
+                    $props[$key] = $groups;
+                }
             }
         }
         if ($this->supportsImports()) {
