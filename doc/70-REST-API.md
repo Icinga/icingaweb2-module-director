@@ -418,6 +418,12 @@ before:
 { "environment": "production" }
 ```
 
+Unlike a plain object `PUT`, this always answers `200 OK`, even when
+the submitted variables are identical to what was already stored. The
+activity log, however, only gets a new entry when a value actually
+changed, so a `200` response here does not guarantee a corresponding
+log entry.
+
 <a id="Custom-Variables-attach-template"></a>#### Attaching a variable to a template for the first time
 -------------------------------------------------------------------------------------------------------
 
