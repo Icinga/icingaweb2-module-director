@@ -75,12 +75,8 @@ class CustomvarController extends CompatController
 
         if ($parentUuid) {
             $parent = $this->fetchProperty($parentUuid);
-
-            if ($parent['parent_uuid'] !== null) {
-                $usedCount = $this->fetchPropertyUsedCount(Uuid::fromBytes($parent['parent_uuid']));
-            } else {
-                $usedCount = $this->fetchPropertyUsedCount($parentUuid);
-            }
+            $rootUuid = Uuid::fromBytes($this->resolveRoot($property, $parent)['uuid']);
+            $usedCount = $this->fetchPropertyUsedCount($rootUuid);
         } else {
             $usedCount = $this->fetchPropertyUsedCount($uuid);
         }
@@ -252,13 +248,8 @@ class CustomvarController extends CompatController
             $parentUuid = Uuid::fromBytes($property['parent_uuid']);
             $this->parentUuid = $parentUuid;
             $parentProperty = $this->fetchProperty($parentUuid);
-            if (isset($parentProperty['parent_uuid'])) {
-                $rootUuid = Uuid::fromBytes($parentProperty['parent_uuid']);
-            } else {
-                $rootUuid = $parentUuid;
-            }
 
-            $uuid = $rootUuid;
+            $uuid = Uuid::fromBytes($this->resolveRoot($property, $parentProperty)['uuid']);
         }
 
         $objectClasses = ['host', 'service', 'notification', 'command', 'user'];
@@ -411,6 +402,21 @@ class CustomvarController extends CompatController
     private function fetchPropertyUsedCount(UuidInterface $uuid): int
     {
         return (new CustomVariableValueCleaner($this->db))->countAttachments($uuid);
+    }
+
+    /**
+     * Walk up from a property to its true root, however deep it's nested
+     *
+     * Usage counts and stored values are always keyed by the root, never an intermediate level.
+     *
+     * @param array $property The property to resolve
+     * @param array $parent   Its immediate parent row
+     *
+     * @return array
+     */
+    private function resolveRoot(array $property, array $parent): array
+    {
+        return (new CustomVariableValueCleaner($this->db))->resolveRootProperty($property, $parent)[0];
     }
 
     /**
