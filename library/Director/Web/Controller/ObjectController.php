@@ -185,9 +185,6 @@ abstract class ObjectController extends ActionController
     /**
      * Add a part to be served as multipart-content
      *
-     * If an id is passed the element is used as-is as the part's content.
-     * Otherwise (no id given) the element's content is used instead.
-     *
      * @param ValidHtml $content
      * @param string    $id
      *
