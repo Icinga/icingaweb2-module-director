@@ -689,7 +689,7 @@ class CustomVarRenderer extends CustomVarRendererHook
      * @param ?string $parentKey
      * @param ?string $grandparentKey
      *
-     * @return ?ValidHtml
+     * @return mixed
      */
     public function renderCustomVarValue(
         string $key,
