@@ -94,11 +94,20 @@ class ObjectTabs extends Tabs
             ));
         }
 
+        // attach is admin gated, view/edit is not
+        if ($this->hasCustomProperties()) {
+            $this->add('variables', array(
+                'url'       => sprintf('director/%s/variables', $type),
+                'urlParams' => $params,
+                'label'     => $this->translate('Custom Variables')
+            ));
+        }
+
         if ($auth->hasPermission(Permission::ADMIN) && $this->hasFields()) {
             $this->add('fields', array(
                 'url'       => sprintf('director/%s/fields', $type),
                 'urlParams' => $params,
-                'label'     => $this->translate('Fields')
+                'label'     => $this->translate('Fields (Deprecated)')
             ));
         }
 
@@ -156,5 +165,15 @@ class ObjectTabs extends Tabs
         return $object->hasBeenLoadedFromDb()
             && $object->supportsFields()
             && ($object->isTemplate() || $this->type === 'command');
+    }
+
+    protected function hasCustomProperties()
+    {
+        if (! ($object = $this->object)) {
+            return false;
+        }
+
+        return $object->hasBeenLoadedFromDb()
+            && $object->supportsCustomProperties();
     }
 }

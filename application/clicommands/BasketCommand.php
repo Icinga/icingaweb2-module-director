@@ -95,11 +95,20 @@ class BasketCommand extends Command
             ObjectPurgeHelper::assertObjectTypesAreEligibleForPurge($purge);
         }
         $json = file_get_contents('php://stdin');
-        BasketSnapshot::restoreJson($json, $this->db());
+        $keptValuesCount = BasketSnapshot::restoreJson($json, $this->db());
         if ($purge) {
             $this->purgeObjectTypes(Json::decode($json), $purge, $this->params->get('force'));
         }
         echo "Objects from Basket Snapshot have been restored\n";
+        if ($keptValuesCount > 0) {
+            // Adds up every kept or dropped value into one number.
+            printf(
+                "%d stored value(s) were kept under their old name or dropped in this"
+                . " basket, either a Data Field still owns the name, or a renamed"
+                . " value's new key was already taken.\n",
+                $keptValuesCount
+            );
+        }
     }
 
     protected function purgeObjectTypes($objects, array $types, $force = false)

@@ -9,6 +9,8 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\Web\Table\NameValueTable;
 use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
+use Icinga\Module\Director\CustomVariable\PropertyValueChange;
+use Icinga\Module\Director\CustomVariable\PropertyValueMigration;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\DirectorObject\Automation\BasketDiff;
@@ -19,8 +21,13 @@ use Icinga\Module\Director\Forms\BasketForm;
 use Icinga\Module\Director\Forms\BasketUploadForm;
 use Icinga\Module\Director\Forms\RestoreBasketForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use Icinga\Module\Director\Web\Table\BasketSnapshotTable;
+use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlString;
+use ipl\Web\Common\CalloutType;
+use ipl\Web\Widget\Callout;
 use Ramsey\Uuid\Uuid;
 
 class BasketController extends ActionController
@@ -283,7 +290,11 @@ class BasketController extends ActionController
                 'class' => ['table-basket-changes', 'table-row-selectable'],
                 'data-base-target' => '_next',
             ]);
+            $blockedMigrations = [];
             foreach ($objects as $key => $object) {
+                // A custom variable's row is keyed by its uuid, not a name.
+                // Show its real name instead so the list reads like the others.
+                $rowLabel = $type === 'CustomVariable' ? ($object->key_name ?? $key) : $key;
                 $linkParams = [
                     'name'     => $basket->get('basket_name'),
                     'checksum' => $this->params->get('checksum'),
@@ -321,10 +332,26 @@ class BasketController extends ActionController
                             ['class' => 'basket-new']
                         );
                     }
-                    $table->addNameValueRow($key, $link);
+
+                    $value = [$link];
+                    if ($type === 'CustomVariable') {
+                        $migration = $diff->getCustomPropertyMigrationPreview($key);
+                        if ($migration->blocked) {
+                            // Collected together and shown once below the header instead of
+                            // repeating the same warning on every blocked row.
+                            $blockedMigrations[$rowLabel] = $migration;
+                        } else {
+                            $migrationHint = $this->describeCustomPropertyMigrationChanges($migration, $diff);
+                            if ($migrationHint !== null) {
+                                $value[] = $migrationHint;
+                            }
+                        }
+                    }
+
+                    $table->addNameValueRow($rowLabel, $value);
                 } catch (Exception $e) {
                     $table->addNameValueRow(
-                        $key,
+                        $rowLabel,
                         Html::tag('a', sprintf(
                             '%s (%s:%d)',
                             $e->getMessage(),
@@ -335,7 +362,192 @@ class BasketController extends ActionController
                 }
             }
             $this->content()->add(Html::tag('h2', $type));
+            if (! empty($blockedMigrations)) {
+                $this->content()->add($this->renderBlockedCustomPropertiesWarning($blockedMigrations, $diff));
+            }
             $this->content()->add($table);
+        }
+    }
+
+    /**
+     * Shows every custom variable a restore can't rename or retype because a
+     * Data Field already owns that name
+     *
+     * @param PropertyValueMigration[] $blockedMigrations Keyed by the property's own name
+     * @param BasketDiff $diff
+     *
+     * @return BaseHtmlElement
+     */
+    private function renderBlockedCustomPropertiesWarning(array $blockedMigrations, BasketDiff $diff): BaseHtmlElement
+    {
+        $items = [];
+        $total = 0;
+        foreach ($blockedMigrations as $rowLabel => $migration) {
+            $affected = $diff->countStoredCustomVariableValues($migration->oldVarname);
+            $total += $affected;
+
+            $items[] = Html::tag('li', sprintf(
+                $this->translate('%s: %s, %d stored value(s) stay as they are'),
+                $rowLabel,
+                $this->describeBlockedCustomPropertyReason($migration),
+                $affected
+            ));
+        }
+
+        // The restore notification adds every blocked property's count together into
+        // one number, spell that total out here too so both numbers can be checked
+        // against each other, a single property's own count on its own line above
+        // won't match it once more than one property is blocked.
+        return new Callout(
+            CalloutType::Warning,
+            (new HtmlDocument())->addHtml(
+                Html::tag(
+                    'p',
+                    sprintf(
+                        $this->translate(
+                            'These custom variables are blocked by a legacy Data Field, their stored '
+                            . 'values stay under the current name and type, %d in total:'
+                        ),
+                        $total
+                    )
+                ),
+                Html::tag('ul', ['class' => 'basket-blocked-properties'], $items)
+            )
+        );
+    }
+
+    /**
+     * A Data Field can own either the old or the new name. Say what the rename
+     * would have been instead of guessing which one it collided with
+     *
+     * @param PropertyValueMigration $migration
+     *
+     * @return string
+     */
+    private function describeBlockedCustomPropertyReason(PropertyValueMigration $migration): string
+    {
+        if ($migration->oldVarname !== $migration->newVarname) {
+            return sprintf(
+                $this->translate('renaming "%s" to "%s" collides with an existing Data Field'),
+                $migration->oldVarname,
+                $migration->newVarname
+            );
+        }
+
+        return sprintf(
+            $this->translate('a Data Field named "%s" already exists'),
+            $migration->oldVarname
+        );
+    }
+
+    /**
+     * Describe what restoring one custom variable would do to its stored values
+     *
+     * Comes back null if nothing would actually change
+     *
+     * @param BasketDiff $diff
+     * @param string $uuid
+     *
+     * @return ?BaseHtmlElement
+     */
+    private function describeCustomPropertyMigration(BasketDiff $diff, string $uuid)
+    {
+        $migration = $diff->getCustomPropertyMigrationPreview($uuid);
+        if ($migration->isNoop()) {
+            return null;
+        }
+
+        if ($migration->blocked) {
+            $affected = $diff->countStoredCustomVariableValues($migration->oldVarname);
+
+            return Hint::warning(sprintf(
+                $this->translate('Blocked, %s, %d stored value(s) stay as they are'),
+                $this->describeBlockedCustomPropertyReason($migration),
+                $affected
+            ));
+        }
+
+        return $this->describeCustomPropertyMigrationChanges($migration, $diff);
+    }
+
+    /**
+     * Same idea, but for a plan the caller already has on hand, and only ever
+     * used once it's known not to be blocked
+     *
+     * @param PropertyValueMigration $migration
+     * @param BasketDiff $diff
+     *
+     * @return ?BaseHtmlElement
+     */
+    private function describeCustomPropertyMigrationChanges(PropertyValueMigration $migration, BasketDiff $diff)
+    {
+        $lines = [];
+        if ($migration->wholeValueCleared) {
+            $lines[] = sprintf(
+                $this->translate('Type is changing, every stored value under "%s" will be cleared'),
+                $migration->oldVarname
+            );
+        } elseif ($migration->oldVarname !== $migration->newVarname) {
+            $lines[] = sprintf('%s -> %s', $migration->oldVarname, $migration->newVarname);
+        }
+
+        $this->collectCustomPropertyChangeLines($migration->children, $lines);
+
+        if (empty($lines)) {
+            return null;
+        }
+
+        $affected = $diff->countStoredCustomVariableValues($migration->oldVarname);
+        $items = [];
+        foreach ($lines as $line) {
+            $items[] = Html::tag('li', $line);
+        }
+
+        return new Callout(
+            CalloutType::Warning,
+            (new HtmlDocument())->addHtml(
+                Html::tag('ul', ['class' => 'basket-property-migration'], $items),
+                Html::tag('p', sprintf(
+                    $this->translate('%d host/service/etc already have a value stored under "%s"'),
+                    $affected,
+                    $migration->oldVarname
+                ))
+            )
+        );
+    }
+
+    /**
+     * Turns a plan's nested changes into plain language lines
+     *
+     * @param PropertyValueChange[] $changes
+     * @param string[] $lines Added to as we go
+     * @param string $prefix Path of the parent key, empty at the top level
+     *
+     * @return void
+     */
+    private function collectCustomPropertyChangeLines(array $changes, array &$lines, string $prefix = ''): void
+    {
+        foreach ($changes as $change) {
+            $path = $prefix === '' ? $change->oldKey : $prefix . '.' . $change->oldKey;
+
+            if ($change->newKey === null) {
+                $lines[] = sprintf($this->translate('"%s" is being removed'), $path);
+            } elseif ($change->valueCleared) {
+                $lines[] = sprintf(
+                    $this->translate('"%s" type is changing, its stored value will be cleared'),
+                    $path
+                );
+            } elseif ($change->oldKey !== $change->newKey) {
+                $lines[] = sprintf('"%s" -> "%s"', $path, $change->newKey);
+            }
+
+            if (! $change->valueCleared && ! empty($change->children)) {
+                $this->collectCustomPropertyChangeLines(
+                    $change->children,
+                    $lines,
+                    $change->newKey ?? $change->oldKey
+                );
+            }
         }
     }
 
@@ -355,17 +567,6 @@ class BasketController extends ActionController
         $key = $this->params->get('key');
 
         $this->addTitle($this->translate('Single Object Diff'));
-        $this->content()->add(Hint::info(Html::sprintf(
-            $this->translate('Comparing %s "%s" from Snapshot "%s" to current config'),
-            $type,
-            $key,
-            Link::create(
-                substr(bin2hex($snapshot->get('content_checksum')), 0, 7),
-                $snapshotUrl,
-                null,
-                ['data-base-target' => '_next']
-            )
-        )));
         $this->actions()->add([
             Link::create(
                 $this->translate('back'),
@@ -395,6 +596,28 @@ class BasketController extends ActionController
         if ($uuid = $object->uuid ?? null) {
             $uuid = Uuid::fromString($uuid);
         }
+
+        // A custom variable's row is keyed by its uuid, not a name, show its real name instead.
+        $displayKey = $type === 'CustomVariable' ? ($object->key_name ?? $key) : $key;
+        $this->content()->add(Hint::info(Html::sprintf(
+            $this->translate('Comparing %s "%s" from Snapshot "%s" to current config'),
+            $type,
+            $displayKey,
+            Link::create(
+                substr(bin2hex($snapshot->get('content_checksum')), 0, 7),
+                $snapshotUrl,
+                null,
+                ['data-base-target' => '_next']
+            )
+        )));
+
+        if ($type === 'CustomVariable') {
+            $migrationHint = $this->describeCustomPropertyMigration($diff, $key);
+            if ($migrationHint !== null) {
+                $this->content()->add($migrationHint);
+            }
+        }
+
         $basketJson = $diff->getBasketString($type, $key);
         $currentJson = $diff->getCurrentString($type, $key, $uuid);
         if ($currentJson === $basketJson) {

@@ -56,6 +56,12 @@ class ObjectImporter
         $properties = (array) $plain;
         unset($properties['fields']);
         unset($properties['originalId']);
+        unset($properties['customVariables']);
+        // A DirectorProperty's items/datalist aren't plain DB columns, setProperties() would
+        // reject them. BasketDiff restores the snapshot's own items/datalist afterwards.
+        unset($properties['items']);
+        unset($properties['datalist']);
+
         if ($implementation === Basket::class) {
             if (isset($properties['objects']) && is_string($properties['objects'])) {
                 $properties['objects'] = JsonString::decode($properties['objects']);
@@ -91,6 +97,7 @@ class ObjectImporter
         if ($implementation === IcingaServiceSet::class) {
             foreach ($plain->services as $service) {
                 unset($service->fields);
+                unset($service->customVariables);
             }
             // Hint: legacy baskets are carrying service names as object keys, new baskets have arrays
             $plain->services = array_values((array) $plain->services);

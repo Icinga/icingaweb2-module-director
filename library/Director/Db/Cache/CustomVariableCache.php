@@ -21,13 +21,14 @@ class CustomVariableCache
         $connection = $object->getConnection();
         $db = $connection->getDbAdapter();
 
-        $columns = array(
-            'id'       => sprintf('v.%s', $object->getVarsIdColumn()),
-            'varname'  => 'v.varname',
-            'varvalue' => 'v.varvalue',
-            'format'   => 'v.format',
-            'checksum' => '(NULL)',
-        );
+        $columns = [
+            'id'            => sprintf('v.%s', $object->getVarsIdColumn()),
+            'varname'       => 'v.varname',
+            'varvalue'      => 'v.varvalue',
+            'format'        => 'v.format',
+            'property_uuid' => 'v.property_uuid',
+            'checksum'      => '(NULL)',
+        ];
 
         if ($connection->isPgsql()) {
             if ($connection->hasPgExtension('pgcrypto')) {

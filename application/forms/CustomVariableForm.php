@@ -1,0 +1,978 @@
+<?php
+
+namespace Icinga\Module\Director\Forms;
+
+use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterException;
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\Data\Db\DbConnection;
+use Icinga\Module\Director\Db;
+use Icinga\Web\Notification;
+use Icinga\Web\Session;
+use ipl\Html\Text;
+use ipl\I18n\Translation;
+use ipl\Web\Common\CalloutType;
+use ipl\Web\Common\CsrfCounterMeasure;
+use ipl\Web\Compat\CompatForm;
+use ipl\Web\Url;
+use ipl\Validator\CallbackValidator;
+use ipl\Web\Widget\ButtonLink;
+use ipl\Web\Widget\Callout;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
+use Throwable;
+use Zend_Db;
+use Zend_Db_Select_Exception;
+
+class CustomVariableForm extends CompatForm
+{
+    use CsrfCounterMeasure;
+    use Translation;
+
+    /** @var bool Whether to hide the key name element or not (checked for the fixed array) */
+    private $hideKeyNameElement = false;
+
+    /** @var ?string The key name as stored in the database, used to detect pending renames */
+    private ?string $storedKeyName = null;
+
+    /** @var int Count of values that stayed under their old name because the new name was taken */
+    private int $renameCollisionCount = 0;
+
+    /** @var ?string Name of the Data Field that blocked the last rename attempt, null if none did */
+    private ?string $renameBlockedByDatafield = null;
+
+    public function __construct(
+        protected DbConnection $db,
+        protected ?UuidInterface $uuid = null,
+        protected bool $field = false,
+        protected ?UuidInterface $parentUuid = null
+    ) {
+        $this->getAttributes()->add(['class' => ['custom-variable-form']]);
+    }
+
+    /**
+     * Get the UUID of the property
+     *
+     * @return ?UuidInterface
+     */
+    public function getUUid(): ?UuidInterface
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * Get UUID of the parent property
+     *
+     * @return ?UuidInterface
+     */
+    public function getParentUUid(): ?UuidInterface
+    {
+        return $this->parentUuid;
+    }
+
+    /**
+     * Set whether to hide the key name element or not (checked for the fixed array)
+     *
+     * @param bool $hideKeyNameElement
+     *
+     * @return $this
+     */
+    public function setHideKeyNameElement(bool $hideKeyNameElement): self
+    {
+        $this->hideKeyNameElement = $hideKeyNameElement;
+
+        return $this;
+    }
+
+    /**
+     * Set the key name this property currently has in the database
+     *
+     * @param string $keyName
+     *
+     * @return $this
+     */
+    public function setStoredKeyName(string $keyName): self
+    {
+        $this->storedKeyName = $keyName;
+
+        return $this;
+    }
+
+    /**
+     * Get the key name this property currently has in the database
+     *
+     * @return string
+     */
+    public function getStoredKeyName(): string
+    {
+        return $this->storedKeyName;
+    }
+
+    /**
+     * Get the key name that actually ended up stored after this submit
+     *
+     * Usually just the submitted key name, but a rename blocked by a Data Field
+     * keeps the old one instead, so a caller reporting success after submit
+     * should use this instead of the raw submitted value.
+     *
+     * @return string
+     */
+    public function getPersistedKeyName(): string
+    {
+        if ($this->renameBlockedByDatafield !== null) {
+            return $this->storedKeyName;
+        }
+
+        return (string) $this->getValue('key_name');
+    }
+
+    /**
+     * Whether the form needs a rename confirmation before it can be submitted
+     *
+     * True once the key name changed, the property is already used
+     * somewhere, and the user hasn't confirmed the change yet
+     *
+     * @return bool
+     */
+    public function isPendingRenameConfirmation(): bool
+    {
+        return $this->uuid !== null
+            && $this->storedKeyName !== null
+            && (int) $this->getPopulatedValue('used_count', 0) > 0
+            && $this->getPopulatedValue('confirm_rename_change', '') === ''
+            && $this->getPopulatedValue('key_name') !== $this->storedKeyName;
+    }
+
+    public function hasBeenSubmitted(): bool
+    {
+        if ($this->isPendingRenameConfirmation()) {
+            return false;
+        }
+
+        return parent::hasBeenSubmitted();
+    }
+
+    protected function assemble(): void
+    {
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
+        $this->addElement('hidden', 'used_count', ['ignore' => true]);
+        $used = (int) $this->getValue('used_count') > 0;
+        $pendingRename = $this->isPendingRenameConfirmation();
+
+        if ($this->hideKeyNameElement) {
+            $db = $this->db->getDbAdapter();
+            $query = $db->select()
+                ->from('director_property', ['count' => 'COUNT(*)'])
+                ->where('parent_uuid = ?', Db\DbUtil::quoteBinaryCompat($this->parentUuid->getBytes(), $db));
+
+            $this->addElement(
+                'hidden',
+                'key_name',
+                ['value' => $db->fetchOne($query)]
+            );
+        } else {
+            $keyNameValidators = [];
+            if ($this->parentUuid === null && $used && $this->storedKeyName !== null) {
+                $storedKeyName = $this->storedKeyName;
+                $cleaner = new CustomVariableValueCleaner($this->db);
+                $keyNameValidators[] = new CallbackValidator(function (
+                    $value,
+                    $validator
+                ) use (
+                    $cleaner,
+                    $storedKeyName
+                ) {
+                    $newKeyName = (string) $value;
+                    if (
+                        $newKeyName === $storedKeyName
+                        || ! $cleaner->wouldRenameCollideWithLegacyDatafield($storedKeyName, $newKeyName)
+                    ) {
+                        return true;
+                    }
+
+                    $validator->addMessage($this->translate(
+                        'A Data Field with the old or the new name still exists. Rename or'
+                        . ' remove it first.'
+                    ));
+
+                    return false;
+                });
+            } elseif ($this->parentUuid === null) {
+                // Covers a brand new property (uuid === null) and an existing, still
+                // unused one being renamed. Only the new value matters here, neither
+                // path moves any stored values around.
+                $storedKeyName = $this->storedKeyName;
+                $cleaner = new CustomVariableValueCleaner($this->db);
+                $keyNameValidators[] = new CallbackValidator(function (
+                    $value,
+                    $validator
+                ) use (
+                    $cleaner,
+                    $storedKeyName
+                ) {
+                    $newKeyName = (string) $value;
+                    if (
+                        $newKeyName === $storedKeyName
+                        || ! $cleaner->wouldDeleteCollideWithLegacyDatafield($newKeyName)
+                    ) {
+                        return true;
+                    }
+
+                    $validator->addMessage($this->translate(
+                        'A Data Field with the same name already exists. Rename or remove it first.'
+                    ));
+
+                    return false;
+                });
+            }
+
+            $keyNameValidators[] = new CallbackValidator(function ($value, $validator) {
+                $keyName = (string) $value;
+                $db = $this->db->getDbAdapter();
+                $query = $db->select()
+                    ->from('director_property', ['count' => 'COUNT(*)'])
+                    ->where('key_name = ?', $keyName);
+
+                if ($this->parentUuid === null) {
+                    $query->where('parent_uuid IS NULL');
+                } else {
+                    $query->where(
+                        'parent_uuid = ?',
+                        Db\DbUtil::quoteBinaryCompat($this->parentUuid->getBytes(), $db)
+                    );
+                }
+
+                if ($this->uuid !== null) {
+                    $query->where('uuid != ?', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $db));
+                }
+
+                if ((int) $db->fetchOne($query) === 0) {
+                    return true;
+                }
+
+                $validator->addMessage($this->translate(
+                    'A property with this name already exists at this level. Please choose a'
+                    . ' different name.'
+                ));
+
+                return false;
+            });
+
+            $this->addElement(
+                'text',
+                'key_name',
+                [
+                    'label'      => $this->translate('Property Key *'),
+                    'required'   => true,
+                    'validators' => $keyNameValidators
+                ]
+            );
+        }
+
+        $this->addElement(
+            'text',
+            'label',
+            [
+                'label'     => $this->translate('Property Label'),
+                'required'  => $this->hideKeyNameElement
+            ]
+        );
+
+        $this->addElement(
+            'textarea',
+            'description',
+            ['label' => $this->translate('Property Description')]
+        );
+
+        if ($this->parentUuid === null) {
+            $this->addElement(
+                'select',
+                'category_id',
+                [
+                    'label'             => $this->translate('Category'),
+                    'value'             => '',
+                    'options'           => ['' => $this->translate('- please choose -')] + $this->fetchCategories()
+                ]
+            );
+        }
+
+        $types = [
+            'string' => 'String',
+            'number' => 'Number',
+            'bool' => 'Boolean',
+            'sensitive' => 'Sensitive',
+            'dynamic-array' => 'Dynamic Array',
+            'datalist-strict' => 'Data List Strict',
+            'datalist-non-strict' => 'Data List Non Strict',
+        ];
+
+        // Fixed-array, fixed-dictionary and dynamic-dictionary may only be used as a
+        // top-level custom variable; they cannot be nested inside one another.
+        if ($this->parentUuid === null) {
+            $types += [
+                'fixed-array' => 'Fixed Array',
+                'fixed-dictionary' => 'Fixed Dictionary',
+                'dynamic-dictionary' => 'Dynamic Dictionary',
+            ];
+        }
+
+        $valueTypeValidators = [];
+        if (! $used && $this->parentUuid === null && $this->uuid !== null) {
+            $storedValueType = $this->fetchProperty($this->uuid)['value_type'] ?? null;
+            $storedKeyName = $this->storedKeyName;
+            $cleaner = new CustomVariableValueCleaner($this->db);
+            $valueTypeValidators[] = new CallbackValidator(function (
+                $value,
+                $validator
+            ) use (
+                $cleaner,
+                $storedKeyName,
+                $storedValueType
+            ) {
+                if (
+                    $storedKeyName === null
+                    || (string) $value === $storedValueType
+                    || ! $cleaner->wouldDeleteCollideWithLegacyDatafield($storedKeyName)
+                ) {
+                    return true;
+                }
+
+                $validator->addMessage($this->translate(
+                    'A Data Field with the same name still exists. Rename or remove it first.'
+                ));
+
+                return false;
+            });
+        }
+
+        $this->addElement(
+            'select',
+            'value_type',
+            [
+                'label'             => $this->translate('Property Type *'),
+                'class'             => 'autosubmit',
+                'required'          => true,
+                'disabledOptions'   => [''],
+                'value'             => 'string',
+                'options'           => $types,
+                'disabled'          => $used,
+                'title'             => $used ? $this->translate(
+                    'This property is used in one or more templates and hence the value type'
+                    . ' cannot be changed.'
+                ) : '',
+                'validators'        => $valueTypeValidators,
+            ]
+        );
+
+        $type = $this->getValue('value_type');
+        if ($type === 'dynamic-array') {
+            $this->addElement(
+                'select',
+                'item_type',
+                [
+                    'label'             => $this->translate('Item Type'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => 'string',
+                    'options'           => array_slice($types, 0, 2),
+                    'disabled'          => $used,
+                    'title'             => $used ? $this->translate(
+                        'This property is used in one or more templates and hence the item type'
+                        . ' cannot be changed.'
+                    ) : ''
+                ]
+            );
+        } elseif (str_starts_with($type, 'datalist')) {
+            $isStrict = substr_compare($type, 'strict', strlen('datalist-')) === 0;
+            $this->getElement('value_type')->setAttribute('strict', $isStrict);
+            $this->addElement(
+                'select',
+                'list',
+                [
+                    'label'             => $this->translate('List name *'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => '',
+                    'required'          => true,
+                    'options'           => ['' => $this->translate('- please choose -')] + $this->enumDatalist(),
+                    'disabled'          => $used,
+                    'title'             => $used ? $this->translate(
+                        'This property is used in one or more templates and hence the datalist'
+                        . ' cannot be changed.'
+                    ) : ''
+                ]
+            );
+
+            $this->addElement(
+                'select',
+                'item_type',
+                [
+                    'label'             => $this->translate('Item Type'),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => 'string',
+                    'options'           => ['string' => 'String', 'dynamic-array' => 'Array']
+                ]
+            );
+
+            if ($used) {
+                $this->getElement('item_type')->getAttributes()->set([
+                    'title' => $this->translate(
+                        'This property is used in one or more templates'
+                        . ' and hence the item type cannot be changed.'
+                    ),
+                    'disabled' => true,
+                ]);
+            }
+        }
+
+        if ($pendingRename) {
+            $this->addElement('checkbox', 'confirm_rename_change', [
+                'label'    => $this->translate('Confirm rename')
+            ]);
+
+            $this->addHtml(new Callout(
+                CalloutType::Warning,
+                Text::create($this->translate(
+                    'There are objects with this custom variable. Renaming changes the name of the'
+                    . ' custom variable in those objects. This may break the apply rules. Are you'
+                    . ' sure you want to rename the custom variable?'
+                ))
+            ));
+        }
+
+        $this->addElement('submit', 'submit', [
+            'label' => $this->uuid ? $this->translate('Save') : $this->translate('Add')
+        ]);
+
+        if ($this->uuid) {
+            $this->getElement('submit')
+                ->getWrapper()
+                ->prepend(
+                    (new ButtonLink(
+                        $this->translate('Delete'),
+                        Url::fromPath(
+                            'director/customvar/delete',
+                            ['uuid' => $this->uuid->toString()]
+                        ),
+                        null,
+                        ['class' => ['btn-remove']]
+                    ))->openInModal()
+                );
+        }
+    }
+
+    /**
+     * Get the datalist options for the field
+     *
+     * @return array
+     */
+    private function enumDatalist(): array
+    {
+        return $this->db->fetchPairs(
+            $this->db->select()->from('director_datalist', ['id', 'list_name'])->order('list_name')
+        );
+    }
+
+    /**
+     * Fetch the datalist for the given ID
+     *
+     * @param int $id
+     *
+     * @return array
+     */
+    private function fetchDatalist(int $id): array
+    {
+        return (array) $this->db->fetchRow(
+            $this->db->select()->from('director_datalist', ['*'])
+                ->where('id', $id)
+        );
+    }
+
+    /**
+     * Fetch the configured categories for the custom variables
+     *
+     * @return array
+     */
+    private function fetchCategories(): array
+    {
+        return $this->db->fetchPairs(
+            $this->db->select()->from('director_datafield_category', ['id', 'category_name'])
+        );
+    }
+
+    /**
+     * Fetch property for the given UUID
+     *
+     * @param UuidInterface $uuid UUID of the given property
+     *
+     * @return array<string, mixed>
+     */
+    private function fetchProperty(UuidInterface $uuid): array
+    {
+        $db = $this->db->getDbAdapter();
+
+        $query = $db
+            ->select()
+            ->from(['dp' => 'director_property'], [])
+            ->joinLeft(['ihp' => 'icinga_host_property'], 'ihp.property_uuid = dp.uuid', [])
+            ->columns([
+                'key_name',
+                'uuid',
+                'parent_uuid',
+                'value_type',
+                'label',
+                'description'
+            ])
+            ->where('uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
+
+        return Db\DbUtil::normalizeRow($db->fetchRow($query, [], Zend_Db::FETCH_ASSOC) ?: []);
+    }
+
+    protected function onSuccess(): void
+    {
+        $values = $this->getValues();
+        $datalist = [];
+        $itemType = '';
+        $valueType = $values['value_type'];
+        if (str_starts_with($valueType, 'datalist-')) {
+            $datalist = $this->fetchDatalist($values['list']);
+            $itemType = $values['item_type'];
+            unset($values['list']);
+        } elseif ($valueType == 'dynamic-array') {
+            $itemType = $values['item_type'];
+        }
+
+        if (isset($values['list'])) {
+            unset($values['list']);
+        }
+
+        if (isset($values['item_type'])) {
+            unset($values['item_type']);
+        }
+
+        if (
+            $this->uuid !== null
+            && $this->storedKeyName !== null
+            && $this->getPopulatedValue('confirm_rename_change', '') === 'n'
+        ) {
+            $values['key_name'] = $this->storedKeyName;
+        }
+
+        $this->db->getDbAdapter()->beginTransaction();
+        try {
+            if ($this->uuid === null) {
+                $this->addNewProperty($values, $datalist, $itemType);
+            } else {
+                $this->updateExistingProperty($values, $datalist, $itemType);
+            }
+        } catch (Throwable $e) {
+            $this->db->getDbAdapter()->rollBack();
+
+            throw $e;
+        }
+
+        $this->db->getDbAdapter()->commit();
+    }
+
+    /**
+     * Add a new custom variable
+     *
+     * @param array  $values Form values
+     * @param array  $datalist Datalist values if any
+     * @param string $itemType Item type if any
+     *
+     * @return void
+     */
+    private function addNewProperty(
+        array $values,
+        array $datalist = [],
+        string $itemType = ''
+    ): void {
+        $this->uuid = Uuid::uuid4();
+        $quotedUuid = Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter());
+        $dynamicArrayItemType = [];
+        if ($itemType !== '') {
+            $dynamicArrayItemType = [
+                'uuid' => Db\DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $this->db->getDbAdapter()),
+                'key_name' => '0',
+                'value_type' => $itemType,
+                'parent_uuid' => $quotedUuid
+            ];
+        }
+
+        if ($this->field) {
+            $quotedParentUuid = Db\DbUtil::quoteBinaryCompat($this->parentUuid->getBytes(), $this->db->getDbAdapter());
+            $values = array_merge(
+                [
+                    'uuid' => $quotedUuid,
+                    'parent_uuid' => $quotedParentUuid
+                ],
+                $values
+            );
+        } else {
+            $values = array_merge(
+                ['uuid' => $quotedUuid],
+                $values
+            );
+        }
+
+        $this->db->insert('director_property', $values);
+
+        if (! empty($dynamicArrayItemType)) {
+            $this->db->insert('director_property', $dynamicArrayItemType);
+        }
+
+        if (! empty($datalist)) {
+            $this->db->insert('director_property_datalist', [
+                'property_uuid' => $quotedUuid,
+                'list_uuid' => Db\DbUtil::quoteBinaryCompat(
+                    Db\DbUtil::binaryResult($datalist['uuid']),
+                    $this->db->getDbAdapter()
+                ),
+            ]);
+        }
+    }
+
+    /**
+     * Update an existing property
+     *
+     * @param array  $values Form values
+     * @param array  $datalist Datalist values if any
+     * @param string $itemType Item type if any
+     *
+     * @return void
+     */
+    private function updateExistingProperty(
+        array $values,
+        array $datalist = [],
+        string $itemType = ''
+    ): void {
+        $valueType = $values['value_type'];
+        if (isset($values['used_count'])) {
+            unset($values['used_count']);
+        }
+
+        $cleaner = new CustomVariableValueCleaner($this->db);
+        $used = $this->isCurrentlyUsed($cleaner);
+
+        if (! $used) {
+            $dbProperty = $this->fetchProperty($this->uuid);
+
+            // The form validator should already catch this, this is just a backstop in
+            // case a Data Field showed up between validation and submit.
+            if (
+                $this->parentUuid === null
+                && $dbProperty['key_name'] !== $values['key_name']
+                && $cleaner->wouldDeleteCollideWithLegacyDatafield((string) $values['key_name'])
+            ) {
+                // Can't tell its values apart from a Data Field's, so keep the old name
+                // too, no point renaming into a name we can't safely own.
+                $values['key_name'] = $dbProperty['key_name'];
+            }
+
+            $blockedByLegacyDatafield = $this->parentUuid === null
+                && $dbProperty['value_type'] !== $valueType
+                && $cleaner->wouldDeleteCollideWithLegacyDatafield($dbProperty['key_name']);
+
+            if ($blockedByLegacyDatafield) {
+                // Its values can't be cleared, so keep the old type too, no point changing
+                // the property's type and leaving stale data behind under the new type.
+                $values['value_type'] = $dbProperty['value_type'];
+            } elseif ($dbProperty['value_type'] !== $valueType) {
+                $db = $this->db->getDbAdapter();
+
+                // The old value type is going away, so whatever this property already holds in
+                // host/service/etc. custom variables no longer matches the new schema and has
+                // to be cleared, the same way deleting the property outright would clear it.
+                if ($this->parentUuid === null) {
+                    $keptValues = $cleaner->deleteStoredValues($dbProperty['key_name']);
+                    $collidingKeyName = $dbProperty['key_name'];
+                } else {
+                    $parentProperty = $this->fetchProperty($this->parentUuid);
+                    $keptValues = max(
+                        $cleaner->removeObjectCustomVars($dbProperty, $parentProperty, true),
+                        $cleaner->removeFromOverrideServiceVars($dbProperty, $parentProperty, true)
+                    );
+                    [$rootProp, ] = $cleaner->resolveRootProperty($dbProperty, $parentProperty);
+                    $collidingKeyName = $rootProp['key_name'];
+                }
+
+                if ($keptValues > 0) {
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Kept %d stored value(s) for "%s", a Data Field with the same name'
+                            . ' still exists.'
+                        ),
+                        $keptValues,
+                        $collidingKeyName
+                    ));
+                }
+
+                // A dictionary can be nested arbitrarily deep (dictionary -> dictionary -> ...),
+                // and any level of that nesting might itself be a datalist-backed field. Hence,
+                // any links between datalists and children or grandchildren in the hierarchy must
+                // also be removed.
+                $descendantUuids = $this->collectDescendantUuids($this->uuid->getBytes());
+
+                if (! empty($descendantUuids)) {
+                    $this->db->delete(
+                        'director_property',
+                        Filter::matchAll(Filter::where(
+                            'uuid',
+                            Db\DbUtil::quoteBinaryCompat($descendantUuids, $db)
+                        ))
+                    );
+                }
+
+                $this->db->delete(
+                    'director_property_datalist',
+                    Filter::matchAll(Filter::where(
+                        'property_uuid',
+                        Db\DbUtil::quoteBinaryCompat(
+                            array_merge([$this->uuid->getBytes()], $descendantUuids),
+                            $db
+                        )
+                    ))
+                );
+
+                if ($itemType && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
+                    $this->db->insert('director_property', [
+                        'uuid' => Db\DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $this->db->getDbAdapter()),
+                        'key_name' => '0',
+                        'value_type' => $itemType,
+                        'parent_uuid' => Db\DbUtil::quoteBinaryCompat(
+                            $this->uuid->getBytes(),
+                            $this->db->getDbAdapter()
+                        ),
+                    ]);
+
+                    if (str_starts_with($valueType, 'datalist-')) {
+                        $this->db->insert('director_property_datalist', [
+                            'property_uuid' => Db\DbUtil::quoteBinaryCompat(
+                                $this->uuid->getBytes(),
+                                $this->db->getDbAdapter()
+                            ),
+                            'list_uuid' => Db\DbUtil::quoteBinaryCompat(
+                                Db\DbUtil::binaryResult($datalist['uuid']),
+                                $this->db->getDbAdapter()
+                            ),
+                        ]);
+                    }
+                }
+            } else {
+                if (str_starts_with($valueType, 'datalist-') && ! empty($datalist)) {
+                    $this->relinkDatalist($this->uuid->getBytes(), $datalist);
+                }
+
+                if ($itemType !== '' && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
+                    $this->updateItemType($this->uuid->getBytes(), $itemType);
+                }
+            }
+        } else {
+            $dbProperty = $this->fetchProperty($this->uuid);
+            $storedKeyName = $dbProperty['key_name'];
+
+            // value_type is disabled in the UI once a property is used, but disabled is
+            // just a browser hint, so pin it back here too instead of trusting the client.
+            $values['value_type'] = $dbProperty['value_type'];
+
+            if ($storedKeyName !== $values['key_name']) {
+                $newKeyName = $values['key_name'];
+                $renamed = $this->updateUsedCustomVarNames($storedKeyName, $newKeyName);
+                if (! $renamed) {
+                    // Values can't follow, so keep the old name too, no point renaming
+                    // the property and orphaning its values.
+                    $values['key_name'] = $storedKeyName;
+                }
+
+                if ($this->renameBlockedByDatafield !== null) {
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Could not rename "%s" to "%s", a Data Field named "%s" still'
+                            . ' exists. Rename or remove it first.'
+                        ),
+                        $storedKeyName,
+                        $newKeyName,
+                        $this->renameBlockedByDatafield
+                    ));
+                } elseif ($this->renameCollisionCount > 0) {
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Kept %d stored value(s) under their old key "%s", "%s" was'
+                            . ' already in use there.'
+                        ),
+                        $this->renameCollisionCount,
+                        $storedKeyName,
+                        $newKeyName
+                    ));
+                }
+            }
+        }
+
+        $this->db->update(
+            'director_property',
+            $values,
+            Filter::where('uuid', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()))
+        );
+    }
+
+    /**
+     * Check usage fresh from the db instead of trusting used_count, a stale page
+     * or a crafted request could send the wrong value
+     *
+     * For a field, the attachment lives on its root property, not on the field
+     * itself, so walk up to the root before counting.
+     *
+     * @param CustomVariableValueCleaner $cleaner
+     *
+     * @return bool
+     */
+    private function isCurrentlyUsed(CustomVariableValueCleaner $cleaner): bool
+    {
+        if ($this->parentUuid === null) {
+            return $cleaner->countAttachments($this->uuid) > 0;
+        }
+
+        $dbProperty = $cleaner->fetchProperty($this->uuid);
+        $parentProperty = $cleaner->fetchProperty($this->parentUuid);
+        [$rootProperty, ] = $cleaner->resolveRootProperty($dbProperty, $parentProperty);
+
+        return $cleaner->countAttachments(Uuid::fromBytes($rootProperty['uuid'])) > 0;
+    }
+
+    /**
+     * Point the given property at the given datalist, replacing any existing link
+     *
+     * @param string $propertyUuid Raw binary UUID of the property
+     * @param array  $datalist     Datalist row, as returned by fetchDatalist()
+     *
+     * @return void
+     */
+    private function relinkDatalist(string $propertyUuid, array $datalist): void
+    {
+        $db = $this->db->getDbAdapter();
+        $quotedPropertyUuid = Db\DbUtil::quoteBinaryCompat($propertyUuid, $db);
+        $newListUuid = Db\DbUtil::binaryResult($datalist['uuid']);
+
+        $linkedListUuid = Db\DbUtil::binaryResult($this->db->fetchOne(
+            $this->db->select()
+                ->from('director_property_datalist', ['list_uuid'])
+                ->where('property_uuid', $quotedPropertyUuid)
+        ));
+
+        if ($linkedListUuid === $newListUuid) {
+            return;
+        }
+
+        $this->db->delete(
+            'director_property_datalist',
+            Filter::where('property_uuid', $quotedPropertyUuid)
+        );
+
+        $this->db->insert('director_property_datalist', [
+            'property_uuid' => $quotedPropertyUuid,
+            'list_uuid' => Db\DbUtil::quoteBinaryCompat($newListUuid, $db),
+        ]);
+    }
+
+    /**
+     * Update the value type of the item type child property for the given parent property
+     *
+     * @param string $parentUuid Raw binary UUID of the parent property
+     * @param string $itemType   New item value type
+     *
+     * @return void
+     */
+    private function updateItemType(string $parentUuid, string $itemType): void
+    {
+        $db = $this->db->getDbAdapter();
+
+        $this->db->update(
+            'director_property',
+            ['value_type' => $itemType],
+            Filter::matchAll(
+                Filter::where('parent_uuid', Db\DbUtil::quoteBinaryCompat($parentUuid, $db)),
+                Filter::where('key_name', '0')
+            )
+        );
+    }
+
+    /**
+     * Recursively collect the raw binary UUIDs of all descendants (children,
+     * grandchildren, ...) of the property with the given raw binary UUID.
+     *
+     * @param string $uuid Raw binary UUID of the property to start from
+     *
+     * @return string[] Raw binary UUIDs of all descendants, not including $uuid itself
+     */
+    private function collectDescendantUuids(string $uuid): array
+    {
+        $db = $this->db->getDbAdapter();
+        $descendants = [];
+        $parents = [$uuid];
+
+        while (! empty($parents)) {
+            $children = $db->fetchCol(
+                $db->select()
+                    ->from('director_property', ['uuid'])
+                    ->where('parent_uuid IN (?)', Db\DbUtil::quoteBinaryCompat($parents, $db))
+            );
+            $children = array_map([Db\DbUtil::class, 'binaryResult'], $children);
+
+            $descendants = array_merge($descendants, $children);
+            $parents = $children;
+        }
+
+        return $descendants;
+    }
+
+    /**
+     * Update the used custom variable names in the database
+     *
+     * @param string $storedKeyName
+     * @param mixed  $keyName
+     *
+     * @return bool Whether the rename actually happened. False means the property must keep
+     *              its old key_name too, its stored values could not follow the rename
+     */
+    private function updateUsedCustomVarNames(string $storedKeyName, mixed $keyName): bool
+    {
+        $this->renameBlockedByDatafield = null;
+        $cleaner = new CustomVariableValueCleaner($this->db);
+
+        if (! $this->parentUuid) {
+            $root = $this->fetchProperty($this->uuid);
+            $newRootName = (string) $keyName;
+
+            // The form validator should already catch this, this is just a backstop
+            // in case a Data Field showed up between validation and submit.
+            if ($cleaner->wouldRenameCollideWithLegacyDatafield($root['key_name'], $newRootName)) {
+                // Either the old or the new name could be the one a Data Field
+                // owns, report whichever one it actually is.
+                $this->renameBlockedByDatafield = $cleaner->wouldDeleteCollideWithLegacyDatafield($newRootName)
+                    ? $newRootName
+                    : $root['key_name'];
+
+                return false;
+            }
+
+            $this->renameCollisionCount = $cleaner->renameStoredValues($root['key_name'], $newRootName);
+
+            return true;
+        }
+
+        $parent = $this->fetchProperty($this->parentUuid);
+        $kept = $cleaner->renameNestedStoredValues(['key_name' => $storedKeyName], $parent, (string) $keyName);
+        $this->renameCollisionCount = $cleaner->getRenameCollisionCount();
+
+        if ($kept > 0) {
+            // The block is keyed off the root's own varname, walk up to find it, this
+            // child's own key never collides with a Data Field on its own.
+            [$rootProp, ] = $cleaner->resolveRootProperty(['key_name' => $storedKeyName], $parent);
+            $this->renameBlockedByDatafield = $rootProp['key_name'];
+        }
+
+        return $kept === 0;
+    }
+}

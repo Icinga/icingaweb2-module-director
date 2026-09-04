@@ -4,13 +4,13 @@ namespace Icinga\Module\Director;
 
 use DateTime;
 use DateTimeZone;
-use Exception;
 use Icinga\Data\ResourceFactory;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
 use RuntimeException;
+use Throwable;
 use Zend_Db_Select;
 
 class Db extends DbConnection
@@ -27,9 +27,13 @@ class Db extends DbConnection
     }
 
     /**
+     * Run a callable inside a transaction, rolling back if anything goes wrong
+     *
      * @param $callable
+     *
      * @return $this
-     * @throws Exception
+     *
+     * @throws Throwable
      */
     public function runFailSafeTransaction($callable)
     {
@@ -42,10 +46,10 @@ class Db extends DbConnection
         try {
             $callable();
             $db->commit();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             try {
                 $db->rollback();
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 // Well... there is nothing we can do here.
             }
             throw $e;

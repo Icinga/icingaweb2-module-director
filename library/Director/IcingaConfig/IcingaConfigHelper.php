@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
+use Icinga\Module\Director\CustomVariable\CustomVariableString;
 use InvalidArgumentException;
 
 use function ctype_digit;
@@ -70,6 +71,10 @@ class IcingaConfigHelper
 
     public static function renderKeyOperatorValue($key, $operator, $value, $prefix = '    ')
     {
+        if ($value instanceof CustomVariableString && ! empty($value->getWhiteList())) {
+            $value = $value->toConfigString(true);
+        }
+
         $string = sprintf(
             "%s %s %s",
             $key,
@@ -375,13 +380,49 @@ class IcingaConfigHelper
     /**
      * Hint: this isn't complete, but let's restrict ourselves right now
      *
-     * @param $name
+     * TODO: Not sure if this covers all cases.
+     *
+     * @param string $name
+     * @param ?array $whiteList
+     *
      * @return bool
      */
-    public static function isValidMacroName($name)
+    public static function isValidMacroName(string $name, ?array $whiteList = null): bool
     {
-        return preg_match('/^[A-z_][A-z_.\d]+$/', $name)
+        $hasMacroPattern = preg_match('/^[A-z_][A-z_.\d]+$/', $name)
             && ! preg_match('/\.$/', $name);
+
+        if ($whiteList === null) {
+            return $hasMacroPattern;
+        }
+
+        // A string key maps a legacy macro alias to the name it should be rendered as,
+        // e.g. ['config' => 'value'] keeps a pre-rename $config$ macro resolving correctly.
+        if (array_key_exists($name, $whiteList) || in_array($name, $whiteList, true)) {
+            return true;
+        }
+
+        foreach ($whiteList as $pattern) {
+            if (! is_string($pattern) || ! str_contains($pattern, '*')) {
+                continue;
+            }
+
+            $regexBody = preg_quote($pattern, '/');
+            // value[*] matches a numeric index or a quoted key, e.g. value["on call contact"].
+            // Both '"' and '\' are excluded from the quoted key so it can't be escaped early.
+            $regexBody = str_replace('\[\*\]', '\[(?:\d+|"[^"\\\\]*")\]', $regexBody);
+            // A wildcard matches one or more dot-joined segments, not raw text.
+            // Old class also matched a leading digit, a trailing dot, or repeated
+            // dots like "host..address".
+            $segment = '[A-Za-z_][A-Za-z0-9_]*';
+            $regexBody = str_replace('\*', $segment . '(?:\.' . $segment . ')*', $regexBody);
+
+            if (preg_match('/^' . $regexBody . '$/', $name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function renderStringWithVariables($string, ?array $whiteList = null)
@@ -402,16 +443,16 @@ class IcingaConfigHelper
                     } else {
                         // We got a macro
                         $macroName = substr($string, $start + 1, $i - $start - 1);
-                        if (static::isValidMacroName($macroName)) {
-                            if ($whiteList === null || in_array($macroName, $whiteList)) {
-                                if ($start > $offset) {
-                                    $parts[] = static::renderString(
-                                        substr($string, $offset, $start - $offset)
-                                    );
-                                }
-                                $parts[] = $macroName;
-                                $offset = $i + 1;
+                        if (static::isValidMacroName($macroName, $whiteList)) {
+                            if ($start > $offset) {
+                                $parts[] = static::renderString(
+                                    substr($string, $offset, $start - $offset)
+                                );
                             }
+
+                            $alias = $whiteList[$macroName] ?? null;
+                            $parts[] = is_string($alias) ? $alias : $macroName;
+                            $offset = $i + 1;
                         }
 
                         $start = false;

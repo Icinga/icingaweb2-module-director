@@ -1,5 +1,8 @@
 <?php
 
+// SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -218,7 +221,7 @@ class IcingaServiceTest extends BaseTestCase
             (string) $service
         );
 
-        $service->object_name = '___TEST$config$___service $host.var.bla$';
+        $service->object_name = '___TEST$value$___service $host.var.bla$';
         $this->assertEquals(
             $this->loadRendered('service6'),
             (string) $service
@@ -227,6 +230,75 @@ class IcingaServiceTest extends BaseTestCase
         $service->object_name = '';
         $this->assertEquals(
             $this->loadRendered('service7'),
+            (string) $service
+        );
+    }
+
+    public function testApplyForConfigMacroStaysBackwardCompatibleWithValue()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        // Before the plain-array apply-for loop variable was renamed from "config" to
+        // "value", existing installations may have stored custom variable strings that
+        // reference the old macro name (e.g. "/dev/$config$"). Those strings live untouched
+        // in the database across an upgrade, so the renderer must still resolve "$config$",
+        // to the same loop variable now named "value", instead of silently leaving it
+        // as literal, un-substituted text in the compiled Icinga 2 configuration.
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.disks';
+        $service->assign_filter = 'host.vars.env="test"';
+        $service->{'vars.legacy_macro'} = '/dev/$config$';
+
+        $this->assertStringContainsString(
+            'vars.legacy_macro = "/dev/" + value',
+            (string) $service
+        );
+    }
+
+    public function testApplyForNameMacroSupportsLegacyConfigAlias()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.disks';
+        $service->assign_filter = 'host.vars.env="test"';
+        // legacy $config$ alias in object names, should resolve to "value" just like
+        // it already does for values stored in custom variables
+        $service->object_name = 'Disk check $config$';
+
+        $this->assertStringContainsString(
+            'name = "Disk check " + value',
+            (string) $service
+        );
+    }
+
+    public function testApplyForDisplayNameMacroSupportsLegacyConfigAlias()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.disks';
+        $service->assign_filter = 'host.vars.env="test"';
+        // same legacy alias as the object name, now on a plain property
+        $service->display_name = 'Disk check $config$';
+
+        $this->assertStringContainsString(
+            'display_name = "Disk check " + value',
             (string) $service
         );
     }

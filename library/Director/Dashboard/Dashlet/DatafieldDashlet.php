@@ -16,7 +16,7 @@ class DatafieldDashlet extends Dashlet
     public function getSummary()
     {
         return $this->translate(
-            'Data fields make sure that configuration fits your rules'
+            'Data fields make sure that configuration fits your rules (Deprecated)'
         );
     }
 

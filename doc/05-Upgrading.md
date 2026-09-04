@@ -15,6 +15,7 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.12.x](#upgrade-to-1.12.x)
 * [Upgrading to 1.11.x](#upgrade-to-1.11.x)
 * [Upgrading to 1.10.x](#upgrade-to-1.10.x)
 * [Upgrading to 1.9.x](#upgrade-to-1.9.x)
@@ -41,6 +42,54 @@ All you need for backing up your Director is a snapshot of your database. Please
 use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
+
+<a name="upgrade-to-1.12.x"></a>Upgrading to 1.12.x
+--------------------------------------------------
+
+The custom property schema migration (version 193) uses the `citext` PostgreSQL
+extension and installs it automatically if it's missing. This works without any
+manual action on PostgreSQL 13+, since the database owner (the role Director
+already connects with) is allowed to install "trusted" extensions like `citext`
+on its own.
+
+On PostgreSQL versions older than 13, or if Director's database role doesn't own
+the database, automatic installation isn't possible and the migration will fail.
+Should this happen, install the extension yourself as a superuser and re-run
+the migration afterward.
+
+     psql -q -c "CREATE EXTENSION citext;"
+
+The `variables` endpoint enforces a Custom Variable's Item Type on a
+`Data List Strict` or `Data List Non Strict` property. If Item Type is set
+to `Dynamic Array`, only a list is accepted, otherwise only a single value
+is. Sending the other shape for that property is rejected. A `null` value
+for a variable Director doesn't recognize under `Custom Variables` at all
+is rejected the same way a real value would be. On a template `PUT`
+specifically, a `null` value for a variable that **is** configured but not
+yet attached to that template is a silent no-op instead, it does not get
+attached. See [the REST API's "Variable not
+configured"](70-REST-API.md#Custom-Variables-not-configured) section for
+the full matrix. Check any script or integration relying on this endpoint
+against these rules if you use `Data List` properties or send `null`
+values.
+
+If you use `icingacli director migrate datafields` to move legacy Data
+Fields onto the new Custom Property system, note that a Data List field
+with the old `Suggest, extend list` behavior migrates to a plain
+`Data List Non Strict` property. Before, submitting a new value added it
+to the list for next time.
+After migration, that value is just accepted and stored, the list itself is
+never extended again. Check any Data List field using that behavior before
+running the migration.
+
+Removing an imported template from an object, or restoring a configuration
+basket that drops a property attachment, can now also remove a custom
+variable value that only existed because of it. Removing an import in the
+object form asks for confirmation before saving; the REST API and a basket
+restore apply the same cleanup right away, without asking. See [Attaching
+custom variables to objects and
+templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
+for details.
 
 <a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
 --------------------------------------------------

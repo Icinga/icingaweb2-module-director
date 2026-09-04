@@ -323,6 +323,7 @@ type:
 
 | Type                  | Description                                     |
 |-----------------------|-------------------------------------------------|
+| `customproperties`    | Export all Custom Property definitions          |
 | `datafields`          | Export all DataField definitions                |
 | `datalists`           | Export all DataList definitions                 |
 | `hosttemplatechoices` | Export all IcingaTemplateChoiceHost definitions |
@@ -373,6 +374,12 @@ CLI command allows you to integrate them into your very own workflows
 
 Use `icingacli director basket restore < exported-basket.json` to restore objects
 from a specific basket. Take a snapshot or a backup first to be on the safe side.
+If a restored custom variable was renamed or retyped but a legacy Data Field
+still owns the old name, or its new name or key was already taken by another
+value, `restore` prints how many stored values were affected, kept under
+their old name or type, or dropped depending on the case, see [Restoring
+Custom Variable Schema
+Changes](30-Configuration-Baskets.md#Restoring-Custom-Variables) for details.
 
 This feature is available since v1.6.0.
 
@@ -431,6 +438,62 @@ Kickstart and schema handling
 
 The `kickstart` and the `migration` command are handled in the [automation section](03-Automation.md),
 so they are skipped here.
+
+
+Migrate legacy Data Fields
+---------------------------
+
+Older Director versions store custom variable definitions as Data Fields.
+They're being replaced by a new Custom Property system. Use
+`icingacli director migrate <action>` to move your existing Data Fields
+over to Custom Properties.
+
+| Action       | Description                                     |
+|--------------|--------------------------------------------------|
+| `summary`    | Show what would be migrated, nothing gets touched |
+| `datafields` | Run the migration                                 |
+
+### Show what would be migrated
+
+`icingacli director migrate summary`
+
+Prints how many Data Fields have a type that can be migrated, how many
+are skipped because a Custom Variable with the same name already exists,
+and totals for what would be migrated versus skipped.
+
+### Run the migration
+
+#### Usage
+
+`icingacli director migrate datafields [options]`
+
+#### Options
+
+| Option                  | Description                                       |
+|--------------------------|---------------------------------------------------|
+| `--dry-run`              | Preview the migration, nothing gets written        |
+| `--delete`               | Remove a Data Field once it's been migrated        |
+|                          | (has no effect together with `--dry-run`)          |
+| `--allow-lossy-filters`  | Migrate a binding even if it has a var_filter,      |
+|                          | dropping the filter. Left alone by default          |
+| `--verbose`              | Print every Data Field as it's migrated or skipped |
+
+#### Examples
+
+```shell
+icingacli director migrate datafields --dry-run --verbose
+```
+
+```shell
+icingacli director migrate datafields --delete --verbose
+```
+
+A Data Field gets skipped when its type isn't supported yet, when a
+Custom Variable with that name already exists, when another Data Field
+has the same name, or when one of its bindings has a var_filter and
+you didn't pass `--allow-lossy-filters`.
+
+Run with `--verbose` to see the reason for each one.
 
 
 Configuration handling

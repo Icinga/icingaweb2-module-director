@@ -4,7 +4,9 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\PropertiesFilter;
+use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -98,6 +100,8 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     protected $supportsFields = true;
 
+    protected $supportsCustomVariables = true;
+
     protected $supportsImports = true;
 
     protected $supportsApplyRules = true;
@@ -121,6 +125,9 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     /** @var ServiceGroupMembershipResolver */
     protected $servicegroupMembershipResolver;
+
+    /** @var array|null Whitelist to be used in custom variables of apply for rule */
+    protected ?array $applyForWhiteList = null;
 
     /**
      * @return IcingaCommand
@@ -348,28 +355,54 @@ class IcingaService extends IcingaObject implements ExportInterface
      */
     protected function renderObjectHeader()
     {
+        $applyFor = $this->get('apply_for');
         if (
             $this->isApplyRule()
             && !$this->hasBeenAssignedToHostTemplate()
-            && $this->get('apply_for') !== null
+            && $applyFor !== null
         ) {
             $name = $this->getObjectName();
             $extraName = '';
+            $applyForVar = substr($applyFor, strlen('host.vars.'));
+            if (preg_match('/[^a-zA-Z0-9_]/', $applyForVar)) {
+                // Old escaping missed newlines and other control chars, use the
+                // same string renderer as everywhere else in the config
+                $applyFor = 'host.vars[' . c::renderString($applyForVar) . ']';
+            }
+
+            $propertyType = $this->fetchApplyForPropertyType($applyForVar);
+            $isApplyFor = $propertyType === 'dynamic-dictionary';
+            $varName = c::renderString($name);
 
             if (c::stringHasMacro($name)) {
-                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
+                $extraName = c::renderKeyValue(
+                    'name',
+                    c::renderStringWithVariables($name, $this->getApplyForVariableWhiteList())
+                );
                 $name = '';
             } elseif ($name !== '') {
                 $name = ' ' . c::renderString($name);
             }
 
+            if ($isApplyFor) {
+                $header = "%s %s%s for (key => value in %s) {\n";
+            } else {
+                $header = "%s %s%s for (value in %s) {\n";
+            }
+
+            $extraInfo = $propertyType !== null
+                ? sprintf("\n    vars.%s = %s\n", CustomVariables::RESERVED_OVERRIDE_HANDOFF_KEY, $varName)
+                : '';
+
             return sprintf(
-                "%s %s%s for (config in %s) {\n",
+                $header,
                 $this->getObjectTypeName(),
                 $this->getType(),
                 $name,
-                $this->get('apply_for')
-            ) . $extraName;
+                $applyFor
+            )
+                . $extraName
+                . $extraInfo;
         }
 
         return parent::renderObjectHeader();
@@ -385,6 +418,60 @@ class IcingaService extends IcingaObject implements ExportInterface
         } else {
             return 'service_description';
         }
+    }
+
+    /**
+     * Fetch property type of the custom variable used in apply for rule
+     *
+     * @param string $applyFor
+     *
+     * @return ?string
+     */
+    protected function fetchApplyForPropertyType(string $applyFor): ?string
+    {
+        // Data field names and Custom Variable names are independent namespaces.
+        // An Apply For rule created long before Custom Variables existed may use a
+        // Data field name that a wholly unrelated Custom Variable now happens to
+        // share, on some unrelated host template. The Data field must keep winning,
+        // or an existing, already-deployed Apply For rule would silently start
+        // rendering as a dictionary iteration it was never meant to be.
+        if ($this->hasLegacyArrayDatafield($applyFor)) {
+            return null;
+        }
+
+        // key_name is unique among root properties, a DB constraint enforces it on
+        // both engines, so this can only ever match one row. The host_property join
+        // just weeds out a key_name nobody has attached anywhere.
+        $query = $this->db
+            ->select()
+            ->from(['dp' => 'director_property'], ['value_type' => 'dp.value_type'])
+            ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
+            ->where('dp.parent_uuid IS NULL')
+            ->where('dp.key_name = ?', $applyFor);
+
+        $result = $this->db->fetchOne($query);
+
+        return $result === false ? null : $result;
+    }
+
+    /**
+     * Whether a deprecated Data field of an array-like type with this name is
+     * already attached to some host template
+     *
+     * @param string $varName
+     *
+     * @return bool
+     */
+    protected function hasLegacyArrayDatafield(string $varName): bool
+    {
+        $query = $this->db
+            ->select()
+            ->from(['df' => 'director_datafield'], ['varname' => 'df.varname'])
+            ->join(['ihf' => 'icinga_host_field'], 'df.id = ihf.datafield_id', [])
+            ->where('df.varname = ?', $varName)
+            ->where('df.datatype = ?', DataTypeArray::class);
+
+        return (bool) $this->db->fetchOne($query);
     }
 
     protected function rendersConditionalTemplate(): bool
@@ -624,6 +711,57 @@ class IcingaService extends IcingaObject implements ExportInterface
         return $where;
     }
 
+    /**
+     * Get this service's vars, locked down to the apply-for whitelist
+     *
+     * An apply-for service can only use specific var paths like value or
+     * host.*, everything else stays blocked so nothing leaks through
+     *
+     * @return CustomVariables
+     */
+    public function vars()
+    {
+        $vars = parent::vars();
+        if ($this->connection === null || ! $this->isApplyRule()) {
+            return $vars;
+        }
+
+        $applyFor = substr($this->get('apply_for') ?? '', strlen('host.vars.'));
+        if (empty($applyFor)) {
+            return $vars;
+        }
+
+        if ($this->applyForWhiteList === null) {
+            $isApplyForDictionary = $this->fetchApplyForPropertyType($applyFor) === 'dynamic-dictionary';
+            $whiteList = ['value', 'host.*'];
+            if ($isApplyForDictionary) {
+                $whiteList[] = 'key';
+                $whiteList[] = 'value[*]';
+                $whiteList[] = 'value[*].*';
+                $whiteList[] = 'value.*';
+            } else {
+                // Legacy alias: before the loop variable was renamed, custom variable
+                // strings could reference the plain-array apply-for loop value as $config$.
+                // Those stored strings survive an upgrade unchanged, so keep resolving them
+                // to what is now called "value" instead of silently leaving them literal.
+                $whiteList['config'] = 'value';
+            }
+
+            $this->applyForWhiteList = $whiteList;
+        }
+
+        $vars->setWhiteList($this->applyForWhiteList);
+
+        return $vars;
+    }
+
+    protected function getApplyForVariableWhiteList(): ?array
+    {
+        // building vars also builds this whitelist, reuse it here
+        $this->vars();
+
+        return $this->applyForWhiteList;
+    }
 
     /**
      * TODO: Duplicate code, clean this up, split it into multiple methods

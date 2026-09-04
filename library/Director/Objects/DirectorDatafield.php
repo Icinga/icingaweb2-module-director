@@ -2,10 +2,13 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
 use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
+use Icinga\Module\Director\Forms\IcingaServiceDictionaryMemberForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Resolver\OverriddenVarsResolver;
@@ -222,7 +225,50 @@ class DirectorDatafield extends DbObjectWithSettings
             $el->setLabel($caption);
         }
 
-        if ($description = $this->get('description')) {
+        $varName = $this->get('varname');
+        $object = $form->getObject();
+        $objectType = $form->getObject()->getShortTableName();
+        $parents = $object->listAncestorIds();
+        $db = $form->getDb();
+        $uuids = [];
+        foreach ($parents as $parent) {
+            $class = DbObjectTypeRegistry::classByType($objectType);
+            $uuids[] = $class::loadWithAutoIncId($parent, $db)->get('uuid');
+        }
+
+        if ($object->get('uuid') && $object->isTemplate()) {
+            $uuids[] = $object->get('uuid');
+        }
+
+        // A dictionary member field ends up nested under the dictionary's own
+        // custom variable, never at the object's own vars root, so it can't
+        // really collide with a root level custom variable of the same name.
+        $hasCustomVariableWithSameName = false;
+        if (! empty($uuids) && ! $form instanceof IcingaServiceDictionaryMemberForm) {
+            $dbAdapter = $db->getDbAdapter();
+            $query = $dbAdapter
+                ->select()
+                ->from(['dp' => 'director_property'], ['key_name' => 'dp.key_name'])
+                ->join(['iop' => "icinga_{$objectType}_property"], 'dp.uuid = iop.property_uuid', [])
+                ->where("iop.{$objectType}_uuid IN (?)", DbUtil::quoteBinaryCompat($uuids, $dbAdapter))
+                ->where('parent_uuid IS NULL')
+                ->where('key_name = ?', $varName);
+
+            $hasCustomVariableWithSameName = $dbAdapter->fetchOne($query) !== false;
+        }
+
+        if ($hasCustomVariableWithSameName) {
+            $el->setAttrib('hidden', true);
+            $el->getDecorator('Description')
+                ->setOptions(['tag' => 'p', 'class' => ['description', 'deprecated-data-field']]);
+            $description = $form->translate(
+                'There is a custom variable with the same name. Go to "Custom Variables" tab to manage it.'
+            );
+        } else {
+            $description = $this->get('description');
+        }
+
+        if ($description) {
             $el->setDescription($description);
         }
 

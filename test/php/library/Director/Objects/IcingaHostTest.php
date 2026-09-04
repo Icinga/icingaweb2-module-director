@@ -1,17 +1,24 @@
 <?php
 
+// SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaZone;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Test\BaseTestCase;
-use Icinga\Exception\IcingaException;
+use Ramsey\Uuid\Uuid;
 
 class IcingaHostTest extends BaseTestCase
 {
@@ -731,6 +738,328 @@ class IcingaHostTest extends BaseTestCase
             "{$prefix}templates" => "templates"
         );
     }
+
+    public function testDynamicDictionaryVarUsesOverrideOperator(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        // Template needs at least one icinga_host_var row to satisfy the JOIN in
+        // CustomVariables::renderSingleVar() that detects dynamic-dictionary properties.
+        $template = IcingaHost::create([
+            'object_name' => '___TEST___linux-server',
+            'object_type' => 'template',
+            'vars'        => ['env' => 'production'],
+        ], $db);
+        $template->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___disk_checks_dyn',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Disk Checks',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+        ]);
+
+        $child = IcingaHost::create([
+            'object_name' => '___TEST___db-server-01',
+            'object_type' => 'object',
+            'address'     => '10.0.1.42',
+            'vars'        => [
+                '___TEST___disk_checks_dyn' => (object) [
+                    'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+                    'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+                ],
+            ],
+        ], $db);
+        $child->imports = '___TEST___linux-server';
+        $child->store();
+
+        $loaded = IcingaHost::load('___TEST___db-server-01', $db);
+
+        $this->assertEquals(
+            $this->loadRendered('host_dynamic_dict'),
+            (string) $loaded
+        );
+    }
+
+    public function testDynamicDictionaryAttachedToTwoChainedTemplatesMergesBoth(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___disk-chain-parent',
+            'object_type' => 'template',
+        ], $db);
+        $templateA->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___disk_checks_chain',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Disk Checks',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba),
+        ]);
+        $templateA->vars()->set('___TEST___disk_checks_chain', (object) [
+            'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+        ]);
+        $templateA->store();
+
+        // a child template can attach a property it already inherits, to add its own entries
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___disk-chain-child',
+            'object_type' => 'template',
+        ], $db);
+        $templateB->imports = '___TEST___disk-chain-parent';
+        $templateB->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateB->get('uuid'), $dba),
+        ]);
+        $templateB->vars()->set('___TEST___disk_checks_chain', (object) [
+            'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+        ]);
+        $templateB->store();
+
+        $loaded = IcingaHost::load('___TEST___disk-chain-child', $db);
+
+        $this->assertStringContainsString(
+            'vars["___TEST___disk_checks_chain"] +=',
+            (string) $loaded,
+            'a template that both inherits and directly attaches a dynamic-dictionary must'
+            . ' still merge with the parent template instead of overwriting its entries'
+        );
+    }
+
+    public function testDetachingPropertyFromAncestorKeepsChildsOwnDirectAttachment(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___detach-parent',
+            'object_type' => 'template',
+        ], $db);
+        $templateA->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___detach_check',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Detach Check',
+        ], $db);
+        $property->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba),
+        ]);
+        $templateA->vars()->set('___TEST___detach_check', (object) [
+            'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+        ]);
+        $templateA->store();
+
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___detach-child',
+            'object_type' => 'template',
+        ], $db);
+        $templateB->imports = '___TEST___detach-parent';
+        $templateB->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateB->get('uuid'), $dba),
+        ]);
+        $templateB->vars()->set('___TEST___detach_check', (object) [
+            'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+        ]);
+        $templateB->store();
+
+        // detach from the parent only, same as the Custom Variables form would
+        $dba->delete(
+            'icinga_host_property',
+            $dba->quoteInto('property_uuid = ?', DbUtil::quoteBinaryCompat($property->get('uuid'), $dba))
+            . ' AND ' . $dba->quoteInto('host_uuid = ?', DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba))
+        );
+        PropertyDetachmentCleaner::removeStaleValues(
+            $templateA,
+            [DbUtil::quoteBinaryCompat($property->get('uuid'), $dba)],
+            $db
+        );
+
+        $reloadedB = IcingaHost::load('___TEST___detach-child', $db);
+
+        $this->assertStringContainsString(
+            'data = {',
+            (string) $reloadedB,
+            'the child template attached this property directly too, its own value must survive'
+            . ' the parent losing its attachment'
+        );
+    }
+
+    public function testDynamicDictionaryOriginListsEachContributingTemplateOnce(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___tpl-a',
+            'object_type' => 'template',
+            'vars'        => ['env' => 'production'],
+        ], $db);
+        $templateA->store();
+
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___tpl-b',
+            'object_type' => 'template',
+            'vars'        => ['env' => 'production'],
+        ], $db);
+        $templateB->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___disk_checks_origin',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Disk Checks',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        foreach ([$templateA, $templateB] as $template) {
+            $db->insert('icinga_host_property', [
+                'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+                'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+            ]);
+        }
+
+        $templateA->vars()->set('___TEST___disk_checks_origin', (object) [
+            'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+        ]);
+        $templateA->store();
+
+        $templateB->vars()->set('___TEST___disk_checks_origin', (object) [
+            'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+            'logs' => (object) ['mount_point' => '/logs', 'warn' => '15%', 'crit' => '5%'],
+            'tmp'  => (object) ['mount_point' => '/tmp', 'warn' => '15%', 'crit' => '5%'],
+        ]);
+        $templateB->store();
+
+        $child = IcingaHost::create([
+            'object_name' => '___TEST___db-server-01',
+            'object_type' => 'object',
+            'address'     => '10.0.1.42',
+        ], $db);
+        $child->set('imports', ['___TEST___tpl-a', '___TEST___tpl-b']);
+        $child->store();
+
+        $loaded = IcingaHost::load('___TEST___db-server-01', $db);
+        $origins = $loaded->getOriginsVars();
+
+        $this->assertEquals(
+            '___TEST___tpl-a, ___TEST___tpl-b',
+            $origins->___TEST___disk_checks_origin,
+            'a template contributing several entries must show up only once in the origin list'
+        );
+    }
+
+    public function testResolvingADescendantDoesNotContaminateAnAncestorsInheritedCache(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___tpl-a',
+            'object_type' => 'template',
+            'vars'        => [
+                '___TEST___tags_dyn' => (object) ['from_a' => (object) ['value' => 'a']],
+            ],
+        ], $db);
+        $templateA->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'value_type' => 'dynamic-dictionary',
+            'key_name'   => '___TEST___tags_dyn',
+            'label'      => 'Tags',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba),
+        ]);
+
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___tpl-b',
+            'object_type' => 'template',
+            'vars'        => [
+                '___TEST___tags_dyn' => (object) ['from_b' => (object) ['value' => 'b']],
+            ],
+        ], $db);
+        $templateB->imports = '___TEST___tpl-a';
+        $templateB->store();
+
+        $child = IcingaHost::create([
+            'object_name' => '___TEST___tpl-c',
+            'object_type' => 'object',
+            'address'     => '10.0.1.1',
+        ], $db);
+        $child->imports = '___TEST___tpl-b';
+        $child->store();
+
+        $child = IcingaHost::load('___TEST___tpl-c', $db);
+
+        // Grab the same B instance the child's resolve() will reuse, and prime its
+        // own inherited cache before touching the child at all.
+        $sharedB = IcingaTemplateRepository::instanceByObject($child)
+            ->getTemplatesIndexedByNameFor($child, true)['___TEST___tpl-b'];
+
+        $primedInherited = $sharedB->getInheritedVars();
+        $this->assertFalse(
+            property_exists($primedInherited->___TEST___tags_dyn, 'from_b'),
+            'sanity check, B must not inherit its own direct entry'
+        );
+
+        $child->getResolvedVars();
+
+        $stillInherited = $sharedB->getInheritedVars();
+        $this->assertFalse(
+            property_exists($stillInherited->___TEST___tags_dyn, 'from_b'),
+            'resolving a descendant must not leak the descendant chain into B\'s own inherited cache'
+        );
+    }
+
     protected function loadRendered($name)
     {
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
@@ -740,7 +1069,22 @@ class IcingaHostTest extends BaseTestCase
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
-            $kill = array($this->testHostName, '___TEST___parent', '___TEST___a', '___TEST___b');
+            $dba = $db->getDbAdapter();
+            $kill = array(
+                $this->testHostName,
+                '___TEST___parent',
+                '___TEST___a',
+                '___TEST___b',
+                '___TEST___db-server-01',
+                '___TEST___linux-server',
+                '___TEST___disk-chain-child',
+                '___TEST___disk-chain-parent',
+                '___TEST___detach-child',
+                '___TEST___detach-parent',
+                '___TEST___tpl-c',
+                '___TEST___tpl-b',
+                '___TEST___tpl-a',
+            );
             foreach ($kill as $name) {
                 if (IcingaHost::exists($name, $db)) {
                     IcingaHost::load($name, $db)->delete();
@@ -755,8 +1099,29 @@ class IcingaHostTest extends BaseTestCase
             }
 
             $this->deleteDatafields();
+
+            $rows = $dba->fetchAll(
+                $dba->select()
+                    ->from('director_property', ['uuid'])
+                    ->where('key_name = ?', '___TEST___disk_checks_dyn')
+            );
+            foreach ($rows as $row) {
+                $dba->delete('director_property', $dba->quoteInto('parent_uuid = ?', $row->uuid));
+            }
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', '___TEST___disk_checks_dyn'));
+
+            $propertyKeyNames = [
+                '___TEST___disk_checks_origin',
+                '___TEST___tags_dyn',
+                '___TEST___disk_checks_chain',
+                '___TEST___detach_check',
+            ];
+            foreach ($propertyKeyNames as $keyName) {
+                $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
+            }
         }
 
+        IcingaTemplateRepository::clear();
         parent::tearDown();
     }
 
