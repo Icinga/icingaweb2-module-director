@@ -1110,12 +1110,13 @@ class IcingaHostTest extends BaseTestCase
             }
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', '___TEST___disk_checks_dyn'));
 
-            foreach ([
+            $propertyKeyNames = [
                 '___TEST___disk_checks_origin',
                 '___TEST___tags_dyn',
                 '___TEST___disk_checks_chain',
                 '___TEST___detach_check',
-            ] as $keyName) {
+            ];
+            foreach ($propertyKeyNames as $keyName) {
                 $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
             }
         }
