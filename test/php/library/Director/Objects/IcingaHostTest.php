@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
 use Icinga\Module\Director\Db\DbUtil;
@@ -850,6 +851,76 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testDetachingPropertyFromAncestorKeepsChildsOwnDirectAttachment(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___detach-parent',
+            'object_type' => 'template',
+        ], $db);
+        $templateA->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___detach_check',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Detach Check',
+        ], $db);
+        $property->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba),
+        ]);
+        $templateA->vars()->set('___TEST___detach_check', (object) [
+            'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+        ]);
+        $templateA->store();
+
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___detach-child',
+            'object_type' => 'template',
+        ], $db);
+        $templateB->imports = '___TEST___detach-parent';
+        $templateB->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateB->get('uuid'), $dba),
+        ]);
+        $templateB->vars()->set('___TEST___detach_check', (object) [
+            'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+        ]);
+        $templateB->store();
+
+        // detach from the parent only, same as the Custom Variables form would
+        $dba->delete(
+            'icinga_host_property',
+            $dba->quoteInto('property_uuid = ?', DbUtil::quoteBinaryCompat($property->get('uuid'), $dba))
+            . ' AND ' . $dba->quoteInto('host_uuid = ?', DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba))
+        );
+        PropertyDetachmentCleaner::removeStaleValues(
+            $templateA,
+            [DbUtil::quoteBinaryCompat($property->get('uuid'), $dba)],
+            $db
+        );
+
+        $reloadedB = IcingaHost::load('___TEST___detach-child', $db);
+
+        $this->assertStringContainsString(
+            'data = {',
+            (string) $reloadedB,
+            'the child template attached this property directly too, its own value must survive'
+            . ' the parent losing its attachment'
+        );
+    }
+
     public function testDynamicDictionaryOriginListsEachContributingTemplateOnce(): void
     {
         if ($this->skipForMissingDb()) {
@@ -1008,6 +1079,8 @@ class IcingaHostTest extends BaseTestCase
                 '___TEST___linux-server',
                 '___TEST___disk-chain-child',
                 '___TEST___disk-chain-parent',
+                '___TEST___detach-child',
+                '___TEST___detach-parent',
                 '___TEST___tpl-c',
                 '___TEST___tpl-b',
                 '___TEST___tpl-a',
@@ -1041,6 +1114,7 @@ class IcingaHostTest extends BaseTestCase
                 '___TEST___disk_checks_origin',
                 '___TEST___tags_dyn',
                 '___TEST___disk_checks_chain',
+                '___TEST___detach_check',
             ] as $keyName) {
                 $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
             }
