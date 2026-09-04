@@ -314,7 +314,8 @@ matter what key an end-user later assigns to that entry.
 Every object type that supports custom variables (host, service, command,
 user and notification) exposes a `Custom Variables` tab on its object and
 template detail pages, next to the `Fields (Deprecated)` tab. Service sets
-do not expose this tab yet.
+never expose this tab: just like `Fields (Deprecated)`, custom variable
+attachment isn't supported on service sets at all, by design.
 
 Only a **template** can attach a configured property with `Add Custom
 Variable`, adding it to the schema that concrete objects then fill in. A
