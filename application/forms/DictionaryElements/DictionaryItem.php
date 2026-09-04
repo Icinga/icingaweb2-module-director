@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\Validator\DatalistEntryValidator;
+use Icinga\Module\Director\Objects\DirectorDatalistEntry;
 use Icinga\Module\Director\Web\Form\Element\ArrayElement;
 use Icinga\Module\Director\Web\Form\Element\IplBoolean;
 use Icinga\Module\Director\Web\Form\Element\SensitiveElement;
@@ -76,6 +77,9 @@ class DictionaryItem extends FieldsetElement
     /**
      * Fetch datalist entries for a given property uuid.
      *
+     * Only returns entries the current user is allowed to see, unrestricted
+     * entries plus entries allowed for one of the user's roles.
+     *
      * @param UuidInterface $uuid
      *
      * @return array
@@ -86,13 +90,24 @@ class DictionaryItem extends FieldsetElement
         $query = $db->select()
             ->from(
                 ['dle' => 'director_datalist_entry'],
-                ['entry_name' => 'dle.entry_name', 'entry_value' => 'dle.entry_value']
+                [
+                    'entry_name'    => 'dle.entry_name',
+                    'entry_value'   => 'dle.entry_value',
+                    'allowed_roles' => 'dle.allowed_roles'
+                ]
             )
             ->join(['dl' => 'director_datalist'], 'dl.id = dle.list_id', [])
             ->join(['dpl' => 'director_property_datalist'], 'dl.uuid = dpl.list_uuid', [])
             ->where('dpl.property_uuid = ?', Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db));
 
-        return  $db->fetchPairs($query);
+        $entries = [];
+        foreach ($db->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+            if (DirectorDatalistEntry::isAllowedForCurrentUser($row['allowed_roles'])) {
+                $entries[$row['entry_name']] = $row['entry_value'];
+            }
+        }
+
+        return $entries;
     }
 
     protected function assemble(): void

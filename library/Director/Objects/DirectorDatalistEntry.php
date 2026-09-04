@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Data\Db\DbObject;
 use RuntimeException;
 
@@ -34,6 +35,44 @@ class DirectorDatalistEntry extends DbObject
             ->order('entry_name ASC');
 
         return static::loadAll($list->getConnection(), $query, 'entry_name');
+    }
+
+    /**
+     * Check whether the current user is allowed to see an entry with the given allowed_roles value.
+     *
+     * @param ?string $allowedRoles Raw allowed_roles column value, a JSON encoded array or null
+     *
+     * @return bool
+     */
+    public static function isAllowedForCurrentUser(?string $allowedRoles): bool
+    {
+        return static::isAllowedForRoles($allowedRoles, Acl::instance()->listRoleNames());
+    }
+
+    /**
+     * Check whether one of the given roles is allowed to see an entry with the given allowed_roles value.
+     *
+     * An entry with no roles set is visible to everyone. Otherwise at least one of the
+     * given roles needs to be listed there.
+     *
+     * @param ?string $allowedRoles Raw allowed_roles column value, a JSON encoded array or null
+     * @param array $currentRoles Names of the roles to check against
+     *
+     * @return bool
+     */
+    public static function isAllowedForRoles(?string $allowedRoles, array $currentRoles): bool
+    {
+        if ($allowedRoles === null || $allowedRoles === '') {
+            return true;
+        }
+
+        if (empty($currentRoles)) {
+            return false;
+        }
+
+        $entryRoles = json_decode($allowedRoles, true) ?: [];
+
+        return (bool) array_intersect($currentRoles, $entryRoles);
     }
 
     /**
