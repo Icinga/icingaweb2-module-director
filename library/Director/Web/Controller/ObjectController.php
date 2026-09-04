@@ -920,7 +920,14 @@ abstract class ObjectController extends ActionController
         ));
     }
 
-    private function fetchNestedDictionaryKeys(string $dictionaryUuid)
+    /**
+     * Fetch the child properties nested directly under the given dictionary
+     *
+     * @param string $dictionaryUuid
+     *
+     * @return array
+     */
+    private function fetchNestedDictionaryKeys(string $dictionaryUuid): array
     {
         $db = $this->db();
         $query = $db->getDbAdapter()
@@ -1619,7 +1626,7 @@ abstract class ObjectController extends ActionController
         );
     }
 
-    private function createValue(string $value)
+    private function createValue(string $value): HtmlElement
     {
         return new HtmlElement(
             'td',
