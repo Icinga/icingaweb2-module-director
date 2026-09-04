@@ -31,7 +31,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     /** @var array Array of values to be used as whitelist */
     private $whiteList = [];
 
-    /** @var array<string, array{value_type: string, object_id: int}>|null */
+    /** @var array<string, array{value_type: string, attachedToAncestor: bool}>|null */
     private ?array $cachedCustomVariableTypes = null;
 
     protected static $allTables = array(
@@ -80,20 +80,18 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             ->where('io.id IN (?)', $ids);
 
         foreach ($object->getDb()->fetchAll($query) as $row) {
-            $existing = $this->cachedCustomVariableTypes[$row->key_name] ?? null;
+            $entry = $this->cachedCustomVariableTypes[$row->key_name] ?? [
+                'value_type'         => $row->value_type,
+                'attachedToAncestor' => false,
+            ];
 
-            // If a row for the exact object being rendered was already cached, keep it: the
-            // merge-vs-assign decision in renderSingleVar() only cares whether the CURRENT
-            // object defines this key directly, and an arbitrary later ancestor row must not
-            // overwrite that regardless of the order the database happens to return rows in.
-            if ($existing !== null && $existing['object_id'] === $objectId) {
-                continue;
+            // a key can be attached on both an ancestor and this object, track that
+            // separately so the object's own row can't hide the inherited one
+            if ((int) $row->object_id !== $objectId) {
+                $entry['attachedToAncestor'] = true;
             }
 
-            $this->cachedCustomVariableTypes[$row->key_name] = [
-                'value_type' => $row->value_type,
-                'object_id'  => (int) $row->object_id,
-            ];
+            $this->cachedCustomVariableTypes[$row->key_name] = $entry;
         }
     }
 
@@ -520,12 +518,11 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
-        $objectId = $object->get('id');
         $cachedRow = $this->cachedCustomVariableTypes[$key] ?? null;
         if (
             $cachedRow !== null
             && $cachedRow['value_type'] === 'dynamic-dictionary'
-            && (int) $objectId !== $cachedRow['object_id']
+            && $cachedRow['attachedToAncestor']
         ) {
             return c::renderKeyOperatorValue(
                 $this->renderKeyName($key),

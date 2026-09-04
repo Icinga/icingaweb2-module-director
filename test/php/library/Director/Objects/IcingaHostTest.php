@@ -791,6 +791,65 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testDynamicDictionaryAttachedToTwoChainedTemplatesMergesBoth(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $templateA = IcingaHost::create([
+            'object_name' => '___TEST___disk-chain-parent',
+            'object_type' => 'template',
+        ], $db);
+        $templateA->store();
+
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => '___TEST___disk_checks_chain',
+            'value_type' => 'dynamic-dictionary',
+            'label'      => 'Disk Checks',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateA->get('uuid'), $dba),
+        ]);
+        $templateA->vars()->set('___TEST___disk_checks_chain', (object) [
+            'root' => (object) ['mount_point' => '/', 'warn' => '20%', 'crit' => '10%'],
+        ]);
+        $templateA->store();
+
+        // a child template can attach a property it already inherits, to add its own entries
+        $templateB = IcingaHost::create([
+            'object_name' => '___TEST___disk-chain-child',
+            'object_type' => 'template',
+        ], $db);
+        $templateB->imports = '___TEST___disk-chain-parent';
+        $templateB->store();
+
+        $db->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($templateB->get('uuid'), $dba),
+        ]);
+        $templateB->vars()->set('___TEST___disk_checks_chain', (object) [
+            'data' => (object) ['mount_point' => '/data', 'warn' => '15%', 'crit' => '5%'],
+        ]);
+        $templateB->store();
+
+        $loaded = IcingaHost::load('___TEST___disk-chain-child', $db);
+
+        $this->assertStringContainsString(
+            'vars["___TEST___disk_checks_chain"] +=',
+            (string) $loaded,
+            'a template that both inherits and directly attaches a dynamic-dictionary must'
+            . ' still merge with the parent template instead of overwriting its entries'
+        );
+    }
+
     public function testDynamicDictionaryOriginListsEachContributingTemplateOnce(): void
     {
         if ($this->skipForMissingDb()) {
@@ -947,6 +1006,8 @@ class IcingaHostTest extends BaseTestCase
                 '___TEST___b',
                 '___TEST___db-server-01',
                 '___TEST___linux-server',
+                '___TEST___disk-chain-child',
+                '___TEST___disk-chain-parent',
                 '___TEST___tpl-c',
                 '___TEST___tpl-b',
                 '___TEST___tpl-a',
@@ -976,7 +1037,11 @@ class IcingaHostTest extends BaseTestCase
             }
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', '___TEST___disk_checks_dyn'));
 
-            foreach (['___TEST___disk_checks_origin', '___TEST___tags_dyn'] as $keyName) {
+            foreach ([
+                '___TEST___disk_checks_origin',
+                '___TEST___tags_dyn',
+                '___TEST___disk_checks_chain',
+            ] as $keyName) {
                 $dba->delete('director_property', $dba->quoteInto('key_name = ?', $keyName));
             }
         }
