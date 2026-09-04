@@ -92,7 +92,7 @@ nothing between `assign where` and `import DirectorOverrideTemplate`:
 ```
 apply Service "http-check" for (value in host.vars.http_vhosts_list) {
 
-    vars.overriddenVar = "http-check"
+    vars.__director_overriddenVar = "http-check"
     import "http-template"
 
     assign where host.vars.http_vhosts_list == 1
@@ -112,7 +112,7 @@ imported `http-template`:
 apply Service for (value in host.vars.http_vhosts_list) {
     name = "http - " + value
 
-    vars.overriddenVar = "http - \$value\$"
+    vars.__director_overriddenVar = "http - \$value\$"
     import "http-template"
 
     assign where host.vars.http_vhosts_list == 1
@@ -124,7 +124,7 @@ apply Service for (value in host.vars.http_vhosts_list) {
 
 `import DirectorOverrideTemplate` is appended to every Apply Rule, Custom Variable based or not,
 it's what makes the optional "Override vars for inherited/applied Services" feature (see
-[REST API](70-REST-API.md)) work at all. `vars.overriddenVar` is the Custom-Variable-specific part
+[REST API](70-REST-API.md)) work at all. `vars.__director_overriddenVar` is the Custom-Variable-specific part
 of that same mechanism: since the rendered service name varies with each iteration, Director keeps
 the original, un-evaluated name pattern around in this variable so that template can still look up
 per-iteration overrides by name. It's added to every Apply For rule bound to a Custom Variable,
@@ -174,7 +174,7 @@ inline, no `name` line, and nothing between `assign where` and `import DirectorO
 ```
 apply Service "disk-check" for (key => value in host.vars.disk_checks) {
 
-    vars.overriddenVar = "disk-check"
+    vars.__director_overriddenVar = "disk-check"
     import "disk-template"
 
     assign where host.vars.disk_checks == 1
@@ -207,7 +207,7 @@ alphabetical order by name, not the order you entered them in:
 apply Service for (key => value in host.vars.disk_checks) {
     name = "disk - " + key
 
-    vars.overriddenVar = "disk - \$key\$"
+    vars.__director_overriddenVar = "disk - \$key\$"
     import "disk-template"
 
     assign where host.vars.disk_checks == 1

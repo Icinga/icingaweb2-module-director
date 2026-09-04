@@ -172,7 +172,7 @@ class IcingaServiceApplyForTest extends BaseTestCase
             'A Data field must keep winning over an unrelated same-named Custom Variable'
         );
         $this->assertStringNotContainsString('key => value', $rendered);
-        $this->assertStringNotContainsString('vars.overriddenVar', $rendered);
+        $this->assertStringNotContainsString('vars.__director_overriddenVar', $rendered);
 
         $otherHost->delete();
         $datafield->delete();

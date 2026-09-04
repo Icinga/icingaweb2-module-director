@@ -567,9 +567,9 @@ if (! globals.contains(DirectorOverrideTemplate)) {
     }
 
     var overriddenVar = name
-    if (vars.overriddenVar) {
-      overriddenVar = vars.overriddenVar
-      vars.remove("overriddenVar")
+    if (vars.__director_overriddenVar) {
+      overriddenVar = vars.__director_overriddenVar
+      vars.remove("__director_overriddenVar")
     }
 
     if (vars) {

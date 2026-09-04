@@ -392,7 +392,7 @@ class IcingaService extends IcingaObject implements ExportInterface
             }
 
             $extraInfo = $propertyType !== null
-                ? sprintf("\n    vars.overriddenVar = %s\n", $varName)
+                ? sprintf("\n    vars.__director_overriddenVar = %s\n", $varName)
                 : '';
 
             return sprintf(
