@@ -15,6 +15,7 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.12.x](#upgrade-to-1.12.x)
 * [Upgrading to 1.11.x](#upgrade-to-1.11.x)
 * [Upgrading to 1.10.x](#upgrade-to-1.10.x)
 * [Upgrading to 1.9.x](#upgrade-to-1.9.x)
@@ -41,6 +42,16 @@ All you need for backing up your Director is a snapshot of your database. Please
 use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
+
+<a name="upgrade-to-1.12.x"></a>Upgrading to 1.12.x
+--------------------------------------------------
+
+Please check your module dependencies the incubator module requirement has
+been replaced by a dependency on the [Icinga PHP Legacy](https://github.com/Icinga/icinga-php-legacy)
+library. If the library is not yet installed, please install it. As always,
+you'll then be prompted to apply pending Database Migrations.
+
+PHP 8.2 is now required.
 
 <a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
 --------------------------------------------------
