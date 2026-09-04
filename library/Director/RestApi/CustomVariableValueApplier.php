@@ -54,10 +54,11 @@ class CustomVariableValueApplier
         // database there is no way to recover what they used to be
         $oldVars = $this->plainVars($objectVars->getOriginalVars());
         $wipeValuesInDb = $request->method === 'PUT' && $object->get('id');
-        // only templates allow attach/detach, concrete objects just replace values
+        // only templates allow attach/detach, and only for types that support it at all
         $wipePropertyAttachmentsInDb = $wipeValuesInDb
             && $request->actionName === 'variables'
-            && $object->isTemplate();
+            && $object->isTemplate()
+            && $object->supportsCustomProperties();
 
         // If a caller already opened a transaction (e.g. IcingaObjectHandler wrapping
         // object persistence and this call together), let it own the commit/rollback.
@@ -232,6 +233,13 @@ class CustomVariableValueApplier
         // must not skip that check below.
         if ($request->actionName !== 'variables') {
             return;
+        }
+
+        if (! $object->supportsCustomProperties()) {
+            throw new NotFoundError(sprintf(
+                'The custom variable %s can not be attached, this object type does not support custom properties',
+                $key
+            ));
         }
 
         if (! $object->isTemplate()) {
