@@ -471,6 +471,22 @@ Content-Type: application/json
 }
 ```
 
+Not every template type supports attachment at all. A service set is a
+template but can never have a custom variable attached to it, so a `PUT`
+to `director/serviceset/variables` for an unattached key is rejected
+outright, whether or not the value is `null`:
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "The custom variable datacenter can not be attached, this object type does not support custom properties"
+}
+```
+
 <a id="Custom-Variables-not-configured"></a>#### Variable not configured
 
 The message depends on how the variable is unknown.
