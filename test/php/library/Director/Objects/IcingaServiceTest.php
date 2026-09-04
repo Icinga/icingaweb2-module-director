@@ -282,6 +282,27 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
+    public function testApplyForDisplayNameMacroSupportsLegacyConfigAlias()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.disks';
+        $service->assign_filter = 'host.vars.env="test"';
+        // same legacy alias as the object name, now on a plain property
+        $service->display_name = 'Disk check $config$';
+
+        $this->assertStringContainsString(
+            'display_name = "Disk check " + value',
+            (string) $service
+        );
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(

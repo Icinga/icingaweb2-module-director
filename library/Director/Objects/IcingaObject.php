@@ -2249,9 +2249,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return c::renderKeyValue(
             $key,
             $this->isApplyRule() ?
-                c::renderStringWithVariables($value) :
+                c::renderStringWithVariables($value, $this->getApplyForVariableWhiteList()) :
                 c::renderString($value)
         );
+    }
+
+    /**
+     * Macro whitelist for an apply-for loop body, null means unrestricted
+     *
+     * @return ?array
+     */
+    protected function getApplyForVariableWhiteList(): ?array
+    {
+        return null;
     }
 
     protected function renderLegacyObjectProperty($key, $value)

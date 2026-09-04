@@ -375,10 +375,9 @@ class IcingaService extends IcingaObject implements ExportInterface
             $varName = c::renderString($name);
 
             if (c::stringHasMacro($name)) {
-                $this->vars(); // populates $applyForWhiteList, needed for the legacy $config$ alias
                 $extraName = c::renderKeyValue(
                     'name',
-                    c::renderStringWithVariables($name, $this->applyForWhiteList)
+                    c::renderStringWithVariables($name, $this->getApplyForVariableWhiteList())
                 );
                 $name = '';
             } elseif ($name !== '') {
@@ -754,6 +753,14 @@ class IcingaService extends IcingaObject implements ExportInterface
         $vars->setWhiteList($this->applyForWhiteList);
 
         return $vars;
+    }
+
+    protected function getApplyForVariableWhiteList(): ?array
+    {
+        // building vars also builds this whitelist, reuse it here
+        $this->vars();
+
+        return $this->applyForWhiteList;
     }
 
     /**
