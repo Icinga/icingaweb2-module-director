@@ -12,6 +12,8 @@ use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
+use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use InvalidArgumentException;
@@ -115,6 +117,33 @@ class ObjectImporter
 
                 $settings->apply_changes = DbDataFormatter::normalizeBoolean($settings->apply_changes);
             }
+        }
+
+        if (
+            $implementation === IcingaTemplateChoiceHost::class
+            || $implementation === IcingaTemplateChoiceService::class
+        ) {
+            $name = $plain->required_template ?? null;
+            if ($name === null || isset($plain->required_template_id)) {
+                return;
+            }
+
+            // Baskets store the associated template by name, look it up here instead of
+            // letting the generic relation resolver do it, that one can't load a service
+            // template because it uses a multicolumn key
+            $templateClass = $implementation === IcingaTemplateChoiceService::class
+                ? IcingaService::class
+                : IcingaHost::class;
+            $template = $templateClass::loadOptional([
+                'object_type' => 'template',
+                'object_name' => $name,
+            ], $this->db);
+
+            if ($template !== null) {
+                $plain->required_template_id = $template->get('id');
+            }
+
+            unset($plain->required_template);
         }
     }
 
