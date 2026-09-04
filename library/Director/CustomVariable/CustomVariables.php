@@ -9,11 +9,19 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Countable;
 use Exception;
+use InvalidArgumentException;
 use Iterator;
 use Ramsey\Uuid\UuidInterface;
 
 class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 {
+    /**
+     * Temporary var name the apply-for override template borrows to pass
+     * the rule's name into the imported template, then deletes right away.
+     * Never a real custom variable.
+     */
+    public const RESERVED_OVERRIDE_HANDOFF_KEY = '__director_overriddenVar';
+
     /** @var CustomVariable[] */
     protected $storedVars = array();
 
@@ -186,6 +194,13 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     public function set($key, $value)
     {
         $key = (string) $key;
+
+        if ($key === self::RESERVED_OVERRIDE_HANDOFF_KEY) {
+            throw new InvalidArgumentException(sprintf(
+                "'%s' is reserved for Director's internal use, it can't be used as a custom variable name",
+                self::RESERVED_OVERRIDE_HANDOFF_KEY
+            ));
+        }
 
         if ($value instanceof CustomVariable) {
             $value = clone($value);

@@ -391,7 +391,7 @@ class IcingaService extends IcingaObject implements ExportInterface
             }
 
             $extraInfo = $propertyType !== null
-                ? sprintf("\n    vars.__director_overriddenVar = %s\n", $varName)
+                ? sprintf("\n    vars.%s = %s\n", CustomVariables::RESERVED_OVERRIDE_HANDOFF_KEY, $varName)
                 : '';
 
             return sprintf(

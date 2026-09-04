@@ -7,6 +7,7 @@ namespace Tests\Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Test\BaseTestCase;
+use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 
 class CustomVariablesTest extends BaseTestCase
@@ -97,6 +98,14 @@ class CustomVariablesTest extends BaseTestCase
 
         $this->assertNull($vars->get('datacenter')->getUuid());
         $this->assertEquals('fra', $vars->get('datacenter')->getValue());
+    }
+
+    public function testReservedOverrideHandoffKeyCanNotBeUsedAsAVarName()
+    {
+        $vars = $this->newVars();
+
+        $this->expectException(InvalidArgumentException::class);
+        $vars->set(CustomVariables::RESERVED_OVERRIDE_HANDOFF_KEY, 'evil');
     }
 
     protected function indentVarsList($vars)

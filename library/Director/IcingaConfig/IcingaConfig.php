@@ -7,6 +7,7 @@ use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Application\MemoryLimit;
+use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ShipConfigFilesHook;
@@ -541,6 +542,7 @@ globals.directorWarnOnceForThresholds = function() {
 const DirectorOverrideTemplate = "%s"
 if (! globals.contains(DirectorOverrideTemplate)) {
   const DirectorOverrideVars = "%s"
+  const DirectorOverrideHandoffVar = "%s"
 
   globals.directorWarnedOnceForServiceWithoutHost = false;
   globals.directorWarnOnceForServiceWithoutHost = function() {
@@ -567,9 +569,9 @@ if (! globals.contains(DirectorOverrideTemplate)) {
     }
 
     var overriddenVar = name
-    if (vars.__director_overriddenVar) {
-      overriddenVar = vars.__director_overriddenVar
-      vars.remove("__director_overriddenVar")
+    if (vars[DirectorOverrideHandoffVar]) {
+      overriddenVar = vars[DirectorOverrideHandoffVar]
+      vars.remove(DirectorOverrideHandoffVar)
     }
 
     if (vars) {
@@ -581,7 +583,8 @@ if (! globals.contains(DirectorOverrideTemplate)) {
 }
 ',
             $settings->override_services_templatename,
-            $settings->override_services_varname
+            $settings->override_services_varname,
+            CustomVariables::RESERVED_OVERRIDE_HANDOFF_KEY
         );
     }
 
