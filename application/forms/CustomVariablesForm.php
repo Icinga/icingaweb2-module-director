@@ -404,7 +404,8 @@ class CustomVariablesForm extends CompatForm
      * Assert that a new custom variable may be attached to $this->object
      *
      * Custom variables are only meant to be attached directly to a
-     * template, and needs director/admin.
+     * template, and needs director/admin. Some template types, like
+     * service sets, never support attaching one at all.
      *
      * @return void
      *
@@ -413,6 +414,13 @@ class CustomVariablesForm extends CompatForm
      */
     private function assertCanAttachNewVariable(): void
     {
+        if (! $this->object->supportsCustomProperties()) {
+            throw new LogicException(sprintf(
+                'Custom Variables can not be attached to %s, this object type does not support custom properties',
+                $this->object->getObjectName()
+            ));
+        }
+
         if (! $this->object->isTemplate()) {
             throw new LogicException(sprintf(
                 'Custom Variables can only be attached directly to a template, got %s',
