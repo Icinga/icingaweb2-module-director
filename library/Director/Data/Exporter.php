@@ -149,12 +149,6 @@ class Exporter
             }
             unset($props['timeperiod_id']);
         } elseif ($object instanceof IcingaTemplateChoice) {
-            if (isset($props['required_template_id'])) {
-                $requiredId = $props['required_template_id'];
-                unset($props['required_template_id']);
-                $props = $this->loadTemplateName($object->getObjectTableName(), $requiredId);
-            }
-
             $props['members'] = array_values($object->getMembers());
         } elseif ($object instanceof IcingaServiceSet) {
             if ($object->get('host_id')) {
@@ -191,16 +185,6 @@ class Exporter
         }
 
         return $this->serviceLoader;
-    }
-
-    protected function loadTemplateName($table, $id)
-    {
-        $db = $this->db;
-        $query = $db->select()
-            ->from(['o' => $table], 'o.object_name')->where("o.object_type = 'template'")
-            ->where('o.id = ?', $id);
-
-        return $db->fetchOne($query);
     }
 
     protected function getDatalistNameForId($id)
