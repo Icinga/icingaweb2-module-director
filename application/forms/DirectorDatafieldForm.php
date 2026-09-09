@@ -4,10 +4,13 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Application\Hook;
+use Icinga\Web\Notification;
 use Exception;
+use Zend_Validate_Callback;
 
 class DirectorDatafieldForm extends DirectorObjectForm
 {
@@ -18,12 +21,21 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function onRequest()
     {
         if ($this->hasBeenSent()) {
+            $newVarname = $this->getSentValue('varname');
+            $collidesWithProperty = ! empty($newVarname)
+                && $this->shouldBeRenamed()
+                && (new CustomVariableValueCleaner($this->getDb()))->wouldDatafieldCollideWithProperty(
+                    $newVarname
+                );
+
             if ($this->shouldBeDeleted()) {
                 $varname = $this->getSentValue('varname');
                 if ($cnt = CustomVariables::countAll($varname, $this->getDb())) {
                     $this->askForVariableDeletion($varname, $cnt);
                 }
-            } elseif ($this->shouldBeRenamed()) {
+            } elseif (! $collidesWithProperty && $this->shouldBeRenamed()) {
+                // Skip the rename on a collision, otherwise renameAll() would move the
+                // vars into the property's name before validation even rejects it.
                 $varname = $this->object()->getOriginalProperty('varname');
                 if ($cnt = CustomVariables::countAll($varname, $this->getDb())) {
                     $this->askForVariableRename(
@@ -57,7 +69,20 @@ class DirectorDatafieldForm extends DirectorObjectForm
 
         if ($wipe = $this->getSentValue('wipe_vars')) {
             if ($wipe === 'y') {
-                CustomVariables::deleteAll($varname, $this->getDb());
+                $cleaner = new CustomVariableValueCleaner($this->getDb());
+                if ($cleaner->wouldDatafieldCollideWithProperty($varname)) {
+                    // A Custom Variable Property owns this name too, its values would
+                    // get wiped along with the field's, so leave everything in place.
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Kept "%s"\'s stored values in place, a Custom Variable Property'
+                            . ' with the same name owns them.'
+                        ),
+                        $varname
+                    ));
+                } else {
+                    CustomVariables::deleteAll($varname, $this->getDb());
+                }
             }
         } else {
             $this->abortDeletion();
@@ -100,7 +125,20 @@ class DirectorDatafieldForm extends DirectorObjectForm
 
         if ($wipe = $this->getSentValue('rename_vars')) {
             if ($wipe === 'y') {
-                CustomVariables::renameAll($oldname, $newname, $this->getDb());
+                $cleaner = new CustomVariableValueCleaner($this->getDb());
+                if ($cleaner->wouldDatafieldCollideWithProperty($oldname)) {
+                    // The old name collides with a Custom Variable Property, its values
+                    // can't be told apart from the field's, so leave them under $oldname.
+                    Notification::warning(sprintf(
+                        $this->translate(
+                            'Kept "%s"\'s stored values in place, a Custom Variable Property'
+                            . ' with the same name owns them.'
+                        ),
+                        $oldname
+                    ));
+                } else {
+                    CustomVariables::renameAll($oldname, $newname, $this->getDb());
+                }
             }
         } else {
             $this->abortDeletion();
@@ -143,6 +181,26 @@ class DirectorDatafieldForm extends DirectorObjectForm
                 'This will be the name of the custom variable in the rendered Icinga configuration.'
             ),
             'required'    => true,
+            'validators'   => [
+                new Zend_Validate_Callback(function ($value) {
+                    $varname = $value;
+                    $isNew = ! $this->object()->hasBeenLoadedFromDb();
+                    if (! empty($varname) && ($isNew || $this->shouldBeRenamed())) {
+                        $cleaner = new CustomVariableValueCleaner($this->getDb());
+                        if ($cleaner->wouldDatafieldCollideWithProperty($varname)) {
+                            $this->getElement('varname')->addErrorMessage($this->translate(
+                                'A Custom Variable Property with the same name already exists.'
+                                . ' Rename or remove it first.'
+                            ));
+
+                            return false;
+                        }
+                    }
+
+
+                    return true;
+                })
+            ]
         ));
 
         $this->addElement('text', 'caption', array(
