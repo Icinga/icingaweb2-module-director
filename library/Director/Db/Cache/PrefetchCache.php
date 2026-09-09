@@ -97,14 +97,36 @@ class PrefetchCache
         $checksum = $var->getChecksum();
         if (null === $checksum) {
             return $var->toConfigString($renderExpressions);
-        } else {
-            $checksum .= (int) $renderExpressions;
-            if (! array_key_exists($checksum, $this->renderedVars)) {
-                $this->renderedVars[$checksum] = $var->toConfigString($renderExpressions);
-            }
-
-            return $this->renderedVars[$checksum];
         }
+
+        $cacheKey = $checksum . (int) $renderExpressions . $this->whiteListKey($var);
+        if (! array_key_exists($cacheKey, $this->renderedVars)) {
+            $this->renderedVars[$cacheKey] = $var->toConfigString($renderExpressions);
+        }
+
+        return $this->renderedVars[$cacheKey];
+    }
+
+    /**
+     * Extra cache key part for the active whitelist, empty when there is none.
+     *
+     * Checksum only covers the value, not the whitelist used to render it. Apply-for
+     * rules render the same checksum with a different whitelist per rule style, so
+     * without this one rule's cached output could leak into the other.
+     *
+     * Skipping the cache for whitelisted vars would be simpler, but apply-for is
+     * where caching pays off most. Many hosts inheriting one dictionary would render
+     * it over and over instead of once. Hashing the whitelist in keeps that win.
+     *
+     * @param CustomVariable $var The var whose active whitelist gets hashed
+     *
+     * @return string
+     */
+    private function whiteListKey(CustomVariable $var): string
+    {
+        $whiteList = $var->getWhiteList();
+
+        return $whiteList === [] ? '' : md5(serialize($whiteList));
     }
 
     public function hostServiceBlacklist()

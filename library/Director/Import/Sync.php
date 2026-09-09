@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Application\MemoryLimit;
+use Icinga\Module\Director\CustomVariable\ObjectCustomVariablePropertyLinker;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
@@ -868,6 +869,10 @@ class Sync
         $allowCreate = ! $updateOnly;
 
         try {
+            // A synced var only ever gets set by name, never linked to a property.
+            // Do that here, once for the whole run, before anything is stored.
+            ObjectCustomVariablePropertyLinker::linkSyncedObjects($objects, $db);
+
             $formerActivityChecksum = hex2bin(
                 $db->getLastActivityChecksum()
             );
