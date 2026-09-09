@@ -20,6 +20,8 @@ class TemplateTree
 
     protected $parents;
 
+    protected $parentsUuids;
+
     protected $children;
 
     protected $rootNodes;
@@ -391,6 +393,8 @@ class TemplateTree
         $rootNodes = [];
         $children = [];
         $names = [];
+        $parentsUuids = [];
+        $uuids = [];
         foreach ($templates as $row) {
             $id = (int) $row->id;
             $pid = (int) $row->parent_id;
@@ -409,6 +413,7 @@ class TemplateTree
 
             $names[$pid] = $row->parent_name;
             $parents[$id][$pid] = $row->parent_name;
+            $parentsUuids[$id][$pid] = $row->parent_uuid;
 
             if (! array_key_exists($pid, $children)) {
                 $children[$pid] = [];
@@ -417,7 +422,8 @@ class TemplateTree
             $children[$pid][$id] = $row->name;
         }
 
-        $this->parents   = $parents;
+        $this->parents = $parents;
+        $this->parentsUuids = $parentsUuids;
         $this->children  = $children;
         $this->rootNodes = $rootNodes;
         $this->names = $names;
@@ -463,6 +469,7 @@ class TemplateTree
                 'object_type' => 'o.object_type',
                 'parent_id'   => 'p.id',
                 'parent_name' => 'p.object_name',
+                'parent_uuid' => 'p.uuid'
             ]
         )->joinLeft(
             ['i' => $table . '_inheritance'],
