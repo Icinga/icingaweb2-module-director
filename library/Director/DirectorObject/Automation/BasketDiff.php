@@ -3,6 +3,9 @@
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use gipfl\Json\JsonString;
+use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\PropertySchemaDiff;
+use Icinga\Module\Director\CustomVariable\PropertyValueMigration;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
@@ -24,6 +27,9 @@ class BasketDiff
     protected $objects = null;
     /** @var BasketSnapshotFieldResolver */
     protected $fieldResolver;
+
+    /** @var BasketSnapshotCustomVariableResolver */
+    protected $customPropertyResolver;
 
     public function __construct(BasketSnapshot $snapshot, Db $db)
     {
@@ -58,14 +64,63 @@ class BasketDiff
         return $this->fieldResolver;
     }
 
+    protected function getCustomPropertyResolver(): BasketSnapshotCustomVariableResolver
+    {
+        if ($this->customPropertyResolver === null) {
+            $this->customPropertyResolver = new BasketSnapshotCustomVariableResolver(
+                $this->getBasketObjects(),
+                $this->db,
+                true
+            );
+        }
+
+        return $this->customPropertyResolver;
+    }
+
+    /**
+     * Work out what restoring this property would do to its stored values
+     *
+     * Runs the exact same check a real restore does, just never followed by a
+     * write, so this is safe to call from a preview screen.
+     *
+     * @param string $uuid the property's uuid as used in the basket's own CustomVariable map
+     *
+     * @return PropertyValueMigration
+     */
+    public function getCustomPropertyMigrationPreview(string $uuid): PropertyValueMigration
+    {
+        $property = $this->getCustomPropertyResolver()->getTargetProperty($uuid);
+        if ($property === null) {
+            return PropertyValueMigration::nothingStoredYet();
+        }
+
+        $cleaner = new CustomVariableValueCleaner($this->db);
+
+        return (new PropertySchemaDiff($cleaner))->diff($property);
+    }
+
+    /**
+     * Count how many hosts, services and so on already have a value stored under this varname
+     *
+     * @param string $varname
+     *
+     * @return int
+     */
+    public function countStoredCustomVariableValues(string $varname): int
+    {
+        return (new CustomVariableValueCleaner($this->db))->countStoredValues($varname);
+    }
+
     protected function getCurrent(string $type, string $key, ?UuidInterface $uuid = null): ?stdClass
     {
         if ($uuid && $current = BasketSnapshot::instanceByUuid($type, $uuid, $this->db)) {
             $exported = $this->exporter->export($current);
             $this->getFieldResolver()->tweakTargetIds($exported);
+            $this->getCustomPropertyResolver()->tweakTargetUuids($exported);
         } elseif ($current = BasketSnapshot::instanceByIdentifier($type, $key, $this->db)) {
             $exported = $this->exporter->export($current);
             $this->getFieldResolver()->tweakTargetIds($exported);
+            $this->getCustomPropertyResolver()->tweakTargetUuids($exported);
         } else {
             $exported = null;
         }
@@ -78,6 +133,9 @@ class BasketDiff
     {
         $object = $this->getBasketObject($type, $key);
         $fields = $object->fields ?? null;
+        $customVariables = $object->customVariables ?? null;
+        $items = $object->items ?? null;
+        $datalist = $object->datalist ?? null;
         $reExport = $this->exporter->export(
             $this->importer->import(BasketSnapshot::getClassForType($type), $object)
         );
@@ -86,6 +144,28 @@ class BasketDiff
         } else {
             $reExport->fields = $fields;
         }
+
+        if ($customVariables === null) {
+            unset($reExport->customVariables);
+        } else {
+            $reExport->customVariables = $customVariables;
+        }
+
+        // A CustomVariable's items/datalist must reflect what the snapshot actually recorded,
+        // not the live DB row importer/exporter above just re-read, otherwise a child added
+        // or removed since the snapshot was taken would never show up in the diff.
+        if ($items === null) {
+            unset($reExport->items);
+        } else {
+            $reExport->items = $items;
+        }
+
+        if ($datalist === null) {
+            unset($reExport->datalist);
+        } else {
+            $reExport->datalist = $datalist;
+        }
+
         CompareBasketObject::normalize($reExport);
 
         return $reExport;
