@@ -7,6 +7,8 @@ namespace Tests\Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Test\BaseTestCase;
+use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 
 class CustomVariablesTest extends BaseTestCase
 {
@@ -65,6 +67,66 @@ class CustomVariablesTest extends BaseTestCase
             'vars.bla = "da"'
         ]);
         $this->assertEquals($expected, $vars->toConfigString(true));
+    }
+
+    public function testListKeysReturnsEveryKeyRegardlessOfUuid()
+    {
+        $vars = $this->newVars();
+        $vars->env = 'production';
+        $vars->datacenter = 'fra';
+        $vars->registerVarUuid('datacenter', Uuid::uuid4());
+
+        $this->assertEquals(['datacenter', 'env'], $vars->listKeys());
+    }
+
+    public function testListKeysSkipsDeletedVars()
+    {
+        $vars = $this->newVars();
+        $vars->env = 'production';
+        unset($vars->env);
+
+        $this->assertEquals([], $vars->listKeys());
+    }
+
+    public function testClearVarUuidDropsTheUuidButKeepsTheValue()
+    {
+        $vars = $this->newVars();
+        $vars->datacenter = 'fra';
+        $vars->registerVarUuid('datacenter', Uuid::uuid4());
+
+        $vars->clearVarUuid('datacenter');
+
+        $this->assertNull($vars->get('datacenter')->getUuid());
+        $this->assertEquals('fra', $vars->get('datacenter')->getValue());
+    }
+
+    public function testReservedOverrideHandoffKeyCanNotBeUsedAsAVarName()
+    {
+        $vars = $this->newVars();
+
+        $this->expectException(InvalidArgumentException::class);
+        $vars->set(CustomVariables::RESERVED_OVERRIDE_HANDOFF_KEY, 'evil');
+    }
+
+    public function testStoredRowsWithTheReservedOverrideHandoffKeyAreDropped()
+    {
+        $rows = [
+            (object) [
+                'varname'  => 'env',
+                'varvalue' => '"production"',
+                'format'   => 'json'
+            ],
+            (object) [
+                'varname'  => CustomVariables::RESERVED_OVERRIDE_HANDOFF_KEY,
+                'varvalue' => '"evil"',
+                'format'   => 'json'
+            ]
+        ];
+
+        $vars = CustomVariables::forStoredRows($rows);
+
+        $this->assertEquals(['env'], $vars->listKeys());
+        $this->assertNull($vars->get(CustomVariables::RESERVED_OVERRIDE_HANDOFF_KEY));
     }
 
     protected function indentVarsList($vars)

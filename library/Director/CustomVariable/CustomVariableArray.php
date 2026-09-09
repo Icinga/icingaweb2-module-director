@@ -11,7 +11,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 class CustomVariableArray extends CustomVariable
 {
     /** @var  CustomVariable[] */
-    protected $value;
+    protected $value = [];
 
     public function equals(CustomVariable $var)
     {
@@ -81,6 +81,12 @@ class CustomVariableArray extends CustomVariable
 
     public function toConfigString($renderExpressions = false)
     {
+        if ($this->whiteList !== null) {
+            foreach ($this->value as $k => $v) {
+                $this->value[$k] = $v->setWhiteList($this->whiteList);
+            }
+        }
+
         $parts = array();
         foreach ($this->value as $k => $v) {
             $parts[] = $v->toConfigString($renderExpressions);
