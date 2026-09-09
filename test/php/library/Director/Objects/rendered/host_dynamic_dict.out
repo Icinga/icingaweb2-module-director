@@ -1,0 +1,18 @@
+object Host "___TEST___db-server-01" {
+    import "___TEST___linux-server"
+
+    address = "10.0.1.42"
+    vars["___TEST___disk_checks_dyn"] += {
+        data = {
+            crit = "5%"
+            mount_point = "/data"
+            warn = "15%"
+        }
+        root = {
+            crit = "10%"
+            mount_point = "/"
+            warn = "20%"
+        }
+    }
+}
+
