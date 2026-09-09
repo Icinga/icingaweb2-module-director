@@ -37,6 +37,8 @@ class IcingaUser extends IcingaObject implements ExportInterface
 
     protected $supportsFields = true;
 
+    protected $supportsCustomVariables = true;
+
     protected $supportsImports = true;
 
     protected $booleans = array(
