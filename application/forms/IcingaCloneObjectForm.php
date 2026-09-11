@@ -174,6 +174,11 @@ class IcingaCloneObjectForm extends DirectorForm
             $connection
         )->set('object_name', $newName);
 
+        if ($new->hasProperty('display_name')) {
+            // display name belongs to the object we copied it from, not to the clone
+            $new->set('display_name', null);
+        }
+
         if ($new->isExternal()) {
             $new->set('object_type', 'object');
         }
