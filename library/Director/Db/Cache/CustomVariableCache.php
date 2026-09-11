@@ -21,34 +21,22 @@ class CustomVariableCache
         $connection = $object->getConnection();
         $db = $connection->getDbAdapter();
 
-        $columns = array(
-            'id'       => sprintf('v.%s', $object->getVarsIdColumn()),
-            'varname'  => 'v.varname',
-            'varvalue' => 'v.varvalue',
-            'format'   => 'v.format',
-            'checksum' => '(NULL)',
-        );
-
-        if ($connection->isPgsql()) {
-            if ($connection->hasPgExtension('pgcrypto')) {
-                $columns['checksum'] = "DIGEST(v.varvalue || ';' || v.format, 'sha1')";
-            }
-        } else {
-            $columns['checksum'] = "UNHEX(SHA1(v.varvalue || ';' || v.format))";
-        }
-
         $query = $db->select()->from(
-            array('v' => $object->getVarsTableName()),
-            $columns
+            ['v' => $object->getVarsTableName()],
+            [
+                'id'       => sprintf('v.%s', $object->getVarsIdColumn()),
+                'varname'  => 'v.varname',
+                'varvalue' => 'v.varvalue',
+                'format'   => 'v.format',
+            ]
         );
 
         foreach ($db->fetchAll($query) as $row) {
             $id = $row->id;
             unset($row->id);
 
-            if (is_resource($row->checksum)) {
-                $row->checksum = stream_get_contents($row->checksum);
-            }
+            // hash it here instead of in SQL, some MySQL versions dropped SHA1()
+            $row->checksum = sha1($row->varvalue . ';' . $row->format, true);
 
             if (array_key_exists($id, $this->rowsById)) {
                 $this->rowsById[$id][] = $row;
