@@ -37,15 +37,4 @@ class DbConnection extends IcingaDbConnection
 
         return $value;
     }
-
-    public function hasPgExtension($name)
-    {
-        $db = $this->db();
-        $query = $db->select()->from(
-            array('e' => 'pg_extension'),
-            array('cnt' => 'COUNT(*)')
-        )->where('extname = ?', $name);
-
-        return (int) $db->fetchOne($query) === 1;
-    }
 }
