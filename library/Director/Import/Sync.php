@@ -17,6 +17,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
+use Icinga\Module\Director\Objects\IcingaObjectGroups;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\SyncProperty;
@@ -576,7 +577,15 @@ class Sync
                     }
                 } elseif ($prop === 'groups') {
                     if ($val !== null) {
-                        $object->groups()->add($val);
+                        $object->groups()->add($val, 'fail', IcingaObjectGroups::OP_ASSIGN);
+                    }
+                } elseif ($prop === 'groupsadd') {
+                    if ($val !== null) {
+                        $object->groups()->add($val, 'fail', IcingaObjectGroups::OP_ADD);
+                    }
+                } elseif ($prop === 'groupsremove') {
+                    if ($val !== null) {
+                        $object->groups()->add($val, 'fail', IcingaObjectGroups::OP_REMOVE);
                     }
                 } elseif (substr($prop, 0, 5) === 'vars.') {
                     $varName = substr($prop, 5);

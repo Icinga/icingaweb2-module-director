@@ -540,6 +540,8 @@ abstract class DirectorObjectForm extends DirectorForm
             'address',
             'address6',
             'groups',
+            'groupsadd',
+            'groupsremove',
             'inherited_groups',
             'applied_groups',
             'users',
@@ -652,6 +654,55 @@ abstract class DirectorObjectForm extends DirectorForm
     {
         $this->listUrl = $url;
         return $this;
+    }
+
+    /**
+     * A group must not be listed in more than one of the group elements, the
+     * last one would silently win and the user would never learn about it
+     *
+     * @param array $data
+     * @return bool
+     */
+    public function isValid($data)
+    {
+        $valid = parent::isValid($data);
+
+        $operators = [
+            'groups'       => '=',
+            'groupsadd'    => '+=',
+            'groupsremove' => '-=',
+        ];
+
+        $seen = [];
+        foreach ($operators as $name => $operator) {
+            $element = $this->getElement($name);
+            if ($element === null) {
+                continue;
+            }
+
+            foreach ((array) $element->getValue() as $group) {
+                if ($group === null || $group === '') {
+                    continue;
+                }
+
+                if (array_key_exists($group, $seen)) {
+                    $element->addError(sprintf(
+                        $this->translate(
+                            'The group "%s" is already used with the "%s" operator,'
+                            . ' a group can only be used once'
+                        ),
+                        $group,
+                        $seen[$group]
+                    ));
+                    $valid = false;
+                    continue;
+                }
+
+                $seen[$group] = $operator;
+            }
+        }
+
+        return $valid;
     }
 
     public function onSuccess()
