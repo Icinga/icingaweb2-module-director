@@ -107,4 +107,61 @@ class IcingaZone extends IcingaObject
 
         return $this->endpointList;
     }
+    public function validate()
+    {
+        parent::validate();
+
+        $parentId = $this->get('parent_id');
+        if ($parentId === null || $parentId === '') {
+            return true;
+        }
+
+        $zoneId = $this->get('id');
+        $zoneName = $this->get('object_name');
+
+        if ($zoneId !== null && (int) $parentId === (int) $zoneId) {
+            throw new \InvalidArgumentException(sprintf(
+                'Infinite recursion detected while resolving zone graph:'
+                . ' zone "%s" cannot be its own parent. Check your zone hierarchy.',
+                $zoneName
+            ));
+        }
+
+        $path = [$zoneName];
+        $seen = [];
+        if ($zoneId !== null) {
+            $seen[(int) $zoneId] = $zoneName;
+        }
+
+        while ($parentId !== null) {
+            $parent = self::loadWithAutoIncId($parentId, $this->connection);
+            $parentName = $parent->get('object_name');
+            $path[] = $parentName;
+
+            if ($zoneId !== null && (int) $parentId === (int) $zoneId) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Infinite recursion detected while resolving zone graph:'
+                    . ' setting parent to "%s" would create a cycle (%s).'
+                    . ' Check your zone hierarchy.',
+                    $path[1],
+                    implode(' -> ', $path)
+                ));
+            }
+
+            if (isset($seen[(int) $parentId])) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Infinite recursion detected while resolving zone graph:'
+                    . ' pre-existing cycle in the parent chain of "%s" (%s).'
+                    . ' Check your zone hierarchy.',
+                    $zoneName,
+                    implode(' -> ', $path)
+                ));
+            }
+            $seen[(int) $parentId] = $parentName;
+
+            $parentId = $parent->get('parent_id');
+        }
+
+        return true;
+    }
 }

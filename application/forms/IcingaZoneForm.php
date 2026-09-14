@@ -35,9 +35,10 @@ class IcingaZoneForm extends DirectorObjectForm
         $this->addElement('select', 'parent_id', array(
             'label'        => $this->translate('Parent Zone'),
             'description'  => $this->translate('Chose an (optional) parent zone'),
-            'multiOptions' => $this->optionalEnum($this->db->enumZones()),
+            'multiOptions' => $this->optionalEnum($this->db->enumZonesExcept($this->object !== null ? $this->object->get('id') : null)),
         ));
 
         $this->setButtons();
     }
 }
+

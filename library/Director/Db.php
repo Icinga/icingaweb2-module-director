@@ -567,6 +567,17 @@ class Db extends DbConnection
         return $this->enumIcingaObjects('zone');
     }
 
+    public function enumZonesExcept($id = null)
+    {
+        $filters = array();
+
+        if ($id !== null) {
+            $filters['id != (?)'] = (int) $id;
+        }
+
+        return $this->enumIcingaObjects('zone', $filters);
+    }
+
     public function enumNonglobalZones()
     {
         $filters = array('is_global = ?' => 'n');

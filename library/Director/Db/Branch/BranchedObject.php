@@ -281,7 +281,7 @@ class BranchedObject
             }
             $branched->set('id', $this->object->get('id'));
             $branched->set('uuid', $this->object->get('uuid'));
-            foreach ((array) $this->object->toPlainObject(false, true) as $key => $value) {
+            foreach ($this->object->getProperties() as $key => $value) {
                 if ($key === 'object_type') {
                     continue;
                 }
