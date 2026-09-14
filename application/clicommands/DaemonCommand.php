@@ -17,19 +17,26 @@ class DaemonCommand extends Command
      *
      * USAGE
      *
-     * icingacli director daemon run [--db-resource <name>] [--kickstart]
+     * icingacli director daemon run [--db-resource <name>] [--kickstart] [--force-kickstart]
      *
      * OPTIONS
      *
-     *   --kickstart  Run migrations, kickstart (if required) and deploy
-     *                config before starting the daemon
+     *   --kickstart        Run migrations, kickstart (if required) and deploy
+     *                      config before starting the daemon. Unlike chaining
+     *                      the migration/kickstart/deploy commands by hand,
+     *                      this refuses to touch a DB that already has
+     *                      Endpoint, Zone or Command objects, see
+     *                      --force-kickstart
+     *   --force-kickstart  Kickstart even if this Director DB already has
+     *                      Endpoint, Zone or Command objects that could get
+     *                      removed. Only use this if you know what you're doing
      */
     public function runAction()
     {
         $this->app->getModuleManager()->loadEnabledModules();
         $dbResource = $this->params->get('db-resource');
         if ($this->params->get('kickstart')) {
-            $this->runKickstart($dbResource);
+            $this->runKickstart($dbResource, (bool) $this->params->get('force-kickstart'));
         }
 
         $daemon = new BackgroundDaemon();
@@ -40,7 +47,15 @@ class DaemonCommand extends Command
         $daemon->run();
     }
 
-    protected function runKickstart(?string $dbResource)
+    /**
+     * Run migrations, kickstart and deploy config before the daemon starts
+     *
+     * @param ?string $dbResource DB resource to use, falls back to the configured default
+     * @param bool $force Kickstart even if there's already Endpoint, Zone or Command objects
+     *
+     * @return void
+     */
+    protected function runKickstart(?string $dbResource, bool $force = false)
     {
         $db = $dbResource === null ? $this->db() : Db::fromResourceName($dbResource);
 
@@ -62,6 +77,18 @@ class DaemonCommand extends Command
             return;
         }
 
+        if ($this->hasExistingKickstartObjects($db)) {
+            if (! $force) {
+                echo "Refusing to kickstart, this DB already has Endpoint, Zone or Command objects.\n"
+                    . "Pass --force-kickstart to override, or run 'kickstart run' by hand.\n";
+                exit(1);
+            }
+
+            if ($this->isVerbose) {
+                echo "Existing Endpoint, Zone or Command objects found, forcing kickstart anyway\n";
+            }
+        }
+
         if ($this->isVerbose) {
             echo "Kickstart has been configured and will be triggered\n";
         }
@@ -81,5 +108,28 @@ class DaemonCommand extends Command
         } elseif ($this->isVerbose) {
             echo $deployer->getNoDeploymentReason() . "\n";
         }
+    }
+
+    /**
+     * Check if a kickstart run could still remove Endpoint, Zone or Command objects
+     *
+     * Only counts objects a previous kickstart imported, a kickstart run
+     * never touches manually created ones like templates
+     *
+     * @param Db $db Database connection to check
+     *
+     * @return bool
+     */
+    protected function hasExistingKickstartObjects(Db $db)
+    {
+        $summary = $db->getObjectSummary();
+
+        foreach (['endpoint', 'zone', 'command'] as $type) {
+            if ((int) $summary[$type]->cnt_external > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
