@@ -24,8 +24,13 @@ class DaemonCommand extends Command
      *
      * OPTIONS
      *
-     *   --kickstart  Run migrations, kickstart (if required) and deploy
-     *                config before starting the daemon
+     *   --kickstart        Run migrations, kickstart (if required) and deploy
+     *                      config before starting the daemon. Unlike chaining
+     *                      the migration/kickstart/deploy commands by hand,
+     *                      this refuses to touch a DB that already has
+     *                      imported Endpoint, Zone or Command objects. Run
+     *                      'icingacli director kickstart run' separately to
+     *                      recover an existing installation
      */
     public function runAction(): void
     {
@@ -43,6 +48,13 @@ class DaemonCommand extends Command
         $daemon->run();
     }
 
+    /**
+     * Run migrations, kickstart and deploy config before the daemon starts
+     *
+     * @param ?string $dbResource DB resource to use, falls back to the configured default
+     *
+     * @return void
+     */
     protected function runKickstart(?string $dbResource): void
     {
         $db = $dbResource === null ? $this->db() : Db::fromResourceName($dbResource);
@@ -65,6 +77,12 @@ class DaemonCommand extends Command
             return;
         }
 
+        if ($this->hasExistingKickstartObjects($db)) {
+            echo "Refusing to kickstart, this DB already has Endpoint, Zone or Command objects.\n"
+                . "Run 'icingacli director kickstart run' separately to recover this installation.\n";
+            exit(1);
+        }
+
         if ($this->isVerbose) {
             echo "Kickstart has been configured and will be triggered\n";
         }
@@ -84,5 +102,28 @@ class DaemonCommand extends Command
         } elseif ($this->isVerbose) {
             echo $deployer->getNoDeploymentReason() . "\n";
         }
+    }
+
+    /**
+     * Check if a kickstart run could still remove Endpoint, Zone or Command objects
+     *
+     * Only counts objects a previous kickstart imported, a kickstart run
+     * never touches manually created ones like templates
+     *
+     * @param Db $db Database connection to check
+     *
+     * @return bool
+     */
+    protected function hasExistingKickstartObjects(Db $db): bool
+    {
+        $summary = $db->getObjectSummary();
+
+        foreach (['endpoint', 'zone', 'command'] as $type) {
+            if ((int) $summary[$type]->cnt_external > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
