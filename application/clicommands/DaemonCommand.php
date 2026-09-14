@@ -31,7 +31,7 @@ class DaemonCommand extends Command
      *                      Endpoint, Zone or Command objects that could get
      *                      removed. Only use this if you know what you're doing
      */
-    public function runAction()
+    public function runAction(): void
     {
         $this->app->getModuleManager()->loadEnabledModules();
         $dbResource = $this->params->get('db-resource');
@@ -55,7 +55,7 @@ class DaemonCommand extends Command
      *
      * @return void
      */
-    protected function runKickstart(?string $dbResource, bool $force = false)
+    protected function runKickstart(?string $dbResource, bool $force = false): void
     {
         $db = $dbResource === null ? $this->db() : Db::fromResourceName($dbResource);
 
@@ -120,7 +120,7 @@ class DaemonCommand extends Command
      *
      * @return bool
      */
-    protected function hasExistingKickstartObjects(Db $db)
+    protected function hasExistingKickstartObjects(Db $db): bool
     {
         $summary = $db->getObjectSummary();
 
