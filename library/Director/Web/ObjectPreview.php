@@ -9,12 +9,12 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Request;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\ControlsAndContent;
 
 class ObjectPreview
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var IcingaObject */
     protected $object;

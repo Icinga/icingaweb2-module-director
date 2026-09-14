@@ -56,6 +56,17 @@ class BasketController extends ActionController
             )
         );
         $basket = $this->requireBasket();
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            'director/basket/add',
+            [
+                'type'  => 'Basket',
+                'names' => $basket->getUniqueIdentifier()
+            ],
+            ['class' => 'icon-tag']
+        ));
+
         $this->basketTabs()->activate('show');
         $this->addTitle($basket->get('basket_name'));
         if ($basket->isEmpty()) {

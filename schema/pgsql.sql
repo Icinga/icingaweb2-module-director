@@ -1415,6 +1415,7 @@ CREATE TABLE icinga_usergroup (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
   zone_id integer DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_usergroup_zone
     FOREIGN KEY (zone_id)
@@ -2059,6 +2060,7 @@ CREATE TABLE icinga_dependency (
   zone_id integer DEFAULT NULL,
   assign_filter text DEFAULT NULL,
   parent_service_by_name character varying(255),
+  redundancy_group character varying(255),
   PRIMARY KEY (id),
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY (parent_host_id)
@@ -2764,6 +2766,7 @@ CREATE TABLE branched_icinga_dependency (
   zone_id integer DEFAULT NULL,
   assign_filter text DEFAULT NULL,
   parent_service_by_name character varying(255),
+  redundancy_group character varying(255),
 
   imports TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
@@ -2778,7 +2781,26 @@ CREATE TABLE branched_icinga_dependency (
 CREATE UNIQUE INDEX dependency_branch_object_name ON branched_icinga_dependency (branch_uuid, object_name);
 CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependency (object_name);
 
+CREATE TABLE icinga_usergroup_user_resolved
+(
+  usergroup_id integer NOT NULL,
+  user_id      integer NOT NULL,
+  PRIMARY KEY (usergroup_id, user_id),
+  CONSTRAINT icinga_usergroup_user_resolved_user
+    FOREIGN KEY (user_id)
+      REFERENCES icinga_user (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_usergroup_user_resolved_usergroup
+    FOREIGN KEY (usergroup_id)
+      REFERENCES icinga_usergroup (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
+CREATE INDEX usergroup_user_resolved_user ON icinga_usergroup_user_resolved (user_id);
+CREATE INDEX usergroup_user_resolved_usergroup ON icinga_usergroup_user_resolved (usergroup_id);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (189, NOW());
+  VALUES (192, NOW());

@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Db\Branch;
 
 class PlainObjectPropertyDiff
 {
-    public static function calculate(array $old = null, array $new = null)
+    public static function calculate(?array $old = null, ?array $new = null)
     {
         if ($new === null) {
             throw new \RuntimeException('Cannot diff for delete');

@@ -7,11 +7,11 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigFile;
 use ipl\Html\Html;
 use ipl\Html\HtmlString;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class ShowConfigFile extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $file;
 

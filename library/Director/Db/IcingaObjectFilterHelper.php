@@ -48,7 +48,7 @@ class IcingaObjectFilterHelper
         $template,
         $tableAlias = 'o',
         $inheritanceType = self::INHERIT_DIRECT,
-        UuidInterface $branchuuid = null
+        ?UuidInterface $branchuuid = null
     ) {
         $i = $tableAlias . 'i';
         $o = $tableAlias;

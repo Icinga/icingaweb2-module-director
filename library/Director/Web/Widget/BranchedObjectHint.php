@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\Web\Widget\Hint;
 use Icinga\Authentication\Auth;
 use Icinga\Exception\NotFoundError;
@@ -13,9 +13,9 @@ use ipl\Html\HtmlDocument;
 
 class BranchedObjectHint extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
-    public function __construct(Branch $branch, Auth $auth, BranchedObject $object = null, $hasPreferredBranch = false)
+    public function __construct(Branch $branch, Auth $auth, ?BranchedObject $object = null, $hasPreferredBranch = false)
     {
         if (! $branch->isBranch()) {
             if ($hasPreferredBranch) {

@@ -163,7 +163,7 @@ class IcingaCommandArgument extends IcingaObject
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,
-        array $chosenProperties = null,
+        ?array $chosenProperties = null,
         $resolveIds = true,
         $keepId = false
     ) {

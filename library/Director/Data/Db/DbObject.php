@@ -909,11 +909,11 @@ abstract class DbObject
     /**
      * Store object to database
      *
-     * @param  DbConnection $db
+     * @param  ?DbConnection $db
      * @return bool Whether storing succeeded. Always true, throws otherwise
      * @throws DuplicateKeyException
      */
-    public function store(DbConnection $db = null)
+    public function store(?DbConnection $db = null)
     {
         if ($db !== null) {
             $this->setConnection($db);
@@ -1181,11 +1181,11 @@ abstract class DbObject
 
     /**
      * @param array $properties
-     * @param DbConnection|null $connection
+     * @param ?DbConnection $connection
      *
      * @return static
      */
-    public static function create($properties = array(), DbConnection $connection = null)
+    public static function create($properties = array(), ?DbConnection $connection = null)
     {
         $obj = new static();
         if ($connection !== null) {

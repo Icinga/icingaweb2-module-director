@@ -3,10 +3,13 @@
 namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Application\Benchmark;
+use Icinga\Exception\MissingParameterException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
+use RuntimeException;
 
 /**
  * Deal with Director Import Sources
@@ -57,7 +60,8 @@ class ImportsourceCommand extends Command
      *
      * OPTIONS
      *
-     *   --id <id>     An Import Source ID. Use the list command to figure out
+     *   --id <id>     An Import Source ID. Use the list command to figure out. Should not be used together --name
+     *   --name <source_name> An Import Source Name. Should not be used together --id
      *   --benchmark   Show timing and memory usage details
      */
     public function checkAction()
@@ -65,6 +69,26 @@ class ImportsourceCommand extends Command
         $source = $this->getImportSource();
         $source->checkForChanges();
         $this->showImportStateDetails($source);
+    }
+
+    /**
+     * This command deletes the given Import Source.
+     *
+     * USAGE
+     *
+     * icingacli director importsource delete --id <id>
+     *
+     * OPTIONS
+     *
+     *   --id <id>     An Import Source ID. Use the list command to figure out. Should not be used together --name
+     *   --name <source_name> An Import Source Name. Should not be used together --id
+     */
+    public function deleteAction()
+    {
+        $source = $this->getImportSource();
+        if ($source->delete()) {
+            echo sprintf("Import Source '%s' has been deleted\n", $source->get('source_name'));
+        }
     }
 
     /**
@@ -79,7 +103,8 @@ class ImportsourceCommand extends Command
      *
      * OPTIONS
      *
-     *   --id <id>     An Import Source ID. Use the list command to figure out
+     *   --id <id>     An Import Source ID. Use the list command to figure out. Should not be used together --name
+     *   --name <source_name> An Import Source Name. Should not be used together --id
      *   --benchmark   Show timing and memory usage details
      */
     public function fetchAction()
@@ -107,7 +132,8 @@ class ImportsourceCommand extends Command
      *
      * OPTIONS
      *
-     *   --id <id>     An Import Source ID. Use the list command to figure out
+     *   --id <id>     An Import Source ID. Use the list command to figure out. Should not be used together --name
+     *   --name <source_name> An Import Source Name. Should not be used together --id
      *   --benchmark   Show timing and memory usage details
      */
     public function runAction()
@@ -123,14 +149,33 @@ class ImportsourceCommand extends Command
     }
 
     /**
+     * Get the import source based on its id or name
+     *
      * @return ImportSource
+     *
+     * @throws MissingParameterException|RuntimeException|NotFoundError
      */
-    protected function getImportSource()
+    protected function getImportSource(): ImportSource
     {
-        return ImportSource::loadWithAutoIncId(
-            (int) $this->params->getRequired('id'),
-            $this->db()
-        );
+        $id = null;
+        if ($this->params->has('id')) {
+            $id = (int) $this->params->get('id');
+        }
+
+        $name = null;
+        if ($id === null) {
+            $name = $this->params->get('name');
+        }
+
+        if ($id === null && $name === null) {
+            throw new MissingParameterException($this->translate('Either --id or --name is required'));
+        } elseif ($id !== null && $name !== null) {
+            throw new RuntimeException('Only one of --id or --name may be used, not both');
+        } elseif ($id !== null) {
+            return ImportSource::loadWithAutoIncId($id, $this->db());
+        }
+
+        return ImportSource::load($name, $this->db());
     }
 
     /**

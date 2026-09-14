@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\ServiceSetQueryBuilder;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -101,6 +102,21 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         }
 
         return $this;
+    }
+
+    public static function load(mixed $id, DbConnection $connection): mixed
+    {
+        if (is_string($id)) {
+            $id = [
+                'object_name' => $id,
+                'object_type' => 'template'
+            ];
+        }
+
+        return parent::load(
+            $id,
+            $connection
+        );
     }
 
     /**
@@ -447,7 +463,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         }
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    public function getRenderingZone(?IcingaConfig $config = null)
     {
         if ($this->get('host_id') === null) {
             if ($hostname = $this->get('host')) {

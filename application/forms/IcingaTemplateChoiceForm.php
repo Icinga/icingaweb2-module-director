@@ -91,19 +91,20 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
             'value' => 1,
         ));
 
-        $this->addElement('select', 'required_template', [
+        $this->addElement('select', 'required_template_id', [
             'label'        => $this->translate('Associated Template'),
             'description'  => $this->translate(
                 'Choose Choice Associated Template'
             ),
             'required'     => true,
-            'multiOptions' => $this->fetchUnboundTemplates(),
+            'multiOptions' => $this->fetchUnboundTemplates(true),
         ]);
 
         $this->setButtons();
     }
 
-    protected function fetchUnboundTemplates()
+
+    protected function fetchUnboundTemplates($useIdAsKey = false)
     {
         /** @var IcingaTemplateChoice $object */
         $object = $this->object();
@@ -112,7 +113,7 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
         $query = $db->select()->from(
             ['o' => $table],
             [
-                'k' => 'o.object_name',
+                'k' => $useIdAsKey ? 'o.id' : 'o.object_name',
                 'v' => 'o.object_name',
             ]
         )->where("o.object_type = 'template'");

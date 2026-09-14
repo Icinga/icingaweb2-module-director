@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Dashboard;
 
 use Exception;
-use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
@@ -15,11 +14,12 @@ use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Widget\Tab;
 use ipl\Html\ValidHtml;
+use ipl\I18n\Translation;
 use Zend_Db_Select as ZfSelect;
 
 abstract class Dashboard extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $name;
 

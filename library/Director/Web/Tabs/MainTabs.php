@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Tabs;
 
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
@@ -13,7 +13,7 @@ use Icinga\Module\Director\Web\Widget\HealthCheckPluginOutput;
 
 class MainTabs extends Tabs
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $auth;
 

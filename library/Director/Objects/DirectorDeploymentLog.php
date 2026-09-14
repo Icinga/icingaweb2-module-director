@@ -64,7 +64,7 @@ class DirectorDeploymentLog extends DbObject
 
     public function isPending()
     {
-        return $this->dump_succeeded === 'y' && $this->startup_log === null;
+        return $this->stage_collected === null;
     }
 
     public function succeeded()

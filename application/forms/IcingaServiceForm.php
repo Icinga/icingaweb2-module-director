@@ -17,6 +17,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\ObjectsTableHost;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\HtmlElement;
 use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
@@ -39,6 +40,9 @@ class IcingaServiceForm extends DirectorObjectForm
 
     /** @var bool|null */
     private $blacklisted;
+
+    /** @var ?IcingaHost */
+    private $blacklistedAncestor;
 
     public function setApplyGenerated(IcingaService $applyGenerated)
     {
@@ -140,9 +144,24 @@ class IcingaServiceForm extends DirectorObjectForm
             );
             $group = null;
             if (! $isBranch) {
-                $this->addDeleteButton($this->translate('Reactivate'));
+                $label = $this->translate('Reactivate');
+                $this->addDeleteButton($label);
+
+                if (! $this->isBlacklistedInCurrentHost()) {
+                    $this->getElement($label)
+                        ->setAttrib(
+                            'title',
+                            sprintf(
+                                $this->translate('This service is deactivated on host template "%s"'),
+                                $this->getBlacklistedAncestor()->getObjectName()
+                            )
+                        )
+                        ->setAttrib('disabled', true);
+                }
+
                 $hasDeleteButton = true;
             }
+
             $this->setSubmitLabel(false);
         } else {
             $this->addOverrideHint();
@@ -216,6 +235,33 @@ class IcingaServiceForm extends DirectorObjectForm
         return current($objects);
     }
 
+    private function getBlacklistedAncestor(): ?IcingaHost
+    {
+        if ($this->hasBeenBlacklisted() === false) {
+            return null;
+        }
+
+        return $this->blacklistedAncestor;
+    }
+
+    private function isBlacklistedInCurrentHost(): bool
+    {
+        if ($this->hasBeenBlacklisted() === false) {
+            return false;
+        }
+
+        $db = $this->db->getDbAdapter();
+
+        return (int) $db->fetchOne(
+            $db->select()->from('icinga_host_service_blacklist', 'host_id')
+                ->where('host_id = ?', $this->host->get('id'))
+                ->where(
+                    'service_id = ?',
+                    $this->getServiceToBeBlacklisted()->get('id')
+                )
+        );
+    }
+
     /**
      * @return bool
      * @throws \Icinga\Exception\NotFoundError
@@ -229,7 +275,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->blacklisted === null) {
             $host = $this->host;
             // Safety check, branches
-            $hostId = $host->get('id');
+            $hostId = (int) $host->get('id');
             $service = $this->getServiceToBeBlacklisted();
             $serviceId = $service->get('id');
             if (! $hostId || ! $serviceId) {
@@ -237,11 +283,25 @@ class IcingaServiceForm extends DirectorObjectForm
             }
             $db = $this->db->getDbAdapter();
             if ($this->providesOverrides()) {
-                $this->blacklisted = 1 === (int)$db->fetchOne(
-                    $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
-                        ->where('host_id = ?', $hostId)
-                        ->where('service_id = ?', $serviceId)
-                );
+                $hostIds = $host->listAncestorIds();
+                $hostIds[] = $hostId;
+
+                foreach ($hostIds as $hostId) {
+                    $host = IcingaHost::loadWithAutoIncId($hostId, $this->db);
+                    $ancestorIds = $host->listAncestorIds();
+                    $ancestorIds[] = $hostId;
+                    $this->blacklisted = 1 === (int) $db->fetchOne(
+                        $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
+                            ->where('host_id IN (?)', $ancestorIds)
+                            ->where('service_id = ?', $serviceId)
+                    );
+
+                    if ($this->blacklisted) {
+                        $this->blacklistedAncestor = $host;
+
+                        break;
+                    }
+                }
             } else {
                 $this->blacklisted = false;
             }
@@ -364,6 +424,7 @@ class IcingaServiceForm extends DirectorObjectForm
         $forceCommandElements = $this->hasPermission(Permission::ADMIN);
 
         $this->addNameElement()
+             ->addDisplayNameElement()
              ->addHostObjectElement()
              ->addImportsElement()
              ->addChoices('service')
@@ -510,6 +571,7 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         $this->addNameElement()
+             ->addDisplayNameElement()
              ->addChoices('service')
              ->addDisabledElement()
              ->addGroupsElement()
@@ -552,6 +614,7 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         $this->addNameElement()
+             ->addDisplayNameElement()
              ->addDisabledElement()
              ->addGroupsElement()
              ->groupMainProperties();
@@ -588,6 +651,28 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->object()->isApplyRule()) {
             $this->eventuallyAddNameRestriction('director/service/apply/filter-by-name');
         }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
+    protected function addDisplayNameElement()
+    {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addElement('text', 'display_name', array(
+            'label'       => $this->translate('Display name'),
+            'spellcheck'  => 'false',
+            'description' => $this->translate(
+                'Alternative name for this service. Might be a more user friendly'
+                . ' string helping your users to identify this service'
+            )
+        ));
 
         return $this;
     }
@@ -664,6 +749,15 @@ class IcingaServiceForm extends DirectorObjectForm
                     . ' single services or to service templates.'
                 )
             ));
+        }
+
+        $applied = $this->getAppliedGroups();
+        if (! empty($applied)) {
+            $this->addElement('simpleNote', 'applied_groups', [
+                'label'  => $this->translate('Applied groups'),
+                'value'  => $this->createServicegroupLinks($applied),
+                'ignore' => true,
+            ]);
         }
 
         return $this;
@@ -807,5 +901,47 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->object->set('object_name', end($imports));
             }
         }
+    }
+
+    /**
+     * Create links to applied servicegroups.
+     *
+     * @param $groups
+     *
+     * @return HtmlElement
+     */
+    protected function createServicegroupLinks($groups): HtmlElement
+    {
+        $links = [];
+        foreach ($groups as $name) {
+            if (! empty($links)) {
+                $links[] = ', ';
+            }
+            $links[] = Link::create(
+                $name,
+                'director/servicegroup',
+                ['name' => $name],
+                ['data-base-target' => '_next']
+            );
+        }
+
+        return Html::tag('span', ['class' => 'host-group-links'], $links);
+    }
+
+    /**
+     * Get applied servicegroups.
+     *
+     * @return array
+     */
+    protected function getAppliedGroups(): array
+    {
+        if ($this->isNew()) {
+            return [];
+        }
+
+        /** @var IcingaService $object */
+        $object = $this->object();
+
+        return $object->getAppliedGroups();
     }
 }

@@ -28,7 +28,7 @@ class DbObjectStore
     /** @var ?Branch */
     protected $branch;
 
-    public function __construct(Db $connection, Branch $branch = null)
+    public function __construct(Db $connection, ?Branch $branch = null)
     {
         $this->connection = $connection;
         $this->branch = $branch;

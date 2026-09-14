@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Restriction;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
+use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -58,8 +60,8 @@ class HostgroupRestriction extends ObjectRestriction
 
         // Hint: branched hosts have no id
         if (! $host->hasBeenLoadedFromDb() || $host->hasModifiedGroups() || $host->get('id') === null) {
-            foreach ($this->listRestrictedHostgroups() as $group) {
-                if ($host->hasGroup($group)) {
+            foreach ($this->listRestrictedHostgroupsFromDb() as $group) {
+                if ($host->hasGroup($group) || $this->matchesHostGroupFilter($group, $host)) {
                     return true;
                 }
             }
@@ -74,6 +76,21 @@ class HostgroupRestriction extends ObjectRestriction
 
         $this->filterHostsQuery($query);
         return (int) $this->db->fetchOne($query) === (int) $host->get('id');
+    }
+
+    /**
+     * Check if the given host matches the filter of given host group
+     *
+     * @param string $group
+     * @param IcingaHost $host
+     *
+     * @return bool
+     */
+    private function matchesHostGroupFilter(string $group, IcingaHost $host): bool
+    {
+        return HostApplyMatches::prepare($host)->matchesFilter(
+            Filter::fromQueryString(IcingaHostGroup::load($group, $host->getConnection())->get('assign_filter'))
+        );
     }
 
     /**
@@ -116,9 +133,14 @@ class HostgroupRestriction extends ObjectRestriction
         IcingaObjectFilterHelper::filterByResolvedHostgroups(
             $query,
             'host',
-            $this->listRestrictedHostgroups(),
+            $this->listRestrictedHostgroupsFromDb(),
             $tableAlias
         );
+    }
+
+    public function filterRestrictedHostgroups(array $groups)
+    {
+        return array_intersect($groups, $this->listRestrictedHostgroupsFromDb());
     }
 
     /**
@@ -136,7 +158,7 @@ class HostgroupRestriction extends ObjectRestriction
         if (! $this->isRestricted()) {
             return;
         }
-        $groups = $this->listRestrictedHostgroups();
+        $groups = $this->listRestrictedHostgroupsFromDb();
 
         if (empty($groups)) {
             $query->where('(1 = 0)');
@@ -167,5 +189,28 @@ class HostgroupRestriction extends ObjectRestriction
         } else {
             return null;
         }
+    }
+
+    /**
+     * Give a list of restricted Hostgroups that exist in the database.
+     *
+     * This filters out Hostgroups that are configured in the restriction but
+     * do not exist in Director database.
+     *
+     * @return array
+     */
+    protected function listRestrictedHostgroupsFromDb()
+    {
+        $groups = $this->listRestrictedHostgroups();
+        if (empty($groups)) {
+            return [];
+        }
+
+        $query = $this->db->select()->from(
+            ['icinga_hostgroup'],
+            ['object_name']
+        )->where('object_name IN (?)', $groups);
+
+        return $this->db->fetchCol($query);
     }
 }

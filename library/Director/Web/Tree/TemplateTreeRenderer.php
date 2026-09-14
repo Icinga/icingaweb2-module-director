@@ -7,12 +7,12 @@ use Icinga\Module\Director\Resolver\TemplateTree;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\ControlsAndContent;
 
 class TemplateTreeRenderer extends BaseHtmlElement
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $tag = 'ul';
 

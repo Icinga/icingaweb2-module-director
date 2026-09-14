@@ -9,7 +9,7 @@ use RuntimeException;
 
 class FormLoader
 {
-    public static function load($name, Module $module = null)
+    public static function load($name, ?Module $module = null)
     {
         if ($module === null) {
             try {

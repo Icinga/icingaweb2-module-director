@@ -13,13 +13,13 @@ use Icinga\Web\Request;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Icon;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\IcingaWeb2\Widget\Tabs;
 
 class DeploymentInfo extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var DirectorDeploymentLog */
     protected $deployment;

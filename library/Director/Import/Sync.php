@@ -102,7 +102,7 @@ class Sync
      * @param SyncRule $rule
      * @param ?DbObjectStore $store
      */
-    public function __construct(SyncRule $rule, DbObjectStore $store = null)
+    public function __construct(SyncRule $rule, ?DbObjectStore $store = null)
     {
         $this->rule = $rule;
         $this->db = $rule->getConnection();

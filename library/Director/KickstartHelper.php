@@ -289,7 +289,7 @@ class KickstartHelper
      */
     protected function removeZones()
     {
-        return $this->removeObjects($this->removeEndpoints, 'External Zone');
+        return $this->removeObjects($this->removeZones, 'External Zone');
     }
 
     /**

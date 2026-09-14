@@ -6,11 +6,11 @@ use Icinga\Module\Director\Objects\IcingaEndpoint;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Html;
 use ipl\Html\Table;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class CoreApiObjectsTable extends Table
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $defaultAttributes = [
         'class' => ['common-table', 'table-row-selectable'],

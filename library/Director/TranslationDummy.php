@@ -2,11 +2,11 @@
 
 namespace Icinga\Module\Director;
 
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 class TranslationDummy
 {
-    use TranslationHelper;
+    use Translation;
 
     protected function dummyForTranslation()
     {

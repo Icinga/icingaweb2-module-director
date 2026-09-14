@@ -3,11 +3,11 @@
 namespace Icinga\Module\Director\Db\Branch;
 
 use Exception;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 
 abstract class MergeError extends Exception
 {
-    use TranslationHelper;
+    use Translation;
 
     /** @var BranchActivity */
     protected $activity;

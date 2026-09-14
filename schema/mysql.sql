@@ -35,8 +35,8 @@ CREATE TABLE director_activity_log (
   object_type VARCHAR(64) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   action_name ENUM('create', 'delete', 'modify') NOT NULL,
-  old_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
-  new_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
+  old_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON',
+  new_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   author VARCHAR(64) NOT NULL,
   change_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   checksum VARBINARY(20) NOT NULL,
@@ -654,7 +654,7 @@ CREATE TABLE icinga_host_field (
 CREATE TABLE icinga_host_var (
   host_id INT(10) UNSIGNED NOT NULL,
   varname VARCHAR(255) NOT NULL COLLATE utf8_bin,
-  varvalue TEXT DEFAULT NULL,
+  varvalue MEDIUMTEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'), -- immer string vorerst
   checksum VARBINARY(20) DEFAULT NULL,
   PRIMARY KEY (host_id, varname),
@@ -1186,6 +1186,7 @@ CREATE TABLE icinga_usergroup (
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
@@ -1774,6 +1775,7 @@ CREATE TABLE icinga_dependency (
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
+  redundancy_group VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
   CONSTRAINT icinga_dependency_parent_host
@@ -2431,6 +2433,7 @@ CREATE TABLE branched_icinga_dependency (
   zone VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
+  redundancy_group VARCHAR(255) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
@@ -2444,6 +2447,23 @@ CREATE TABLE branched_icinga_dependency (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_usergroup_user_resolved
+(
+  usergroup_id INT(10) UNSIGNED NOT NULL,
+  user_id      INT(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (usergroup_id, user_id),
+  CONSTRAINT icinga_usergroup_user_resolved_user
+    FOREIGN KEY user (user_id)
+      REFERENCES icinga_user (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT icinga_usergroup_user_resolved_usergroup
+    FOREIGN KEY usergroup (usergroup_id)
+      REFERENCES icinga_usergroup (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (189, NOW());
+  VALUES (192, NOW());

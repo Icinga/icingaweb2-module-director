@@ -22,6 +22,7 @@ class Settings
         'deployment_path_v1'               => null,
         'activation_script_v1'             => null,
         'self-service/agent_name'          => 'fqdn',
+        'self-service/agent_version'       => 'latest',
         'self-service/transform_hostname'  => '0',
         'self-service/resolve_parent_host' => '0',
         'self-service/global_zones'        => ['director-global'],

@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Web\Widget;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Db;
@@ -16,7 +16,7 @@ use stdClass;
 class IcingaObjectInspection extends BaseHtmlElement
 {
     use DbHelper;
-    use TranslationHelper;
+    use Translation;
 
     protected $tag = 'div';
 

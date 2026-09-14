@@ -20,14 +20,14 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Icon;
 use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use ipl\I18n\Translation;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\IcingaWeb2\Widget\Tabs;
 
 class ActivityLogInfo extends HtmlDocument
 {
-    use TranslationHelper;
+    use Translation;
 
     protected $defaultTab;
 
@@ -344,10 +344,10 @@ class ActivityLogInfo extends HtmlDocument
     }
 
     /**
-     * @param Url|null $url
+     * @param ?Url $url
      * @return Tabs
      */
-    public function getTabs(Url $url = null)
+    public function getTabs(?Url $url = null)
     {
         if ($this->tabs === null) {
             $this->tabs = $this->createTabs($url);
@@ -509,6 +509,8 @@ class ActivityLogInfo extends HtmlDocument
             $controller = 'serviceset';
         } elseif ($controller === 'scheduled_downtime') {
             $controller = 'scheduled-downtime';
+        } elseif (str_ends_with($controller, '_template_choice')) {
+            $controller = 'templatechoice/' . substr($controller, 0, -strlen('_template_choice'));
         }
 
         return Link::create(
