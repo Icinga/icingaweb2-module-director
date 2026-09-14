@@ -281,7 +281,8 @@ class BranchedObject
             }
             $branched->set('id', $this->object->get('id'));
             $branched->set('uuid', $this->object->get('uuid'));
-            foreach ((array) $this->object->toPlainObject(false, true) as $key => $value) {
+            // Skip resolving ids to names, a looped zone hierarchy would recurse forever otherwise
+            foreach ((array) $this->object->toPlainObject(false, true, null, false) as $key => $value) {
                 if ($key === 'object_type') {
                     continue;
                 }
