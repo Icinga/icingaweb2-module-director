@@ -44,6 +44,7 @@ class CommandUsage
             'host'         => ['check_command', 'event_command'],
             'service'      => ['check_command', 'event_command'],
             'notification' => ['command'],
+            'command'      => [],
         ];
         $types = [
             'host' => [
@@ -59,6 +60,10 @@ class CommandUsage
                 'object'   => $this->translate('%d Notification(s)'),
                 'template' => $this->translate('%d Notification Template(s)'),
                 'apply'     => $this->translate('%d Notification Apply Rule(s)'),
+            ],
+            'command' => [
+                'object'   => $this->translate('%d Commands(s)'),
+                'template'   => $this->translate('%d Command Templates(s)'),
             ],
         ];
 
@@ -93,7 +98,16 @@ class CommandUsage
         foreach ($objectTypes as $type) {
             $columns[$type] = "COALESCE(SUM(CASE WHEN object_type = '$type' THEN 1 ELSE 0 END), 0)";
         }
-        $query = $this->db->select()->from("icinga_$table", $columns);
+
+        $query = $this->db->select()->from(['c' => "icinga_$table"], $columns);
+
+        if ($table === 'command') {
+            $query->join(
+                ['ici' => 'icinga_command_inheritance'],
+                'ici.command_id = c.id',
+                []
+            )->where('ici.parent_command_id = ?', $id);
+        }
 
         foreach ($rels as $rel) {
             $query->orWhere("{$rel}_id = ?", $id);
