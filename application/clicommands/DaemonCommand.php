@@ -55,8 +55,11 @@ class DaemonCommand extends Command
         }
 
         if (! $kickstart->isRequired()) {
-            echo "Kickstart configured, execution is not required\n";
-            exit(1);
+            if ($this->isVerbose) {
+                echo "Kickstart configured, execution is not required\n";
+            }
+
+            return;
         }
 
         if ($this->isVerbose) {
@@ -75,9 +78,8 @@ class DaemonCommand extends Command
             if ($this->isVerbose) {
                 printf("Config '%s' has been deployed\n", $checksum);
             }
-        } else {
+        } elseif ($this->isVerbose) {
             echo $deployer->getNoDeploymentReason() . "\n";
-            exit(1);
         }
     }
 }
