@@ -122,6 +122,30 @@ class ImportExport
         return $res;
     }
 
+    public function unserializeJobs($objects)
+    {
+        $count = 0;
+        $this->connection->runFailSafeTransaction(function () use ($objects, &$count) {
+            $importer = new ObjectImporter($this->connection);
+            foreach ($objects as $object) {
+                if (isset($object->settings->source_name)) {
+                    $source = ImportSource::load($object->settings->source_name, $this->connection);
+                    unset($object->settings->source_name);
+                    $object->settings->source_id = $source->get('id');
+                }
+                if (isset($object->settings->rule_name)) {
+                    $rule = SyncRule::load($object->settings->rule_name, $this->connection);
+                    unset($object->settings->rule_name);
+                    $object->settings->rule_id = $rule->get('id');
+                }
+                $importer->import(DirectorJob::class, $object)->store();
+                $count++;
+            }
+        });
+
+        return $count;
+    }
+
     public function unserializeImportSources($objects)
     {
         $count = 0;

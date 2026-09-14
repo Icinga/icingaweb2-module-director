@@ -18,7 +18,20 @@ class SyncrulesController extends ActionController
     public function indexAction()
     {
         if ($this->getRequest()->isApiRequest()) {
-            $this->sendExport();
+            switch (strtolower($this->getRequest()->getMethod())) {
+                case 'get':
+                    $this->sendExport();
+                    break;
+                case 'post':
+                    $this->acceptImport($this->getRequest()->getRawBody());
+                    break;
+                case 'delete':
+                    $this->deleteSyncRule($this->params->get('name'));
+                    break;
+                default:
+                    $this->sendUnsupportedMethod();
+            }
+
             return;
         }
 
@@ -30,6 +43,28 @@ class SyncrulesController extends ActionController
             )->tabs(new ImportTabs())->activate('syncrule');
 
         (new SyncruleTable($this->db()))->renderTo($this);
+    }
+
+    protected function deleteSyncRule($name)
+    {
+        $db = $this->db()->getDbAdapter();
+        $id = (int) $db->fetchOne(
+            $db->select()->from('sync_rule', 'id')->where('rule_name = ?', $name)
+        );
+        if (!$id) {
+            $this->sendJson($this->getResponse(), (object)[]);
+            return;
+        }
+        $db->delete('sync_run', ['rule_id = ?' => $id]);
+        $db->delete('sync_property', ['rule_id = ?' => $id]);
+        $db->delete('sync_rule', ['id = ?' => $id]);
+        $this->sendJson($this->getResponse(), (object)[]);
+    }
+
+    protected function acceptImport($raw)
+    {
+        $count = (new ImportExport($this->db()))->unserializeSyncRules(json_decode($raw));
+        $this->sendJson($this->getResponse(), ['imported' => $count]);
     }
 
     /**
