@@ -484,7 +484,7 @@ abstract class ObjectsController extends ActionController
                             'ici.parent_command_id = ?',
                             $command->getAutoincId()
                         );
-                        
+
                     break;
             }
         }
