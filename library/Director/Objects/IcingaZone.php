@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
@@ -67,6 +68,47 @@ class IcingaZone extends IcingaObject
     public static function setCachedGlobalZoneNames($names)
     {
         self::$globalZoneNames = $names;
+    }
+
+    protected function beforeStore()
+    {
+        parent::beforeStore();
+
+        if ($this->hasBeenLoadedFromDb() && ($parentId = $this->get('parent_id'))) {
+            $this->assertNoZoneLoop((int) $parentId);
+        }
+    }
+
+    /**
+     * Assert that there is no zone loop
+     *
+     * @param int $parentId
+     *
+     * @throws NestingError
+     */
+    protected function assertNoZoneLoop($parentId)
+    {
+        $id = (int) $this->get('id');
+        $parents = [];
+        $names = [];
+        $db = $this->getDb();
+
+        foreach ($db->fetchAll($db->select()->from('icinga_zone', ['id', 'parent_id', 'object_name'])) as $zone) {
+            $parents[(int) $zone->id] = (int) $zone->parent_id;
+            $names[(int) $zone->id] = $zone->object_name;
+        }
+
+        $chain = [$this->getObjectName()];
+
+        while ($parentId) {
+            $chain[] = $names[$parentId] ?? $parentId;
+
+            if ($parentId === $id) {
+                throw new NestingError('Loop detected: %s', implode(' -> ', $chain));
+            }
+
+            $parentId = $parents[$parentId] ?? 0;
+        }
     }
 
     public function getRenderingZone(?IcingaConfig $config = null)
