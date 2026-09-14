@@ -93,6 +93,50 @@ class DaemonCommandTest extends BaseTestCase
     }
 
     /**
+     * @return void
+     */
+    public function testKickstartGuardOnlyBlocksImportedObjects(): void
+    {
+        // The base fixture supplies an imported zone even in a fresh test database.
+        $this->connection->getDbAdapter()->delete('icinga_zone', ['object_name = ?' => 'director-global']);
+        $command = $this->getMockBuilder(DaemonCommand::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['db'])
+            ->getMock();
+        $command->expects($this->never())->method('db');
+
+        $cases = [
+            'no endpoints, zones or commands' => [null, null, false],
+            'manual endpoint' => ['endpoint', 'object', false],
+            'manual zone' => ['zone', 'object', false],
+            'manual command' => ['command', 'object', false],
+            'endpoint template' => ['endpoint', 'template', false],
+            'zone template' => ['zone', 'template', false],
+            'command template' => ['command', 'template', false],
+            'imported endpoint' => ['endpoint', 'external_object', true],
+            'imported zone' => ['zone', 'external_object', true],
+            'imported command' => ['command', 'external_object', true],
+        ];
+        foreach ($cases as $label => [$type, $objectType, $expected]) {
+            $object = null;
+            if ($type !== null) {
+                $object = $this->newObject($type, '___TEST___kickstart-guard', ['object_type' => $objectType]);
+                $object->store();
+            }
+
+            self::assertSame(
+                $expected,
+                self::callMethod($command, 'hasExistingKickstartObjects', [$this->connection]),
+                $label
+            );
+
+            if ($object !== null) {
+                $object->delete();
+            }
+        }
+    }
+
+    /**
      * Run the startup prerequisite without constructing the CLI application
      *
      * @return void
