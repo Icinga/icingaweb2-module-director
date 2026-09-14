@@ -31,10 +31,12 @@ class DaemonCommand extends Command
         if ($this->params->get('kickstart')) {
             $this->runKickstart($dbResource);
         }
+
         $daemon = new BackgroundDaemon();
         if ($dbResource) {
             $daemon->setDbResourceName($dbResource);
         }
+
         $daemon->run();
     }
 
@@ -51,10 +53,12 @@ class DaemonCommand extends Command
             echo "Kickstart has not been configured\n";
             exit(1);
         }
+
         if (! $kickstart->isRequired()) {
             echo "Kickstart configured, execution is not required\n";
             exit(1);
         }
+
         if ($this->isVerbose) {
             echo "Kickstart has been configured and will be triggered\n";
         }
@@ -66,7 +70,7 @@ class DaemonCommand extends Command
         // Like icingacli director config deploy
         $config = IcingaConfig::generate($db);
         $checksum = $config->getHexChecksum();
-        $deployer = new ConditionalDeployment($db, $this->api());
+        $deployer = new ConditionalDeployment($db, $db->getDeploymentEndpoint()->api());
         if ($deployer->deploy($config)) {
             if ($this->isVerbose) {
                 printf("Config '%s' has been deployed\n", $checksum);
