@@ -42,6 +42,34 @@ You now can start the Background daemon like any other service on your Linux sys
 systemctl start icinga-director.service
 ```
 
+Starting the Daemon with a Kickstart
+-------------------------------------
+
+If you're setting up a new install, container or otherwise, you can add
+`--kickstart` to have the daemon apply pending migrations, run the kickstart
+and deploy the config before it starts. That's one command instead of four:
+
+```sh
+icingacli director daemon run --kickstart
+```
+
+This is safe to use every time you start the daemon. If kickstart already
+ran, that step gets skipped and the daemon starts as normal. If kickstart
+was never set up at all, the command stops with an error instead of
+starting, since that means the install isn't ready yet.
+
+A kickstart run can delete Endpoint, Zone or Command objects that came from
+an earlier kickstart if they're no longer on the Icinga 2 master. To keep
+`--kickstart` safe as a startup command, it refuses to run if the Director
+DB already has objects like that. Objects you created by hand, such as a
+Command template, don't count and won't block it.
+
+If you really do want to kickstart a DB that already has those objects, for
+example while restoring a backup that's missing its API user, add
+`--force-kickstart`, or run `icingacli director kickstart run` by hand
+instead. Running it by hand has no such safety check, it will remove those
+objects without asking.
+
 Stopping the Daemon
 -------------------
 
