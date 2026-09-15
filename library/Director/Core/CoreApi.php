@@ -838,8 +838,10 @@ constants
         $username = null;
         $auth = Auth::getInstance();
         if ($auth->isAuthenticated()) {
-            $username = $auth->getUser()->getUsername();
+            // Column is only 64 chars wide, don't let a long domain suffix blow up the insert
+            $username = mb_substr($auth->getUser()->getUsername(), 0, 64);
         }
+
         $start = microtime(true);
         /** @var DirectorDeploymentLog $deployment */
         $deployment = DirectorDeploymentLog::create(array(
