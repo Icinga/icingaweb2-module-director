@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Core;
 
 use Exception;
+use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -225,6 +226,13 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         $this->assertPackageName($packageName);
         $this->assertDeploymentPath();
 
+        $username = null;
+        $auth = Auth::getInstance();
+        if ($auth->isAuthenticated()) {
+            // Column is only 64 chars wide, don't let a long domain suffix blow up the insert
+            $username = mb_substr($auth->getUser()->getUsername(), 0, 64);
+        }
+
         $start = microtime(true);
         $deployment = DirectorDeploymentLog::create(array(
             // 'config_id'      => $config->id,
@@ -232,9 +240,9 @@ class LegacyDeploymentApi implements DeploymentApiInterface
             'peer_identity'   => $this->deploymentPath,
             'start_time'      => date('Y-m-d H:i:s'),
             'config_checksum' => $config->getChecksum(),
-            'last_activity_checksum' => $config->getLastActivityChecksum()
+            'last_activity_checksum' => $config->getLastActivityChecksum(),
+            'username'        => $username
             // 'triggered_by'   => Util::getUsername(),
-            // 'username'       => Util::getUsername(),
             // 'module_name'    => $moduleName,
         ));
 
