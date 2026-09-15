@@ -24,6 +24,7 @@ use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
+use Zend_Form_Exception;
 use Zend_Validate_Callback;
 
 abstract class DirectorObjectForm extends DirectorForm
@@ -32,6 +33,7 @@ abstract class DirectorObjectForm extends DirectorForm
     public const GROUP_ORDER_RELATED_OBJECTS = 25;
     public const GROUP_ORDER_ASSIGN = 30;
     public const GROUP_ORDER_CHECK_EXECUTION = 40;
+    public const GROUP_ORDER_EVENT_HANDLER = 45;
     public const GROUP_ORDER_CUSTOM_FIELDS = 50;
     public const GROUP_ORDER_CUSTOM_FIELD_CATEGORIES = 60;
     public const GROUP_ORDER_EVENT_FILTERS = 700;
@@ -337,6 +339,16 @@ abstract class DirectorObjectForm extends DirectorForm
             'check_execution',
             self::GROUP_ORDER_CHECK_EXECUTION,
             $this->translate('Check execution')
+        );
+    }
+
+    protected function addToEventHandlerDisplayGroup($elements)
+    {
+        return $this->addElementsToGroup(
+            $elements,
+            'event_handler',
+            self::GROUP_ORDER_EVENT_HANDLER,
+            $this->translate('Event handler')
         );
     }
 
@@ -1378,6 +1390,9 @@ abstract class DirectorObjectForm extends DirectorForm
      */
     protected function addCheckCommandElements($force = false)
     {
+        // Event command shows on regular objects too, not just templates
+        $this->addEventCommandElements();
+
         if (! $force && ! $this->isTemplate()) {
             return $this;
         }
@@ -1394,17 +1409,36 @@ abstract class DirectorObjectForm extends DirectorForm
             // ->addElement($this->getElement('check_command_id'))
             ->addElement($this->getElement('check_command'));
 
+        return $this;
+    }
+
+    /**
+     * Add the event command fields
+     *
+     * @return $this
+     */
+    protected function addEventCommandElements()
+    {
         $eventCommands = $this->db->enumEventcommands();
 
-        if (! empty($eventCommands)) {
-            $this->addElement('select', 'event_command_id', array(
-                'label' => $this->translate('Event command'),
-                'description'  => $this->translate('Event command definition'),
-                'multiOptions' => $this->optionalEnum($eventCommands),
-                'class'        => 'autosubmit',
-            ));
-            $this->addToCheckExecutionDisplayGroup('event_command_id');
+        if (empty($eventCommands)) {
+            return $this;
         }
+
+        $this->addElement('select', 'event_command_id', array(
+            'label' => $this->translate('Event command'),
+            'description'  => $this->translate('Event command definition'),
+            'multiOptions' => $this->optionalEnum($eventCommands),
+            'class'        => 'autosubmit',
+        ));
+
+        $this->optionalBoolean(
+            'enable_event_handler',
+            $this->translate('Enable event handler'),
+            $this->translate('Whether to enable event handlers this object')
+        );
+
+        $this->addToEventHandlerDisplayGroup(['event_command_id', 'enable_event_handler']);
 
         return $this;
     }
@@ -1493,12 +1527,6 @@ abstract class DirectorObjectForm extends DirectorForm
         );
 
         $this->optionalBoolean(
-            'enable_event_handler',
-            $this->translate('Enable event handler'),
-            $this->translate('Whether to enable event handlers this object')
-        );
-
-        $this->optionalBoolean(
             'enable_perfdata',
             $this->translate('Process performance data'),
             $this->translate('Whether to process performance data provided by this object')
@@ -1547,7 +1575,6 @@ abstract class DirectorObjectForm extends DirectorForm
             'enable_active_checks',
             'enable_passive_checks',
             'enable_notifications',
-            'enable_event_handler',
             'enable_perfdata',
             'enable_flapping',
             'flapping_threshold_high',
