@@ -90,3 +90,40 @@ selections).
 For each item in that list, the keywords *unchanged* or *new* will appear to the right.
 Clicking on *new* will show the differences between the version in the snapshot and the
 current configuration.
+
+
+
+### Version Compatibility
+
+Snapshots created on a Director version that supports new [Custom Variables](12-Handling-custom-variables.md) (>= 1.12.0)
+include a `CustomVariable` element type. Restoring such a snapshot on an older Director
+version (< 1.12.0) that predates this feature is not supported, and will fail for any
+affected object, since older versions do not know how to interpret that data. This is
+relevant when using baskets to share or sync configuration between Director instances
+that are not on the same version, for example between
+a master and a satellite/config master. To avoid a failed restore, keep Director versions
+aligned across instances that exchange baskets, or upgrade the receiving instance before
+restoring a snapshot from a newer one.
+
+<a id="Restoring-Custom-Variables"></a>### Restoring Custom Variable Schema Changes
+
+Restoring a snapshot applies the same cleanup to custom variable values that the
+object form and the REST API already apply, see [Attaching custom variables to
+objects and templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
+for the general rules.
+
+If the snapshot renamed or changed the type of a custom variable, restoring it
+moves or clears the values already stored on hosts, services and other objects
+to match the new name or type.
+
+If the snapshot no longer attaches a property to a template, restoring it removes
+any value that only existed because of that attachment. A value survives if some
+other template still provides the same property to the object holding it.
+
+A value that would otherwise be renamed or removed is left untouched, under its
+old name or type, when a legacy Data Field still claims that variable name. The
+same thing happens when a rename's new name or key is already taken by another
+value on the same object, the existing value wins. Depending on the migration
+path, the incoming value is kept under its old name or dropped. Both the web
+UI and `icingacli director basket restore` report the combined number of
+affected values once the restore finishes, without telling the cases apart.

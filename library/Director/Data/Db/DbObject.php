@@ -681,15 +681,16 @@ abstract class DbObject
      */
     public function getAutoincId()
     {
-        if (isset($this->properties[$this->autoincKeyName])) {
+        if ($this->autoincKeyName && isset($this->properties[$this->autoincKeyName])) {
             return (int) $this->properties[$this->autoincKeyName];
         }
+
         return null;
     }
 
     protected function forgetAutoincId()
     {
-        if (isset($this->properties[$this->autoincKeyName])) {
+        if ($this->autoincKeyName && isset($this->properties[$this->autoincKeyName])) {
             $this->properties[$this->autoincKeyName] = null;
         }
 

@@ -9,7 +9,7 @@ use Countable;
 class CustomVariableDictionary extends CustomVariable implements Countable
 {
     /** @var  CustomVariable[] */
-    protected $value;
+    protected $value = [];
 
     public function equals(CustomVariable $var)
     {
@@ -66,9 +66,11 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     public function getValue()
     {
         $ret = (object) array();
-        ksort($this->value);
 
-        foreach ($this->value as $key => $var) {
+        $sortedValue = $this->value;
+        ksort($sortedValue);
+
+        foreach ($sortedValue as $key => $var) {
             $ret->$key = $var->getValue();
         }
 
@@ -119,8 +121,21 @@ class CustomVariableDictionary extends CustomVariable implements Countable
 
     public function toConfigString($renderExpressions = false)
     {
-        // TODO
-        return c::renderDictionary($this->value);
+        if ($this->whiteList !== null) {
+            foreach ($this->value as $key => $value) {
+                $this->value[$key] = $value->setWhiteList($this->whiteList);
+            }
+        }
+
+        // Render each child through its own logic first, or an array or
+        // dictionary child falls back to a plain string cast and quietly
+        // loses the apply-for whitelist.
+        $rendered = [];
+        foreach ($this->value as $key => $value) {
+            $rendered[$key] = $value->toConfigString($renderExpressions);
+        }
+
+        return c::renderDictionary($rendered);
     }
 
     public function toLegacyConfigString()
