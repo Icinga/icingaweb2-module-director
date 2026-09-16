@@ -55,8 +55,8 @@ class CommandUsage
                 'apply'     => $this->translate('%d Notification Apply Rule(s)'),
             ],
             'command' => [
-                'object'   => $this->translate('%d Commands(s)'),
-                'template'   => $this->translate('%d Command Templates(s)'),
+                'object'   => $this->translate('%d Command(s)'),
+                'template' => $this->translate('%d Command Template(s)'),
             ],
         ];
 
