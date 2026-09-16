@@ -136,13 +136,6 @@ In case you are running 1.2.0 or any GIT master since then, all you need is to
 replace the Director module folder with the new one. Or to run `git checkout v1.3.x`
 in case you installed Director from GIT.
 
-When running Director since 1.1.0 or earlier on PostgreSQL, you might not yet
-have the PostgreSQL crypto extension installed (Package: `postgresql-contrib`) and
-enabled:
-
-     psql -q -c "CREATE EXTENSION pgcrypto;"
-
-
 <a name="upgrade-to-1.2.0"></a>Upgrading to 1.2.0
 -------------------------------------------------
 
