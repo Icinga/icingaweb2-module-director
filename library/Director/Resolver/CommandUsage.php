@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\Resolver;
 use gipfl\IcingaWeb2\Link;
 use ipl\I18n\Translation;
 use Icinga\Module\Director\Objects\IcingaCommand;
-use InvalidArgumentException;
 
 class CommandUsage
 {
@@ -23,12 +22,6 @@ class CommandUsage
      */
     public function __construct(IcingaCommand $command)
     {
-        if ($command->isTemplate()) {
-            throw new InvalidArgumentException(
-                'CommandUsageTable expects object or external_object, got a template'
-            );
-        }
-
         $this->command = $command;
         $this->db = $command->getDb();
     }
