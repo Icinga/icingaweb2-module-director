@@ -70,11 +70,19 @@ class IcingaZone extends IcingaObject
         self::$globalZoneNames = $names;
     }
 
-    protected function beforeStore()
+    /**
+     * Resolve related properties and reject cyclic parent hierarchies
+     *
+     * @return void
+     *
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws NestingError
+     */
+    protected function beforeStore(): void
     {
         parent::beforeStore();
 
-        if ($this->hasBeenLoadedFromDb() && ($parentId = $this->get('parent_id'))) {
+        if ($parentId = $this->get('parent_id')) {
             $this->assertNoZoneLoop((int) $parentId);
         }
     }
@@ -84,9 +92,11 @@ class IcingaZone extends IcingaObject
      *
      * @param int $parentId
      *
+     * @return void
+     *
      * @throws NestingError
      */
-    protected function assertNoZoneLoop($parentId)
+    protected function assertNoZoneLoop(int $parentId): void
     {
         $id = (int) $this->get('id');
         $parents = [];
@@ -99,13 +109,16 @@ class IcingaZone extends IcingaObject
         }
 
         $chain = [$this->getObjectName()];
+        $visited = [$id => true];
 
         while ($parentId) {
             $chain[] = $names[$parentId] ?? $parentId;
 
-            if ($parentId === $id) {
+            if (isset($visited[$parentId])) {
                 throw new NestingError('Loop detected: %s', implode(' -> ', $chain));
             }
+
+            $visited[$parentId] = true;
 
             $parentId = $parents[$parentId] ?? 0;
         }
