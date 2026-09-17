@@ -570,13 +570,16 @@ class IcingaServiceForm extends DirectorObjectForm
             return;
         }
 
+        $forceCommandElements = $this->hasPermission(Permission::ADMIN);
+
         $this->addNameElement()
              ->addDisplayNameElement()
              ->addChoices('service')
              ->addDisabledElement()
              ->addGroupsElement()
              ->groupMainProperties()
-             ->addCheckCommandElements()
+             ->addCheckCommandElements($forceCommandElements)
+             ->addCheckExecutionElements($forceCommandElements)
              ->addExtraInfoElements()
              ->setButtons();
 
