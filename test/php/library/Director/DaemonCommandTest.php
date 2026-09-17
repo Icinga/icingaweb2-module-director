@@ -3,8 +3,13 @@
 namespace Tests\Icinga\Module\Director;
 
 use Icinga\Application\Config;
+use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Clicommands\DaemonCommand;
+use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\Core\RestApiResponse;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Deployment\ConditionalDeployment;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaApiUser;
@@ -95,6 +100,48 @@ class DaemonCommandTest extends BaseTestCase
     /**
      * @return void
      */
+    public function testUnforcedDeploymentRetriesFailedDumpAndSkipsSuccessfulDump(): void
+    {
+        $config = IcingaConfig::generate($this->connection);
+        $client = $this->createMock(RestApiClient::class);
+        $client->expects($this->exactly(2))->method('post')->willReturnOnConsecutiveCalls(
+            RestApiResponse::fromJsonResult('{"results":[{"code":500,"status":"Stage creation failed"}]}'),
+            RestApiResponse::fromJsonResult(
+                '{"results":[{"package":"director","stage":"unforced-recovery","code":200}]}'
+            )
+        );
+        $deploymentApi = $this->createDeploymentApi($client);
+        $api = $this->createMock(CoreApi::class);
+        $api->expects($this->once())->method('collectLogFiles')->with($this->connection);
+        $api->expects($this->once())->method('wipeInactiveStages')->with($this->connection);
+        $api->method('getActiveStageName')->willReturn(null);
+        $api->expects($this->exactly(2))->method('dumpConfig')->willReturnCallback([$deploymentApi, 'dumpConfig']);
+        $deployer = new ConditionalDeployment($this->connection, $api);
+
+        try {
+            $deployer->deploy($config);
+            self::fail('A rejected dump must fail an unforced deployment');
+        } catch (IcingaException $exception) {
+            self::assertStringContainsString('Failed to deploy config', $exception->getMessage());
+        }
+
+        $failedDeployment = DirectorDeploymentLog::loadLatest($this->connection);
+        self::assertSame('n', $failedDeployment->get('dump_succeeded'));
+        self::assertSame($config->getHexChecksum(), $failedDeployment->getConfigHexChecksum());
+
+        $deployment = $deployer->deploy($config);
+
+        self::assertInstanceOf(DirectorDeploymentLog::class, $deployment);
+        self::assertSame('y', $deployment->get('dump_succeeded'));
+        self::assertSame('unforced-recovery', $deployment->get('stage_name'));
+        self::assertFalse($deployer->hasBeenForced());
+        self::assertNull($deployer->deploy($config));
+        self::assertSame('Config matches last deployed one', $deployer->getNoDeploymentReason());
+    }
+
+    /**
+     * @return void
+     */
     public function testKickstartGuardOnlyBlocksImportedObjects(): void
     {
         // The base fixture supplies an imported zone even in a fresh test database.
@@ -134,6 +181,26 @@ class DaemonCommandTest extends BaseTestCase
                 $object->delete();
             }
         }
+    }
+
+    /**
+     * Keep dump persistence real while replacing API initialization and requests
+     *
+     * @param RestApiClient&MockObject $client
+     *
+     * @return CoreApi
+     */
+    private function createDeploymentApi(RestApiClient $client): CoreApi
+    {
+        $client->method('getPeerIdentity')->willReturn('___TEST___daemon-endpoint');
+
+        $api = $this->getMockBuilder(CoreApi::class)
+            ->setConstructorArgs([$client])
+            ->onlyMethods(['assertPackageExists', 'enableWorkaroundForConnectionIssues'])
+            ->getMock();
+        $api->expects($this->atLeastOnce())->method('assertPackageExists')->willReturnSelf();
+
+        return $api;
     }
 
     /**
