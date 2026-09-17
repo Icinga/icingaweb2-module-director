@@ -81,6 +81,11 @@ class PrefetchCache
         return $this->groupsCache($object)->getGroupsForObject($object);
     }
 
+    public function groupOperators(IcingaObject $object)
+    {
+        return $this->groupsCache($object)->getOperatorsForObject($object);
+    }
+
     /* Hint: not implemented, this happens in DbObject right now
     public function byObjectType($type)
     {
