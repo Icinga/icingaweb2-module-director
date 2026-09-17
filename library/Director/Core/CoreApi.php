@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Core;
 
 use Exception;
+use Icinga\Authentication\Auth;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\DeploymentHook;
@@ -834,6 +835,13 @@ constants
         if ($packageName === null) {
             $packageName = $db->settings()->get('icinga_package_name');
         }
+        $username = null;
+        $auth = Auth::getInstance();
+        if ($auth->isAuthenticated()) {
+            // Column is only 64 chars wide, don't let a long domain suffix blow up the insert
+            $username = mb_substr($auth->getUser()->getUsername(), 0, 64);
+        }
+
         $start = microtime(true);
         /** @var DirectorDeploymentLog $deployment */
         $deployment = DirectorDeploymentLog::create(array(
@@ -842,9 +850,9 @@ constants
             'peer_identity'   => $this->client->getPeerIdentity(),
             'start_time'      => date('Y-m-d H:i:s'),
             'config_checksum' => $config->getChecksum(),
-            'last_activity_checksum' => $config->getLastActivityChecksum()
+            'last_activity_checksum' => $config->getLastActivityChecksum(),
+            'username'        => $username
             // 'triggered_by'   => Util::getUsername(),
-            // 'username'       => Util::getUsername(),
             // 'module_name'    => $moduleName,
         ));
 
