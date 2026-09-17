@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\Resolver;
 use gipfl\IcingaWeb2\Link;
 use ipl\I18n\Translation;
 use Icinga\Module\Director\Objects\IcingaCommand;
-use InvalidArgumentException;
 
 class CommandUsage
 {
@@ -23,12 +22,6 @@ class CommandUsage
      */
     public function __construct(IcingaCommand $command)
     {
-        if ($command->isTemplate()) {
-            throw new InvalidArgumentException(
-                'CommandUsageTable expects object or external_object, got a template'
-            );
-        }
-
         $this->command = $command;
         $this->db = $command->getDb();
     }
@@ -44,6 +37,7 @@ class CommandUsage
             'host'         => ['check_command', 'event_command'],
             'service'      => ['check_command', 'event_command'],
             'notification' => ['command'],
+            'command'      => [],
         ];
         $types = [
             'host' => [
@@ -59,6 +53,10 @@ class CommandUsage
                 'object'   => $this->translate('%d Notification(s)'),
                 'template' => $this->translate('%d Notification Template(s)'),
                 'apply'     => $this->translate('%d Notification Apply Rule(s)'),
+            ],
+            'command' => [
+                'object'   => $this->translate('%d Command(s)'),
+                'template' => $this->translate('%d Command Template(s)'),
             ],
         ];
 
@@ -93,7 +91,16 @@ class CommandUsage
         foreach ($objectTypes as $type) {
             $columns[$type] = "COALESCE(SUM(CASE WHEN object_type = '$type' THEN 1 ELSE 0 END), 0)";
         }
-        $query = $this->db->select()->from("icinga_$table", $columns);
+
+        $query = $this->db->select()->from(['c' => "icinga_$table"], $columns);
+
+        if ($table === 'command') {
+            $query->join(
+                ['ici' => 'icinga_command_inheritance'],
+                'ici.command_id = c.id',
+                []
+            )->where('ici.parent_command_id = ?', $id);
+        }
 
         foreach ($rels as $rel) {
             $query->orWhere("{$rel}_id = ?", $id);
