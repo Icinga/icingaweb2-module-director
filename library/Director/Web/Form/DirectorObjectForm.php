@@ -22,6 +22,7 @@ use Icinga\Module\Director\Resolver\TemplateTree;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
+use Zend_Form_DisplayGroup;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 use Zend_Form_Exception;
@@ -342,7 +343,16 @@ abstract class DirectorObjectForm extends DirectorForm
         );
     }
 
-    protected function addToEventHandlerDisplayGroup($elements)
+    /**
+     * Add named elements to the event handler display group
+     *
+     * @param string ...$elements Names of existing form elements
+     *
+     * @return Zend_Form_DisplayGroup
+     *
+     * @throws Zend_Form_Exception If a new group has no valid elements
+     */
+    protected function addToEventHandlerDisplayGroup(string ...$elements)
     {
         return $this->addElementsToGroup(
             $elements,
@@ -1417,7 +1427,7 @@ abstract class DirectorObjectForm extends DirectorForm
      *
      * @return $this
      */
-    protected function addEventCommandElements()
+    protected function addEventCommandElements(): static
     {
         $eventCommands = $this->db->enumEventcommands();
         $hasEventCommands = ! empty($eventCommands);
@@ -1441,7 +1451,7 @@ abstract class DirectorObjectForm extends DirectorForm
             $this->translate('Whether to enable event handlers this object')
         );
 
-        $this->addToEventHandlerDisplayGroup(['event_command_id', 'enable_event_handler']);
+        $this->addToEventHandlerDisplayGroup('event_command_id', 'enable_event_handler');
 
         return $this;
     }
