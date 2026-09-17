@@ -120,12 +120,11 @@ class ServiceSetQueryBuilder
     }
 
     /**
-     * Fetch the raw UUIDs (binary, 16 bytes) of all services matched by the query,
-     * one entry per row.
+     * Fetch the raw UUIDs (binary, 16 bytes) of all matching services, one per row
      *
-     * Unlike fetchServicesWithQuery(), this does NOT deduplicate by object_name, so
-     * callers that need to see every stored row (for example to reconcile and delete
-     * orphaned Service Set members) do not lose same-named duplicates.
+     * Keeps every row separate instead of merging rows that share a name.
+     *
+     * @param \Zend_Db_Select $query
      *
      * @return string[]
      */

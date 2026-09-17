@@ -110,8 +110,7 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
     }
 
     /**
-     * Control case: importing a Set member with an unchanged UUID must match the
-     * existing service by UUID and update it in place - never create a second row.
+     * Control case: re-importing a member with the same uuid should update it in place, not add a copy.
      */
     public function testImportingMemberWithSameUuidUpdatesInPlace()
     {
@@ -149,15 +148,7 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
     }
 
     /**
-     * Regression test: importing a Set member with a *new* UUID (as a regenerated
-     * Basket does) must not leave a duplicate behind.
-     *
-     * IcingaServiceSet::setServices() matches members by UUID only, so a changed UUID
-     * creates a new service. storeRelatedServices() is expected to delete the now
-     * orphaned old member, but it enumerates via the name-deduplicating fetchServices()
-     * (ServiceSetQueryBuilder::fetchServicesWithQuery(), which keys results by
-     * object_name). Two same-named rows collapse into one, hiding the orphan from the
-     * deletion loop, so it survives and the member ends up duplicated.
+     * Regression: A member re-imported under a new uuid must replace, not duplicate, the old one.
      */
     public function testImportingMemberWithNewUuidDoesNotDuplicate()
     {
