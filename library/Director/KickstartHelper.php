@@ -70,21 +70,27 @@ class KickstartHelper
 
     /**
      * Trigger a complete kickstart run
+     *
+     * Roll back imported objects and API credentials if the import fails.
+     *
+     * @return void
      */
     public function run()
     {
-        $this->fetchEndpoints()
-            ->reconnectToDeploymentEndpoint()
-            ->fetchZones()
-            ->fetchCommands()
-            ->storeZones()
-            ->storeEndpoints()
-            ->storeCommands()
-            ->removeEndpoints()
-            ->removeZones()
-            ->removeCommands();
+        $this->db->runFailSafeTransaction(function () {
+            $this->fetchEndpoints()
+                ->reconnectToDeploymentEndpoint()
+                ->fetchZones()
+                ->fetchCommands()
+                ->storeZones()
+                ->storeEndpoints()
+                ->storeCommands()
+                ->removeEndpoints()
+                ->removeZones()
+                ->removeCommands();
 
-        $this->apiUser()->store();
+            $this->apiUser()->store();
+        });
     }
 
     /**
