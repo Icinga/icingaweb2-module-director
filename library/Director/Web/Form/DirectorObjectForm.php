@@ -1420,17 +1420,20 @@ abstract class DirectorObjectForm extends DirectorForm
     protected function addEventCommandElements()
     {
         $eventCommands = $this->db->enumEventcommands();
+        $hasEventCommands = ! empty($eventCommands);
 
-        if (empty($eventCommands)) {
-            return $this;
-        }
-
-        $this->addElement('select', 'event_command_id', array(
-            'label' => $this->translate('Event command'),
+        $this->addElement('select', 'event_command_id', [
+            'label'        => $this->translate('Event command'),
             'description'  => $this->translate('Event command definition'),
             'multiOptions' => $this->optionalEnum($eventCommands),
             'class'        => 'autosubmit',
-        ));
+        ]);
+
+        if (! $hasEventCommands) {
+            $el = $this->getElement('event_command_id');
+            $el->setAttrib('disabled', 'disabled');
+            $el->setAttrib('title', $this->translate('There are no event commands available'));
+        }
 
         $this->optionalBoolean(
             'enable_event_handler',
