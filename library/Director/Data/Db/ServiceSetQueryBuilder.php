@@ -11,6 +11,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\TableWithBranchSupport;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Zend_Db_Select;
 
 class ServiceSetQueryBuilder
 {
@@ -124,11 +125,11 @@ class ServiceSetQueryBuilder
      *
      * Keeps every row separate instead of merging rows that share a name.
      *
-     * @param \Zend_Db_Select $query
+     * @param Zend_Db_Select $query
      *
      * @return string[]
      */
-    public function fetchServiceUuids(\Zend_Db_Select $query): array
+    public function fetchServiceUuids(Zend_Db_Select $query): array
     {
         static::resetQueryProperties($query);
         $uuids = [];
