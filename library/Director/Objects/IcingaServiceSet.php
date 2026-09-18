@@ -166,9 +166,15 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             $service->store();
         }
 
-        foreach ($this->fetchServices() as $service) {
-            if (!isset($seen[$service->getUniqueId()->getBytes()])) {
-                $service->delete();
+        // Delete members no longer in the set. Look at every row on its own instead
+        // of a list that merges rows sharing a name, so a leftover doesn't get missed.
+        $builder = new ServiceSetQueryBuilder($this->getConnection(), null);
+        foreach ($builder->fetchServiceUuids($builder->selectServicesForSet($this)) as $uuid) {
+            if (! isset($seen[$uuid])) {
+                IcingaService::loadWithUniqueId(
+                    Uuid::fromBytes($uuid),
+                    $this->getConnection()
+                )->delete();
             }
         }
     }

@@ -11,6 +11,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\TableWithBranchSupport;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Zend_Db_Select;
 
 class ServiceSetQueryBuilder
 {
@@ -117,6 +118,26 @@ class ServiceSetQueryBuilder
         }
 
         return $services;
+    }
+
+    /**
+     * Fetch the raw UUIDs (binary, 16 bytes) of all matching services, one per row
+     *
+     * Keeps every row separate instead of merging rows that share a name.
+     *
+     * @param Zend_Db_Select $query
+     *
+     * @return string[]
+     */
+    public function fetchServiceUuids(Zend_Db_Select $query): array
+    {
+        static::resetQueryProperties($query);
+        $uuids = [];
+        foreach ($this->connection->getDbAdapter()->fetchCol($query) as $uuid) {
+            $uuids[] = DbUtil::binaryResult($uuid);
+        }
+
+        return $uuids;
     }
 
     protected function getColumns()

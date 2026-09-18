@@ -2,8 +2,10 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Test\IcingaObjectTestCase;
+use Ramsey\Uuid\Uuid;
 
 class IcingaServiceSetTest extends IcingaObjectTestCase
 {
@@ -105,6 +107,136 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
         // TODO: deleting set should delete services
 
         $this->checkForDanglingServices();
+    }
+
+    /**
+     * Verify that importing the same UUID updates the existing member in place
+     *
+     * @return void
+     */
+    public function testImportingMemberWithSameUuidUpdatesInPlace(): void
+    {
+        if (! $this->hasDb()) {
+            $this->markTestSkipped('Test db not configured');
+        }
+
+        $db = $this->getDb();
+        $set = IcingaServiceSet::load($this->testObjectName, $db);
+        $setId = $set->getAutoincId();
+        $name = '___TEST___member_same_uuid';
+
+        $member = IcingaService::create([
+            'object_type'    => 'apply',
+            'object_name'    => $name,
+            'service_set_id' => $setId,
+            'vars'           => ['marker' => 'original'],
+        ], $db);
+        $uuid = $member->getUniqueId();
+        $member->store();
+
+        try {
+            $set->setServices([
+                (object) [
+                    'object_type' => 'apply',
+                    'object_name' => $name,
+                    'uuid'        => $uuid->toString(),
+                    'vars'        => (object) ['marker' => 'updated'],
+                ],
+            ]);
+            $set->store();
+
+            $ids = $this->fetchSetMemberIds($setId, $name);
+            $this->assertCount(1, $ids, 'A member imported with the same UUID must not be duplicated');
+            $stored = IcingaService::loadWithAutoIncId($ids[0], $db);
+            $this->assertSame($member->getAutoincId(), $stored->getAutoincId());
+            $this->assertSame($uuid->toString(), $stored->getUniqueId()->toString());
+            $this->assertSame('updated', $stored->vars()->marker->getValue());
+        } finally {
+            $this->cleanupServices($this->fetchSetMemberIds($setId, $name));
+        }
+    }
+
+    /**
+     * Verify that importing a new UUID replaces the old member and its properties
+     *
+     * @return void
+     */
+    public function testImportingMemberWithNewUuidDoesNotDuplicate(): void
+    {
+        if (! $this->hasDb()) {
+            $this->markTestSkipped('Test db not configured');
+        }
+
+        $db = $this->getDb();
+        $set = IcingaServiceSet::load($this->testObjectName, $db);
+        $setId = $set->getAutoincId();
+        $name = '___TEST___member_new_uuid';
+
+        $existing = IcingaService::create([
+            'object_type'    => 'apply',
+            'object_name'    => $name,
+            'service_set_id' => $setId,
+            'vars'           => ['marker' => 'original'],
+        ], $db);
+        $uuidA = $existing->getUniqueId();
+        $existing->store();
+
+        try {
+            $uuidB = Uuid::uuid4();
+            $this->assertNotEquals($uuidA->toString(), $uuidB->toString());
+
+            $set->setServices([
+                (object) [
+                    'object_type' => 'apply',
+                    'object_name' => $name,
+                    'uuid'        => $uuidB->toString(),
+                    'vars'        => (object) ['marker' => 'updated'],
+                ],
+            ]);
+            $set->store();
+
+            $ids = $this->fetchSetMemberIds($setId, $name);
+            $this->assertCount(1, $ids, 'A member imported with a new UUID must exist exactly once');
+            $stored = IcingaService::loadWithAutoIncId($ids[0], $db);
+            $this->assertSame($uuidB->toString(), $stored->getUniqueId()->toString());
+            $this->assertSame('updated', $stored->vars()->marker->getValue());
+        } finally {
+            $this->cleanupServices($this->fetchSetMemberIds($setId, $name));
+        }
+    }
+
+    /**
+     * Fetch IDs of all matching members, including duplicate names
+     *
+     * @param int|string $setId
+     * @param string $name
+     *
+     * @return list<int|string>
+     */
+    private function fetchSetMemberIds(int|string $setId, string $name): array
+    {
+        $db = $this->getDb()->getDbAdapter();
+
+        return $db->fetchCol(
+            $db->select()
+                ->from('icinga_service', 'id')
+                ->where('service_set_id = ?', $setId)
+                ->where('object_name = ?', $name)
+        );
+    }
+
+    /**
+     * Delete the test members through their normal object lifecycle
+     *
+     * @param list<int|string> $ids
+     *
+     * @return void
+     */
+    private function cleanupServices(array $ids): void
+    {
+        foreach ($ids as $id) {
+            IcingaService::loadWithAutoIncId($id, $this->getDb())->delete();
+        }
     }
 
     public function testCreatingSetWithoutType()
