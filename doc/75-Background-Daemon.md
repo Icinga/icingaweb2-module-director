@@ -42,31 +42,36 @@ You now can start the Background daemon like any other service on your Linux sys
 systemctl start icinga-director.service
 ```
 
-Starting the Daemon with a Kickstart
--------------------------------------
+Startup Options
+---------------
 
-If you're setting up a new install, container or otherwise, you can add
-`--kickstart` to have the daemon apply pending migrations, run the kickstart
-and deploy the config before it starts. That's one command instead of four:
+If you're setting up a new install, container or otherwise, `daemon run`
+takes a few flags to fold your usual setup steps into a single command
+instead of chaining them by hand:
 
 ```sh
-icingacli director daemon run --kickstart
+icingacli director daemon run --kickstart --run-sync --deploy
 ```
 
-This is safe to use every time you start the daemon. If kickstart already
-ran, that step gets skipped and the daemon starts as normal. If kickstart
-was never set up at all, the command stops with an error instead of
-starting, since that means the install isn't ready yet.
+- `--kickstart` runs kickstart if it's configured and required
+- `--import <path>` restores a basket snapshot from the given file
+- `--run-sync` runs all import sources and sync rules
+- `--deploy` deploys the generated config
 
-If the import fails, its database changes are rolled back so the next startup
-can retry. Once the import succeeds, an outstanding initial deployment is
-retried on startup without importing objects again. A successful manual
-deployment also completes setup. Normal restarts after a completed setup do
-not deploy pending configuration changes.
+Pass any combination of these, or just one. Each one applies pending
+migrations first and retries the DB connection if it's not reachable yet,
+so it's safe to run any of them before the DB is fully up.
 
-While initial deployment is pending, startup deploys even if the configuration
-matches an earlier dump. If startup is interrupted after uploading the config
-but before recording completion, the next startup may deploy it again.
+`--kickstart` on its own is safe to use every time you start the daemon. If
+kickstart already ran, that step gets skipped and the daemon starts as
+normal. If kickstart was never set up at all, the command stops with an
+error instead of starting, since that means the install isn't ready yet.
+`--import`, `--run-sync` and `--deploy` don't need kickstart to be
+configured at all, so they also work on a setup seeded purely from a
+basket snapshot with no Icinga 2 API to kickstart from.
+
+If the kickstart import fails partway through, its database changes are
+rolled back so the next startup can retry from a clean state.
 
 A kickstart run can delete Endpoint, Zone or Command objects that came from
 an earlier kickstart if they're no longer on the Icinga 2 master. To keep
@@ -76,8 +81,8 @@ Command template, don't count and won't block it.
 
 If you really do want to kickstart a DB that already has those objects, for
 example while restoring a backup that's missing its API user, run
-`icingacli director kickstart run` separately. This command has no such
-safety check and can remove previously imported objects without asking.
+`icingacli director kickstart run` separately. That command has no such
+safety check and will remove those objects without asking.
 
 Stopping the Daemon
 -------------------

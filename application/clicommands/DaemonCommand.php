@@ -31,22 +31,25 @@ class DaemonCommand extends Command
      *
      * OPTIONS
      *
-     *   --kickstart        Run migrations and kickstart (if required) before
-     *                      starting the daemon. Unlike chaining the
-     *                      migration/kickstart commands by hand, this
-     *                      refuses to touch a DB that already has
-     *                      Endpoint, Zone or Command objects. Retries the
-     *                      DB connection if it's not reachable yet
+     *   --kickstart        Run kickstart if configured and required, before
+     *                      starting the daemon. Refuses to touch a DB that
+     *                      already has Endpoint, Zone or Command objects.
+     *                      Fails if kickstart isn't configured at all
      *   --import <path>    Restore a basket snapshot from the given file
      *   --run-sync         Run all import sources and sync rules
      *   --deploy           Deploy the generated config
+     *
+     * Each of these runs independently, you can pass any combination of
+     * them (or just one) without the others. All of them apply pending
+     * migrations first and retry the DB connection if it's not reachable
+     * yet.
      */
     public function runAction(): void
     {
         $this->app->getModuleManager()->loadEnabledModules();
         $dbResource = $this->params->get('db-resource');
-        if ($this->params->get('kickstart')) {
-            $this->runKickstart($dbResource);
+        if ($this->wantsSetup()) {
+            $this->runSetup($dbResource);
         }
 
         $daemon = new BackgroundDaemon();
@@ -58,13 +61,29 @@ class DaemonCommand extends Command
     }
 
     /**
-     * Run migrations, kickstart and the requested setup steps before the daemon starts
+     * Check if any startup flag was passed
+     *
+     * @return bool
+     */
+    protected function wantsSetup(): bool
+    {
+        foreach (['kickstart', 'import', 'run-sync', 'deploy'] as $flag) {
+            if ($this->params->get($flag)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Connect to the database and run the requested startup steps
      *
      * @param ?string $dbResource DB resource to use, falls back to the configured default
      *
      * @return void
      */
-    protected function runKickstart(?string $dbResource): void
+    protected function runSetup(?string $dbResource): void
     {
         $dbCallback = $dbResource === null ? $this->db(...) : fn () => Db::fromResourceName($dbResource);
         $db = $this->retryDbConnection($dbCallback);
@@ -73,6 +92,47 @@ class DaemonCommand extends Command
         // Like icingacli director migration run
         (new Migrations($db))->applyPendingMigrations();
 
+        if ($this->params->get('kickstart')) {
+            $this->runKickstart($db);
+        }
+
+        // import = "/etc/icingaweb2/modules/director/<basket>.json"
+        $import = $this->params->get('import');
+        if ($import) {
+            $this->restoreBasket($db, $import);
+        }
+
+        if ($this->params->get('run-sync')) {
+            $this->runImportAndSync($db);
+        }
+
+        if ($this->params->get('deploy')) {
+            $this->deployConfig($db);
+        }
+    }
+
+    /**
+     * Restore a basket snapshot from a file
+     *
+     * @param Db $db Database connection to use
+     * @param string $path Path to the basket snapshot file
+     *
+     * @return void
+     */
+    protected function restoreBasket(Db $db, string $path): void
+    {
+        BasketSnapshot::restoreJson(file_get_contents($path), $db);
+    }
+
+    /**
+     * Run kickstart if it's configured and required
+     *
+     * @param Db $db Database connection to use
+     *
+     * @return void
+     */
+    protected function runKickstart(Db $db): void
+    {
         // Like icingacli director kickstart required
         $kickstart = new KickstartHelper($db);
         if (! $kickstart->isConfigured()) {
@@ -99,20 +159,6 @@ class DaemonCommand extends Command
             $kickstart->loadConfigFromFile()->run();
         } elseif ($this->isVerbose) {
             echo "Kickstart configured, execution is not required\n";
-        }
-
-        // import = "/etc/icingaweb2/modules/director/<basket>.json"
-        $import = $this->params->get('import');
-        if ($import) {
-            BasketSnapshot::restoreJson(file_get_contents($import), $db);
-        }
-
-        if ($this->params->get('run-sync')) {
-            $this->runImportAndSync($db);
-        }
-
-        if ($this->params->get('deploy')) {
-            $this->deployConfig($db);
         }
     }
 
