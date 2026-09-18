@@ -175,9 +175,8 @@ class DaemonCommand extends Command
             }
 
             $settings->set('initial_deployment_pending', null);
-        } else {
+        } elseif ($this->isVerbose) {
             echo $deployer->getNoDeploymentReason() . "\n";
-            exit(1);
         }
     }
 
