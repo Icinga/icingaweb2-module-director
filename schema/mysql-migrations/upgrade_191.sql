@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_activity_log
   MODIFY COLUMN old_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   MODIFY COLUMN new_properties MEDIUMTEXT DEFAULT NULL COMMENT 'Property hash, JSON';

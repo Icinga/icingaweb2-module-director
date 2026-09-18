@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_service_template_choice (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(64) NOT NULL,

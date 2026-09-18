@@ -1,5 +1,8 @@
 <?php
 
+// SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 namespace Tests\Icinga\Module\Director\Field;
 
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;

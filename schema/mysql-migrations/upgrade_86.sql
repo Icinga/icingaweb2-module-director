@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_notification_user (
   notification_id INT(10) UNSIGNED NOT NULL,
   user_id INT(10) UNSIGNED NOT NULL,

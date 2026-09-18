@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 UPDATE import_row_modifier SET priority = id;
 
 CREATE UNIQUE INDEX import_row_modifier_prio

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2022 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE branched_icinga_service_set (
   uuid VARBINARY(16) NOT NULL,
   branch_uuid VARBINARY(16) NOT NULL,

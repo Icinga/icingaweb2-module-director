@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2021 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE director_branch (
   uuid  bytea NOT NULL UNIQUE CHECK(LENGTH(uuid) = 16),
   owner character varying(255) NOT NULL,

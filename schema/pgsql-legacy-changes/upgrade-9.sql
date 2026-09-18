@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_zone_inheritance (
   zone_id integer NOT NULL,
   parent_zone_id integer NOT NULL,

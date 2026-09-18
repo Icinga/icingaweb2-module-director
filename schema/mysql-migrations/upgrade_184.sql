@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2022 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE branched_icinga_notification
   ADD COLUMN users_var VARCHAR(255) DEFAULT NULL AFTER zone;
 

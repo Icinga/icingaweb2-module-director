@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: 2016 Icinga GmbH <https://icinga.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 MYSQL_CONTAINER=icingaweb2_director_mysql
 
 echo "Starting MySQL container..."

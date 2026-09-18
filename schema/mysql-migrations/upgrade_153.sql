@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE director_basket (
   uuid VARBINARY(16) NOT NULL,
   basket_name VARCHAR(64) NOT NULL,

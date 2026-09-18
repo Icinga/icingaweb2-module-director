@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_datalist_entry
   ADD COLUMN allowed_roles VARCHAR(255) DEFAULT NULL;
 

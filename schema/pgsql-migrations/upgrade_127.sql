@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_command_var
   ADD COLUMN checksum bytea DEFAULT NULL CHECK(LENGTH(checksum) = 20);
 CREATE INDEX command_var_search_idx ON icinga_command_var (varname);

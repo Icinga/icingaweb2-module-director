@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE sync_run (
   id BIGINT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   rule_id INT(10) UNSIGNED DEFAULT NULL,

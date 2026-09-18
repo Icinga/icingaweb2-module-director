@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 SET @stmt = (SELECT IF(
     (SELECT EXISTS(
         SELECT * FROM information_schema.table_constraints

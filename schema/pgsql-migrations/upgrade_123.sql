@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- cleanup dangling service_set before we add foreign key
 DELETE FROM icinga_service_set AS ss
   WHERE NOT EXISTS (

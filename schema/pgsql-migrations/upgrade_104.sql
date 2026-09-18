@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_timeperiod_range
   ADD COLUMN range_key character varying(255) DEFAULT NULL,
   ADD COLUMN range_value character varying(255) DEFAULT NULL;

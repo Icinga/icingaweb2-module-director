@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_job ADD COLUMN ts_last_attempt_tmp bigint DEFAULT NULL;
 ALTER TABLE director_job ADD COLUMN ts_last_error_tmp bigint DEFAULT NULL;
 

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- cleanup dangling service_set before we add foreign key
 DELETE ss FROM icinga_service_set AS ss
   LEFT JOIN icinga_host AS h ON h.id = ss.host_id

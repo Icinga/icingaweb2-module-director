@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2022 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 DELETE FROM sync_run AS sr
   WHERE EXISTS (
     SELECT 1 FROM sync_rule AS s

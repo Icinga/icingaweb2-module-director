@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_command_field (
   command_id INT(10) UNSIGNED NOT NULL,
   datafield_id INT(10) UNSIGNED NOT NULL,

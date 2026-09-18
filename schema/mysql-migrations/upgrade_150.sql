@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 UPDATE icinga_user u
 SET period_id = NULL
 WHERE NOT EXISTS (
