@@ -31,10 +31,12 @@ class DaemonCommand extends Command
      *
      * OPTIONS
      *
-     *   --kickstart        Run kickstart if configured and required, before
-     *                      starting the daemon. Refuses to touch a DB that
-     *                      already has Endpoint, Zone or Command objects.
-     *                      Fails if kickstart isn't configured at all
+     *   --kickstart  Run kickstart if configured and required, before
+     *                starting the daemon. Refuses to touch a DB that
+     *                already has Endpoint, Zone or Command objects, run
+     *                'icingacli director kickstart run' separately to
+     *                recover an existing installation instead. Fails if
+     *                kickstart isn't configured at all
      *   --import <path>    Restore a basket snapshot from the given file
      *   --run-sync         Run all import sources and sync rules
      *   --deploy           Deploy the generated config
@@ -43,6 +45,11 @@ class DaemonCommand extends Command
      * them (or just one) without the others. All of them apply pending
      * migrations first and retry the DB connection if it's not reachable
      * yet.
+     *
+     * A kickstart import is rolled back if it fails partway through. If it
+     * succeeds but the daemon is interrupted before the config is deployed,
+     * a later --deploy (even without --kickstart) still deploys it, even if
+     * the generated config looks unchanged.
      */
     public function runAction(): void
     {

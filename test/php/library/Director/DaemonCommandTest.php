@@ -13,6 +13,7 @@ use Icinga\Module\Director\Deployment\ConditionalDeployment;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaApiUser;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Test\BaseTestCase;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -191,6 +192,81 @@ class DaemonCommandTest extends BaseTestCase
 
         self::assertSame('n', $deployment->get('dump_succeeded'));
         self::assertSame('y', (new Settings($this->connection))->get('initial_deployment_pending'));
+    }
+
+    /**
+     * @return void
+     */
+    public function testKickstartDoesNotTouchPendingDeploymentWhenNotRequired(): void
+    {
+        $this->connection->expects($this->never())->method('getDeploymentEndpoint');
+
+        $command = $this->getMockBuilder(DaemonCommand::class)->disableOriginalConstructor()->getMock();
+        self::callMethod($command, 'runKickstart', [$this->connection]);
+
+        self::assertNull((new Settings($this->connection))->get('initial_deployment_pending'));
+    }
+
+    /**
+     * @return void
+     */
+    public function testDeployForcesWhilePendingAndClearsPendingAfterSuccess(): void
+    {
+        $this->connection->settings()->set('initial_deployment_pending', 'y');
+        $config = IcingaConfig::generate($this->connection);
+        DirectorDeploymentLog::create([
+            'config_checksum' => $config->getChecksum(),
+            'last_activity_checksum' => $config->getLastActivityChecksum(),
+            'peer_identity' => '___TEST___daemon-endpoint',
+            'start_time' => '2026-01-01 00:00:00',
+            'stage_name' => '___TEST___daemon-stage',
+            'dump_succeeded' => 'y',
+        ], $this->connection)->store();
+
+        $endpoint = $this->createMock(IcingaEndpoint::class);
+        $api = $this->createMock(CoreApi::class);
+        $endpoint->method('api')->willReturn($api);
+        $this->connection->expects($this->once())->method('getDeploymentEndpoint')->willReturn($endpoint);
+        $api->method('getActiveStageName')->willReturn(null);
+        $api->expects($this->once())->method('dumpConfig')->willReturn(
+            DirectorDeploymentLog::create([
+                'config_checksum' => $config->getChecksum(),
+                'dump_succeeded' => 'y',
+            ], $this->connection)
+        );
+
+        $command = $this->getMockBuilder(DaemonCommand::class)->disableOriginalConstructor()->getMock();
+        self::callMethod($command, 'deployConfig', [$this->connection]);
+
+        self::assertNull((new Settings($this->connection))->get('initial_deployment_pending'));
+    }
+
+    /**
+     * @return void
+     */
+    public function testDeployDoesNotForceOrDeployWhenNothingIsPending(): void
+    {
+        $config = IcingaConfig::generate($this->connection);
+        DirectorDeploymentLog::create([
+            'config_checksum' => $config->getChecksum(),
+            'last_activity_checksum' => $config->getLastActivityChecksum(),
+            'peer_identity' => '___TEST___daemon-endpoint',
+            'start_time' => '2026-01-01 00:00:00',
+            'stage_name' => '___TEST___daemon-stage',
+            'dump_succeeded' => 'y',
+        ], $this->connection)->store();
+
+        $endpoint = $this->createMock(IcingaEndpoint::class);
+        $api = $this->createMock(CoreApi::class);
+        $endpoint->method('api')->willReturn($api);
+        $this->connection->method('getDeploymentEndpoint')->willReturn($endpoint);
+        $api->method('getActiveStageName')->willReturn(null);
+        $api->expects($this->never())->method('dumpConfig');
+
+        $command = $this->getMockBuilder(DaemonCommand::class)->disableOriginalConstructor()->getMock();
+        self::callMethod($command, 'deployConfig', [$this->connection]);
+
+        self::assertNull((new Settings($this->connection))->get('initial_deployment_pending'));
     }
 
     /**

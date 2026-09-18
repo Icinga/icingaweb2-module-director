@@ -41,7 +41,7 @@ class TestableDaemonCommand extends DaemonCommand
         return $this->wantsSetup();
     }
 
-    protected function runKickstart(Db $db, bool $force = false): void
+    protected function runKickstart(Db $db): void
     {
         $this->stepsRun[] = 'kickstart';
     }

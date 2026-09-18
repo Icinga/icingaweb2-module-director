@@ -71,7 +71,11 @@ configured at all, so they also work on a setup seeded purely from a
 basket snapshot with no Icinga 2 API to kickstart from.
 
 If the kickstart import fails partway through, its database changes are
-rolled back so the next startup can retry from a clean state.
+rolled back so the next startup can retry from a clean state. If it
+succeeds but the daemon gets interrupted before the config is deployed,
+that's remembered too: the next time `--deploy` runs, even on its own,
+it deploys the pending config even if it looks unchanged, instead of
+quietly skipping it.
 
 A kickstart run can delete Endpoint, Zone or Command objects that came from
 an earlier kickstart if they're no longer on the Icinga 2 master. To keep
