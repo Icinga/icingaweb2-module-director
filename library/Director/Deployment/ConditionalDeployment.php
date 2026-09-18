@@ -47,8 +47,15 @@ class ConditionalDeployment implements LoggerAwareInterface
     }
 
     /**
+     * Deploy configuration when required
+     *
+     * Failed dumps throw and do not suppress later attempts with the same checksum.
+     *
      * @param IcingaConfig $config
+     *
      * @return ?DirectorDeploymentLog
+     *
+     * @throws IcingaException If the configuration dump fails
      */
     public function deploy(IcingaConfig $config)
     {
@@ -159,7 +166,8 @@ class ConditionalDeployment implements LoggerAwareInterface
     protected function deployedConfigMatches(IcingaConfig $config)
     {
         if ($deployment = DirectorDeploymentLog::optionalLatest($this->db)) {
-            return $deployment->getConfigHexChecksum() === $config->getHexChecksum();
+            return $deployment->get('dump_succeeded') === 'y'
+                && $deployment->getConfigHexChecksum() === $config->getHexChecksum();
         }
 
         return false;
@@ -175,7 +183,9 @@ class ConditionalDeployment implements LoggerAwareInterface
 
     /**
      * @param IcingaConfig $config
-     * @return bool|DirectorDeploymentLog
+     *
+     * @return DirectorDeploymentLog
+     *
      * @throws IcingaException
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
@@ -183,11 +193,13 @@ class ConditionalDeployment implements LoggerAwareInterface
     {
         $checksum = $config->getHexChecksum();
         $this->logger->info(sprintf('Director ConfigJob ready to deploy "%s"', $checksum));
-        if ($deployment = $this->api->dumpConfig($config, $this->db)) {
-            $this->logger->notice(sprintf('Director ConfigJob deployed config "%s"', $checksum));
-            return $deployment;
-        } else {
+        $deployment = $this->api->dumpConfig($config, $this->db);
+        if ($deployment->get('dump_succeeded') !== 'y') {
             throw new IcingaException('Failed to deploy config "%s"', $checksum);
         }
+
+        $this->logger->notice(sprintf('Director ConfigJob deployed config "%s"', $checksum));
+
+        return $deployment;
     }
 }

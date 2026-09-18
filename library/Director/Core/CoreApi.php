@@ -827,10 +827,16 @@ constants
     }
 
     /**
+     * Dump configuration to the API
+     *
+     * A successful dump of the configured package completes pending initial deployment.
+     *
      * @param IcingaConfig $config
      * @param Db $db
-     * @param null $packageName
+     * @param ?string $packageName Package to deploy, defaults to the configured package
+     *
      * @return DirectorDeploymentLog
+     *
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     public function dumpConfig(IcingaConfig $config, Db $db, $packageName = null)
@@ -886,6 +892,11 @@ constants
         $deployment->store($db);
 
         if ($succeeded === 'y') {
+            // Manual deployments also complete setup before a later daemon restart.
+            if ($packageName === $db->settings()->get('icinga_package_name')) {
+                $db->settings()->set('initial_deployment_pending', null);
+            }
+
             foreach ($hooks as $hook) {
                 $hook->triggerSuccessfulDump($deployment);
             }
