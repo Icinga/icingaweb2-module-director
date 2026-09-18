@@ -131,9 +131,17 @@ class DaemonCommand extends Command
         }
 
         foreach ($sources as $source) {
-            echo $source->runImport()
-                ? "New data has been imported\n"
-                : "Nothing has been changed, imported data is still up to date\n";
+            if ($source->runImport()) {
+                echo "New data has been imported\n";
+            } elseif ($source->get('import_state') === 'failing') {
+                $this->fail(
+                    "Import '%s' failed: %s",
+                    $source->get('source_name'),
+                    $source->get('last_error_message')
+                );
+            } else {
+                echo "Nothing has been changed, imported data is still up to date\n";
+            }
         }
 
         $rules = SyncRule::loadAll($db);
@@ -142,9 +150,17 @@ class DaemonCommand extends Command
         }
 
         foreach ($rules as $rule) {
-            echo $rule->applyChanges()
-                ? "New data has been applied\n"
-                : "Nothing has been changed, synced data is still up to date\n";
+            if ($rule->applyChanges()) {
+                echo "New data has been applied\n";
+            } elseif ($rule->get('sync_state') === 'failing') {
+                $this->fail(
+                    "Sync rule '%s' failed: %s",
+                    $rule->get('rule_name'),
+                    $rule->get('last_error_message')
+                );
+            } else {
+                echo "Nothing has been changed, synced data is still up to date\n";
+            }
         }
     }
 
