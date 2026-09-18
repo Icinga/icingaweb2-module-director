@@ -5,12 +5,15 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Clicommands\DaemonCommand;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Tests\Icinga\Module\Director\Lib\Objects\TestableDaemonCommand;
 use RuntimeException;
+use Throwable;
+use Zend_Db_Adapter_Exception;
 
 class DaemonCommandTest extends BaseTestCase
 {
@@ -148,6 +151,86 @@ class DaemonCommandTest extends BaseTestCase
 
             $this->assertSame([], $cmd->stepsRun, "$label: no step may run");
         }
+    }
+
+    public function testConnectionRetriesUntilItSucceeds(): void
+    {
+        $cmd = new TestableDaemonCommand();
+        $attempts = 0;
+
+        $connection = $cmd->retryConnectionStep(
+            'database',
+            function () use (&$attempts) {
+                if (++$attempts < 3) {
+                    throw new Zend_Db_Adapter_Exception('Connection refused');
+                }
+
+                return 'connected';
+            },
+            fn (Throwable $e) => $e instanceof Zend_Db_Adapter_Exception
+        );
+
+        $this->assertSame('connected', $connection);
+        $this->assertSame(3, $attempts);
+        $this->assertSame([5, 5], $cmd->waitedFor, 'every failed attempt must wait five seconds');
+    }
+
+    public function testOtherErrorsAreNotRetried(): void
+    {
+        $cmd = new TestableDaemonCommand();
+        $attempts = 0;
+        $caught = null;
+
+        try {
+            $cmd->retryConnectionStep(
+                'database',
+                function () use (&$attempts) {
+                    $attempts++;
+
+                    throw new ConfigurationError('Resource has not been configured');
+                },
+                fn (Throwable $e) => $e instanceof Zend_Db_Adapter_Exception
+            );
+        } catch (ConfigurationError $e) {
+            $caught = $e;
+        }
+
+        $this->assertSame(
+            'Resource has not been configured',
+            $caught->getMessage(),
+            'A misconfigured resource must fail immediately'
+        );
+        $this->assertSame(1, $attempts);
+        $this->assertSame([], $cmd->waitedFor);
+    }
+
+    public function testConnectionGivesUpAfterFiveMinutes(): void
+    {
+        $cmd = new TestableDaemonCommand();
+        $attempts = 0;
+        $caught = null;
+
+        try {
+            $cmd->retryConnectionStep(
+                'database',
+                function () use (&$attempts) {
+                    $attempts++;
+
+                    throw new Zend_Db_Adapter_Exception('Connection refused');
+                },
+                fn (Throwable $e) => $e instanceof Zend_Db_Adapter_Exception
+            );
+        } catch (RuntimeException $e) {
+            $caught = $e;
+        }
+
+        $this->assertSame(
+            'Could not connect to database, giving up after 60 attempts: Connection refused',
+            $caught->getMessage(),
+            'An unreachable database must not be retried forever'
+        );
+        $this->assertSame(60, $attempts);
+        $this->assertCount(59, $cmd->waitedFor, 'there is no wait after the last attempt');
     }
 
     public function testRestoreBasketRestoresObjectsFromTheGivenFile(): void

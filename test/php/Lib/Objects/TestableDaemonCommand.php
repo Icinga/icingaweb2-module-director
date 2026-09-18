@@ -10,18 +10,23 @@ use Icinga\Cli\Screen;
 use Icinga\Module\Director\Clicommands\DaemonCommand;
 use Icinga\Module\Director\Db;
 use RuntimeException;
+use Throwable;
 
 /**
  * Test adapter that bypasses CLI bootstrap for DaemonCommand
  *
  * Injects DB and params directly, and stubs out the four startup steps
  * so tests can check which ones ran without touching kickstart, import,
- * sync or deploy for real. Failing the command throws instead of exiting.
+ * sync or deploy for real. Failing the command throws instead of exiting,
+ * and waiting between connection attempts returns immediately.
  */
 class TestableDaemonCommand extends DaemonCommand
 {
     /** @var string[] Steps that ran, in the order they ran */
     public $stepsRun = [];
+
+    /** @var int[] Seconds the command wanted to wait for, one entry per wait */
+    public $waitedFor = [];
 
     /**
      * Create a new TestableDaemonCommand
@@ -63,6 +68,25 @@ class TestableDaemonCommand extends DaemonCommand
     public function wantsSetupStep(): bool
     {
         return $this->wantsSetup();
+    }
+
+    /**
+     * @template T
+     *
+     * @param string $what Remote side, as it should read in log and error messages
+     * @param callable(): T $connect Callback that establishes the connection
+     * @param callable(Throwable): bool $isRetryable Check whether an error is worth retrying
+     *
+     * @return T
+     */
+    public function retryConnectionStep(string $what, callable $connect, callable $isRetryable)
+    {
+        return $this->retryConnection($what, $connect, $isRetryable);
+    }
+
+    protected function sleep(int $seconds): void
+    {
+        $this->waitedFor[] = $seconds;
     }
 
     protected function runKickstart(Db $db): void

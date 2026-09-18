@@ -17,10 +17,18 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
+use PDOException;
 use Throwable;
+use Zend_Db_Adapter_Exception;
 
 class DaemonCommand extends Command
 {
+    /** @var int Seconds to wait between two connection attempts */
+    protected const RETRY_INTERVAL = 5;
+
+    /** @var int Connection attempts to make before giving up */
+    protected const ATTEMPT_LIMIT = 60;
+
     /**
      * Run the main Director daemon
      *
@@ -90,7 +98,15 @@ class DaemonCommand extends Command
     {
         $basket = $this->getBasketSnapshotPath();
 
-        $db = $dbResource === null ? $this->db() : Db::fromResourceName($dbResource);
+        $dbCallback = $dbResource === null ? $this->db(...) : fn () => Db::fromResourceName($dbResource);
+        $db = $this->retryConnection(
+            'database',
+            $dbCallback,
+            // Any connection error, failed authentication included, can clear up while
+            // the DB is still being set up. Zend_Db rethrows PDO errors as its own type.
+            fn (Throwable $e) => $e instanceof PDOException || $e instanceof Zend_Db_Adapter_Exception
+        );
+        Logger::info('Successfully connected to database');
 
         // Like icingacli director migration run
         (new Migrations($db))->applyPendingMigrations();
@@ -297,6 +313,67 @@ class DaemonCommand extends Command
         } else {
             Logger::info('Nothing has been deployed: %s', $deployer->getNoDeploymentReason());
         }
+    }
+
+    /**
+     * Retry a connection until it can be established
+     *
+     * Makes up to ATTEMPT_LIMIT attempts, RETRY_INTERVAL seconds apart, then fails
+     * the command. Every error $isRetryable accepts is retried, including errors
+     * of a remote side that is up but not fully set up yet, such as failed
+     * authentication. Other errors pass through right away.
+     *
+     * @template T
+     *
+     * @param string $what Remote side, as it should read in log and error messages
+     * @param callable(): T $connect Callback that establishes the connection
+     * @param callable(Throwable): bool $isRetryable Check whether an error is worth retrying
+     *
+     * @return T
+     */
+    protected function retryConnection(string $what, callable $connect, callable $isRetryable)
+    {
+        $attempt = 0;
+        while (true) {
+            try {
+                return $connect();
+            } catch (Throwable $e) {
+                if (! $isRetryable($e)) {
+                    throw $e;
+                }
+
+                if (++$attempt >= static::ATTEMPT_LIMIT) {
+                    $this->fail(
+                        'Could not connect to %s, giving up after %d attempts: %s',
+                        $what,
+                        $attempt,
+                        $e->getMessage()
+                    );
+                }
+
+                Logger::warning(
+                    'Could not connect to %s yet, retrying in %ds: %s',
+                    $what,
+                    static::RETRY_INTERVAL,
+                    $e->getMessage()
+                );
+                $this->sleep(static::RETRY_INTERVAL);
+            }
+        }
+    }
+
+    /**
+     * Wait before the next connection attempt
+     *
+     * Kept separate so tests can run the retry loop without waiting.
+     *
+     * @param int $seconds Seconds to wait
+     *
+     * @return void
+     */
+    protected function sleep(int $seconds): void
+    {
+        sleep($seconds);
     }
 
     /**

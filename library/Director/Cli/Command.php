@@ -42,8 +42,11 @@ class Command extends CliCommand
     }
 
     /**
-     * @param string $msg
-     * @return never-return
+     * Print an error message and exit with a non-zero status
+     *
+     * @param string $msg Message, optionally with sprintf placeholders for the remaining arguments
+     *
+     * @return never
      */
     public function fail($msg)
     {

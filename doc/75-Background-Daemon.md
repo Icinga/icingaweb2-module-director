@@ -60,7 +60,10 @@ icingacli director daemon run --kickstart --run-automation --deploy
 - `--deploy` deploys the generated config
 
 Pass any combination of these, or just one. Any of these applies pending
-migrations first.
+migrations first and retries the DB connection until it succeeds, so it's
+safe to run any of them before the DB is up or fully configured. That retry is
+bounded: the command tries every five seconds for five minutes, then
+stops with an error instead of waiting forever.
 
 `--kickstart` on its own is safe to use every time you start the daemon. If
 kickstart already ran, that step gets skipped and the daemon starts as
@@ -87,6 +90,20 @@ succeeds but the daemon gets interrupted before the config is deployed,
 that's remembered too: the next time `--deploy` runs, even on its own,
 it deploys the pending config even if it looks unchanged, instead of
 quietly skipping it.
+
+All of this runs before the daemon tells systemd that it's ready. The
+shipped unit is `Type=notify` with systemd's default `TimeoutStartSec`
+of 90 seconds, which is shorter than a single DB retry window. Raise
+it with a drop-in if you add these flags to the unit:
+
+```sh
+systemctl edit icinga-director.service
+```
+
+```ini
+[Service]
+TimeoutStartSec=900
+```
 
 A kickstart run can delete Endpoint, Zone or Command objects that came from
 an earlier kickstart if they're no longer on the Icinga 2 master. To keep
