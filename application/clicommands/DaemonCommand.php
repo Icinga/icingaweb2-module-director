@@ -122,27 +122,23 @@ class DaemonCommand extends Command
         $sources = ImportSource::loadAll($db);
         if (empty($sources)) {
             echo "No import sources have been configured\n";
-        } else {
-            foreach ($sources as $source) {
-                if ($source->runImport()) {
-                    echo "New data has been imported\n";
-                } else {
-                    echo "Nothing has been changed, imported data is still up to date\n";
-                }
-            }
+        }
+
+        foreach ($sources as $source) {
+            echo $source->runImport()
+                ? "New data has been imported\n"
+                : "Nothing has been changed, imported data is still up to date\n";
         }
 
         $rules = SyncRule::loadAll($db);
         if (empty($rules)) {
             echo "No sync rules have been configured\n";
-        } else {
-            foreach ($rules as $rule) {
-                if ($rule->checkForChanges(true)) {
-                    echo "New data has been applied\n";
-                } else {
-                    echo "Nothing has been changed, synced data is still up to date\n";
-                }
-            }
+        }
+
+        foreach ($rules as $rule) {
+            echo $rule->applyChanges()
+                ? "New data has been applied\n"
+                : "Nothing has been changed, synced data is still up to date\n";
         }
     }
 
