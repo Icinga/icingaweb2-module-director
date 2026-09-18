@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
+use Icinga\Application\Logger;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Daemon\BackgroundDaemon;
 use Icinga\Module\Director\Db;
@@ -15,6 +16,8 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
+use PDOException;
+use Zend_Db_Adapter_Exception;
 
 class DaemonCommand extends Command
 {
@@ -32,7 +35,8 @@ class DaemonCommand extends Command
      *                      starting the daemon. Unlike chaining the
      *                      migration/kickstart commands by hand, this
      *                      refuses to touch a DB that already has
-     *                      Endpoint, Zone or Command objects
+     *                      Endpoint, Zone or Command objects. Retries the
+     *                      DB connection if it's not reachable yet
      *   --import <path>    Restore a basket snapshot from the given file
      *   --run-sync         Run all import sources and sync rules
      *   --deploy           Deploy the generated config
@@ -62,7 +66,9 @@ class DaemonCommand extends Command
      */
     protected function runKickstart(?string $dbResource): void
     {
-        $db = $dbResource === null ? $this->db() : Db::fromResourceName($dbResource);
+        $dbCallback = $dbResource === null ? $this->db(...) : fn () => Db::fromResourceName($dbResource);
+        $db = $this->retryDbConnection($dbCallback);
+        Logger::info('Successfully connected to database');
 
         // Like icingacli director migration run
         (new Migrations($db))->applyPendingMigrations();
@@ -172,6 +178,34 @@ class DaemonCommand extends Command
         } else {
             echo $deployer->getNoDeploymentReason() . "\n";
             exit(1);
+        }
+    }
+
+    /**
+     * Retry connecting to the database until it's reachable
+     *
+     * Retries every 5 seconds for up to 5 minutes before giving up
+     *
+     * @param callable $fn Callback that opens the DB connection
+     *
+     * @return Db
+     */
+    protected function retryDbConnection(callable $fn): Db
+    {
+        $try = 0;
+        while (true) {
+            try {
+                return $fn();
+            } catch (PDOException | Zend_Db_Adapter_Exception $e) {
+                // Zend_Db wraps every PDOException and rethrows it as
+                // Zend_Db_Adapter_Exception, so we have to catch both
+                if (++$try > 60) {
+                    $this->fail('Could not connect to database, stopped retrying after 5m: ' . $e->getMessage());
+                }
+
+                Logger::warning('Could not connect to database, retrying in 5s: ' . $e->getMessage());
+                sleep(5);
+            }
         }
     }
 
