@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_host
   DROP COLUMN flapping_threshold,
   ADD COLUMN flapping_threshold_high smallint DEFAULT NULL,

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 DELETE FROM director_datalist_entry WHERE entry_name IS NULL;
 ALTER TABLE director_datalist_entry
   MODIFY entry_name VARCHAR(255) NOT NULL;

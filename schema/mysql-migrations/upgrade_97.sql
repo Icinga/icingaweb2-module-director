@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_job
   ADD COLUMN timeperiod_id INT(10) UNSIGNED DEFAULT NULL AFTER run_interval,
   ADD CONSTRAINT director_job_period

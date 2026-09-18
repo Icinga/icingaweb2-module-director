@@ -1,5 +1,8 @@
 <?php
 
+// SPDX-FileCopyrightText: 2019 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 

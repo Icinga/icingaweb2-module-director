@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_servicegroup_service_resolved (
   servicegroup_id integer NOT NULL,
   service_id integer NOT NULL,

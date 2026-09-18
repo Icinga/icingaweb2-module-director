@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_command ALTER COLUMN command TYPE text;
 ALTER TABLE icinga_command ALTER COLUMN command DROP DEFAULT;
 ALTER TABLE icinga_command ALTER COLUMN command SET DEFAULT NULL;

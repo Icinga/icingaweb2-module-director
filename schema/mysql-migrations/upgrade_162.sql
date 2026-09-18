@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2019 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_scheduled_downtime
   ADD COLUMN with_services ENUM('y', 'n') NULL DEFAULT NULL;
 

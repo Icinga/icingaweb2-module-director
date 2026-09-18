@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2016 Icinga GmbH <https://icinga.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 <#
 .Synopsis
    Icinga 2 PowerShell Module - the most flexible and easy way to configure and install Icinga 2 Agents on Windows. 

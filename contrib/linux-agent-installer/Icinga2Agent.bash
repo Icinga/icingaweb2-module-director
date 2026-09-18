@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: 2016 Icinga GmbH <https://icinga.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # This generates and signs your required certificates. Please do not
 # forget to install the Icinga 2 package and your desired monitoring
 # plugins first.

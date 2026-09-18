@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE icinga_command_var
   ADD COLUMN checksum VARBINARY(20) DEFAULT NULL AFTER command_id,
   ADD INDEX search_idx (varname),

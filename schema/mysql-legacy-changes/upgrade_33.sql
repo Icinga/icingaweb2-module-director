@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE director_datafield_setting (
   datafield_id INT(10) UNSIGNED NOT NULL,
   setting_name VARCHAR(64) NOT NULL,

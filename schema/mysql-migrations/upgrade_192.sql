@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_usergroup_user_resolved
 (
   usergroup_id INT(10) UNSIGNED NOT NULL,

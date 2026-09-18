@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2024 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 ALTER TABLE director_generated_config
   DROP FOREIGN KEY director_generated_config_activity;
 

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_host_service_blacklist (
   host_id INT(10) UNSIGNED NOT NULL,
   service_id INT(10) UNSIGNED NOT NULL,

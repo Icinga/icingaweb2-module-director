@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2018 Icinga GmbH <https://icinga.com>
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 CREATE TABLE icinga_service_set_inheritance (
   service_set_id INT(10) UNSIGNED NOT NULL,
   parent_service_set_id INT(10) UNSIGNED NOT NULL,
