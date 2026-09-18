@@ -11,17 +11,19 @@ assisted** variant. It will save you a lot of headaches.
 Preparation
 -----------
 
-Agent settings are not available for modification directly on a host
-object. This requires you to create an "Icinga Agent" template. You
-could name it exactly like that; it's important to use meaningful names
-for your templates.
+Agent and zone settings can be set directly on a host object, but for
+more than a handful of Agents it's usually easier to create an "Icinga
+Agent" template. You could name it exactly like that; it's important
+to use meaningful names for your templates.
 
 ![Create an Agent template](screenshot/director/24-agents/2401_agent_template.png)
 
 As long as you're not using Satellite nodes, a single Agent zone is all
-you need. Otherwise, you should create one Agent template per satellite
-zone. If you want to move an Agent to a specific zone, just assign it
-the correct template and you're all done.
+you need. Otherwise, assign each Agent to the zone of its Satellite,
+either directly on the host or by assigning it a template dedicated to
+that Satellite zone. A dedicated template per zone pays off once you're
+managing many Agents, as it lets you move all of them into the right
+zone at once instead of editing every host individually.
 
 
 Usage
