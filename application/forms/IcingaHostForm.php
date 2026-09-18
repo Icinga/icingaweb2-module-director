@@ -57,14 +57,16 @@ class IcingaHostForm extends DirectorObjectForm
             $this->addImportsElement();
         }
 
+        $forceCommandElements = $this->hasPermission(Permission::ADMIN);
+
         $this->addChoices('host')
              ->addDisplayNameElement()
              ->addAddressElements()
              ->addGroupsElement()
              ->addDisabledElement()
              ->groupMainProperties($simpleImports)
-             ->addCheckCommandElements()
-             ->addCheckExecutionElements()
+             ->addCheckCommandElements($forceCommandElements)
+             ->addCheckExecutionElements($forceCommandElements)
              ->addExtraInfoElements()
              ->addClusteringElements()
              ->setButtons();

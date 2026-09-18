@@ -1400,12 +1400,11 @@ abstract class DirectorObjectForm extends DirectorForm
      */
     protected function addCheckCommandElements($force = false)
     {
-        // Event command shows on regular objects too, not just templates
-        $this->addEventCommandElements();
-
         if (! $force && ! $this->isTemplate()) {
             return $this;
         }
+
+        $this->addEventCommandElements();
 
         $this->addElement('text', 'check_command', array(
             'label' => $this->translate('Check command'),
