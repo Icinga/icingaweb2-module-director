@@ -27,10 +27,11 @@ class CustomVariableCache
         $query = $db->select()->from(
             ['v' => $object->getVarsTableName()],
             [
-                'id'       => sprintf('v.%s', $object->getVarsIdColumn()),
-                'varname'  => 'v.varname',
-                'varvalue' => 'v.varvalue',
-                'format'   => 'v.format',
+                'id'            => sprintf('v.%s', $object->getVarsIdColumn()),
+                'varname'       => 'v.varname',
+                'varvalue'      => 'v.varvalue',
+                'format'        => 'v.format',
+                'property_uuid' => 'v.property_uuid',
             ]
         );
 

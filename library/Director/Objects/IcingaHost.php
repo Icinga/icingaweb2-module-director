@@ -99,6 +99,8 @@ class IcingaHost extends IcingaObject implements ExportInterface
 
     protected $supportsFields = true;
 
+    protected $supportsCustomVariables = true;
+
     protected $supportsChoices = true;
 
     protected $supportedInLegacy = true;
@@ -429,7 +431,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
         return $this;
     }
 
-    protected function getServiceOverrivesVarname()
+    public function getServiceOverrivesVarname()
     {
         return $this->connection->settings()->override_services_varname;
     }

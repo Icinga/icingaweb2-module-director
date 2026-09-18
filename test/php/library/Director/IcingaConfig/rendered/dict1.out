@@ -1,6 +1,6 @@
 {
     "0" = numeric
+    address = 192.0.2.10
     @include = reserved
-    key1 = bla
-    "spe cial" = value
+    "on call" = contact
 }

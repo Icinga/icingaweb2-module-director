@@ -47,7 +47,7 @@ class ObjectPreview
 
         if ($params->shift('resolved')) {
             $object = $object::fromPlainObject(
-                $object->toPlainObject(true),
+                $object->toPlainObject(true, keepId: true),
                 $object->getConnection()
             );
 

@@ -42,6 +42,8 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
 
     protected $supportsFields = true;
 
+    protected $supportsCustomVariables = true;
+
     protected $supportsImports = true;
 
     protected $supportedInLegacy = true;

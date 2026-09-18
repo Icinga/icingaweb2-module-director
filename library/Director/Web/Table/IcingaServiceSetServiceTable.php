@@ -42,6 +42,9 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     /** @var string|null */
     protected $highlightedService;
 
+    /** @var bool Use deprecated links instead of the new links for the services linked to service sets */
+    private $useDeprecatedLink = false;
+
     /**
      * @param IcingaServiceSet $set
      * @return static
@@ -105,6 +108,20 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     }
 
     /**
+     * Whether to use deprecated links instead of the new links for the services
+     *
+     * @param bool $useDeprecatedLink
+     *
+     * @return $this
+     */
+    public function useDeprecatedLink(bool $useDeprecatedLink = true): self
+    {
+        $this->useDeprecatedLink = $useDeprecatedLink;
+
+        return $this;
+    }
+
+    /**
      * @param $row
      * @return BaseHtmlElement
      */
@@ -125,6 +142,9 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
                 'set'     => $row->service_set
             ];
             $url = 'director/host/servicesetservice';
+            if ($this->useDeprecatedLink) {
+                $url .= 'deprecated';
+            }
         } else {
             if (is_resource($row->uuid)) {
                 $row->uuid = stream_get_contents($row->uuid);

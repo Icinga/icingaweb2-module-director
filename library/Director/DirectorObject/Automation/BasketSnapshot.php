@@ -13,6 +13,7 @@ use Icinga\Module\Director\Data\ObjectImporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorJob;
@@ -36,12 +37,14 @@ use InvalidArgumentException;
 use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
 use stdClass;
+use Throwable;
 
 class BasketSnapshot extends DbObject
 {
     protected static $typeClasses = [
         'DatafieldCategory' => DirectorDatafieldCategory::class,
         'Datafield'       => DirectorDatafield::class,
+        'CustomVariable'  => DirectorProperty::class,
         'TimePeriod'      => IcingaTimePeriod::class,
         'CommandTemplate' => [IcingaCommand::class, ['object_type' => 'template']],
         'ExternalCommand' => [IcingaCommand::class, ['object_type' => 'external_object']],
@@ -157,6 +160,7 @@ class BasketSnapshot extends DbObject
         ], $db);
         $snapshot->addObjectsChosenByBasket($basket);
         $snapshot->resolveRequiredFields();
+        $snapshot->resolveRequiredProperties();
 
         return $snapshot;
     }
@@ -184,6 +188,27 @@ class BasketSnapshot extends DbObject
         }
         if (! empty($categories)) {
             $this->objects['DatafieldCategory'] = $categories;
+        }
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function resolveRequiredProperties()
+    {
+        /** @var Db $db */
+        $db = $this->getConnection();
+        $customPropertyResolver = new BasketSnapshotCustomVariableResolver($this->objects, $db);
+
+        /** @var DirectorProperty[] $properties */
+        $properties = $customPropertyResolver->loadCurrentProperties($db);
+        if (! empty($properties)) {
+            $plain = [];
+            foreach ($properties as $uuid => $customProperty) {
+                $plain[$uuid] = $customProperty->export();
+            }
+
+            $this->objects['CustomVariable'] = $plain;
         }
     }
 
@@ -223,11 +248,15 @@ class BasketSnapshot extends DbObject
 
     /**
      * @param Db $connection
+     *
+     * @return int values kept under their old name or dropped, either an old
+     *             Data Field owns them or a rename's new key was taken, 0 if none
+     *
      * @throws \Icinga\Exception\NotFoundError
      */
-    public function restoreTo(Db $connection)
+    public function restoreTo(Db $connection): int
     {
-        static::restoreJson($this->getJsonDump(), $connection);
+        return static::restoreJson($this->getJsonDump(), $connection);
     }
 
     /**
@@ -240,6 +269,7 @@ class BasketSnapshot extends DbObject
         $snapshot = static::create([
             'basket_uuid' => $basket->get('uuid')
         ]);
+
         $snapshot->objects = [];
         foreach ((array) JsonString::decode($string) as $type => $objects) {
             $snapshot->objects[$type] = (array) $objects;
@@ -248,32 +278,80 @@ class BasketSnapshot extends DbObject
         return $snapshot;
     }
 
-    public static function restoreJson($string, Db $connection)
+    /**
+     * @param string $string The snapshot, as JSON
+     * @param Db     $connection
+     *
+     * @return int values kept under their old name or dropped, either an old
+     *             Data Field owns them or a rename's new key was taken, 0 if none
+     *
+     * TODO: this number now also counts renamed values that got dropped, not
+     *       just old Data Fields, so it can't become void once Data Fields
+     *       go away.
+     */
+    public static function restoreJson($string, Db $connection): int
     {
-        (new static())->restoreObjects(JsonString::decode($string), $connection);
+        return (new static())->restoreObjects(JsonString::decode($string), $connection);
     }
 
     /**
+     * Restores objects from the json decoded snapshot
+     *
+     * @param stdClass $all The decoded snapshot
+     * @param Db       $connection
+     *
+     * @return int values kept under their old name or dropped, either an old
+     *             Data Field owns them or a rename's new key was taken, 0 if none
+     *
+     * TODO: this number now also counts renamed values that got dropped, not
+     *       just old Data Fields, so it can't become void once Data Fields
+     *       go away.
+     *
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
      * @throws \Icinga\Exception\NotFoundError
      * @throws JsonDecodeException
      */
-    protected function restoreObjects(stdClass $all, Db $connection)
+    protected function restoreObjects(stdClass $all, Db $connection): int
     {
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
-        $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
-        $this->restoreType($all, 'DataList', $fieldResolver, $connection);
-        $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
-        $fieldResolver->storeNewFields();
-        foreach ($this->restoreOrder as $typeName) {
-            $this->restoreType($all, $typeName, $fieldResolver, $connection);
+        try {
+            $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
+            $propertyResolver = new BasketSnapshotCustomVariableResolver($all, $connection);
+            $this->restoreType($all, 'DataList', $fieldResolver, $connection);
+            $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection);
+            $fieldResolver->storeNewFields();
+            $propertyResolver->storeNewProperties();
+            foreach ($this->restoreOrder as $typeName) {
+                $this->restoreType($all, $typeName, $fieldResolver, $connection, $propertyResolver);
+            }
+            // Runs last on purpose, a restored host or service still carries its
+            // own old vars, doing this any earlier just gets overwritten by that.
+            $propertyResolver->applyPendingValueMigrations();
+        } catch (Throwable $e) {
+            $db->rollBack();
+
+            throw $e;
         }
+
         $db->commit();
+
+        return $propertyResolver->getKeptValuesCount();
     }
 
     /**
+     * Restores the given type of objects from the snapshot
+     *
+     * @param stdClass                             $all
+     * @param string                               $typeName
+     * @param BasketSnapshotFieldResolver          $fieldResolver
+     * @param Db                                   $connection
+     * @param ?BasketSnapshotCustomVariableResolver $customPropertyResolver Brings back the custom
+     *                                                                      variables for this kind
+     *                                                                      of object, skipped if
+     *                                                                      not given at all
+     *
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
@@ -283,7 +361,8 @@ class BasketSnapshot extends DbObject
         stdClass $all,
         string $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
-        Db $connection
+        Db $connection,
+        ?BasketSnapshotCustomVariableResolver $customPropertyResolver = null
     ) {
         if (isset($all->$typeName)) {
             $objects = (array) $all->$typeName;
@@ -309,6 +388,11 @@ class BasketSnapshot extends DbObject
                     // Linking fields right now, as we're not in $changed
                     if ($new instanceof IcingaObject) {
                         $fieldResolver->relinkObjectFields($new, $object);
+
+                        $customPropertyResolver?->relinkObjectCustomProperties(
+                            $new,
+                            $object
+                        );
                     }
                 }
             } else {
@@ -316,6 +400,11 @@ class BasketSnapshot extends DbObject
                 // been changed
                 if ($new instanceof IcingaObject) {
                     $fieldResolver->relinkObjectFields($new, $object);
+
+                    $customPropertyResolver?->relinkObjectCustomProperties(
+                        $new,
+                        $object
+                    );
                 }
             }
         }
@@ -329,6 +418,11 @@ class BasketSnapshot extends DbObject
             // un-stored, let's do it right here
             if ($new instanceof IcingaObject) {
                 $fieldResolver->relinkObjectFields($new, $objects[$key]);
+
+                $customPropertyResolver?->relinkObjectCustomProperties(
+                    $new,
+                    $objects[$key]
+                );
             }
         }
     }

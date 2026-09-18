@@ -7,14 +7,20 @@ namespace Icinga\Module\Director\CustomVariable;
 
 use Exception;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use InvalidArgumentException;
 use LogicException;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 abstract class CustomVariable implements IcingaConfigRenderer
 {
     protected $key;
+
+    /** @var ?UuidInterface */
+    protected $uuid;
 
     protected $value;
 
@@ -29,6 +35,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
     protected $deleted = false;
 
     protected $checksum;
+
+    protected $whiteList = [];
 
     protected function __construct($key, $value = null)
     {
@@ -92,6 +100,37 @@ abstract class CustomVariable implements IcingaConfigRenderer
     }
 
     /**
+     * Get the UUID of the custom variable
+     *
+     * @return ?UuidInterface
+     */
+    public function getUuid(): ?UuidInterface
+    {
+        return $this->uuid;
+    }
+
+    public function setUuid(UuidInterface $uuid): static
+    {
+        $this->uuid = $uuid;
+        $this->modified = true;
+
+        return $this;
+    }
+
+    /**
+     * Drop the uuid, the var stays around as a plain value with no property behind it
+     *
+     * @return $this
+     */
+    public function clearUuid(): static
+    {
+        $this->uuid = null;
+        $this->modified = true;
+
+        return $this;
+    }
+
+    /**
      * @param $value
      * @return $this
      */
@@ -110,6 +149,23 @@ abstract class CustomVariable implements IcingaConfigRenderer
             '%s has no toConfigString() implementation',
             get_class($this)
         ));
+    }
+
+    /**
+     * Set which macro names may resolve as expressions inside this value
+     *
+     * Used for apply-for services, to limit which vars a custom variable
+     * string is allowed to reference
+     *
+     * @param array $whiteList
+     *
+     * @return $this
+     */
+    public function setWhiteList(array $whiteList): self
+    {
+        $this->whiteList = $whiteList;
+
+        return $this;
     }
 
     public function flatten(array &$flat, $prefix)
@@ -157,6 +213,16 @@ abstract class CustomVariable implements IcingaConfigRenderer
         } else {
             return $this->toConfigString($renderExpressions);
         }
+    }
+
+    /**
+     * Get the allowed macro names, empty means expressions aren't rendered at all
+     *
+     * @return array
+     */
+    public function getWhiteList(): array
+    {
+        return $this->whiteList;
     }
 
     public function setModified($modified = true)
@@ -243,7 +309,14 @@ abstract class CustomVariable implements IcingaConfigRenderer
         }
     }
 
-    public static function fromDbRow($row)
+    /**
+     * Create a CustomVariable instance from a database row object.
+     *
+     * @param object $row The database row object containing the custom variable data.
+     *
+     * @return CustomVariable The constructed CustomVariable instance.
+     */
+    public static function fromDbRow(object $row): CustomVariable
     {
         switch ($row->format) {
             case 'string':
@@ -262,12 +335,18 @@ abstract class CustomVariable implements IcingaConfigRenderer
                     $row->format
                 ));
         }
+
         if (property_exists($row, 'checksum')) {
             $var->setChecksum($row->checksum);
         }
 
+        if (property_exists($row, 'property_uuid') && $row->property_uuid) {
+            $var->setUuid(Uuid::fromBytes(DbUtil::binaryResult($row->property_uuid)));
+        }
+
         $var->loadedFromDb = true;
         $var->setUnmodified();
+
         return $var;
     }
 

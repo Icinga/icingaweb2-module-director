@@ -8,6 +8,7 @@ namespace Icinga\Module\Director\Objects;
 use Exception;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\DataType\DataTypeDatalist;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 
@@ -118,7 +119,22 @@ class DirectorDatalist extends DbObject implements ExportInterface
             ->where('datatype = ?', DataTypeDatalist::class)
             ->where('setting_value = ?', $id);
 
-        if ($db->fetchOne($dataFieldsCheck)) {
+        $quoteUuid = DbUtil::quoteBinaryCompat($this->get('uuid'), $db);
+        $customPropertiesCheck = $db->select()
+            ->from(['dp' => 'director_property'], ['key_name'])
+            ->join(
+                ['dpl' => 'director_property_datalist'],
+                'dp.uuid = dpl.property_uuid',
+                []
+            )
+            ->where('dpl.list_uuid = ?', $quoteUuid);
+
+        // fetchOne can come back as "0", which is falsy in PHP but still a real match
+        if ($db->fetchOne($dataFieldsCheck) !== false) {
+            return true;
+        }
+
+        if ($db->fetchOne($customPropertiesCheck) !== false) {
             return true;
         }
 
@@ -127,7 +143,7 @@ class DirectorDatalist extends DbObject implements ExportInterface
             ->where('sp.destination_field = ?', 'list_id')
             ->where('sp.source_expression = ?', $id);
 
-        if ($db->fetchOne($syncCheck)) {
+        if ($db->fetchOne($syncCheck) !== false) {
             return true;
         }
 
