@@ -104,7 +104,21 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
         }
 
         if ($this->hasBeenModified()) {
-            $this->store();
+            if ($this->hasBeenLoadedFromDb()) {
+                // Persist only the execution state. A job may have been edited while
+                // it was running, so storing this stale instance would restore its
+                // old settings via DbObjectWithSettings::onStore().
+                $state = array_intersect_key(
+                    $this->getModifiedProperties(),
+                    array_flip($this->stateProperties)
+                );
+                if (! empty($state)) {
+                    $this->getDb()->update($this->table, $state, $this->createWhere());
+                    $this->loadFromDb();
+                }
+            } else {
+                $this->store();
+            }
         }
 
         return $success;
