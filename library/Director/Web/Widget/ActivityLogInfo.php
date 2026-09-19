@@ -131,10 +131,12 @@ class ActivityLogInfo extends HtmlDocument
 
         $this->getTabs()->activate($tabName);
         $this->add($this->getInfoTable());
-        if (in_array($this->entry->object_type, [
-            'icinga_host_template_choice',
-            'icinga_service_template_choice',
-        ], true)) {
+        if (
+            in_array($this->entry->object_type, [
+                'icinga_host_template_choice',
+                'icinga_service_template_choice',
+            ], true)
+        ) {
             $this->addDiffs($this->getTemplateChoiceDiffs($tabName));
             return $this;
         }
