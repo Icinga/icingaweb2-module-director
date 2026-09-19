@@ -14,7 +14,8 @@ class ActivityLogInfoTest extends BaseTestCase
     public function testTemplateChoiceDiffUsesLoggedProperties(): void
     {
         $info = (new ReflectionClass(ActivityLogInfo::class))->newInstanceWithoutConstructor();
-        self::setActivityProperties($info, 
+        self::setActivityProperties(
+            $info,
             '{"object_name":"test-choice","min_required":0,"members":["host-a"]}',
             '{"object_name":"test-choice","min_required":1,"members":["host-a","host-b"]}'
         );
@@ -32,7 +33,8 @@ class ActivityLogInfoTest extends BaseTestCase
     public function testNewAndFormerTabsOnlyShowTheirOwnSnapshot(): void
     {
         $info = (new ReflectionClass(ActivityLogInfo::class))->newInstanceWithoutConstructor();
-        self::setActivityProperties($info, 
+        self::setActivityProperties(
+            $info,
             '{"description":"former-value"}',
             '{"description":"new-value"}'
         );
@@ -56,6 +58,7 @@ class ActivityLogInfoTest extends BaseTestCase
         $this->assertCount(1, $diffs);
         $this->assertStringContainsString('new-choice', reset($diffs)->render());
     }
+
     private static function setActivityProperties(ActivityLogInfo $info, ?string $old, ?string $new): void
     {
         (new ReflectionClass(ActivityLogInfo::class))->getProperty('entry')->setValue(
@@ -66,5 +69,4 @@ class ActivityLogInfoTest extends BaseTestCase
             ]
         );
     }
-
 }
