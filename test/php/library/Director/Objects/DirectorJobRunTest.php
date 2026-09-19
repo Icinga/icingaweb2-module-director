@@ -5,7 +5,7 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Hook\JobHook;
+use Tests\Icinga\Module\Director\Objects\Lib\DirectorJobConcurrentSettingsTestJob;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Test\BaseTestCase;
 
@@ -38,6 +38,9 @@ class DirectorJobRunTest extends BaseTestCase
             };
 
             $this->assertTrue($runningJob->run());
+            $this->assertSame('y', $runningJob->getSetting('run_import'));
+            $this->assertFalse($runningJob->hasBeenModified());
+            $runningJob->store();
 
             $storedJob = DirectorJob::load($name, $db);
             $this->assertSame('y', $storedJob->getSetting('run_import'));
@@ -47,18 +50,6 @@ class DirectorJobRunTest extends BaseTestCase
         } finally {
             DirectorJobConcurrentSettingsTestJob::$duringRun = null;
             $job->delete();
-        }
-    }
-}
-
-class DirectorJobConcurrentSettingsTestJob extends JobHook
-{
-    public static $duringRun;
-
-    public function run()
-    {
-        if (self::$duringRun !== null) {
-            (self::$duringRun)();
         }
     }
 }
