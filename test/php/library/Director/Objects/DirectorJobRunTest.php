@@ -18,10 +18,14 @@ class DirectorJobRunTest extends BaseTestCase
         }
 
         $db = $this->getDb();
+        if (! class_exists('DirectorJobTestHook', false)) {
+            class_alias(DirectorJobConcurrentSettingsTestJob::class, 'DirectorJobTestHook');
+        }
+
         $name = '___TEST___concurrent_job_settings';
         $job = DirectorJob::create([
             'job_name'     => $name,
-            'job_class'    => DirectorJobConcurrentSettingsTestJob::class,
+            'job_class'    => 'DirectorJobTestHook',
             'run_interval' => 60,
             'disabled'     => 'n',
         ], $db);
