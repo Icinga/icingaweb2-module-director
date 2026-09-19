@@ -755,6 +755,23 @@ class IcingaServiceForm extends DirectorObjectForm
             }
         }
 
+        // Synced host variables do not need a declared data field or property.
+        // Their stored JSON format and array prefix identify list values without
+        // treating JSON dictionaries or scalar strings as Apply For arrays.
+        $syncedArrays = $this->db->getDbAdapter()
+            ->select()
+            ->distinct()
+            ->from(['hv' => 'icinga_host_var'], ['varname' => 'hv.varname'])
+            ->where('hv.format = ?', 'json')
+            ->where('hv.varvalue LIKE ?', '[%');
+
+        foreach ($this->db->getDbAdapter()->fetchCol($syncedArrays) as $varname) {
+            $key = 'host.vars.' . $varname;
+            if (! array_key_exists($key, $properties)) {
+                $properties[$key] = $varname;
+            }
+        }
+
         return [t('director', 'Custom variables') => $properties];
     }
 
