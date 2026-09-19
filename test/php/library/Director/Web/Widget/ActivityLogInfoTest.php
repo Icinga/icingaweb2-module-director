@@ -13,13 +13,13 @@ class ActivityLogInfoTest extends BaseTestCase
 {
     public function testTemplateChoiceDiffUsesLoggedProperties(): void
     {
-        $info = (new ReflectionClass(TestableActivityLogInfo::class))->newInstanceWithoutConstructor();
-        $info->setActivityProperties(
+        $info = (new ReflectionClass(ActivityLogInfo::class))->newInstanceWithoutConstructor();
+        self::setActivityProperties($info, 
             '{"object_name":"test-choice","min_required":0,"members":["host-a"]}',
             '{"object_name":"test-choice","min_required":1,"members":["host-a","host-b"]}'
         );
 
-        $diffs = $info->templateChoiceDiffs('diff');
+        $diffs = self::callMethod($info, 'getTemplateChoiceDiffs', ['diff']);
 
         $this->assertCount(1, $diffs);
         $html = reset($diffs)->render();
@@ -31,14 +31,14 @@ class ActivityLogInfoTest extends BaseTestCase
 
     public function testNewAndFormerTabsOnlyShowTheirOwnSnapshot(): void
     {
-        $info = (new ReflectionClass(TestableActivityLogInfo::class))->newInstanceWithoutConstructor();
-        $info->setActivityProperties(
+        $info = (new ReflectionClass(ActivityLogInfo::class))->newInstanceWithoutConstructor();
+        self::setActivityProperties($info, 
             '{"description":"former-value"}',
             '{"description":"new-value"}'
         );
 
-        $new = $info->templateChoiceDiffs('new');
-        $old = $info->templateChoiceDiffs('old');
+        $new = self::callMethod($info, 'getTemplateChoiceDiffs', ['new']);
+        $old = self::callMethod($info, 'getTemplateChoiceDiffs', ['old']);
 
         $this->assertStringContainsString('new-value', reset($new)->render());
         $this->assertStringNotContainsString('former-value', reset($new)->render());
@@ -48,28 +48,23 @@ class ActivityLogInfoTest extends BaseTestCase
 
     public function testEmptySnapshotDoesNotRenderAFakeObject(): void
     {
-        $info = (new ReflectionClass(TestableActivityLogInfo::class))->newInstanceWithoutConstructor();
-        $info->setActivityProperties(null, '{"object_name":"new-choice"}');
+        $info = (new ReflectionClass(ActivityLogInfo::class))->newInstanceWithoutConstructor();
+        self::setActivityProperties($info, null, '{"object_name":"new-choice"}');
 
-        $diffs = $info->templateChoiceDiffs('new');
+        $diffs = self::callMethod($info, 'getTemplateChoiceDiffs', ['new']);
 
         $this->assertCount(1, $diffs);
         $this->assertStringContainsString('new-choice', reset($diffs)->render());
     }
-}
-
-class TestableActivityLogInfo extends ActivityLogInfo
-{
-    public function setActivityProperties(?string $old, ?string $new): void
+    private static function setActivityProperties(ActivityLogInfo $info, ?string $old, ?string $new): void
     {
-        $this->entry = (object) [
-            'old_properties' => $old,
-            'new_properties' => $new,
-        ];
+        (new ReflectionClass(ActivityLogInfo::class))->getProperty('entry')->setValue(
+            $info,
+            (object) [
+                'old_properties' => $old,
+                'new_properties' => $new,
+            ]
+        );
     }
 
-    public function templateChoiceDiffs(string $tab): array
-    {
-        return $this->getTemplateChoiceDiffs($tab);
-    }
 }
