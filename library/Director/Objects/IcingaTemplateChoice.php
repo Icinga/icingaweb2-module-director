@@ -205,7 +205,7 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
     public function onStore()
     {
         parent::onStore();
-        if ($this->newChoices !== $this->choices) {
+        if ($this->newChoices !== null && $this->newChoices !== $this->choices) {
             $this->storeChoices();
         }
     }
