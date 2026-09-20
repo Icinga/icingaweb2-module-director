@@ -38,6 +38,41 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected $showColumns = ['object_name' => 'Name'];
 
+    /** @var array<string, string> Extra core column labels keyed by column name */
+    protected $additionalColumns = [];
+
+    /**
+     * Explicitly extend the main host/service list using the same allowlist
+     * as the corresponding template list. Branch lists require separate
+     * support for their union and remain unchanged.
+     */
+    public function setAdditionalColumns(?string $columns): self
+    {
+        $selected = AdditionalCoreColumns::parse($this->getType(), $columns);
+        if ($selected && $this->branchUuid !== null) {
+            throw new \InvalidArgumentException(
+                'Additional columns are not yet supported in configuration branch object lists'
+            );
+        }
+
+        foreach ($selected as $column) {
+            if (! isset($this->showColumns[$column])) {
+                $this->additionalColumns[$column] = AdditionalCoreColumns::label($column);
+                $this->columns[$column] = AdditionalCoreColumns::expression($column);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function getAdditionalColumnsToBeRendered(): array
+    {
+        return $this->additionalColumns;
+    }
+
     protected $filterObjectType = 'object';
 
     protected $type;
@@ -113,7 +148,7 @@ class ObjectsTable extends ZfQueryBasedTable
 
     public function getColumnsToBeRendered()
     {
-        return $this->showColumns;
+        return $this->showColumns + $this->getAdditionalColumnsToBeRendered();
     }
 
     public function filterTemplate(
