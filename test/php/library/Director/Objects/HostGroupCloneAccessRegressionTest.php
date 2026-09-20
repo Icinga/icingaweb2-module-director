@@ -232,5 +232,4 @@ class HostGroupCloneAccessRegressionTest extends BaseTestCase
             $scope->delete();
         }
     }
-
 }
