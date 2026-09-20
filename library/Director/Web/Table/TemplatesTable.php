@@ -101,7 +101,7 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
                 'imports' => $name
             ]),
             new Link(new Icon('history'), "director/$type/history", [
-                'uuid' => Uuid::fromBytes(DbDbUtil::binaryResult($row->uuid))->toString(),
+                'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
             ])
         ];
 
