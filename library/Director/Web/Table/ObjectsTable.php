@@ -55,6 +55,11 @@ class ObjectsTable extends ZfQueryBasedTable
             );
         }
 
+        foreach ($this->additionalColumns as $column => $label) {
+            unset($this->columns[$column]);
+        }
+        $this->additionalColumns = [];
+
         foreach ($selected as $column) {
             if (! isset($this->showColumns[$column])) {
                 $this->additionalColumns[$column] = AdditionalCoreColumns::label($column);
