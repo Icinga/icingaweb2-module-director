@@ -83,13 +83,14 @@ class IcingaServiceApplyForEmptyDatafieldTest extends BaseTestCase
         $fields = [];
 
         try {
-            foreach ([
+            $fieldTypes = [
                 'datalist_array' => [DataTypeDatalist::class, 'array'],
                 'sqlquery_array' => [DataTypeSqlQuery::class, 'array'],
                 'datalist_scalar' => [DataTypeDatalist::class, 'string'],
                 'sqlquery_scalar' => [DataTypeSqlQuery::class, 'string'],
                 'plain_scalar' => [DataTypeString::class, null],
-            ] as $suffix => [$type, $valueType]) {
+            ];
+            foreach ($fieldTypes as $suffix => [$type, $valueType]) {
                 $field = DirectorDatafield::create([
                     'varname' => '___TEST___3072_' . $suffix,
                     'caption' => $suffix,
@@ -142,12 +143,13 @@ class IcingaServiceApplyForEmptyDatafieldTest extends BaseTestCase
         $properties = [];
 
         try {
-            foreach ([
+            $propertyTypes = [
                 'fixed_array' => ['fixed-array', null],
                 'datalist_array' => ['datalist-strict', 'dynamic-array'],
                 'datalist_scalar' => ['datalist-strict', 'string'],
                 'plain_scalar' => ['string', null],
-            ] as $suffix => [$type, $itemType]) {
+            ];
+            foreach ($propertyTypes as $suffix => [$type, $itemType]) {
                 $property = DirectorProperty::create([
                     'uuid' => Uuid::uuid4()->getBytes(),
                     'key_name' => '___TEST___3072_property_' . $suffix,
@@ -186,5 +188,4 @@ class IcingaServiceApplyForEmptyDatafieldTest extends BaseTestCase
             $host->delete();
         }
     }
-
 }
