@@ -11,7 +11,8 @@ const icinga = { availableModules: {} };
 const source = fs.readFileSync(path.join(__dirname, '../../public/js/module.js'), 'utf8');
 vm.runInNewContext(source, { Icinga: icinga });
 
-function selectedValue(text, context) {
+function selectedValue(text, context)
+{
     const director = Object.create(icinga.availableModules.director.prototype);
     director.getSuggestionList = () => ({ remove() {} });
 
