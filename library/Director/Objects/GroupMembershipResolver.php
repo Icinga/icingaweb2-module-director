@@ -188,6 +188,11 @@ abstract class GroupMembershipResolver
             $this->objects[$id] = $object;
         }
 
+        // A resolver can be reused across multiple stores of the same host.
+        // Invalidate its previous check so both the new memberships and the
+        // current stored mappings are fetched again after each modification.
+        $this->checked = false;
+
         return $this;
     }
 
