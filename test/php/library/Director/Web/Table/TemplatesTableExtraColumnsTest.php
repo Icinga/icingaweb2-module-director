@@ -66,7 +66,7 @@ class TemplatesTableExtraColumnsTest extends BaseTestCase
             $row = $db->getDbAdapter()->fetchRow($query);
             $this->assertSame('___TEST___3088_host_check', $row->check_command);
             $this->assertSame('192.0.2.88', $row->address);
-            $this->assertSame('10m', $row->check_interval);
+            $this->assertSame('600', $row->check_interval);
         } finally {
             if ($template->get('id')) {
                 $template->delete();
