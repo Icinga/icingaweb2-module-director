@@ -67,6 +67,7 @@ class TemplatesTableExtraColumnsTest extends BaseTestCase
             $this->assertSame('___TEST___3088_host_check', $row->check_command);
             $this->assertSame('192.0.2.88', $row->address);
             $this->assertSame('600', $row->check_interval);
+            $this->assertStringContainsString('___TEST___3088_host_check', (string) $table->renderRow($row));
         } finally {
             if ($template->get('id')) {
                 $template->delete();
@@ -102,6 +103,7 @@ class TemplatesTableExtraColumnsTest extends BaseTestCase
             $row = $db->getDbAdapter()->fetchRow($query);
             $this->assertSame('___TEST___3088_service_check', $row->check_command);
             $this->assertSame(3, (int) $row->max_check_attempts);
+            $this->assertStringContainsString('___TEST___3088_service_check', (string) $table->renderRow($row));
         } finally {
             if ($template->get('id')) {
                 $template->delete();
