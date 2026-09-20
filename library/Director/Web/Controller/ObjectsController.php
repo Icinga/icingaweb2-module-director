@@ -269,6 +269,9 @@ abstract class ObjectsController extends ActionController
             TemplateTreeRenderer::showType($shortType, $this, $this->db());
         } else {
             $table = TemplatesTable::create($shortType, $this->db());
+            if (in_array($shortType, ['host', 'service'], true)) {
+                $table->setAdditionalColumns($this->params->get('add_columns'));
+            }
             $this->eventuallyFilterCommand($table);
             $table->renderTo($this);
             (new AdditionalTableActions($this->getAuth(), $this->url(), $table))
