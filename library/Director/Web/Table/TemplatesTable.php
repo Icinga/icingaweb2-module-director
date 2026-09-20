@@ -91,18 +91,21 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
             'name' => $name
         ]);
 
-        return $this::row([
-            new Link($caption, $url),
-            [
-                new Link(new Icon('plus'), "director/$type/add", [
-                    'type' => 'object',
-                    'imports' => $name
-                ]),
-                new Link(new Icon('history'), "director/$type/history", [
-                    'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
-                ])
-            ]
-        ]);
+        $cells = [new Link($caption, $url)];
+        foreach ($this->additionalColumns as $column) {
+            $cells[] = $this::td($row->$column);
+        }
+        $cells[] = [
+            new Link(new Icon('plus'), "director/$type/add", [
+                'type' => 'object',
+                'imports' => $name
+            ]),
+            new Link(new Icon('history'), "director/$type/history", [
+                'uuid' => Uuid::fromBytes(DbDbUtil::binaryResult($row->uuid))->toString(),
+            ])
+        ];
+
+        return $this::row($cells);
     }
 
     public function filterTemplate(
