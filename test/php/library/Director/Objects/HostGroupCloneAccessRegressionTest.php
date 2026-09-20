@@ -194,7 +194,21 @@ class HostGroupCloneAccessRegressionTest extends BaseTestCase
             $form->setObject($source)->onSuccess();
             $clone = IcingaHost::load('___TEST___3092_scope_clone', $db);
             $this->assertTrue($inGroup($clone, $scope), 'The clone has already been assigned to the scope group');
+            $auth = $this->getMockBuilder(Auth::class)
+                ->disableOriginalConstructor()
+                ->onlyMethods(['getRestrictions'])
+                ->getMock();
+            $auth->method('getRestrictions')->willReturnCallback(
+                static function ($type) use ($tenantName) {
+                    return $type === Restriction::FILTER_HOSTGROUPS ? [$tenantName] : [];
+                }
+            );
+            $restriction = new HostgroupRestriction($db, $auth);
             $visibleBeforeRefresh = $inGroup($clone, $tenant);
+            $this->assertTrue(
+                $restriction->allowsHost($clone),
+                'A tenant-restricted user must have access to the GUI clone immediately'
+            );
 
             // Simulate the CLI maintenance workaround for this resolver:
             // preload all objects before forcing the refresh. On current
