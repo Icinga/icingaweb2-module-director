@@ -93,6 +93,7 @@ class ObjectsTableExtraColumnsTest extends BaseTestCase
             $hostRow = $sql->fetchRow($query);
             $this->assertSame('___TEST___3088_list_command', $hostRow->check_command);
             $this->assertSame('192.0.2.89', $hostRow->address);
+            $this->assertStringContainsString('___TEST___3088_list_command', (string) $hosts->renderRow($hostRow));
 
             $services = ObjectsTable::create('service', $db, $auth)
                 ->setAdditionalColumns('check_command,max_check_attempts');
@@ -103,6 +104,10 @@ class ObjectsTableExtraColumnsTest extends BaseTestCase
             $this->assertSame('___TEST___3088_list_command', $serviceRow->check_command);
             $this->assertSame(7, (int) $serviceRow->max_check_attempts);
             $this->assertSame('___TEST___3088_list_host', $serviceRow->host);
+            $this->assertStringContainsString(
+                '___TEST___3088_list_command',
+                (string) $services->renderRow($serviceRow)
+            );
         } finally {
             if ($service->get('id')) {
                 $service->delete();
