@@ -53,7 +53,8 @@ class PropertyModifierSimpleGroupBy extends PropertyModifierHook
                         foreach ($values as $item) {
                             $duplicate = false;
                             foreach ($unique as $previous) {
-                                if (is_array($item) || is_object($item)
+                                if (
+                                    is_array($item) || is_object($item)
                                     || is_array($previous) || is_object($previous)
                                 ) {
                                     $equal = gettype($item) === gettype($previous)
