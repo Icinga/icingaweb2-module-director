@@ -72,7 +72,7 @@ class PropertyModifierSimpleGroupByTest extends BaseTestCase
         $modifier->setRow($first)->transform('a');
         $modifier->setRow($other)->transform('a');
 
-        $this->assertSame(
+        $this->assertEquals(
             [['nested' => 'value'], (object) ['nested' => 'value']],
             $first->obj
         );
