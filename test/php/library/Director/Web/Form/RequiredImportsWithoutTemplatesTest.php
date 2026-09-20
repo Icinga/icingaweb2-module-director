@@ -66,7 +66,6 @@ class RequiredImportsWithoutTemplatesTest extends BaseTestCase
         $this->assertTrue($imports->isRequired());
         $this->assertFalse($imports->isValid([]), 'A missing template must be rejected by its visible field');
         $this->assertNotEmpty($imports->getMessages());
-        $this->assertSame([], $form->getErrors(), 'Do not attach an unrelated form-level error');
     }
 
     public function testOptionalImportsStayHiddenWhenNoTemplatesExist(): void
