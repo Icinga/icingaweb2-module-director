@@ -10,6 +10,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
+use InvalidArgumentException;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Icon;
 use gipfl\IcingaWeb2\Link;
@@ -27,6 +28,77 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
     protected $searchColumns = ['o.object_name'];
 
     private $type;
+
+    /** @var string[] Additional explicitly selected core properties */
+    private $additionalColumns = [];
+
+    /**
+     * Only core properties which are safe to display in a template overview.
+     * Do not accept arbitrary SQL expressions or sensitive custom variables.
+     */
+    private const ADDITIONAL_CORE_COLUMNS = [
+        'display_name'         => 'Display Name',
+        'address'              => 'Address',
+        'address6'             => 'Address6',
+        'check_command'        => 'Check Command',
+        'check_period'         => 'Check Period',
+        'check_interval'       => 'Check Interval',
+        'retry_interval'       => 'Retry Interval',
+        'max_check_attempts'   => 'Max Check Attempts',
+        'zone'                 => 'Zone',
+        'command_endpoint'     => 'Command Endpoint',
+        'enable_active_checks' => 'Active Checks',
+        'enable_notifications' => 'Notifications',
+        'notes'                => 'Notes',
+    ];
+
+    private const RELATION_COLUMNS = [
+        'check_command'    => ['icinga_command', 'check_command_id'],
+        'check_period'     => ['icinga_timeperiod', 'check_period_id'],
+        'zone'             => ['icinga_zone', 'zone_id'],
+        'command_endpoint' => ['icinga_endpoint', 'command_endpoint_id'],
+    ];
+
+    /**
+     * Enable explicit core properties via ?add_columns=check_command,address.
+     * Only host/service template columns are supported by this first step.
+     */
+    public function setAdditionalColumns(?string $columns): self
+    {
+        if ($columns === null || trim($columns) === '') {
+            $this->additionalColumns = [];
+            return $this;
+        }
+
+        $requested = array_values(array_unique(array_map('trim', explode(',', $columns))));
+        if (count($requested) > 10) {
+            throw new InvalidArgumentException('A maximum of 10 additional template columns is supported');
+        }
+
+        $type = $this->getType();
+        foreach ($requested as $column) {
+            if (
+                ! isset(self::ADDITIONAL_CORE_COLUMNS[$column])
+                || ($type !== 'host' && $type !== 'service')
+                || ($type === 'service' && in_array($column, ['address', 'address6'], true))
+            ) {
+                throw new InvalidArgumentException('Unsupported template list column: ' . $column);
+            }
+        }
+
+        $this->additionalColumns = $requested;
+        return $this;
+    }
+
+    private function additionalColumnExpression(string $column): string
+    {
+        if (isset(self::RELATION_COLUMNS[$column])) {
+            [$table, $foreignKey] = self::RELATION_COLUMNS[$column];
+            return "(SELECT rel.object_name FROM $table rel WHERE rel.id = o.$foreignKey)";
+        }
+
+        return "o.$column";
+    }
 
     public static function create($type, Db $db)
     {
@@ -52,7 +124,12 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
 
     public function getColumnsToBeRendered()
     {
-        return [$this->translate('Template Name')];
+        $columns = [$this->translate('Template Name')];
+        foreach ($this->additionalColumns as $column) {
+            $columns[] = $this->translate(self::ADDITIONAL_CORE_COLUMNS[$column]);
+        }
+
+        return $columns;
     }
 
     public function renderRow($row)
@@ -147,6 +224,9 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
             'id'      => 'o.id',
             'is_used' => $used,
         ];
+        foreach ($this->additionalColumns as $column) {
+            $columns[$column] = $this->additionalColumnExpression($column);
+        }
         $query = $this->db()->select()->from(
             ['o' => "icinga_{$type}"],
             $columns
