@@ -8,6 +8,7 @@ namespace Tests\Icinga\Module\Director\Objects;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
@@ -174,11 +175,24 @@ class HostGroupCloneAccessRegressionTest extends BaseTestCase
                 'Adding an apply rule based on an existing applied group must make the old host visible'
             );
 
-            $clone = $source::fromPlainObject($source->toPlainObject(false), $db)
-                ->set('object_name', '___TEST___3092_scope_clone');
-            $clone->set('display_name', null);
-            $clone->set('api_key', null);
-            (new DbObjectStore($db))->store($clone);
+            $form = new class extends IcingaCloneObjectForm {
+                public function getValue($name)
+                {
+                    return $name === 'new_object_name' ? '___TEST___3092_scope_clone' : null;
+                }
+
+                public function setSuccessUrl($url, $params = null)
+                {
+                    return $this;
+                }
+
+                public function redirectOnSuccess($message = null)
+                {
+                    return $this;
+                }
+            };
+            $form->setObject($source)->onSuccess();
+            $clone = IcingaHost::load('___TEST___3092_scope_clone', $db);
             $this->assertTrue($inGroup($clone, $scope), 'The clone has already been assigned to the scope group');
             $visibleBeforeRefresh = $inGroup($clone, $tenant);
 
