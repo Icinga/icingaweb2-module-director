@@ -88,6 +88,11 @@ class ImportPendingNavigationItemRendererTest extends BaseTestCase
             {
                 return $this->connection;
             }
+
+            public function hasProblems()
+            {
+                return parent::hasProblems();
+            }
         };
     }
 }
