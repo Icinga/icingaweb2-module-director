@@ -189,8 +189,9 @@ abstract class GroupMembershipResolver
         }
 
         // A resolver can be reused across multiple stores of the same host.
-        // Invalidate its previous check so both the new memberships and the
-        // current stored mappings are fetched again after each modification.
+        // The object may also carry resolved vars cached by a previous check.
+        // Recompute both before evaluating the current hostgroup assignments.
+        $object->invalidateResolveCache();
         $this->checked = false;
 
         return $this;
