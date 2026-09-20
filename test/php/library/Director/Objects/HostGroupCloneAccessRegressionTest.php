@@ -179,11 +179,16 @@ class HostGroupCloneAccessRegressionTest extends BaseTestCase
             $clone->set('display_name', null);
             $clone->set('api_key', null);
             (new DbObjectStore($db))->store($clone);
+            $this->assertTrue($inGroup($clone, $scope), 'The clone has already been assigned to the scope group');
             $visibleBeforeRefresh = $inGroup($clone, $tenant);
 
-            // A full maintenance refresh is what the issue author reports
-            // restoring access; assert both sides of that transition.
-            (new HostGroupMembershipResolver($db))->refreshAllMappings();
+            // Simulate the CLI maintenance workaround for this resolver:
+            // preload all objects before forcing the refresh. On current
+            // master, refreshAllMappings() alone clears objects to [] and
+            // therefore does not fetch any objects to refresh.
+            $maintenance = new HostGroupMembershipResolver($db);
+            self::callMethod($maintenance, 'getObjects', []);
+            $maintenance->refreshDb(true);
             $this->assertTrue($inGroup($clone, $tenant), 'Maintenance must restore tenant membership');
             $this->assertTrue(
                 $visibleBeforeRefresh,
