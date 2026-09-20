@@ -1,0 +1,26 @@
+name: JavaScript suggestions
+
+on:
+  push:
+    paths:
+      - 'public/js/module.js'
+      - 'test/js/suggestions.test.js'
+      - '.github/workflows/suggestions.yml'
+  pull_request:
+    paths:
+      - 'public/js/module.js'
+      - 'test/js/suggestions.test.js'
+      - '.github/workflows/suggestions.yml'
+
+jobs:
+  suggestions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: node --check public/js/module.js
+      - name: Test suggestion selection
+        run: node --test test/js/suggestions.test.js
