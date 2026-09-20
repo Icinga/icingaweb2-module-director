@@ -34,11 +34,47 @@ class PropertyModifierSimpleGroupBy extends PropertyModifierHook
         if (isset($this->keptRows[$value])) {
             foreach ($aggregationColumns as $column) {
                 if (isset($row->$column)) {
-                    $this->keptRows[$value]->{$column} = array_unique(array_merge(
+                    $values = array_merge(
                         $this->keptRows[$value]->{$column},
                         [$row->$column]
-                    ));
-                    sort($this->keptRows[$value]->{$column});
+                    );
+                    $hasStructuredValues = false;
+                    foreach ($values as $item) {
+                        if (is_array($item) || is_object($item)) {
+                            $hasStructuredValues = true;
+                            break;
+                        }
+                    }
+
+                    if ($hasStructuredValues) {
+                        // array_unique() casts values to strings and fails for objects.
+                        // Keep structured values in import order and compare their contents.
+                        $unique = [];
+                        foreach ($values as $item) {
+                            $duplicate = false;
+                            foreach ($unique as $previous) {
+                                if (is_array($item) || is_object($item)
+                                    || is_array($previous) || is_object($previous)
+                                ) {
+                                    $equal = gettype($item) === gettype($previous)
+                                        && $item == $previous;
+                                } else {
+                                    $equal = (string) $item === (string) $previous;
+                                }
+                                if ($equal) {
+                                    $duplicate = true;
+                                    break;
+                                }
+                            }
+                            if (! $duplicate) {
+                                $unique[] = $item;
+                            }
+                        }
+                        $this->keptRows[$value]->{$column} = $unique;
+                    } else {
+                        $this->keptRows[$value]->{$column} = array_unique($values);
+                        sort($this->keptRows[$value]->{$column});
+                    }
                 }
             }
             $this->rejectRow();
