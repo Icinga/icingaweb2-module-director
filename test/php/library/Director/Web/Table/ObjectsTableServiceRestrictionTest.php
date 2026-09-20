@@ -102,6 +102,18 @@ class ObjectsTableServiceRestrictionTest extends BaseTestCase
                 $dba->fetchAll($unauthorized->getQuery()),
                 'An inherited-by host outside the allowed group must never expose a parent service'
             );
+
+            // Access to a parent template must not grant access to an unrelated
+            // descendant: authorization is always determined by the target host.
+            $dba->insert('icinga_hostgroup_host_resolved', [
+                'hostgroup_id' => $group->get('id'),
+                'host_id' => $template->get('id'),
+            ]);
+            $parentVisible = new ObjectsTableService($db, $auth);
+            $this->assertCount(1, $dba->fetchAll($parentVisible->setHost($template)->getQuery()));
+            $unauthorized = new ObjectsTableService($db, $auth);
+            $unauthorized->setHost($template)->setInheritedBy($denied);
+            $this->assertCount(0, $dba->fetchAll($unauthorized->getQuery()));
         } finally {
             $service->delete();
             $denied->delete();
