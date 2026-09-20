@@ -38,6 +38,17 @@ class ObjectsTableExtraColumnsTest extends BaseTestCase
         $this->assertSame('Check Command', $table->getColumnsToBeRendered()['check_command']);
         $this->assertSame('Check Interval', $table->getColumnsToBeRendered()['check_interval']);
 
+        $table->setAdditionalColumns(null);
+        $this->assertArrayNotHasKey('check_command', $table->getColumnsToBeRendered());
+        $table->setAdditionalColumns('address,check_command');
+        $this->assertSame(
+            1,
+            count(array_filter(array_keys($table->getColumnsToBeRendered()), static function ($name) {
+                return $name === 'address';
+            })),
+            'Selecting an existing default column must not duplicate it'
+        );
+
         foreach (['api_key', 'vars.password', 'not_a_column', 'address);DROP TABLE icinga_host;--'] as $invalid) {
             try {
                 $table->setAdditionalColumns($invalid);
