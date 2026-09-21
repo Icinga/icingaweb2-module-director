@@ -117,15 +117,17 @@ class ObjectsTableService extends ObjectsTable
     public function getColumnsToBeRendered()
     {
         if ($this->title) {
-            return [$this->title];
+            $columns = [$this->title];
+        } elseif ($this->host) {
+            $columns = [$this->translate('Servicename')];
+        } else {
+            $columns = [
+                'host'        => $this->translate('Host'),
+                'object_name' => $this->translate('Service Name'),
+            ];
         }
-        if ($this->host) {
-            return [$this->translate('Servicename')];
-        }
-        return [
-            'host'        => $this->translate('Host'),
-            'object_name' => $this->translate('Service Name'),
-        ];
+
+        return $columns + $this->getAdditionalColumnsToBeRendered();
     }
 
     public function renderRow($row)
@@ -138,14 +140,21 @@ class ObjectsTableService extends ObjectsTable
         if ($row->host === null) {
             $hostField->getAttributes()->add('class', 'error');
         }
+        $extraCells = [];
+        foreach ($this->getAdditionalColumnsToBeRendered() as $column => $label) {
+            $extraCells[] = static::td($row->$column);
+        }
+
         if ($this->host) {
             $tr = static::tr([
-                static::td($this->getServiceLink($row))
+                static::td($this->getServiceLink($row)),
+                $extraCells
             ]);
         } else {
             $tr = static::tr([
                 $hostField,
-                static::td($this->getServiceLink($row))
+                static::td($this->getServiceLink($row)),
+                $extraCells
             ]);
         }
 
