@@ -5,6 +5,8 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use gipfl\Diff\HtmlRenderer\SideBySideDiff;
+use gipfl\Diff\PhpDiff;
 use gipfl\Json\JsonString;
 use Icinga\Module\Director\Data\FieldReferenceLoader;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
@@ -129,6 +131,16 @@ class ActivityLogInfo extends HtmlDocument
 
         $this->getTabs()->activate($tabName);
         $this->add($this->getInfoTable());
+        if (
+            in_array($this->entry->object_type, [
+                'icinga_host_template_choice',
+                'icinga_service_template_choice',
+            ], true)
+        ) {
+            $this->addDiffs($this->getTemplateChoiceDiffs($tabName));
+            return $this;
+        }
+
         if ($tabName === 'old') {
             // $title = sprintf('%s former config', $this->entry->object_name);
             $diffs = IcingaConfigDiff::getDiffs($this->oldConfig(), $this->emptyConfig());
@@ -142,6 +154,36 @@ class ActivityLogInfo extends HtmlDocument
         $this->addDiffs($diffs);
 
         return $this;
+    }
+
+    /**
+     * Template choices are Director-only objects, not renderable Icinga config.
+     * Compare their recorded properties instead of calling renderToConfig().
+     */
+    protected function getTemplateChoiceDiffs($tabName)
+    {
+        $old = $tabName === 'new' ? '' : $this->formatTemplateChoiceProperties($this->entry->old_properties);
+        $new = $tabName === 'old' ? '' : $this->formatTemplateChoiceProperties($this->entry->new_properties);
+
+        if ($old === $new) {
+            return [];
+        }
+
+        return [
+            $this->translate('Template choice') => new SideBySideDiff(new PhpDiff($old, $new))
+        ];
+    }
+
+    protected function formatTemplateChoiceProperties($properties)
+    {
+        if ($properties === null) {
+            return '';
+        }
+
+        return json_encode(
+            JsonString::decode($properties),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        ) . "\n";
     }
 
     protected function emptyConfig()
