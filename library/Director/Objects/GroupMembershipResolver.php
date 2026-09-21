@@ -188,6 +188,12 @@ abstract class GroupMembershipResolver
             $this->objects[$id] = $object;
         }
 
+        // A resolver can be reused across multiple stores of the same host.
+        // The object may also carry resolved vars cached by a previous check.
+        // Recompute both before evaluating the current hostgroup assignments.
+        $object->invalidateResolveCache();
+        $this->checked = false;
+
         return $this;
     }
 
