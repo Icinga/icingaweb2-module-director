@@ -82,6 +82,11 @@ in the Director DB. Provision these separately or run kickstart, since
 basket snapshots do not contain Endpoints or API users. Without a
 deployment endpoint, deployment fails with a clear error.
 
+`--deploy` also needs to reach the Icinga 2 API of that Endpoint, not just
+its configuration in the DB. It waits for the master the same way it waits
+for the DB, every five seconds for five minutes, and then stops with an
+error naming the Endpoint.
+
 A failing import source or sync rule stops the whole startup, and the
 daemon does not start. That is deliberate, since deploying a config built
 from stale or half-synced data is worse than not starting. Keep in mind
@@ -98,7 +103,7 @@ quietly skipping it.
 
 All of this runs before the daemon tells systemd that it's ready. The
 shipped unit is `Type=notify` with systemd's default `TimeoutStartSec`
-of 90 seconds, which is shorter than a single DB retry window. Raise
+of 90 seconds, which is shorter than a single DB or API retry window. Raise
 it with a drop-in if you add these flags to the unit:
 
 ```sh

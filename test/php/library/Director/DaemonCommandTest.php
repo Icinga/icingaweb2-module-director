@@ -364,6 +364,45 @@ class DaemonCommandTest extends BaseTestCase
     }
 
     /**
+     * @return void
+     */
+    public function testDeployWaitsForAnIcingaMasterThatIsNotUpYet(): void
+    {
+        $this->connection->settings()->set('initial_deployment_pending', 'y');
+        $config = IcingaConfig::generate($this->connection);
+        $endpoint = $this->createMock(IcingaEndpoint::class);
+        $api = $this->createMock(CoreApi::class);
+        $endpoint->method('api')->willReturn($api);
+        $this->connection->expects($this->once())->method('getDeploymentEndpoint')->willReturn($endpoint);
+        $api->method('getActiveStageName')->willReturn(null);
+
+        // Collecting log files is the first request the deployment sends.
+        $attempts = 0;
+        $api->method('collectLogFiles')->willReturnCallback(function () use (&$attempts) {
+            if (++$attempts === 1) {
+                throw new RuntimeException('CURL ERROR: Failed to connect to port 5665');
+            }
+        });
+        $api->expects($this->once())->method('dumpConfig')->willReturn(
+            DirectorDeploymentLog::create([
+                'config_checksum' => $config->getChecksum(),
+                'dump_succeeded' => 'y',
+            ], $this->connection)
+        );
+
+        $command = $this->getMockBuilder(DaemonCommand::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['sleep'])
+            ->getMock();
+        $command->expects($this->once())->method('sleep')->with(5);
+
+        self::callMethod($command, 'deployConfig', [$this->connection]);
+
+        self::assertSame(2, $attempts, 'the daemon must try again once the API answers');
+        self::assertNull((new Settings($this->connection))->get('initial_deployment_pending'));
+    }
+
+    /**
      * Keep dump persistence real while replacing API initialization and requests
      *
      * @param RestApiClient&MockObject $client

@@ -18,6 +18,7 @@ use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use PDOException;
+use RuntimeException;
 use Throwable;
 use Zend_Db_Adapter_Exception;
 
@@ -311,7 +312,16 @@ class DaemonCommand extends Command
             $this->fail('Cannot deploy, no deployment endpoint is configured yet: %s', $e->getMessage());
         }
 
-        $deployer = new ConditionalDeployment($db, $endpoint->api());
+        // Constructing the deployment is the first thing to talk to the master,
+        // so retrying it covers an Icinga 2 that is still starting up.
+        $deployer = $this->retryConnection(
+            sprintf("Icinga 2 API on endpoint '%s'", $endpoint->getObjectName()),
+            fn () => new ConditionalDeployment($db, $endpoint->api()),
+            // The REST client reports transport, authentication and HTTP errors as plain
+            // runtime errors, and all of them can clear up while the master is set up.
+            fn (Throwable $e) => $e instanceof RuntimeException
+        );
+
         if ($pending) {
             // A matching deployment log may belong to another package.
             $deployer->force();
