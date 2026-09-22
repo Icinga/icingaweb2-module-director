@@ -47,7 +47,11 @@ class DaemonCommand extends Command
      *                           separately to recover an existing installation
      *                           instead. Fails if kickstart isn't configured at
      *                           all
-     *   --import-basket <path>  Restore a basket snapshot from the given file
+     *   --import-basket <path>  Restore a basket snapshot from the given file.
+     *                           Repeat the option to restore more than one, in
+     *                           the given order. Separate option and path with a
+     *                           space, since --import-basket=<path> keeps only
+     *                           the last one
      *   --run-automation        Run all import sources and sync rules
      *   --deploy                Deploy the generated config
      */
@@ -96,7 +100,7 @@ class DaemonCommand extends Command
      */
     protected function runSetup(?string $dbResource): void
     {
-        $basket = $this->getBasketSnapshotPath();
+        $baskets = $this->getBasketSnapshotPaths();
 
         $dbCallback = $dbResource === null ? $this->db(...) : fn () => Db::fromResourceName($dbResource);
         $db = $this->retryConnection(
@@ -115,7 +119,7 @@ class DaemonCommand extends Command
             $this->runKickstart($db);
         }
 
-        if ($basket !== null) {
+        foreach ($baskets as $basket) {
             $this->restoreBasket($db, $basket);
         }
 
@@ -129,28 +133,34 @@ class DaemonCommand extends Command
     }
 
     /**
-     * Get the basket snapshot file passed with --import-basket
+     * Get the basket snapshot files passed with --import-basket
      *
-     * Fails the command unless the option carries a readable path.
+     * Fails the command unless every occurrence of the option carries a
+     * readable path.
      *
-     * @return ?string Null if --import-basket wasn't passed at all
+     * @return string[] In the order they were given, empty if --import-basket wasn't passed at all
      */
-    protected function getBasketSnapshotPath(): ?string
+    protected function getBasketSnapshotPaths(): array
     {
-        $path = $this->params->get('import-basket');
-        if ($path === null) {
-            return null;
+        $given = $this->params->get('import-basket');
+        if ($given === null) {
+            return [];
         }
 
-        if (! is_string($path)) {
-            $this->fail('--import-basket requires a file path');
+        $paths = [];
+        foreach (is_array($given) ? $given : [$given] as $path) {
+            if (! is_string($path)) {
+                $this->fail('--import-basket requires a file path');
+            }
+
+            if (! is_file($path) || ! is_readable($path)) {
+                $this->fail('Cannot read basket snapshot "%s"', $path);
+            }
+
+            $paths[] = $path;
         }
 
-        if (! is_file($path) || ! is_readable($path)) {
-            $this->fail('Cannot read basket snapshot "%s"', $path);
-        }
-
-        return $path;
+        return $paths;
     }
 
     /**

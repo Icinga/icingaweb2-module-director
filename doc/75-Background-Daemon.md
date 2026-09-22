@@ -55,7 +55,12 @@ icingacli director daemon run --kickstart --run-automation --deploy
 
 - `--kickstart` runs kickstart if it's configured and required
 - `--import-basket <path>` restores a basket snapshot from the given file,
-  for example `/etc/icingaweb2/modules/director/basket.json`
+  for example `/etc/icingaweb2/modules/director/basket.json`. Repeat the
+  option to restore more than one snapshot, they are restored in the order
+  you give them, so put a snapshot before the ones importing from it.
+  Separate each path from the option with a space. The
+  `--import-basket=<path>` form can't be repeated, only its last
+  occurrence counts
 - `--run-automation` runs all import sources and sync rules
 - `--deploy` deploys the generated config
 

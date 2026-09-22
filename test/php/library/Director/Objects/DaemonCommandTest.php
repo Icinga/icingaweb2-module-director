@@ -77,6 +77,25 @@ class DaemonCommandTest extends BaseTestCase
         $this->assertEquals(['import:' . $path], $cmd->stepsRun);
     }
 
+    public function testEveryGivenBasketIsRestoredInOrder(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $first = $this->createBasketFile();
+        $second = $this->createBasketFile();
+        $cmd = new TestableDaemonCommand($this->getDb(), [
+            '--import-basket',
+            $first,
+            '--import-basket',
+            $second,
+        ]);
+        $cmd->runSetupStep();
+
+        $this->assertEquals(['import:' . $first, 'import:' . $second], $cmd->stepsRun);
+    }
+
     public function testRunAutomationRunsWithoutTheKickstartFlag(): void
     {
         if ($this->skipForMissingDb()) {
@@ -135,6 +154,10 @@ class DaemonCommandTest extends BaseTestCase
             'unreadable path' => [
                 ['--import-basket', '/tmp/___TEST___does-not-exist.json'],
                 'Cannot read basket snapshot "/tmp/___TEST___does-not-exist.json"'
+            ],
+            'one of several paths unreadable' => [
+                ['--import-basket', $this->createBasketFile(), '--import-basket', '/tmp/___TEST___gone.json'],
+                'Cannot read basket snapshot "/tmp/___TEST___gone.json"'
             ],
         ];
 
