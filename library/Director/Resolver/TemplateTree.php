@@ -14,6 +14,11 @@ use RuntimeException;
 
 class TemplateTree
 {
+    protected const TYPES_WITH_EXTERNAL_REFERENCES = [
+        'command',
+        'notification',
+    ];
+
     protected $connection;
 
     protected $db;
@@ -449,11 +454,8 @@ class TemplateTree
         $type  = $this->type;
         $table = "icinga_$type";
 
-        if ($type === 'command') {
-            $joinCondition = $db->quoteInto(
-                "p.id = i.parent_{$type}_id",
-                'template'
-            );
+        if ($this->supportsExternalReferences()) {
+            $joinCondition = "p.id = i.parent_{$type}_id";
         } else {
             $joinCondition = $db->quoteInto(
                 "p.id = i.parent_{$type}_id AND p.object_type = ?",
@@ -489,6 +491,11 @@ class TemplateTree
         }
 
         return $db->fetchAll($query);
+    }
+
+    protected function supportsExternalReferences(): bool
+    {
+        return in_array($this->type, self::TYPES_WITH_EXTERNAL_REFERENCES);
     }
 }
 

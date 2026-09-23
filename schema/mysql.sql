@@ -1345,7 +1345,7 @@ CREATE TABLE icinga_notification (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
-  object_type ENUM('object', 'template', 'apply') NOT NULL,
+  object_type ENUM('object', 'template', 'apply', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   apply_to ENUM('host', 'service') DEFAULT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
@@ -2648,4 +2648,4 @@ CREATE TABLE icinga_user_property (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (193, NOW());
+  VALUES (194, NOW());
