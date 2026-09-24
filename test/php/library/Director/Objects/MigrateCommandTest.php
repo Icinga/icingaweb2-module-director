@@ -14,7 +14,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostField;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Ramsey\Uuid\Uuid;
-use Tests\Icinga\Module\Director\Objects\Lib\TestableMigrateCommand;
+use Tests\Icinga\Module\Director\Lib\Objects\TestableMigrateCommand;
 
 class MigrateCommandTest extends BaseTestCase
 {

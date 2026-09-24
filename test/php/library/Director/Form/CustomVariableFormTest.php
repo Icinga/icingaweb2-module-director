@@ -16,7 +16,7 @@ use Icinga\Module\Director\Test\BaseTestCase;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use Tests\Icinga\Module\Director\Form\Lib\TestableCustomVariableForm;
+use Tests\Icinga\Module\Director\Lib\Form\TestableCustomVariableForm;
 
 class CustomVariableFormTest extends BaseTestCase
 {

@@ -18,6 +18,8 @@ use Icinga\Module\Icingadb\Model\Host;
 use ipl\Html\ValidHtml;
 use ReflectionMethod;
 use Ramsey\Uuid\Uuid;
+use Tests\Icinga\Module\Director\Lib\ProvidedHook\Icingadb\CapturingLogWriter;
+use Tests\Icinga\Module\Director\Lib\ProvidedHook\Icingadb\TestableCustomVarRenderer;
 
 class CustomVarRendererTest extends BaseTestCase
 {

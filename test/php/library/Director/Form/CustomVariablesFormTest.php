@@ -16,7 +16,7 @@ use InvalidArgumentException;
 use LogicException;
 use Ramsey\Uuid\Uuid;
 use ReflectionMethod;
-use Tests\Icinga\Module\Director\Form\Lib\TestablePropertiesDictionary;
+use Tests\Icinga\Module\Director\Lib\Form\TestablePropertiesDictionary;
 
 class CustomVariablesFormTest extends BaseTestCase
 {

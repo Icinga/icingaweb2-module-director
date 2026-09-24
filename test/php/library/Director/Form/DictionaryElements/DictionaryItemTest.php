@@ -16,7 +16,7 @@ use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Module\Director\Web\Form\Element\SensitiveElement;
 use ipl\Html\FormElement\SelectElement;
 use Ramsey\Uuid\Uuid;
-use Tests\Icinga\Module\Director\Form\Lib\TestableDictionaryItem;
+use Tests\Icinga\Module\Director\Lib\Form\TestableDictionaryItem;
 
 class DictionaryItemTest extends BaseTestCase
 {

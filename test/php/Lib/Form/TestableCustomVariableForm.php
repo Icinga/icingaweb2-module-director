@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Tests\Icinga\Module\Director\Form\Lib;
+namespace Tests\Icinga\Module\Director\Lib\Form;
 
 use Icinga\Module\Director\Forms\CustomVariableForm;
 
