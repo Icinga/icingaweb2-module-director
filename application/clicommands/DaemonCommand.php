@@ -302,15 +302,15 @@ class DaemonCommand extends Command
         $settings = $db->settings();
         $pending = $settings->get('initial_deployment_pending') === 'y';
 
-        // Like icingacli director config deploy
-        $config = IcingaConfig::generate($db);
-        $checksum = $config->getHexChecksum();
-
         try {
             $endpoint = $db->getDeploymentEndpoint();
         } catch (ConfigurationError $e) {
             $this->fail('Cannot deploy, no deployment endpoint is configured yet: %s', $e->getMessage());
         }
+
+        // Like icingacli director config deploy
+        $config = IcingaConfig::generate($db);
+        $checksum = $config->getHexChecksum();
 
         // Constructing the deployment is the first thing to talk to the master,
         // so retrying it covers an Icinga 2 that is still starting up.
