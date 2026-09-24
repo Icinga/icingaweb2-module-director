@@ -12,5 +12,5 @@ jobs:
          "/icingaweb2"                             : "https://github.com/Icinga/icingaweb2.git",
          "/usr/share/icingaweb2-modules/icingadb"  : "https://github.com/Icinga/icingadb-web.git",
          "/usr/share/icingaweb2-modules/cube"      : "https://github.com/Icinga/icingaweb2-module-cube.git",
-         "/usr/share/icingaweb2-modules/incubator" : "-b stable/0.22.0 https://github.com/Icinga/icingaweb2-module-incubator"
+         "/usr/share/icinga-php/legacy"             : "-b snapshot https://github.com/Icinga/icinga-php-legacy.git"
         }
