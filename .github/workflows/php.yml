@@ -85,24 +85,24 @@ jobs:
       - name: Checkout code base
         uses: actions/checkout@v6
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Setup PHP and Icinga PHP libraries
+        uses: Icinga/github-actions/.github/actions/php-and-dependencies@main
         with:
           php-version: ${{ matrix.php }}
-          tools: phpunit:9.5
-          extensions: mysql, pgsql
+          php-extensions: mysql, pgsql
+          php-tools: phpunit:9.5
+          dependencies: |
+            {
+              "./vendor/icinga-php/legacy": "https://github.com/Icinga/icinga-php-legacy.git#snapshot"
+            }
 
       - name: Setup Icinga Web
         run: |
           git clone --depth 1 https://github.com/Icinga/icingaweb2.git _icingaweb2
           ln -s `pwd` _icingaweb2/modules/director
 
-      - name: Setup Libraries
-        run: |
-          composer require --working-dir=_icingaweb2 -n --no-progress mockery/mockery
-          mkdir _libraries
-          git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
-          git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
+      - name: Setup Icinga Web test dependencies
+        run: composer require --working-dir=_icingaweb2 -n --no-progress mockery/mockery
 
       - name: Setup Icingadb
         run: |
@@ -111,47 +111,10 @@ jobs:
           cd _icingaweb2/modules/icingadb
           ln -s `pwd` ../../../test/config/enabledModules/icingadb
 
-      - name: Setup Incubator
-        run: |
-          git clone --depth 1 https://github.com/Icinga/icingaweb2-module-incubator _icingaweb2/modules/incubator
-          mkdir -p test/config/enabledModules
-          cd _icingaweb2/modules/incubator
-          ln -s `pwd` ../../../test/config/enabledModules/incubator
-          composer require --no-update \
-          "gipfl/calendar": "dev-master as 99.x-dev" \
-          "gipfl/cli": "dev-master as 99.x-dev" \
-          "gipfl/curl": "dev-master as 99.x-dev" \
-          "gipfl/data-type": "dev-master as 99.x-dev" \
-          "gipfl/db-migration": "dev-master as 99.x-dev" \
-          "gipfl/diff": "dev-master as 99.x-dev" \
-          "gipfl/format": "dev-master as 99.x-dev" \
-          "gipfl/icinga-bundles": "dev-master as 99.x-dev" \
-          "gipfl/icinga-cli-daemon": "dev-master as 99.x-dev" \
-          "gipfl/icingaweb2": "dev-master as 99.x-dev" \
-          "gipfl/influxdb": "dev-master as 99.x-dev" \
-          "gipfl/json": "dev-master as 99.x-dev" \
-          "gipfl/linux-health": "dev-master as 99.x-dev" \
-          "gipfl/log": "dev-master as 99.x-dev" \
-          "gipfl/process": "dev-master as 99.x-dev" \
-          "gipfl/protocol-jsonrpc": "dev-master as 99.x-dev" \
-          "gipfl/protocol-netstring": "dev-master as 99.x-dev" \
-          "gipfl/react-utils": "dev-master as 99.x-dev" \
-          "gipfl/simple-daemon": "dev-master as 99.x-dev" \
-          "gipfl/socket": "dev-master as 99.x-dev" \
-          "gipfl/stream": "dev-master as 99.x-dev" \
-          "gipfl/systemd": "dev-master as 99.x-dev" \
-          "gipfl/translation": "dev-master as 99.x-dev" \
-          "gipfl/web": "dev-master as 99.x-dev" \
-          "gipfl/zfdb": "dev-master as 99.x-dev" \
-          "gipfl/zfdbstore": "dev-master as 99.x-dev"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          bin/make-release.sh snapshot
-
       - name: PHPUnit with MySQL
         if: ${{ ! cancelled() }}
         env:
-          ICINGAWEB_LIBDIR: _libraries
+          ICINGAWEB_LIBDIR: ./vendor/icinga-php
           ICINGAWEB_CONFIGDIR: test/config
           DIRECTOR_TESTDB_RES: Director MySQL TestDB
           DIRECTOR_TESTDB: director_test
@@ -164,7 +127,7 @@ jobs:
       - name: PHPUnit with PostgreSQL
         if: ${{ ! cancelled() }}
         env:
-          ICINGAWEB_LIBDIR: _libraries
+          ICINGAWEB_LIBDIR: ./vendor/icinga-php
           ICINGAWEB_CONFIGDIR: test/config
           DIRECTOR_TESTDB_RES: Director PostgreSQL TestDB
           DIRECTOR_TESTDB: director_test
