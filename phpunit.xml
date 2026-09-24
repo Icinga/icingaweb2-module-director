@@ -7,11 +7,10 @@
          convertWarningsToExceptions="true"
          processIsolation="false"
          stopOnFailure="false"
-         bootstrap="test/bootstrap.php"
     >
     <testsuites>
         <testsuite name="Director PHP Unit tests">
-            <directory suffix=".php">test/php</directory>
+            <directory suffix="Test.php">test/php</directory>
         </testsuite>
     </testsuites>
 </phpunit>
