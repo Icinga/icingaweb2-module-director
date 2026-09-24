@@ -403,6 +403,55 @@ class DaemonCommandTest extends BaseTestCase
     }
 
     /**
+     * @return void
+     */
+    public function testDeployRetriesStageCleanupWhileIcingaIsReloading(): void
+    {
+        $this->connection->settings()->set('initial_deployment_pending', 'y');
+        $config = IcingaConfig::generate($this->connection);
+        $package = $this->connection->settings()->get('icinga_package_name');
+        $stage = '___TEST___inactive-stage';
+        $client = $this->createMock(RestApiClient::class);
+        $attempts = 0;
+        $client->expects($this->exactly(2))->method('delete')
+            ->with('config/stages/' . rawurlencode($package) . '/' . $stage)
+            ->willReturnCallback(function () use (&$attempts): RestApiResponse {
+                if (++$attempts === 1) {
+                    return RestApiResponse::fromJsonResult('{"error":503,"status":"Icinga is reloading"}');
+                }
+
+                return RestApiResponse::fromJsonResult('{"results":[{"code":200,"status":"Stage deleted."}]}');
+            });
+
+        $api = $this->getMockBuilder(CoreApi::class)
+            ->setConstructorArgs([$client])
+            ->onlyMethods(['collectLogFiles', 'listPackageStages', 'dumpConfig', 'enableWorkaroundForConnectionIssues'])
+            ->getMock();
+        $api->setDb($this->connection);
+        $api->expects($this->exactly(2))->method('listPackageStages')->with($package, false)->willReturn([$stage]);
+        $api->expects($this->once())->method('dumpConfig')->willReturn(
+            DirectorDeploymentLog::create([
+                'config_checksum' => $config->getChecksum(),
+                'dump_succeeded' => 'y',
+            ], $this->connection)
+        );
+        $endpoint = $this->createMock(IcingaEndpoint::class);
+        $endpoint->method('api')->willReturn($api);
+        $this->connection->expects($this->once())->method('getDeploymentEndpoint')->willReturn($endpoint);
+
+        $command = $this->getMockBuilder(DaemonCommand::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['sleep'])
+            ->getMock();
+        $command->expects($this->once())->method('sleep')->with(5);
+
+        self::callMethod($command, 'deployConfig', [$this->connection]);
+
+        self::assertSame(2, $attempts);
+        self::assertNull((new Settings($this->connection))->get('initial_deployment_pending'));
+    }
+
+    /**
      * Keep dump persistence real while replacing API initialization and requests
      *
      * @param RestApiClient&MockObject $client

@@ -7,6 +7,7 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Application\Logger;
 use Icinga\Exception\ConfigurationError;
+use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Daemon\BackgroundDaemon;
 use Icinga\Module\Director\Db;
@@ -317,9 +318,10 @@ class DaemonCommand extends Command
         $deployer = $this->retryConnection(
             sprintf("Icinga 2 API on endpoint '%s'", $endpoint->getObjectName()),
             fn () => new ConditionalDeployment($db, $endpoint->api()),
-            // The REST client reports transport, authentication and HTTP errors as plain
-            // runtime errors, and all of them can clear up while the master is set up.
-            fn (Throwable $e) => $e instanceof RuntimeException
+            // Stage cleanup can return HTTP 503 while Icinga is reloading.
+            // The REST client uses IcingaException for these responses and
+            // RuntimeException for transport and authentication failures.
+            fn (Throwable $e) => $e instanceof RuntimeException || $e instanceof IcingaException
         );
 
         if ($pending) {
