@@ -29,7 +29,7 @@ Please read more about:
 * [Upgrading to 1.1.0](#upgrade-to-1.1.0)
 * [How to work with the latest GIT master](#git-master)
 * [Database schema upgrades](#schema-migrations)
-* [Job Runner restart](#restart-jobrunner)
+* [Background Daemon restart](#background-daemon)
 * [Downgrading](#downgrade)
 
 And last but not least, having a look at our [Changelog](82-Changelog.md) is
@@ -269,16 +269,16 @@ strictly followed, and there may be other ones in future. So please use one
 of the supported migration methods either on the web or on command line and
 stay away from directly interfering with the schema.
 
-<a name="restart-jobrunner"></a>Restart the Job Runner service
+<a name="background-daemon"></a>Restart the Background Daemon
 --------------------------------------------------------------
 
-The Job Runner forks it's jobs, so usually a changed code base will take effect
-immediately. However, there might be (schema or code) changes involving the Runner
-process itself. To be on the safe side please always restart it after an upgrade,
-even when it's just a quick `git pull`:
+The Background Daemon forks its jobs, so usually a changed code base will take
+effect immediately. However, there might be (schema or code) changes involving
+the daemon process itself. To be on the safe side please always restart it
+after an upgrade, even when it's just a quick `git pull`:
 
 ```sh
-systemctl restart director-jobs.service
+systemctl restart icinga-director.service
 ```
 
 <a name="downgrade"></a>Downgrading
