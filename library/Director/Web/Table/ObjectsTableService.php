@@ -35,6 +35,18 @@ class ObjectsTableService extends ObjectsTable
     /** @var string|null */
     protected $highlightedService;
 
+    /** @var bool */
+    protected $includeServiceSetMembers = false;
+
+    /**
+     * Include Service Set members in command usage lists only.
+     */
+    public function includeServiceSetMembers()
+    {
+        $this->includeServiceSetMembers = true;
+        return $this;
+    }
+
     protected $columns = [
         'object_name'      => 'o.object_name',
         'disabled'         => 'o.disabled',
@@ -253,7 +265,9 @@ class ObjectsTableService extends ObjectsTable
                     []
                 );
 
-                $subQuery->where('o.service_set_id IS NULL');
+                if (! $this->includeServiceSetMembers) {
+                    $subQuery->where('o.service_set_id IS NULL');
+                }
             }
 
             $subQuery
@@ -261,8 +275,10 @@ class ObjectsTableService extends ObjectsTable
                 ->order('o.object_name')->order('h.object_name');
 
             if ($this->branchUuid) {
-                $subQuery->where('bo.service_set IS NULL')
-                    ->group(['bo.uuid', 'bo.branch_uuid']);
+                if (! $this->includeServiceSetMembers) {
+                    $subQuery->where('bo.service_set IS NULL');
+                }
+                $subQuery->group(['bo.uuid', 'bo.branch_uuid']);
             }
 
             if ($this->host) {
