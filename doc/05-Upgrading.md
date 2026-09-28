@@ -46,6 +46,34 @@ pending database migrations to an imported old database snapshot.
 <a name="upgrade-to-1.12.x"></a>Upgrading to 1.12.x
 --------------------------------------------------
 
+PHP 8.2 is now required.
+
+A MySQL (>=8) or MariaDB (>=10.2.2) database is now required. Upgrade your
+database server first if you're on an older version, otherwise the schema
+migrations below will fail.
+
+If you're running Director from a GIT checkout, check your module
+dependencies. The incubator module requirement has been replaced by a
+dependency on [Icinga PHP Legacy](https://github.com/Icinga/icinga-php-legacy)
+(>=1.1.0), and the minimum versions of `icinga-php-library` (now >=1.0.0)
+and `icinga-php-thirdparty` (now >=1.0.0) have been raised too. If you
+installed Director from one of our packages, your package manager already
+took care of this for you.
+
+Director's own dependency check screen has been removed in this release, so
+on a from-source installation a missing or outdated library now causes a fatal
+error instead of a friendly notice. As always, once the dependencies are in
+place, you'll be prompted to apply pending Database Migrations.
+
+The main feature of this release is the new `Custom Variables` system, a
+more flexible replacement for the deprecated `Data fields`, supporting
+typed properties, Data Lists and role-based access on every object type.
+A dictionary-type custom variable on a host template can now also be used
+as the source of a service `Apply For` rule, alongside the array types
+already supported. See [Working with custom
+variables](12-Handling-custom-variables.md) and [Working with Apply For
+rules](15-Service-apply-for-example.md) for more details.
+
 The custom property schema migration (version 193) uses the `citext` PostgreSQL
 extension and installs it automatically if it's missing. This works without any
 manual action on PostgreSQL 13+, since the database owner (the role Director
@@ -59,53 +87,20 @@ the migration afterward.
 
      psql -q -c "CREATE EXTENSION citext;"
 
-The `variables` endpoint enforces a Custom Variable's Item Type on a
-`Data List Strict` or `Data List Non Strict` property. If Item Type is set
-to `Dynamic Array`, only a list is accepted, otherwise only a single value
-is. Sending the other shape for that property is rejected. A `null` value
-for a variable Director doesn't recognize under `Custom Variables` at all
-is rejected the same way a real value would be. On a template `PUT`
-specifically, a `null` value for a variable that **is** configured but not
-yet attached to that template is a silent no-op instead, it does not get
-attached. See [the REST API's "Variable not
-configured"](70-REST-API.md#Custom-Variables-not-configured) section for
-the full matrix. Check any script or integration relying on this endpoint
-against these rules if you use `Data List` properties or send `null`
-values.
-
-Data List entries can be limited to certain Icinga Web 2 roles using
-`allowed_roles`. Until now the REST API's `variables` endpoint ignored
-this restriction for a Data List Strict Custom Variable, so any
-authenticated API user could write a value even if their role wasn't on
-the list. Starting with this release, that endpoint checks `allowed_roles`
-the same way the web form already does, so a write gets rejected if the
-calling user doesn't have one of the required roles. This check only
-covers a Data List Strict property attached through the newer Custom
-Variables system and written through the `variables` endpoint. A plain
-`vars` write through the base object endpoint (`POST`/`PUT` to
-`director/host` and similar) is not covered, whether the value belongs to
-a Custom Variable or an older Data Field. If you have an automation user
-writing to a role-restricted Data List Strict property through the
-`variables` endpoint, make sure it's been granted the right role before
-upgrading, otherwise those writes will start failing.
+The REST API's `variables` endpoint is now stricter: it enforces a Custom
+Variable's Item Type on `Data List` properties, and checks `allowed_roles`
+on a `Data List Strict` property the same way the web form already does.
+If you have a script or automation user writing to a `Data List` property
+through this endpoint, check it against the [updated
+rules](70-REST-API.md#Custom-Variables-not-configured) before upgrading,
+otherwise some of those writes may start failing.
 
 If you use `icingacli director migrate datafields` to move legacy Data
 Fields onto the new Custom Property system, note that a Data List field
-with the old `Suggest, extend list` behavior migrates to a plain
-`Data List Non Strict` property. Before, submitting a new value added it
-to the list for next time.
-After migration, that value is just accepted and stored, the list itself is
-never extended again. Check any Data List field using that behavior before
+with the old `Suggest, extend list` behavior now migrates to a plain
+`Data List Non Strict` property, which no longer extends itself with new
+values on submit. Check any Data List field using that behavior before
 running the migration.
-
-Removing an imported template from an object, or restoring a configuration
-basket that drops a property attachment, can now also remove a custom
-variable value that only existed because of it. Removing an import in the
-object form asks for confirmation before saving; the REST API and a basket
-restore apply the same cleanup right away, without asking. See [Attaching
-custom variables to objects and
-templates](12-Handling-custom-variables.md#Attaching-custom-variables-to-objects-and-templates)
-for details.
 
 <a name="upgrade-to-1.11.x"></a>Upgrading to 1.11.x
 --------------------------------------------------
