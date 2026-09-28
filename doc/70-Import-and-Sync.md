@@ -14,45 +14,43 @@ own importer in your very own Icinga Web 2 module.
 Examples
 --------
 
-### Import Servers from MS Active Directory
+### Import Servers from a CMDB
 
 #### Create a new import source
 
-Importing data from LDAP sources is pretty easy. We use MS Active Directory
-as an example source:
+Importing data from a SQL database is pretty easy. We use a CMDB table listing
+newly provisioned servers as an example source:
 
 ![Import source](screenshot/director/08_import-and-sync/081_director_import_source.png)
 
-You must formerly have configured a corresponding LDAP resource in your Icinga Web.
-Then you choose your preferred object class, you might add custom filters, a search
-base should always be set.
+You must formerly have configured a corresponding database resource in your
+Icinga Web. Then you write the query that selects the columns you care about.
 
-The only tricky part here are the chosen Properties. You must know them and you
-are required to fill them in, no way around this right now. Also please choose one
-column as your key column.
-
-In case you want to avoid trouble please make this the column that corresponds to
-your desired object name for the objects you are going to import. Rows duplicating
-this property will be considered erroneous, the Import would fail.
+The only tricky part here is the key column. You must choose one property as
+your key column, and it should correspond to the desired object name for the
+objects you are going to import. Rows duplicating this property will be
+considered erroneous, the Import would fail.
 
 #### Property modifiers
 
-Data sources like SQL databases provide very powerful modifiers themselves. With a
-handcrafted query you can solve lots of data conversion problems. Sometimes this is
-not possible, and some sources (like LDAP) do not even have such features.
+SQL databases provide very powerful modifiers themselves. With a handcrafted
+query you can already solve lots of data conversion problems. Sometimes this
+is not possible, or you would rather keep the query simple and let Director
+do the conversion. Some sources (like plain files or LDAP) do not even offer
+such features in the first place.
 
-This is where property modifiers jump in to the rescue. Your computer names are
+This is where property modifiers jump in to the rescue. Your object names are
 uppercase and you hate this? Use the lowercase modifier:
 
 ![Lowercase modifier](screenshot/director/08_import-and-sync/082_director_import_modifier_lowercase.png)
 
-You want to have the object SID as a custom variable, but the data is stored
-binary in your AD? There is a dedicated modifier:
+Your source only gives you a hostname and no address? Look it up and store it
+in a dedicated property:
 
-![SID modifier](screenshot/director/08_import-and-sync/083_director_import_modifier_sid.png)
+![Get host by name modifier](screenshot/director/08_import-and-sync/083_director_import_modifier_gethostbyname.png)
 
-You do not agree with the way Microsoft represents its version numbers? Regular
-expressions are able to fix everything:
+Your source dumps a release codename you don't care about right into the
+value? Regular expressions are able to fix everything:
 
 ![Regular expression modifier](screenshot/director/08_import-and-sync/084_director_import_modifier_regex.png)
 
@@ -74,13 +72,13 @@ When creating a Synchronization rule, you must decide which Icinga objects you w
 to work with. You could decide to use the same import source in various rules with
 different filters and properties.
 
-![Synchronization rule](screenshot/director/08_import-and-sync/086_director_sync_rule_ad_hosts.png)
+![Synchronization rule](screenshot/director/08_import-and-sync/086_director_sync_rule_hosts.png)
 
 For every property you must decide whether and how it should be synchronized. You
 can also define custom expressions, combine multiple source fields, set custom
 properties based on custom conditions and so on.
 
-![Synchronization properties](screenshot/director/08_import-and-sync/087_director_sync_properties_ad_host.png)
+![Synchronization properties](screenshot/director/08_import-and-sync/087_director_sync_properties_host.png)
 
 Now you are all done and ready to a) launch the Import and b) trigger your synchronization
 run.
