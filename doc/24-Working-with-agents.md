@@ -34,12 +34,11 @@ Well, create a host, choose an Agent template, that's it:
 ![Create an Agent-based host](screenshot/director/24-agents/2402_create_agent_based_host.png)
 
 Once you import the "Icinga Agent" template, you'll see a new "Agent" tab.
-It tries to assist you with the initial Agent setup by showing a sample
-config:
+It hands you a signed ticket for manual configuration, plus a ready-to-run
+Windows Kickstart Script and Linux commandline script, both available for
+download and previewed right there on the page:
 
-![Agent instructions 1](screenshot/director/24-agents/2403_show_agent_instructions_1.png)
-
-![Agent instructions 2](screenshot/director/24-agents/2404_show_agent_instructions_2.png)
+![Agent instructions](screenshot/director/24-agents/2403_show_agent_instructions_1.png)
 
 The preview shows that the Icinga Director would deploy multiple objects
 for your newly created host:
@@ -59,7 +58,8 @@ this template should run on your Agents.
 Please do not set a cluster zone, as this would rarely be necessary.
 Agent-based services will always be deployed to their Agent's zone by
 default. All you need to do now for services that should be executed
-on your Agents is importing that template:
+on your Agents is importing that template, for example when creating
+a service directly on one of your Agent-based hosts:
 
 ![Agent-based load check](screenshot/director/24-agents/2407_create_agent_based_load_check.png)
 
@@ -67,14 +67,15 @@ Config preview shows that everything works as expected:
 
 ![Agent-based service preview](screenshot/director/24-agents/2409_agent_based_service_rendered_for_host.png)
 
-It's perfectly valid to assign services to host templates. Look how the
-generated config differs now:
+Instead of creating a Service for every single host, you can also apply
+your `Agent-based Service` template to all hosts using the "Icinga Agent"
+template at once. Create an Apply Rule for services, import your template
+and assign it wherever `"Icinga Agent" in host.templates`:
 
 ![Agent-based service assigned to host template](screenshot/director/24-agents/2410_agent_based_service_rendered_for_host_template.png)
 
-While services added to a host template are implicitly rendered as
-assign rules, you could of course also use your `Agent-based service`
-template in custom apply rules:
+The Service tab shows how such an Apply Rule is configured, combining the
+imported template with your assignment filter:
 
 ![Agent-based service applied](screenshot/director/24-agents/2411_assign_agent_based_service.png)
 
