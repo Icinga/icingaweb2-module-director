@@ -67,6 +67,10 @@ v1.12.0
 
 - Feature: Add a `--name` option to the `importsource` and `syncrule` commands, to check, run or delete by name instead of only by ID (#3067)
 
+### Documentation
+
+- Fix: Update stale screenshots and corresponding documentation (#3142)
+
 ### Internals
 
 - Support PHP 8.5 (#3028)
