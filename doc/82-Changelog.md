@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.12.1
+-------
+
+### Fixes
+
+- Fix: Migration 193 failed on MySQL when creating the `director_property` table (#3144)
+- Fix: Saving a strict data-list custom variable failed with a class-not-found error (#3145)
+
+You can find issues and feature requests related to this release on our [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/46?closed=1)
+
 v1.12.0
 -------
 
