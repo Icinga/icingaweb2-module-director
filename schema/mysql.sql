@@ -271,7 +271,7 @@ CREATE TABLE director_property (
   ) COLLATE utf8mb4_unicode_ci NOT NULL,
   category_id INT(10) UNSIGNED DEFAULT NULL,
   description text DEFAULT NULL,
-  parent_uuid_v varbinary(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) STORED,
+  parent_uuid_v varbinary(16) AS (COALESCE(parent_uuid, 0x00000000000000000000000000000000)) VIRTUAL,
   PRIMARY KEY (uuid),
   UNIQUE INDEX unique_name_parent_uuid (key_name, parent_uuid_v),
   CONSTRAINT director_property_category
@@ -2648,4 +2648,4 @@ CREATE TABLE icinga_user_property (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (194, NOW());
+  VALUES (195, NOW());
