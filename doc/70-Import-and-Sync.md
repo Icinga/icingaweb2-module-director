@@ -61,12 +61,7 @@ we want:
 
 ![Import preview](screenshot/director/08_import-and-sync/085_director_import_preview.png)
 
-#### Synchronization
-
-The Import itself just fetches raw data, it does not yet try to modify any of your
-Icinga objects. That's what the Sync rules have been designed for. This distinction
-has a lot of advantages when it goes to automatic scheduling for various import and
-sync jobs.
+#### Configure synchronization
 
 When creating a Synchronization rule, you must decide which Icinga objects you want
 to work with. You could decide to use the same import source in various rules with
@@ -79,9 +74,6 @@ can also define custom expressions, combine multiple source fields, set custom
 properties based on custom conditions and so on.
 
 ![Synchronization properties](screenshot/director/08_import-and-sync/087_director_sync_properties_host.png)
-
-Now you are all done and ready to a) launch the Import and b) trigger your synchronization
-run.
 
 ### Import Servers from LDAP or Active Directory
 
@@ -141,11 +133,11 @@ Open **Preview** to check the selected rows and the results of your modifiers:
 
 ![LDAP import preview](screenshot/director/08_import-and-sync/089_director_import_preview_ldap.png)
 
-#### Synchronize the hosts
+#### Configure synchronization
 
-Trigger an import run to store the data. Then create a sync rule with object
-type **Host**, update policy **Merge**, and **Purge** set to **No**. Add the
-following properties, selecting the LDAP import source for each one:
+Create a sync rule with object type **Host**, update policy **Merge**, and
+**Purge** set to **No**. Add the following properties, selecting the LDAP import
+source for each one:
 
 | Destination            | Source                                                            |
 |------------------------|-------------------------------------------------------------------|
@@ -166,6 +158,19 @@ For an Active Directory source with the SID modifier, add a mapping from
 `operatingsystemversion`, include them in the import source's **Properties**
 and add the corresponding sync mappings.
 
-Check the sync rule's **Preview** before running the synchronization. Importing
-stores source data, while synchronization creates or updates the Director
-objects. Deploy the resulting configuration when it is ready for monitoring.
+Run the import and synchronization
+----------------------------------
+
+After configuring an import source and its sync rules, use the following steps
+for either example. Import runs fetch and store source data. Synchronization
+uses the imported data to create or update Director objects.
+
+1. Open the import source's **Preview** to check the selected rows and property
+   modifiers.
+2. Select **Trigger Import Run** to store the data for synchronization.
+3. Open the sync rule's **Preview** to review the proposed object changes, then
+   run the synchronization.
+4. Deploy the resulting configuration when it is ready for monitoring.
+
+Create **Import** and **Sync** jobs to run imports and synchronization on a
+schedule. See [Jobs](79-Jobs.md) for details.
