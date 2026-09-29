@@ -32,6 +32,7 @@ v1.12.0
 - Fix: Array to object conversion for the directory-to-row property modifier (#2923)
 - Fix: Rendering of assign filter for boolean filter expression (#2984)
 - Fix: Flatten nulls to empty string for `preg_match()` in PropertyModifierRejectOrSelect (#2994)
+- Fix: Display results of syncrule in CLI correctly (#3141)
 
 ### Baskets
 
