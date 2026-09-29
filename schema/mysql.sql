@@ -2648,4 +2648,4 @@ CREATE TABLE icinga_user_property (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (194, NOW());
+  VALUES (195, NOW());
