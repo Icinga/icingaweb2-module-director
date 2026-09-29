@@ -10,7 +10,7 @@ v1.12.0
 ### Breaking Changes
 
 - Raise minimum required PHP version to 8.2 (#3083)
-- Change license to **GPL-3.0-only** (#3050)
+- Change license to **GPLv3** (#3050)
 
 ### UI
 
