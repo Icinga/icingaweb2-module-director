@@ -551,7 +551,7 @@ function Icinga2AgentModule {
         param([int] $currentIndex);
 
         # Load the config into a local variable for quicker access
-        [array]$endpoint_config = $this.config('endpoints_config');
+        [array]$endpoint_config = $this.config('parent_endpoints');
 
         # In case no endpoint config is given, we should do nothing
         if ($endpoint_config -eq $NULL) {
