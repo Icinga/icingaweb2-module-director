@@ -8,6 +8,7 @@ namespace Icinga\Module\Director\Data\Db;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\InvalidDataException;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use InvalidArgumentException;
@@ -1293,7 +1294,7 @@ abstract class DbObject
         }
 
         $obj = new static();
-        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+        if (self::$dbObjectStore !== null && BranchSupport::existsForTableName($obj->getTableName())) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             $uuid = UuidLookup::requireUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
@@ -1322,7 +1323,7 @@ abstract class DbObject
         /** @var DbObject $obj */
         $obj = new static();
 
-        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+        if (self::$dbObjectStore !== null && BranchSupport::existsForTableName($obj->getTableName())) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             $uuid = UuidLookup::requireUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
@@ -1348,7 +1349,7 @@ abstract class DbObject
         /** @var DbObject $obj */
         $obj = new static();
 
-        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+        if (self::$dbObjectStore !== null && BranchSupport::existsForTableName($obj->getTableName())) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
@@ -1462,7 +1463,7 @@ abstract class DbObject
 
         /** @var DbObject $obj */
         $obj = new static();
-        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+        if (self::$dbObjectStore !== null && BranchSupport::existsForTableName($obj->getTableName())) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
@@ -1509,7 +1510,7 @@ abstract class DbObject
         $db = $connection->getDbAdapter();
         $obj = new static();
 
-        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+        if (self::$dbObjectStore !== null && BranchSupport::existsForTableName($obj->getTableName())) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             return self::$dbObjectStore->load($table, $uuid);
