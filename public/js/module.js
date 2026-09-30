@@ -339,7 +339,8 @@
             var re = /^(.+) \[(\w+)]$/;
 
             var withLabel = val.match(re);
-            if (withLabel) {
+            // Service names are literal names: "whatever [A]" is not a label/key pair.
+            if (withLabel && $el.data('suggestion-context') !== 'servicenames') {
                 val = withLabel[2];
             }
 
