@@ -13,6 +13,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
+use Icinga\Module\Director\Hook\BeforeStoreIcingaObjectHook;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -24,6 +25,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Icinga\Web\Hook;
 use LogicException;
 use RuntimeException;
 use stdClass;
@@ -1741,6 +1743,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function beforeStore()
     {
+        /** @var BeforeStoreIcingaObjectHook[] $hooks */
+        $hooks = Hook::all('director/BeforeStoreIcingaObject');
+        foreach ($hooks as $hook) {
+            $hook::manipulateIcingaObject($this);
+        }
+
         $this->resolveUnresolvedRelatedProperties();
         if ($this->gotImports()) {
             $this->imports()->getObjects();
