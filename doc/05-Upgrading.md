@@ -27,7 +27,7 @@ Please read more about:
 * [Upgrading to 1.3.0](#upgrade-to-1.3.0)
 * [Upgrading to 1.2.0](#upgrade-to-1.2.0)
 * [Upgrading to 1.1.0](#upgrade-to-1.1.0)
-* [How to work with the latest GIT master](#git-master)
+* [How to work with the latest GIT main](#git-main)
 * [Database schema upgrades](#schema-migrations)
 * [Background Daemon restart](#background-daemon)
 * [Downgrading](#downgrade)
@@ -151,7 +151,7 @@ Also, the following PHP libraries should be available:
 * php-posix (on RHEL/CentOS this is php-process, or rh-php7x-php-process)
 * php-sockets (might already be built into your PHP binary)
 
-Apart from this, in case you are running 1.6.x or any GIT master since then,
+Apart from this, in case you are running 1.6.x or any GIT main since then,
 all you need is to replace the Director module folder with the new one. Or to
 run `git checkout v1.7.x` in case you installed Director from GIT.
 
@@ -164,7 +164,7 @@ for related instructions.
 -------------------------------------------------
 
 There is nothing special to take care of. In case you are running 1.5.x or any
-GIT master since then, all you need is to replace the Director module folder
+GIT main since then, all you need is to replace the Director module folder
 with the new one. Or to run git checkout v1.6.0 in case you installed Director
 from GIT.
 
@@ -174,7 +174,7 @@ As always, you'll then be prompted to apply pending Database Migrations.
 -------------------------------------------------
 
 There is nothing special to take care of. In case you are running 1.4.x or any
-GIT master since then, all you need is to replace the Director module folder
+GIT main since then, all you need is to replace the Director module folder
 with the new one. Or to run git checkout v1.5.0 in case you installed Director
 from GIT.
 
@@ -185,14 +185,14 @@ As always, you'll then be prompted to apply pending Database Migrations.
 
 Since v1.4.0 Icinga Director requires at least PHP 5.4. Apart from this, there
 is nothing special to take care of. In case you are running 1.3.x or any GIT
-master since then, all you need is to replace the Director module folder with
+main since then, all you need is to replace the Director module folder with
 the new one. Or to run `git checkout v1.4.x` in case you installed Director
 from GIT.
 
 <a name="upgrade-to-1.3.x"></a>Upgrading to 1.3.x
 -------------------------------------------------
 
-In case you are running 1.2.0 or any GIT master since then, all you need is to
+In case you are running 1.2.0 or any GIT main since then, all you need is to
 replace the Director module folder with the new one. Or to run `git checkout v1.3.x`
 in case you installed Director from GIT.
 
@@ -200,7 +200,7 @@ in case you installed Director from GIT.
 -------------------------------------------------
 
 There is nothing special to take care of. In case you are running 1.1.0 or any
-GIT master since then, all you need is to replace the Director module folder with
+GIT main since then, all you need is to replace the Director module folder with
 the new one. Or to run `git checkout v1.2.0` in case you installed Director from
 GIT.
 
@@ -208,12 +208,12 @@ GIT.
 -------------------------------------------------
 
 There is nothing special to take care of. In case you are running 1.0.0 or any
-GIT master since then, all you need is to replace the Director module folder with
+GIT main since then, all you need is to replace the Director module folder with
 the new one. Or to run `git checkout v1.1.0` in case you installed Director from
 GIT.
 
-<a name="git-master"></a>Work with the latest GIT master
---------------------------------------------------------
+<a name="git-main"></a>Work with the latest GIT main
+----------------------------------------------------
 
 Icinga Director is still a very young project. Lots of changes are going on,
 a lot of improvements, bug fixes and new features are still being added every
@@ -229,10 +229,10 @@ DIRECTOR_GIT=https://github.com/Icinga/icingaweb2-module-director.git
 git clone $DIRECTOR_GIT $ICINGAWEB_MODULES/director
 ```
 
-Don't worry about schema upgrades. Once they made it into our GIT master there
+Don't worry about schema upgrades. Once they made it into our GIT main there
 will always be a clean upgrade path for you, no manual interaction should ever
 be required. Like every human being, we are not infallible. So, while our strict
-policy says that the master should never break, this might of course happen.
+policy says that main should never break, this might of course happen.
 
 In that case, please [let us know](https://github.com/Icinga/icingaweb2-module-director/issues).
 We'll try to fix your issue as soon as possible.
