@@ -541,9 +541,16 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
+        // Apply For already restricts matching hosts to those with the array or
+        // dictionary being iterated. Keep the assign filter mandatory for a
+        // plain Apply rule, which otherwise could target every host.
+        $applyFor = $this->hasBeenSent()
+            ? $this->getSentValue('apply_for')
+            : $this->object->get('apply_for');
+
         $this->addAssignFilter([
             'suggestionContext' => 'HostFilterColumns',
-            'required' => true,
+            'required' => empty($applyFor),
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want. The'
