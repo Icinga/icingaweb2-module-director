@@ -106,6 +106,40 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
         return parent::hasBeenModified();
     }
 
+    /**
+     * Include members in activity snapshots: they live on the templates, not
+     * in the template choice's own database row.
+     */
+    public function toPlainObject(
+        $resolved = false,
+        $skipDefaults = false,
+        ?array $chosenProperties = null,
+        $resolveIds = true,
+        $keepId = false
+    ) {
+        $props = parent::toPlainObject(
+            $resolved,
+            $skipDefaults,
+            $chosenProperties,
+            $resolveIds,
+            $keepId
+        );
+
+        if ($chosenProperties === null || in_array('members', $chosenProperties, true)) {
+            $props->members = array_values($this->getChoices());
+        }
+
+        return $props;
+    }
+
+    public function getPlainUnmodifiedObject()
+    {
+        $props = parent::getPlainUnmodifiedObject();
+        $props->members = array_values($this->choices ?? $this->fetchChoices());
+
+        return $props;
+    }
+
     public function getMembers()
     {
         return $this->enumChoices();
@@ -171,7 +205,7 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
     public function onStore()
     {
         parent::onStore();
-        if ($this->newChoices !== $this->choices) {
+        if ($this->newChoices !== null && $this->newChoices !== $this->choices) {
             $this->storeChoices();
         }
     }
