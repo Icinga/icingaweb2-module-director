@@ -197,7 +197,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     }
 
     /**
-     * @param $timestamp
+     * @param int|string|null $timestamp
      * @param bool $required
      * @return ImportRun|null
      * @throws NotFoundError
@@ -212,12 +212,16 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
             $timestamp = time();
         }
 
+        if (is_numeric($timestamp)) {
+            $timestamp = date('Y-m-d H:i:s', (int) $timestamp);
+        }
+
         $db = $this->getDb();
         $query = $db->select()->from(
             ['ir' => 'import_run'],
             'ir.id'
         )->where('ir.source_id = ?', $this->get('id'))
-        ->where('ir.start_time < ?', date('Y-m-d H:i:s', $timestamp))
+        ->where('ir.start_time < ?', $timestamp)
         ->order('ir.start_time DESC')
         ->limit(1);
 
