@@ -25,6 +25,7 @@ use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ObjectSetTable;
 use Icinga\Module\Director\Web\Table\ObjectsTable;
+use Icinga\Module\Director\Web\Table\ObjectsTableService;
 use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
@@ -464,6 +465,9 @@ abstract class ObjectsController extends ActionController
             switch ($this->getBaseType()) {
                 case 'host':
                 case 'service':
+                    if ($this->getBaseType() === 'service' && $table instanceof ObjectsTableService) {
+                        $table->includeServiceSetMembers();
+                    }
                     $table->getQuery()->where(
                         $this->db()->getDbAdapter()->quoteInto(
                             '(o.check_command_id = ? OR o.event_command_id = ?)',
