@@ -11,6 +11,8 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\DataType\DataTypeArray;
+use Icinga\Module\Director\DataType\DataTypeDatalist;
+use Icinga\Module\Director\DataType\DataTypeSqlQuery;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -724,7 +726,16 @@ class IcingaServiceForm extends DirectorObjectForm
                 ]
             )
             ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
-            ->where("value_type IN ('dynamic-array', 'dynamic-dictionary')");
+            ->joinLeft(
+                ['item' => 'director_property'],
+                "item.parent_uuid = dp.uuid AND item.key_name = '0'",
+                []
+            )
+            ->where(
+                "(dp.value_type IN ('dynamic-array', 'dynamic-dictionary', 'fixed-array')"
+                . " OR (dp.value_type IN ('datalist-strict', 'datalist-non-strict')"
+                . " AND item.value_type = 'dynamic-array'))"
+            );
 
         $vars = $this->db->getDbAdapter()->fetchAll($query);
 
@@ -748,10 +759,32 @@ class IcingaServiceForm extends DirectorObjectForm
             ->join(['ihf' => 'icinga_host_field'], 'df.id = ihf.datafield_id', [])
             ->where("df.datatype = ?", DataTypeArray::class);
 
-        foreach ($this->db->getDbAdapter()->fetchAll($datafieldQuery) as $df) {
-            $key = 'host.vars.' . $df->varname;
-            if (! array_key_exists($key, $properties)) {
-                $properties[$key] = $df->caption . ' (' . $df->varname . ')';
+        // Datalist and SQL Query fields may also produce arrays. Unlike plain
+        // DataTypeArray fields, their output type is stored in field settings.
+        // A declared host-template field must be selectable even when no host
+        // has a value for it yet.
+        $typedArrayFieldQuery = $this->db->getDbAdapter()
+            ->select()
+            ->distinct()
+            ->from(
+                ['df' => 'director_datafield'],
+                ['varname' => 'df.varname', 'caption' => 'df.caption']
+            )
+            ->join(['ihf' => 'icinga_host_field'], 'df.id = ihf.datafield_id', [])
+            ->join(
+                ['dfs' => 'director_datafield_setting'],
+                "dfs.datafield_id = df.id AND dfs.setting_name = 'data_type'",
+                []
+            )
+            ->where('df.datatype IN (?)', [DataTypeDatalist::class, DataTypeSqlQuery::class])
+            ->where('dfs.setting_value = ?', 'array');
+
+        foreach ([$datafieldQuery, $typedArrayFieldQuery] as $fieldQuery) {
+            foreach ($this->db->getDbAdapter()->fetchAll($fieldQuery) as $df) {
+                $key = 'host.vars.' . $df->varname;
+                if (! array_key_exists($key, $properties)) {
+                    $properties[$key] = $df->caption . ' (' . $df->varname . ')';
+                }
             }
         }
 
