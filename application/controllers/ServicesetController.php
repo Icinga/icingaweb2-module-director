@@ -71,7 +71,7 @@ class ServicesetController extends ObjectController
         $this->actions()->add(Link::create(
             $this->translate('Add service'),
             'director/service/add',
-            ['set' => $name],
+            $set->get('id') === null ? ['set' => $name] : ['set_id' => $set->get('id')],
             ['class' => 'icon-plus']
         ));
 

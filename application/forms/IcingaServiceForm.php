@@ -606,7 +606,11 @@ class IcingaServiceForm extends DirectorObjectForm
      */
     protected function setupSetRelatedElements()
     {
-        $this->addHidden('service_set', $this->set->getObjectName());
+        if ($this->set->get('id') !== null) {
+            $this->addHidden('service_set_id', $this->set->get('id'));
+        } else {
+            $this->addHidden('service_set', $this->set->getObjectName());
+        }
         $this->addHidden('object_type', 'apply');
         $this->addImportsElement();
         $this->setButtons();
