@@ -28,6 +28,20 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
 
     private $type;
 
+    /** @var string[] Additional explicitly selected core properties */
+    private $additionalColumns = [];
+
+    /**
+     * Enable extra core columns through ?add_columns=check_command,address.
+     *
+     * @return $this
+     */
+    public function setAdditionalColumns(?string $columns)
+    {
+        $this->additionalColumns = AdditionalCoreColumns::parse($this->getType(), $columns);
+        return $this;
+    }
+
     public static function create($type, Db $db)
     {
         $table = new static($db);
@@ -52,7 +66,12 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
 
     public function getColumnsToBeRendered()
     {
-        return [$this->translate('Template Name')];
+        $columns = [$this->translate('Template Name')];
+        foreach ($this->additionalColumns as $column) {
+            $columns[] = $this->translate(AdditionalCoreColumns::label($column));
+        }
+
+        return $columns;
     }
 
     public function renderRow($row)
@@ -72,18 +91,21 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
             'name' => $name
         ]);
 
-        return $this::row([
-            new Link($caption, $url),
-            [
-                new Link(new Icon('plus'), "director/$type/add", [
-                    'type' => 'object',
-                    'imports' => $name
-                ]),
-                new Link(new Icon('history'), "director/$type/history", [
-                    'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
-                ])
-            ]
-        ]);
+        $cells = [new Link($caption, $url)];
+        foreach ($this->additionalColumns as $column) {
+            $cells[] = $this::td($row->$column);
+        }
+        $cells[] = [
+            new Link(new Icon('plus'), "director/$type/add", [
+                'type' => 'object',
+                'imports' => $name
+            ]),
+            new Link(new Icon('history'), "director/$type/history", [
+                'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
+            ])
+        ];
+
+        return $this::row($cells);
     }
 
     public function filterTemplate(
@@ -147,6 +169,9 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
             'id'      => 'o.id',
             'is_used' => $used,
         ];
+        foreach ($this->additionalColumns as $column) {
+            $columns[$column] = AdditionalCoreColumns::expression($column);
+        }
         $query = $this->db()->select()->from(
             ['o' => "icinga_{$type}"],
             $columns
