@@ -175,8 +175,14 @@ class DirectorActivityLog extends DbObject
         stdClass $newVars,
         Db $db
     ) {
-        $oldProps = json_encode((object) ['vars' => $oldVars]);
-        $newProps = json_encode((object) ['vars' => $newVars]);
+        // Log the whole object like any other change, restoring from a
+        // vars-only entry would blank every other property on the object
+        $oldPlain = $object->toPlainObject(false, true);
+        $newPlain = clone $oldPlain;
+        $oldPlain->vars = $oldVars;
+        $newPlain->vars = $newVars;
+        $oldProps = json_encode($oldPlain);
+        $newProps = json_encode($newPlain);
 
         return self::logModificationChange(
             $object->getObjectName(),
