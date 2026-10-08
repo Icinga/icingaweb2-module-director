@@ -303,6 +303,7 @@ class DictionaryItem extends FieldsetElement
             } elseif ($itemType === 'dynamic-array') {
                 $listEntriesInput = (new ArrayElement($valElementName))
                     ->shouldAutoSubmit()
+                    ->setPlaceHolder($placeholder)
                     ->setSuggestedValues($datalistEntries)
                     ->setVerticalTermDirection()
                     ->setSuggestionUrl(Url::fromPath('director/suggestions/datalist-entry', [
