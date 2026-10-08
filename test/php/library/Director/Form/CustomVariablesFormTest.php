@@ -5,6 +5,7 @@
 
 namespace Tests\Icinga\Module\Director\Form;
 
+use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -244,6 +245,61 @@ class CustomVariablesFormTest extends BaseTestCase
         $entry = ['label' => 'dc1', 'slots' => ['', '', '']];
         $result = CustomVariablesForm::filterEmpty($entry);
         $this->assertSame(['label' => 'dc1'], $result);
+    }
+
+    /**
+     * Preserve numeric dictionary entry names through storage and service overrides
+     *
+     * @return void
+     */
+    public function testNumericDictionaryKeysSurviveStorageAndServiceOverrides(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createDatalistTestHost($db);
+        $property = DirectorProperty::create([
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => self::DATALIST_KEY,
+            'value_type' => 'dynamic-dictionary',
+        ], $db);
+        $property->store();
+        $service = IcingaService::create([
+            'object_name' => self::DATALIST_PREFIX . 'numeric-dictionary-service',
+            'object_type' => 'template',
+        ], $db);
+
+        foreach ([[0 => []], [0 => ['address' => 'localhost'], 3 => []]] as $submitted) {
+            $expected = (object) array_map(fn($entry) => (object) $entry, $submitted);
+            foreach ([false, true] as $override) {
+                $form = new CustomVariablesForm($override ? $service : $host, [
+                    self::DATALIST_KEY => [
+                        'uuid' => $property->get('uuid'),
+                        'value_type' => 'dynamic-dictionary',
+                    ],
+                ]);
+                if ($override) {
+                    $form->setApplyGenerated($service);
+                    $form->setHostForService($host);
+                }
+
+                $form->registerElement(new TestablePropertiesDictionary([self::DATALIST_KEY => $submitted]));
+                self::callMethod($form, 'persistPropertyChanges', []);
+
+                $host = IcingaHost::load(self::DATALIST_HOST_NAME, $db);
+                if ($override) {
+                    $values = $host->getOverriddenServiceVars($service->getObjectName());
+                    $this->assertEquals($expected, $values->{self::DATALIST_KEY});
+                } else {
+                    $value = $host->vars()->get(self::DATALIST_KEY);
+                    $this->assertInstanceOf(CustomVariableDictionary::class, $value);
+                    $this->assertSame(json_encode($expected), $value->getDbValue());
+                    $this->assertStringContainsString('"0"', $value->toConfigString());
+                }
+            }
+        }
     }
 
     public function testDatalistStrictRejectsAChangedValueNotInTheAllowedList(): void
