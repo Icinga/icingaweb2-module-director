@@ -243,15 +243,22 @@ class DictionaryItem extends FieldsetElement
             $isStrict = substr($type, strlen('datalist-')) === 'strict';
             $datalistEntries = self::fetchDataListEntries($uuid);
             if ($itemType === 'string') {
+                if (! CustomVariablesForm::isValueUnset($inherited)) {
+                    $placeholder = ($datalistEntries[$inherited] ?? $inherited) . ' ('
+                        . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
+                }
+
                 if ($isStrict) {
                     $this->addElement(
                         'select',
                         $valElementName,
                         [
                             'label' => $valueLabel,
-                            'placeholder' => $placeholder,
                             'value' => '',
-                            'options' => ['' => $this->translate('- Please choose -')]
+                            // Keep the empty value so saving does not create a local override.
+                            'options' => ['' => $placeholder !== ''
+                                ? $placeholder
+                                : $this->translate('- Please choose -')]
                                 + $datalistEntries
                         ]
                     );
@@ -261,6 +268,7 @@ class DictionaryItem extends FieldsetElement
                         'autocomplete' => 'off',
                         'ignore' => true,
                         'label' => $valueLabel,
+                        'placeholder' => $placeholder,
                         'data-enrichment-type' => 'completion',
                         'data-auto-submit' => true,
                         'data-term-suggestions' => "#{$valElementName}-suggestions-{$fieldsetName}",
@@ -530,6 +538,8 @@ class DictionaryItem extends FieldsetElement
             && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'string'
         ) {
             $dataListEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
+            $values['inherited'] = $property['inherited'] ?? '';
+            $values['inherited_from'] = $property['inherited_from'] ?? '';
             $value = is_string($property['value'] ?? null) ? $property['value'] : '';
             if (isset($dataListEntries[$value])) {
                 $values['var'] = $dataListEntries[$value];

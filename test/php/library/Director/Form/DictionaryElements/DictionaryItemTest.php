@@ -602,6 +602,86 @@ class DictionaryItemTest extends BaseTestCase
         $this->assertArrayNotHasKey('required', $item->getItem());
     }
 
+    /**
+     * Show the inherited choice without storing it as a local override
+     *
+     * @return void
+     */
+    public function testStrictDatalistShowsInheritedChoiceInEmptyOption(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createDatalistStrictProperty(['dev', 'prod', '0']);
+        $cases = [
+            ['dev', null, 'Dev (Inherited from base-template)'],
+            ['0', null, '0 (Inherited from base-template)'],
+            ['removed', null, 'removed (Inherited from base-template)'],
+            ['dev', 'prod', 'Dev (Inherited from base-template)'],
+            [null, null, '- Please choose -'],
+        ];
+        foreach ($cases as [$inherited, $local, $caption]) {
+            $propertyData = [
+                'uuid' => $property->get('uuid'),
+                'key_name' => $property->get('key_name'),
+                'value_type' => 'datalist-strict',
+                'label' => 'Environment',
+                'value' => $local,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $propertyData);
+            $item->populate(DictionaryItem::prepare($propertyData));
+            $item->ensureAssembled();
+            $select = $item->getElement('var');
+
+            $this->assertStringContainsString($caption, (string) $select->getOption(''));
+            $this->assertSame($local, $select->getValue());
+            $this->assertSame($local, $item->getItem()['value']);
+        }
+    }
+
+    /**
+     * Show inherited suggestions without populating a local value
+     *
+     * @return void
+     */
+    public function testNonStrictDatalistShowsInheritedChoiceAsPlaceholder(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createDatalistStrictProperty(['dev', 'prod', '0']);
+        $property->set('value_type', 'datalist-non-strict')->store();
+        $cases = [
+            ['dev', null, 'Dev (Inherited from base-template)'],
+            ['0', null, '0 (Inherited from base-template)'],
+            ['custom', null, 'custom (Inherited from base-template)'],
+            ['dev', 'prod', 'Dev (Inherited from base-template)'],
+            [null, null, ''],
+        ];
+        foreach ($cases as [$inherited, $local, $placeholder]) {
+            $propertyData = [
+                'uuid' => $property->get('uuid'),
+                'key_name' => $property->get('key_name'),
+                'value_type' => 'datalist-non-strict',
+                'label' => 'Environment',
+                'value' => $local,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $propertyData);
+            $item->populate(DictionaryItem::prepare($propertyData));
+            $item->ensureAssembled();
+
+            $this->assertSame($placeholder, $item->getElement('var')->getPlaceholder());
+            $this->assertSame($local === 'prod' ? 'Prod' : null, $item->getElement('var')->getValue());
+            $this->assertSame($local, $item->getItem()['value']);
+        }
+    }
+
     public function testTamperedHiddenTypeCannotDowngradeAStrictDatalistToAPlainTextField(): void
     {
         if ($this->skipForMissingDb()) {
