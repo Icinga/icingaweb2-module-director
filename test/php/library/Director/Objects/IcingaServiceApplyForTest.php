@@ -7,6 +7,7 @@ namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -31,6 +32,49 @@ class IcingaServiceApplyForTest extends BaseTestCase
 
     /** @var string[] property key_names created during tests */
     private array $createdPropertyKeys = [];
+
+    public function testApplyForOffersArrayDatalistsAndExcludesScalarDatalists(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->hostTemplate();
+        $host->store($db);
+        $form = new IcingaServiceForm();
+        $form->setDb($db);
+
+        foreach (['datalist-strict', 'datalist-non-strict'] as $valueType) {
+            foreach (['dynamic-array', 'string'] as $itemType) {
+                $suffix = str_replace('-', '_', $valueType . '_' . $itemType);
+                $property = $this->makeAndLinkProperty($suffix, $valueType, $host, $db);
+                DirectorProperty::create([
+                    'uuid' => Uuid::uuid4()->getBytes(),
+                    'parent_uuid' => $property->get('uuid'),
+                    'key_name' => '0',
+                    'value_type' => $itemType,
+                ], $db)->store();
+
+                $groups = self::callMethod($form, 'applyForVars', []);
+                $options = array_merge(...array_values($groups));
+                $applyFor = 'host.vars.' . self::PREFIX . $suffix;
+
+                if ($itemType === 'string') {
+                    $this->assertArrayNotHasKey($applyFor, $options);
+                    continue;
+                }
+
+                $this->assertArrayHasKey($applyFor, $options);
+                $service = $this->applyService($suffix, $applyFor);
+                $service->setConnection($db);
+                $service->store();
+                $service = IcingaService::loadWithUniqueId(Uuid::fromBytes($service->get('uuid')), $db);
+                $this->assertSame($applyFor, $service->get('apply_for'));
+                $this->assertStringContainsString('for (value in ' . $applyFor . ')', (string) $service);
+            }
+        }
+    }
 
     public function testApplyForDynamicArrayRendersForValue(): void
     {

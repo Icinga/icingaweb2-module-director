@@ -714,6 +714,7 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $query = $this->db->getDbAdapter()
             ->select()
+            ->distinct()
             ->from(
                 ['dp' => 'director_property'],
                 [
@@ -724,7 +725,16 @@ class IcingaServiceForm extends DirectorObjectForm
                 ]
             )
             ->join(['iop' => 'icinga_host_property'], 'dp.uuid = iop.property_uuid', [])
-            ->where("value_type IN ('dynamic-array', 'dynamic-dictionary')");
+            ->joinLeft(
+                ['item' => 'director_property'],
+                "item.parent_uuid = dp.uuid AND item.value_type = 'dynamic-array'",
+                []
+            )
+            ->where('dp.parent_uuid IS NULL')
+            ->where(
+                "dp.value_type IN ('dynamic-array', 'dynamic-dictionary')"
+                . " OR (dp.value_type IN ('datalist-strict', 'datalist-non-strict') AND item.uuid IS NOT NULL)"
+            );
 
         $vars = $this->db->getDbAdapter()->fetchAll($query);
 
