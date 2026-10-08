@@ -211,7 +211,7 @@ class NestedDictionary extends FieldsetElement
      *
      * @param bool $applyUnchangedDefaults See DictionaryItem::getItem()
      *
-     * @return array<string, array>
+     * @return array<int|string, array<mixed>>
      */
     public function getDictionary(bool $applyUnchangedDefaults = true): array
     {
@@ -220,7 +220,7 @@ class NestedDictionary extends FieldsetElement
         foreach ($this->ensureAssembled()->getElements() as $element) {
             if ($element instanceof NestedDictionaryItem) {
                 $property = $element->getItem($applyUnchangedDefaults);
-                if (! empty($property['key']) && array_key_exists('value', $property)) {
+                if ($property['key'] !== null && $property['key'] !== '' && array_key_exists('value', $property)) {
                     $values[$property['key']] = $property['value'];
                 } else {
                     $values[self::UNDEFINED_KEY . $count] = $property['value'];

@@ -527,8 +527,8 @@ class CustomVariablesForm extends CompatForm
 
             if (is_array($value) && ! empty($value)) {
                 if ($property['value_type'] === 'dynamic-dictionary') {
-                    // Preserve outer keys; only filter empty sub-field values within each entry
-                    $value = array_map(function ($entry) {
+                    // Keep numeric entry names as dictionary keys through storage and overrides.
+                    $value = (object) array_map(function ($entry) {
                         if (! is_array($entry)) {
                             return $entry;
                         }
