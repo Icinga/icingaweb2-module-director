@@ -764,6 +764,11 @@ class DictionaryItem extends FieldsetElement
             $stored = null;
         }
 
+        // An empty array input also represents an absent local value.
+        if ($itemValue instanceof ArrayElement && $submitted === [] && $stored === null) {
+            return true;
+        }
+
         return $submitted === $stored;
     }
 
