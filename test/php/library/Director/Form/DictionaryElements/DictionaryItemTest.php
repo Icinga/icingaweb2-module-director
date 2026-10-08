@@ -682,6 +682,33 @@ class DictionaryItemTest extends BaseTestCase
         }
     }
 
+    public function testSensitiveFieldsShowInheritedPresenceWithoutExposingTheSecret(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['parent-secret', null] as $inherited) {
+            $data = [
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => 'token',
+                'value_type' => 'sensitive',
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $data);
+            $item->populate(DictionaryItem::prepare($data));
+            $item->ensureAssembled();
+
+            $this->assertSame(
+                $inherited === null ? '' : 'Inherited value (Inherited from base-template)',
+                $item->getElement('var')->getAttributes()->get('placeholder')->getValue()
+            );
+            $this->assertStringNotContainsString('parent-secret', (string) $item);
+            $this->assertSame('', $item->getElement('var')->getValue());
+        }
+    }
+
     public function testZeroValuesKeepTheirInheritanceHints(): void
     {
         if ($this->skipForMissingDb()) {

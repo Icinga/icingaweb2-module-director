@@ -224,11 +224,17 @@ class DictionaryItem extends FieldsetElement
                 )
             );
         } elseif ($type === 'sensitive') {
+            if (! CustomVariablesForm::isValueUnset($inherited)) {
+                $placeholder = $this->translate('Inherited value') . ' ('
+                    . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
+            }
+
             $this->addElement(
                 new SensitiveElement(
                     $valElementName,
                     [
                         'label' => $valueLabel,
+                        'placeholder' => $placeholder,
                         'autocomplete' => 'off'
                     ]
                 )
