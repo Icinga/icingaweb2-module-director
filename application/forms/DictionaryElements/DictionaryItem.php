@@ -217,12 +217,17 @@ class DictionaryItem extends FieldsetElement
                 ]
             );
         } elseif ($type == 'bool') {
-            $this->addElement(
-                new IplBoolean(
-                    $valElementName,
-                    ['label' => $label, 'placeholder' => $placeholder]
-                )
-            );
+            $valueElement = new IplBoolean($valElementName, ['label' => $label]);
+            if (! CustomVariablesForm::isValueUnset($inherited)) {
+                $caption = $inherited === 'y' ? $this->translate('Yes') : $this->translate('No');
+                $valueElement->setOptions(['' => $caption . ' ('
+                    . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')',
+                    'y' => $this->translate('Yes'),
+                    'n' => $this->translate('No')
+                ]);
+            }
+
+            $this->addElement($valueElement);
         } elseif ($type === 'sensitive') {
             if (! CustomVariablesForm::isValueUnset($inherited)) {
                 $placeholder = $this->translate('Inherited value') . ' ('
@@ -556,6 +561,12 @@ class DictionaryItem extends FieldsetElement
                 $values['var'] = $value;
                 $values['var-search'] = $value;
             }
+        } elseif ($property['value_type'] === 'bool') {
+            $values['var'] = $property['value'] ?? '';
+            $inherited = $property['inherited'] ?? null;
+            // Hidden inputs must survive an HTML round trip, including inherited false.
+            $values['inherited'] = is_bool($inherited) ? ($inherited ? 'y' : 'n') : ($inherited ?? '');
+            $values['inherited_from'] = $property['inherited_from'] ?? '';
         } elseif ($property['value_type'] === 'sensitive') {
             // Send the DUMMYPASSWORD placeholder, not the real secret. The field itself
             // can't tell a stored secret apart from a value the user just typed, so we

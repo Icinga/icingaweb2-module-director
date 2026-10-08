@@ -682,6 +682,44 @@ class DictionaryItemTest extends BaseTestCase
         }
     }
 
+    public function testInheritedBooleansSurviveSubmissionWithoutCreatingAnOverride(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach ([true, false] as $inherited) {
+            $data = [
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => 'enabled',
+                'value_type' => 'bool',
+                'required' => true,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $prepared = DictionaryItem::prepare($data);
+            $this->assertSame($inherited ? 'y' : 'n', $prepared['inherited']);
+
+            $item = new DictionaryItem('0', $data);
+            $item->populate($prepared);
+            $item->ensureAssembled();
+            $this->assertStringContainsString(
+                'value="' . $prepared['inherited'] . '"',
+                (string) $item->getElement('inherited')
+            );
+            $this->assertStringContainsString(
+                ($inherited ? 'Yes' : 'No') . ' (Inherited from base-template)',
+                (string) $item->getElement('var')->getOption('')
+            );
+            $this->assertFalse($item->getElement('var')->isRequired());
+            $this->assertTrue($item->isValid());
+            $this->assertSame('', $item->getItem()['value']);
+
+            $item->getElement('var')->setValue(! $inherited);
+            $this->assertSame(! $inherited, $item->getItem()['value']);
+        }
+    }
+
     public function testSensitiveFieldsShowInheritedPresenceWithoutExposingTheSecret(): void
     {
         if ($this->skipForMissingDb()) {
