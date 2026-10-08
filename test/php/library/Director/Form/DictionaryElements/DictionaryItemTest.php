@@ -682,6 +682,32 @@ class DictionaryItemTest extends BaseTestCase
         }
     }
 
+    public function testArrayDatalistsShowInheritedValuesWithoutCreatingAnOverride(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createDatalistStrictProperty(['dev', 'prod'], 'dynamic-array');
+        foreach (['datalist-strict', 'datalist-non-strict'] as $type) {
+            $property->set('value_type', $type)->store();
+            $data = [
+                'uuid' => $property->get('uuid'),
+                'key_name' => $property->get('key_name'),
+                'value_type' => $type,
+                'inherited' => ['dev', 'prod'],
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $data);
+            $item->populate(DictionaryItem::prepare($data));
+            $item->ensureAssembled();
+
+            $this->assertStringContainsString('dev, prod (Inherited from base-template)', (string) $item);
+            $this->assertSame([], $item->getElement('var')->getValue());
+            $this->assertSame([], $item->getItem()['value']);
+        }
+    }
+
     public function testTamperedHiddenTypeCannotDowngradeAStrictDatalistToAPlainTextField(): void
     {
         if ($this->skipForMissingDb()) {
@@ -1214,7 +1240,10 @@ class DictionaryItemTest extends BaseTestCase
      * Build a datalist-strict 'environment_choice' DictionaryItem property, backed by a
      * real datalist that only allows the given entry names.
      */
-    private function createDatalistStrictProperty(array $allowedEntryNames): DirectorProperty
+    private function createDatalistStrictProperty(
+        array $allowedEntryNames,
+        string $itemType = 'string'
+    ): DirectorProperty
     {
         $db = $this->getDb();
         $keyName = self::PREFIX . 'environment_choice';
@@ -1247,13 +1276,11 @@ class DictionaryItemTest extends BaseTestCase
         $property = DirectorProperty::import($plain, $db);
         $property->store();
 
-        // the item type ("this datalist holds plain strings, not arrays") lives in its
-        // own child row, key_name "0" by convention
         DirectorProperty::create([
             'uuid' => Uuid::uuid4()->getBytes(),
             'key_name' => '0',
             'parent_uuid' => $property->get('uuid'),
-            'value_type' => 'string',
+            'value_type' => $itemType,
         ], $db)->store();
 
         return $property;
