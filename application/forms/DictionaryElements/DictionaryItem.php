@@ -198,7 +198,7 @@ class DictionaryItem extends FieldsetElement
         $inheritedFrom = $this->getElement('inherited_from')->getValue();
 
         $placeholder = '';
-        if ($inherited) {
+        if (! CustomVariablesForm::isValueUnset($inherited)) {
             $placeholder = $inherited . ' (' . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
         }
 
