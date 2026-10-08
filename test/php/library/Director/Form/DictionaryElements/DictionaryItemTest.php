@@ -682,6 +682,63 @@ class DictionaryItemTest extends BaseTestCase
         }
     }
 
+    public function testInheritedContainersWithArrayChildrenStayInheritedUntilEdited(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['fixed-dictionary', 'fixed-array'] as $containerType) {
+            foreach (['dynamic-array', 'datalist-strict', 'datalist-non-strict'] as $arrayType) {
+                $item = $this->buildArrayContainerDictionaryItem($containerType, $arrayType);
+                $this->assertArrayNotHasKey('value', $item->getItem());
+
+                $arrayKey = $containerType === 'fixed-array' ? '0' : 'targets';
+                $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+                $this->findNestedItem($item, $arrayKey)->getElement('var')->setValue(['prod']);
+                $this->assertEquals([$arrayKey => ['prod'], $numberKey => 0], $item->getItem()['value']);
+            }
+        }
+    }
+
+    public function testSparseLocalContainersWithArrayChildrenStayUnchanged(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['fixed-dictionary', 'fixed-array'] as $containerType) {
+            foreach (['dynamic-array', 'datalist-strict', 'datalist-non-strict'] as $arrayType) {
+                $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+                $item = $this->buildArrayContainerDictionaryItem($containerType, $arrayType, [$numberKey => 5]);
+                $this->assertArrayNotHasKey('value', $item->getItem());
+            }
+        }
+    }
+
+    public function testClearingStoredArrayChildrenStillChangesTheirContainers(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['fixed-dictionary', 'fixed-array'] as $containerType) {
+            foreach (['dynamic-array', 'datalist-strict', 'datalist-non-strict'] as $arrayType) {
+                $arrayKey = $containerType === 'fixed-array' ? '0' : 'targets';
+                $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+                $item = $this->buildArrayContainerDictionaryItem(
+                    $containerType,
+                    $arrayType,
+                    [$arrayKey => ['dev'], $numberKey => 5]
+                );
+                $this->assertArrayNotHasKey('value', $item->getItem());
+
+                $this->findNestedItem($item, $arrayKey)->getElement('var')->setValue([]);
+                $this->assertEquals([$arrayKey => [], $numberKey => 5], $item->getItem()['value']);
+            }
+        }
+    }
+
     public function testInheritedBooleansSurviveSubmissionWithoutCreatingAnOverride(): void
     {
         if ($this->skipForMissingDb()) {
@@ -1330,12 +1387,12 @@ class DictionaryItemTest extends BaseTestCase
      */
     private function createDatalistStrictProperty(
         array $allowedEntryNames,
-        string $itemType = 'string'
-    ): DirectorProperty
-    {
+        string $itemType = 'string',
+        string $suffix = ''
+    ): DirectorProperty {
         $db = $this->getDb();
-        $keyName = self::PREFIX . 'environment_choice';
-        $listName = self::PREFIX . 'environment_list';
+        $keyName = self::PREFIX . 'environment_choice' . $suffix;
+        $listName = self::PREFIX . 'environment_list' . $suffix;
         $this->createdKeyNames[] = $keyName;
         $this->createdDatalistNames[] = $listName;
 
@@ -1375,8 +1432,74 @@ class DictionaryItemTest extends BaseTestCase
     }
 
     /**
-     * Find the nested DictionaryItem for the given key name inside a fixed-dictionary/
-     * fixed-array DictionaryItem's 'var' Dictionary.
+     * Build a fixed container with an array child and a numeric sibling
+     */
+    private function buildArrayContainerDictionaryItem(
+        string $containerType,
+        string $arrayType,
+        ?array $localValue = null
+    ): DictionaryItem {
+        $db = $this->getDb();
+        $uuid = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . $containerType . '_' . $arrayType;
+        $this->createdKeyNames[] = $keyName;
+        DirectorProperty::create([
+            'uuid' => $uuid,
+            'key_name' => $keyName,
+            'value_type' => $containerType,
+        ], $db)->store();
+
+        $arrayKey = $containerType === 'fixed-array' ? '0' : 'targets';
+        $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+        if (str_starts_with($arrayType, 'datalist-')) {
+            $arrayProperty = $this->createDatalistStrictProperty(
+                ['dev', 'prod'],
+                'dynamic-array',
+                $containerType . '_' . $arrayType
+            );
+            $arrayProperty->set('key_name', $arrayKey)
+                ->set('parent_uuid', $uuid)
+                ->set('value_type', $arrayType)
+                ->store();
+        } else {
+            $arrayProperty = DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => $arrayKey,
+                'parent_uuid' => $uuid,
+                'value_type' => $arrayType,
+            ], $db);
+            $arrayProperty->store();
+            DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => '0',
+                'parent_uuid' => $arrayProperty->get('uuid'),
+                'value_type' => 'string',
+            ], $db)->store();
+        }
+
+        DirectorProperty::create([
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => $numberKey,
+            'parent_uuid' => $uuid,
+            'value_type' => 'number',
+        ], $db)->store();
+        $data = [
+            'uuid' => $uuid,
+            'key_name' => $keyName,
+            'value_type' => $containerType,
+            'value' => $localValue,
+            'inherited' => [$arrayKey => ['dev'], $numberKey => 5],
+            'inherited_from' => 'base-template',
+        ];
+        $item = new DictionaryItem('0', $data);
+        $item->populate(DictionaryItem::prepare($data));
+        $item->ensureAssembled();
+
+        return $item;
+    }
+
+    /**
+     * Find a child by key name inside a fixed container's dictionary
      */
     private function findNestedItem(DictionaryItem $parent, string $keyName): DictionaryItem
     {
