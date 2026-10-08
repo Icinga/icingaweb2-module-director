@@ -682,6 +682,29 @@ class DictionaryItemTest extends BaseTestCase
         }
     }
 
+    public function testZeroValuesKeepTheirInheritanceHints(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['number' => 0, 'string' => '0', 'dynamic-array' => ['0']] as $type => $inherited) {
+            $data = [
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => 'zero',
+                'value_type' => $type,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $data);
+            $item->populate(DictionaryItem::prepare($data));
+            $item->ensureAssembled();
+
+            $this->assertStringContainsString('0 (Inherited from base-template)', (string) $item);
+            $this->assertFalse($item->getElement('var')->isRequired());
+        }
+    }
+
     public function testArrayDatalistsShowInheritedValuesWithoutCreatingAnOverride(): void
     {
         if ($this->skipForMissingDb()) {
