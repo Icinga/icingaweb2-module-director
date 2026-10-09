@@ -602,6 +602,257 @@ class DictionaryItemTest extends BaseTestCase
         $this->assertArrayNotHasKey('required', $item->getItem());
     }
 
+    /**
+     * Show the inherited choice without storing it as a local override
+     *
+     * @return void
+     */
+    public function testStrictDatalistShowsInheritedChoiceInEmptyOption(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createDatalistStrictProperty(['dev', 'prod', '0']);
+        $cases = [
+            ['dev', null, 'Dev (Inherited from base-template)'],
+            ['0', null, '0 (Inherited from base-template)'],
+            ['removed', null, 'removed (Inherited from base-template)'],
+            ['dev', 'prod', 'Dev (Inherited from base-template)'],
+            [null, null, '- Please choose -'],
+        ];
+        foreach ($cases as [$inherited, $local, $caption]) {
+            $propertyData = [
+                'uuid' => $property->get('uuid'),
+                'key_name' => $property->get('key_name'),
+                'value_type' => 'datalist-strict',
+                'label' => 'Environment',
+                'value' => $local,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $propertyData);
+            $item->populate(DictionaryItem::prepare($propertyData));
+            $item->ensureAssembled();
+            $select = $item->getElement('var');
+
+            $this->assertStringContainsString($caption, (string) $select->getOption(''));
+            $this->assertSame($local, $select->getValue());
+            $this->assertSame($local, $item->getItem()['value']);
+        }
+    }
+
+    /**
+     * Show inherited suggestions without populating a local value
+     *
+     * @return void
+     */
+    public function testNonStrictDatalistShowsInheritedChoiceAsPlaceholder(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createDatalistStrictProperty(['dev', 'prod', '0']);
+        $property->set('value_type', 'datalist-non-strict')->store();
+        $cases = [
+            ['dev', null, 'Dev (Inherited from base-template)'],
+            ['0', null, '0 (Inherited from base-template)'],
+            ['custom', null, 'custom (Inherited from base-template)'],
+            ['dev', 'prod', 'Dev (Inherited from base-template)'],
+            [null, null, ''],
+        ];
+        foreach ($cases as [$inherited, $local, $placeholder]) {
+            $propertyData = [
+                'uuid' => $property->get('uuid'),
+                'key_name' => $property->get('key_name'),
+                'value_type' => 'datalist-non-strict',
+                'label' => 'Environment',
+                'value' => $local,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $propertyData);
+            $item->populate(DictionaryItem::prepare($propertyData));
+            $item->ensureAssembled();
+
+            $this->assertSame($placeholder, $item->getElement('var')->getPlaceholder());
+            $this->assertSame($local === 'prod' ? 'Prod' : null, $item->getElement('var')->getValue());
+            $this->assertSame($local, $item->getItem()['value']);
+        }
+    }
+
+    public function testInheritedContainersWithArrayChildrenStayInheritedUntilEdited(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['fixed-dictionary', 'fixed-array'] as $containerType) {
+            foreach (['dynamic-array', 'datalist-strict', 'datalist-non-strict'] as $arrayType) {
+                $item = $this->buildArrayContainerDictionaryItem($containerType, $arrayType);
+                $this->assertArrayNotHasKey('value', $item->getItem());
+
+                $arrayKey = $containerType === 'fixed-array' ? '0' : 'targets';
+                $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+                $this->findNestedItem($item, $arrayKey)->getElement('var')->setValue(['prod']);
+                $this->assertEquals([$arrayKey => ['prod'], $numberKey => 0], $item->getItem()['value']);
+            }
+        }
+    }
+
+    public function testSparseLocalContainersWithArrayChildrenStayUnchanged(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['fixed-dictionary', 'fixed-array'] as $containerType) {
+            foreach (['dynamic-array', 'datalist-strict', 'datalist-non-strict'] as $arrayType) {
+                $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+                $item = $this->buildArrayContainerDictionaryItem($containerType, $arrayType, [$numberKey => 5]);
+                $this->assertArrayNotHasKey('value', $item->getItem());
+            }
+        }
+    }
+
+    public function testClearingStoredArrayChildrenStillChangesTheirContainers(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['fixed-dictionary', 'fixed-array'] as $containerType) {
+            foreach (['dynamic-array', 'datalist-strict', 'datalist-non-strict'] as $arrayType) {
+                $arrayKey = $containerType === 'fixed-array' ? '0' : 'targets';
+                $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+                $item = $this->buildArrayContainerDictionaryItem(
+                    $containerType,
+                    $arrayType,
+                    [$arrayKey => ['dev'], $numberKey => 5]
+                );
+                $this->assertArrayNotHasKey('value', $item->getItem());
+
+                $this->findNestedItem($item, $arrayKey)->getElement('var')->setValue([]);
+                $this->assertEquals([$arrayKey => [], $numberKey => 5], $item->getItem()['value']);
+            }
+        }
+    }
+
+    public function testInheritedBooleansSurviveSubmissionWithoutCreatingAnOverride(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach ([true, false] as $inherited) {
+            $data = [
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => 'enabled',
+                'value_type' => 'bool',
+                'required' => true,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $prepared = DictionaryItem::prepare($data);
+            $this->assertSame($inherited ? 'y' : 'n', $prepared['inherited']);
+
+            $item = new DictionaryItem('0', $data);
+            $item->populate($prepared);
+            $item->ensureAssembled();
+            $this->assertStringContainsString(
+                'value="' . $prepared['inherited'] . '"',
+                (string) $item->getElement('inherited')
+            );
+            $this->assertStringContainsString(
+                ($inherited ? 'Yes' : 'No') . ' (Inherited from base-template)',
+                (string) $item->getElement('var')->getOption('')
+            );
+            $this->assertFalse($item->getElement('var')->isRequired());
+            $this->assertTrue($item->isValid());
+            $this->assertSame('', $item->getItem()['value']);
+
+            $item->getElement('var')->setValue(! $inherited);
+            $this->assertSame(! $inherited, $item->getItem()['value']);
+        }
+    }
+
+    public function testSensitiveFieldsShowInheritedPresenceWithoutExposingTheSecret(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['parent-secret', null] as $inherited) {
+            $data = [
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => 'token',
+                'value_type' => 'sensitive',
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $data);
+            $item->populate(DictionaryItem::prepare($data));
+            $item->ensureAssembled();
+
+            $this->assertSame(
+                $inherited === null ? '' : 'Inherited value (Inherited from base-template)',
+                $item->getElement('var')->getAttributes()->get('placeholder')->getValue()
+            );
+            $this->assertStringNotContainsString('parent-secret', (string) $item);
+            $this->assertSame('', $item->getElement('var')->getValue());
+        }
+    }
+
+    public function testZeroValuesKeepTheirInheritanceHints(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        foreach (['number' => 0, 'string' => '0', 'dynamic-array' => ['0']] as $type => $inherited) {
+            $data = [
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => 'zero',
+                'value_type' => $type,
+                'inherited' => $inherited,
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $data);
+            $item->populate(DictionaryItem::prepare($data));
+            $item->ensureAssembled();
+
+            $this->assertStringContainsString('0 (Inherited from base-template)', (string) $item);
+            $this->assertFalse($item->getElement('var')->isRequired());
+        }
+    }
+
+    public function testArrayDatalistsShowInheritedValuesWithoutCreatingAnOverride(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createDatalistStrictProperty(['dev', 'prod'], 'dynamic-array');
+        foreach (['datalist-strict', 'datalist-non-strict'] as $type) {
+            $property->set('value_type', $type)->store();
+            $data = [
+                'uuid' => $property->get('uuid'),
+                'key_name' => $property->get('key_name'),
+                'value_type' => $type,
+                'inherited' => ['dev', 'prod'],
+                'inherited_from' => 'base-template',
+            ];
+            $item = new DictionaryItem('0', $data);
+            $item->populate(DictionaryItem::prepare($data));
+            $item->ensureAssembled();
+
+            $this->assertStringContainsString('dev, prod (Inherited from base-template)', (string) $item);
+            $this->assertSame([], $item->getElement('var')->getValue());
+            $this->assertSame([], $item->getItem()['value']);
+        }
+    }
+
     public function testTamperedHiddenTypeCannotDowngradeAStrictDatalistToAPlainTextField(): void
     {
         if ($this->skipForMissingDb()) {
@@ -1134,11 +1385,14 @@ class DictionaryItemTest extends BaseTestCase
      * Build a datalist-strict 'environment_choice' DictionaryItem property, backed by a
      * real datalist that only allows the given entry names.
      */
-    private function createDatalistStrictProperty(array $allowedEntryNames): DirectorProperty
-    {
+    private function createDatalistStrictProperty(
+        array $allowedEntryNames,
+        string $itemType = 'string',
+        string $suffix = ''
+    ): DirectorProperty {
         $db = $this->getDb();
-        $keyName = self::PREFIX . 'environment_choice';
-        $listName = self::PREFIX . 'environment_list';
+        $keyName = self::PREFIX . 'environment_choice' . $suffix;
+        $listName = self::PREFIX . 'environment_list' . $suffix;
         $this->createdKeyNames[] = $keyName;
         $this->createdDatalistNames[] = $listName;
 
@@ -1167,21 +1421,85 @@ class DictionaryItemTest extends BaseTestCase
         $property = DirectorProperty::import($plain, $db);
         $property->store();
 
-        // the item type ("this datalist holds plain strings, not arrays") lives in its
-        // own child row, key_name "0" by convention
         DirectorProperty::create([
             'uuid' => Uuid::uuid4()->getBytes(),
             'key_name' => '0',
             'parent_uuid' => $property->get('uuid'),
-            'value_type' => 'string',
+            'value_type' => $itemType,
         ], $db)->store();
 
         return $property;
     }
 
     /**
-     * Find the nested DictionaryItem for the given key name inside a fixed-dictionary/
-     * fixed-array DictionaryItem's 'var' Dictionary.
+     * Build a fixed container with an array child and a numeric sibling
+     */
+    private function buildArrayContainerDictionaryItem(
+        string $containerType,
+        string $arrayType,
+        ?array $localValue = null
+    ): DictionaryItem {
+        $db = $this->getDb();
+        $uuid = Uuid::uuid4()->getBytes();
+        $keyName = self::PREFIX . $containerType . '_' . $arrayType;
+        $this->createdKeyNames[] = $keyName;
+        DirectorProperty::create([
+            'uuid' => $uuid,
+            'key_name' => $keyName,
+            'value_type' => $containerType,
+        ], $db)->store();
+
+        $arrayKey = $containerType === 'fixed-array' ? '0' : 'targets';
+        $numberKey = $containerType === 'fixed-array' ? '1' : 'retries';
+        if (str_starts_with($arrayType, 'datalist-')) {
+            $arrayProperty = $this->createDatalistStrictProperty(
+                ['dev', 'prod'],
+                'dynamic-array',
+                $containerType . '_' . $arrayType
+            );
+            $arrayProperty->set('key_name', $arrayKey)
+                ->set('parent_uuid', $uuid)
+                ->set('value_type', $arrayType)
+                ->store();
+        } else {
+            $arrayProperty = DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => $arrayKey,
+                'parent_uuid' => $uuid,
+                'value_type' => $arrayType,
+            ], $db);
+            $arrayProperty->store();
+            DirectorProperty::create([
+                'uuid' => Uuid::uuid4()->getBytes(),
+                'key_name' => '0',
+                'parent_uuid' => $arrayProperty->get('uuid'),
+                'value_type' => 'string',
+            ], $db)->store();
+        }
+
+        DirectorProperty::create([
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => $numberKey,
+            'parent_uuid' => $uuid,
+            'value_type' => 'number',
+        ], $db)->store();
+        $data = [
+            'uuid' => $uuid,
+            'key_name' => $keyName,
+            'value_type' => $containerType,
+            'value' => $localValue,
+            'inherited' => [$arrayKey => ['dev'], $numberKey => 5],
+            'inherited_from' => 'base-template',
+        ];
+        $item = new DictionaryItem('0', $data);
+        $item->populate(DictionaryItem::prepare($data));
+        $item->ensureAssembled();
+
+        return $item;
+    }
+
+    /**
+     * Find a child by key name inside a fixed container's dictionary
      */
     private function findNestedItem(DictionaryItem $parent, string $keyName): DictionaryItem
     {
