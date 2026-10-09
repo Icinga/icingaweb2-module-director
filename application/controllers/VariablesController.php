@@ -30,7 +30,25 @@ class VariablesController extends CompatController
 
     public function indexAction(): void
     {
-        $this->addTitleTab($this->translate('Custom Variables'));
+        $this->setTitle($this->translate('Custom Variables'));
+        $this->getTabs()
+            ->add('datafield', [
+                'label' => $this->translate('Data fields'),
+                'url' => Url::fromPath('director/data/fields')
+            ])
+            ->add('datafieldcategory', [
+                'label' => $this->translate('Data field categories'),
+                'url' => Url::fromPath('director/data/fieldcategories')
+            ])
+            ->add('datalist', [
+                'label' => $this->translate('Data lists'),
+                'url' => Url::fromPath('director/data/lists')
+            ])
+            ->add('customvars', [
+                'label' => $this->translate('Custom Variables'),
+                'url' => Url::fromPath('director/variables')
+            ])
+            ->activate('customvars');
 
         $db = Db::fromResourceName(
             Config::module('director')->get('db', 'resource')
