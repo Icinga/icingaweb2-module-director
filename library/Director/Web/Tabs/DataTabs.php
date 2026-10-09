@@ -31,7 +31,7 @@ class DataTabs extends Tabs
             'url'   => 'director/data/lists'
         ])->add('customvars', [
             'label' => $this->translate('Custom Variables'),
-            'url'   => 'director/data/vars'
+            'url'   => 'director/variables'
         ]);
     }
 }
