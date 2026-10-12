@@ -17,7 +17,7 @@ elsewhere ;-) Cheers!
 When pushing to [GitHub](https://github.com/Icinga/icingaweb2-module-director/)
 or sending pull requests, Unit-Tests are automatically triggered.
 
-![Build Status](https://github.com/Icinga/icingaweb2-module-director/workflows/PHP%20Tests/badge.svg?branch=master)
+![Build Status](https://github.com/Icinga/icingaweb2-module-director/workflows/PHP%20Tests/badge.svg?branch=main)
 
 The [GitHub Actions workflow](../.github/workflows/php.yml) defines the PHP
 versions and database services used for testing.
