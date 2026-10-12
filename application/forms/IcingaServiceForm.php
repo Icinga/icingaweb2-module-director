@@ -11,6 +11,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\DataType\DataTypeArray;
+use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -756,7 +757,14 @@ class IcingaServiceForm extends DirectorObjectForm
                 ['varname' => 'df.varname', 'caption' => 'df.caption']
             )
             ->join(['ihf' => 'icinga_host_field'], 'df.id = ihf.datafield_id', [])
-            ->where("df.datatype = ?", DataTypeArray::class);
+            ->joinLeft(
+                ['dfs' => 'director_datafield_setting'],
+                "dfs.datafield_id = df.id AND dfs.setting_name = 'data_type'",
+                []
+            )
+            ->where('df.datatype IN (?)', [DataTypeArray::class, DataTypeDatalist::class])
+            // Datalist fields only count if they are array
+            ->where("df.datatype = ? OR dfs.setting_value = 'array'", DataTypeArray::class);
 
         foreach ($this->db->getDbAdapter()->fetchAll($datafieldQuery) as $df) {
             $key = 'host.vars.' . $df->varname;

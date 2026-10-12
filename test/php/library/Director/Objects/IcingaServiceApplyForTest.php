@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\DataType\DataTypeArray;
+use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -73,6 +74,52 @@ class IcingaServiceApplyForTest extends BaseTestCase
                 $this->assertSame($applyFor, $service->get('apply_for'));
                 $this->assertStringContainsString('for (value in ' . $applyFor . ')', (string) $service);
             }
+        }
+    }
+
+    public function testApplyForOffersLegacyDatalistFieldsOnlyWhenTargetIsArray(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $host = $this->hostTemplate();
+        $host->store($db);
+        $form = new IcingaServiceForm();
+        $form->setDb($db);
+
+        $datafields = [];
+        foreach (['array' => 'tcp_ports', 'string' => 'snmp_version'] as $targetType => $name) {
+            $datafield = DirectorDatafield::create([
+                'varname'  => self::PREFIX . $name,
+                'caption'  => $name,
+                'datatype' => DataTypeDatalist::class,
+            ], $db);
+            $datafield->store();
+            $datafields[] = $datafield;
+
+            $dba->insert('director_datafield_setting', [
+                'datafield_id' => $datafield->get('id'),
+                'setting_name' => 'data_type',
+                'setting_value' => $targetType,
+            ]);
+            $dba->insert('icinga_host_field', [
+                'host_id'      => $host->get('id'),
+                'datafield_id' => $datafield->get('id'),
+                'is_required'  => 'n',
+            ]);
+        }
+
+        $groups = self::callMethod($form, 'applyForVars', []);
+        $options = array_merge(...array_values($groups));
+
+        $this->assertArrayHasKey('host.vars.' . self::PREFIX . 'tcp_ports', $options);
+        $this->assertArrayNotHasKey('host.vars.' . self::PREFIX . 'snmp_version', $options);
+
+        foreach ($datafields as $datafield) {
+            $datafield->delete();
         }
     }
 
