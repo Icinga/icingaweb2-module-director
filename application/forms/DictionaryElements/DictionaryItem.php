@@ -198,7 +198,7 @@ class DictionaryItem extends FieldsetElement
         $inheritedFrom = $this->getElement('inherited_from')->getValue();
 
         $placeholder = '';
-        if ($inherited) {
+        if (! CustomVariablesForm::isValueUnset($inherited)) {
             $placeholder = $inherited . ' (' . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
         }
 
@@ -217,18 +217,29 @@ class DictionaryItem extends FieldsetElement
                 ]
             );
         } elseif ($type == 'bool') {
-            $this->addElement(
-                new IplBoolean(
-                    $valElementName,
-                    ['label' => $label, 'placeholder' => $placeholder]
-                )
-            );
+            $valueElement = new IplBoolean($valElementName, ['label' => $label]);
+            if (! CustomVariablesForm::isValueUnset($inherited)) {
+                $caption = $inherited === 'y' ? $this->translate('Yes') : $this->translate('No');
+                $valueElement->setOptions(['' => $caption . ' ('
+                    . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')',
+                    'y' => $this->translate('Yes'),
+                    'n' => $this->translate('No')
+                ]);
+            }
+
+            $this->addElement($valueElement);
         } elseif ($type === 'sensitive') {
+            if (! CustomVariablesForm::isValueUnset($inherited)) {
+                $placeholder = $this->translate('Inherited value') . ' ('
+                    . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
+            }
+
             $this->addElement(
                 new SensitiveElement(
                     $valElementName,
                     [
                         'label' => $valueLabel,
+                        'placeholder' => $placeholder,
                         'autocomplete' => 'off'
                     ]
                 )
@@ -243,15 +254,22 @@ class DictionaryItem extends FieldsetElement
             $isStrict = substr($type, strlen('datalist-')) === 'strict';
             $datalistEntries = self::fetchDataListEntries($uuid);
             if ($itemType === 'string') {
+                if (! CustomVariablesForm::isValueUnset($inherited)) {
+                    $placeholder = ($datalistEntries[$inherited] ?? $inherited) . ' ('
+                        . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
+                }
+
                 if ($isStrict) {
                     $this->addElement(
                         'select',
                         $valElementName,
                         [
                             'label' => $valueLabel,
-                            'placeholder' => $placeholder,
                             'value' => '',
-                            'options' => ['' => $this->translate('- Please choose -')]
+                            // Keep the empty value so saving does not create a local override.
+                            'options' => ['' => $placeholder !== ''
+                                ? $placeholder
+                                : $this->translate('- Please choose -')]
                                 + $datalistEntries
                         ]
                     );
@@ -261,6 +279,7 @@ class DictionaryItem extends FieldsetElement
                         'autocomplete' => 'off',
                         'ignore' => true,
                         'label' => $valueLabel,
+                        'placeholder' => $placeholder,
                         'data-enrichment-type' => 'completion',
                         'data-auto-submit' => true,
                         'data-term-suggestions' => "#{$valElementName}-suggestions-{$fieldsetName}",
@@ -295,6 +314,7 @@ class DictionaryItem extends FieldsetElement
             } elseif ($itemType === 'dynamic-array') {
                 $listEntriesInput = (new ArrayElement($valElementName))
                     ->shouldAutoSubmit()
+                    ->setPlaceHolder($placeholder)
                     ->setSuggestedValues($datalistEntries)
                     ->setVerticalTermDirection()
                     ->setSuggestionUrl(Url::fromPath('director/suggestions/datalist-entry', [
@@ -530,6 +550,8 @@ class DictionaryItem extends FieldsetElement
             && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'string'
         ) {
             $dataListEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
+            $values['inherited'] = $property['inherited'] ?? '';
+            $values['inherited_from'] = $property['inherited_from'] ?? '';
             $value = is_string($property['value'] ?? null) ? $property['value'] : '';
             if (isset($dataListEntries[$value])) {
                 $values['var'] = $dataListEntries[$value];
@@ -539,6 +561,12 @@ class DictionaryItem extends FieldsetElement
                 $values['var'] = $value;
                 $values['var-search'] = $value;
             }
+        } elseif ($property['value_type'] === 'bool') {
+            $values['var'] = $property['value'] ?? '';
+            $inherited = $property['inherited'] ?? null;
+            // Hidden inputs must survive an HTML round trip, including inherited false.
+            $values['inherited'] = is_bool($inherited) ? ($inherited ? 'y' : 'n') : ($inherited ?? '');
+            $values['inherited_from'] = $property['inherited_from'] ?? '';
         } elseif ($property['value_type'] === 'sensitive') {
             // Send the DUMMYPASSWORD placeholder, not the real secret. The field itself
             // can't tell a stored secret apart from a value the user just typed, so we
@@ -734,6 +762,11 @@ class DictionaryItem extends FieldsetElement
         $stored = $this->fields['value'] ?? null;
         if ($stored === '') {
             $stored = null;
+        }
+
+        // An empty array input also represents an absent local value.
+        if ($itemValue instanceof ArrayElement && $submitted === [] && $stored === null) {
+            return true;
         }
 
         return $submitted === $stored;
