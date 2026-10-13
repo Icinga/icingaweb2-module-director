@@ -23,15 +23,15 @@ class DataTabs extends Tabs
         $this->add('customvars', [
             'label' => $this->translate('Custom Variables'),
             'url'   => 'director/variables'
-        ])->add('datafield', [
-            'label' => $this->translate('Data fields'),
-            'url'   => 'director/data/fields'
         ])->add('datafieldcategory', [
             'label' => $this->translate('Data field categories'),
             'url'   => 'director/data/fieldcategories'
         ])->add('datalist', [
             'label' => $this->translate('Data lists'),
             'url'   => 'director/data/lists'
+        ])->add('datafield', [
+            'label' => $this->translate('Data fields (deprecated)'),
+            'url'   => 'director/data/fields'
         ])->add('customvarsoverview', [
             'label' => $this->translate('Custom Variables Overview (deprecated)'),
             'url'   => 'director/data/vars'
