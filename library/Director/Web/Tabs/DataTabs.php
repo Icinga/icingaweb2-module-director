@@ -32,6 +32,9 @@ class DataTabs extends Tabs
         ])->add('datalist', [
             'label' => $this->translate('Data lists'),
             'url'   => 'director/data/lists'
+        ])->add('customvarsoverview', [
+            'label' => $this->translate('Custom Variables Overview (deprecated)'),
+            'url'   => 'director/data/vars'
         ]);
     }
 }

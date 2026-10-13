@@ -109,8 +109,8 @@ class DataController extends ActionController
 
     public function varsAction()
     {
-        $this->tabs(new DataTabs())->activate('customvars');
-        $this->addTitle($this->translate('Custom Vars - Overview'));
+        $this->tabs(new DataTabs())->activate('customvarsoverview');
+        $this->addTitle($this->translate('Custom Variables Overview (deprecated)'));
         (new CustomvarTable($this->db()))->renderTo($this);
     }
 

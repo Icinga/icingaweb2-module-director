@@ -48,6 +48,10 @@ class VariablesController extends CompatController
                 'label' => $this->translate('Data lists'),
                 'url' => Url::fromPath('director/data/lists')
             ])
+            ->add('customvarsoverview', [
+                'label' => $this->translate('Custom Variables Overview (deprecated)'),
+                'url' => Url::fromPath('director/data/vars')
+            ])
             ->activate('customvars');
 
         $db = Db::fromResourceName(
