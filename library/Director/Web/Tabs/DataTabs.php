@@ -20,7 +20,10 @@ class DataTabs extends Tabs
 
     protected function assemble()
     {
-        $this->add('datafield', [
+        $this->add('customvars', [
+            'label' => $this->translate('Custom Variables'),
+            'url'   => 'director/variables'
+        ])->add('datafield', [
             'label' => $this->translate('Data fields'),
             'url'   => 'director/data/fields'
         ])->add('datafieldcategory', [
@@ -29,9 +32,6 @@ class DataTabs extends Tabs
         ])->add('datalist', [
             'label' => $this->translate('Data lists'),
             'url'   => 'director/data/lists'
-        ])->add('customvars', [
-            'label' => $this->translate('Custom Variables'),
-            'url'   => 'director/variables'
         ]);
     }
 }

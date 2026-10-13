@@ -32,6 +32,10 @@ class VariablesController extends CompatController
     {
         $this->setTitle($this->translate('Custom Variables'));
         $this->getTabs()
+            ->add('customvars', [
+                'label' => $this->translate('Custom Variables'),
+                'url' => Url::fromPath('director/variables')
+            ])
             ->add('datafield', [
                 'label' => $this->translate('Data fields'),
                 'url' => Url::fromPath('director/data/fields')
@@ -43,10 +47,6 @@ class VariablesController extends CompatController
             ->add('datalist', [
                 'label' => $this->translate('Data lists'),
                 'url' => Url::fromPath('director/data/lists')
-            ])
-            ->add('customvars', [
-                'label' => $this->translate('Custom Variables'),
-                'url' => Url::fromPath('director/variables')
             ])
             ->activate('customvars');
 
