@@ -580,7 +580,8 @@ class ActivityLogInfo extends HtmlDocument
             $this->translate('Checksum'),
             $entry->checksum
         );
-        if ($this->entry->old_properties) {
+
+        if ($this->canRestoreFormerObject()) {
             $table->addNameValueRow(
                 $this->translate('Actions'),
                 $this->getRestoreForm()
@@ -588,6 +589,22 @@ class ActivityLogInfo extends HtmlDocument
         }
 
         return $table;
+    }
+
+    /**
+     * Check if the former object can be brought back safely
+     *
+     * Some older entries only saved the custom variables that changed, not the
+     * whole object. Restoring from one of those would wipe everything else on
+     * the object, so the restore option is only offered when the whole object
+     * was saved.
+     *
+     * @return bool
+     */
+    protected function canRestoreFormerObject(): bool
+    {
+        return (bool) $this->entry->old_properties
+            && property_exists($this->oldProperties(), 'object_name');
     }
 
     public function hasBeenEnabled()
@@ -650,7 +667,8 @@ class ActivityLogInfo extends HtmlDocument
     protected function createObject($type, $props)
     {
         $props = json_decode($props);
-        $newProps = ['object_name' => $props->object_name];
+        // Older entries that only saved custom variables have no name in them
+        $newProps = ['object_name' => $props->object_name ?? $this->entry->object_name];
         if (property_exists($props, 'object_type')) {
             $newProps['object_type'] = $props->object_type;
         }
