@@ -10,11 +10,9 @@ use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
@@ -51,9 +49,6 @@ abstract class DirectorObjectForm extends DirectorForm
 
     /** @var IcingaObject */
     protected $object;
-
-    /** @var Branch */
-    protected $branch;
 
     protected $objectName;
 
@@ -726,7 +721,7 @@ abstract class DirectorObjectForm extends DirectorForm
             $removedImportNames = $this->removedImportNames();
 
             $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
-                $this->getDbObjectStore()->store($object);
+                $object->store();
 
                 if (! empty($removedImportNames)) {
                     PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
@@ -978,19 +973,10 @@ abstract class DirectorObjectForm extends DirectorForm
             );
         }
 
-        if ($this->getDbObjectStore()->delete($object)) {
+        if ($object->delete()) {
             $this->setSuccessUrl($url);
         }
         $this->redirectOnSuccess($msg);
-    }
-
-    /**
-     * @return DbObjectStore
-     */
-    protected function getDbObjectStore()
-    {
-        $store = new DbObjectStore($this->getDb(), $this->branch);
-        return $store;
     }
 
     protected function addDeleteButton($label = null)
@@ -1120,9 +1106,6 @@ abstract class DirectorObjectForm extends DirectorForm
 
     public function loadObject($id)
     {
-        if ($this->branch && $this->branch->isBranch()) {
-            throw new \RuntimeException('Calling loadObject from form in a branch');
-        }
         /** @var DbObject $class */
         $class = $this->getObjectClassname();
         if (is_int($id)) {
@@ -1972,13 +1955,6 @@ abstract class DirectorObjectForm extends DirectorForm
     public function hasPermission($permission)
     {
         return Util::hasPermission($permission);
-    }
-
-    public function setBranch(Branch $branch)
-    {
-        $this->branch = $branch;
-
-        return $this;
     }
 
     protected function allowsExperimental()
