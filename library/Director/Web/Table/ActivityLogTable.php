@@ -131,6 +131,16 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         $day = $this->getDateFormatter()->format((new DateTime())->setTimestamp($timestamp));
 
         if ($this->lastDay !== $day) {
+            if ($this->isPdfExport && $this->lastDay === null) {
+                // Empty first header, the only one that repeats on every page
+                $this->nextHeader()->add(
+                    $this::th('', [
+                        'colspan' => $this->hasObjectFilter ? 2 : 3,
+                        'class'   => 'pdf-page-spacer'
+                    ])
+                );
+            }
+
             $this->nextHeader()->add(
                 $this::th($day, [
                     'colspan' => $this->hasObjectFilter ? 2 : 3,

@@ -28,4 +28,33 @@ class ActivityLogTableTest extends BaseTestCase
         $class = (string) $table->getAttributes()->get('class')->renderValue();
         $this->assertStringContainsString('pdf-export', $class);
     }
+
+    public function testPdfExportStartsWithOneEmptySpacerBeforeTheFirstDay()
+    {
+        $table = new ActivityLogTable($this->createMock(DbConnection::class));
+        $table->setIsPdfExport(true);
+
+        self::callMethod($table, 'renderDayIfNew', [strtotime('2026-10-15 10:00:00 UTC')]);
+        self::callMethod($table, 'renderDayIfNew', [strtotime('2026-10-12 07:40:00 UTC')]);
+
+        $html = $this->renderContent($table);
+
+        $this->assertSame(1, substr_count($html, 'pdf-page-spacer'));
+        $this->assertLessThan(strpos($html, 'table-header-day'), strpos($html, 'pdf-page-spacer'));
+        $this->assertSame(2, substr_count($html, 'table-header-day'));
+    }
+
+    public function testScreenViewHasNoSpacer()
+    {
+        $table = new ActivityLogTable($this->createMock(DbConnection::class));
+
+        self::callMethod($table, 'renderDayIfNew', [strtotime('2026-10-15 10:00:00 UTC')]);
+
+        $this->assertStringNotContainsString('pdf-page-spacer', $this->renderContent($table));
+    }
+
+    private function renderContent(ActivityLogTable $table): string
+    {
+        return implode('', array_map(fn ($element) => $element->render(), $table->getContent()));
+    }
 }

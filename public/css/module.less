@@ -1512,14 +1512,29 @@ table.activity-log.pdf-export {
       overflow: visible;
     }
 
-    // the day divider thead repeats on every page dompdf breaks this table
-    // across, but body's padding-top that reserves space for the fixed page
-    // header only paints on page 1. give the divider the same top padding so
-    // it clears the logo whenever it gets redrawn on later pages too. core's
-    // pdf layout reserves 37px for the header on a 9pt (12px) base font.
-    th.table-header-day {
-      padding-top: (37px / 12px) * 1em;
+    // Every day has its own thead, so only the empty spacer one should repeat
+    // on each page. Otherwise the first day's date shows up on every page.
+    thead {
+      display: table-row-group;
+
+      &:first-of-type {
+        display: table-header-group;
+      }
     }
+
+    // The fixed page header only gets room from the body on page 1. The
+    // repeating spacer keeps rows clear of it on later pages too. Core's pdf
+    // layout reserves 37px for it on a 9pt (12px) base font.
+    th.pdf-page-spacer {
+      height: (37px / 12px) * 1em;
+      padding: 0;
+      border: 0;
+    }
+}
+
+// The spacer already reserves that room on page 1
+body:has(table.activity-log.pdf-export) {
+    padding-top: 0;
 }
 
 table.config-diff {
