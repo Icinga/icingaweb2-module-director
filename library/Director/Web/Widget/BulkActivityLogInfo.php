@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use GuzzleHttp\Psr7\ServerRequest;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Forms\ActivityLogNoteForm;
 use Icinga\Module\Director\Forms\BulkRestoreObjectForm;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use gipfl\IcingaWeb2\Url;
@@ -35,12 +37,14 @@ class BulkActivityLogInfo extends BaseHtmlElement
     protected function assemble()
     {
         $selected = [];
+        $noteIds = [];
         foreach ($this->ids as $id) {
             $entry = $this->db->fetchActivityLogEntryById($id);
             if ($entry === null) {
                 continue;
             }
 
+            $noteIds[] = (int) $id;
             $info = new ActivityLogInfo($this->db, $entry->object_type, $entry->object_name);
             $info->setEmbedded(true)->setId($id);
             // Pick the entry's tab first, or showing it has no diff to render
@@ -96,9 +100,26 @@ class BulkActivityLogInfo extends BaseHtmlElement
             }
         }
 
+        if (! empty($selected)) {
+            $this->add($this->createNoteForm($noteIds));
+        }
+
         if (! empty($restoreItems)) {
             $this->add($this->createRestoreForm($restoreItems));
         }
+    }
+
+    /**
+     * One note for all selected entries
+     *
+     * @param int[] $ids
+     *
+     * @return ActivityLogNoteForm
+     */
+    protected function createNoteForm(array $ids)
+    {
+        return (new ActivityLogNoteForm($this->db, $ids))
+            ->handleRequest(ServerRequest::fromGlobals());
     }
 
     /**

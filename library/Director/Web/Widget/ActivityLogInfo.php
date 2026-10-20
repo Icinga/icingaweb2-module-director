@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use GuzzleHttp\Psr7\ServerRequest;
 use gipfl\Json\JsonString;
 use Icinga\Module\Director\Data\FieldReferenceLoader;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
@@ -15,6 +16,7 @@ use ipl\Html\HtmlElement;
 use Icinga\Date\DateFormatter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Forms\ActivityLogNoteForm;
 use Icinga\Module\Director\Forms\RestoreObjectForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -584,6 +586,14 @@ class ActivityLogInfo extends HtmlDocument
             );
         }
 
+        $note = $this->db->fetchActivityLogNotes([$this->id])[$this->id] ?? null;
+        if (! $this->embedded) {
+            $table->addNameValueRow($this->translate('Note'), $this->getNoteForm($note));
+        } elseif ($note !== null) {
+            // The multiselect view has one form for all entries
+            $table->addNameValueRow($this->translate('Note'), $note);
+        }
+
         if ($this->hasBeenEnabled()) {
             $table->addNameValueRow(
                 $this->translate('Rendering'),
@@ -664,6 +674,17 @@ class ActivityLogInfo extends HtmlDocument
         return sprintf($msg, $this->typeName, $this->entry->object_name);
     }
 
+    /**
+     * @param string|null $note
+     *
+     * @return ActivityLogNoteForm
+     */
+    protected function getNoteForm(?string $note)
+    {
+        return (new ActivityLogNoteForm($this->db, [$this->id], $note))
+            ->handleRequest(ServerRequest::fromGlobals());
+    }
+
     protected function getOptionalRangeComment()
     {
         if ($this->id) {
@@ -671,6 +692,8 @@ class ActivityLogInfo extends HtmlDocument
             return $db->fetchOne(
                 $db->select()
                     ->from('director_activity_log_remark', 'remark')
+                    // A remark on one entry is its note, shown on its own
+                    ->where('first_related_activity < last_related_activity')
                     ->where('first_related_activity <= ?', $this->id)
                     ->where('last_related_activity >= ?', $this->id)
             );

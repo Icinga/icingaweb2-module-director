@@ -1426,6 +1426,16 @@ table.activity-log {
         width:10%;
     }
 
+    // Long notes are cut after two lines, the full text is in the tooltip
+    div.activity-note {
+        color: @gray;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
     tr td:first-child {
         padding-left: 2em;
         &::before {
@@ -1536,6 +1546,11 @@ table.activity-log {
 table.activity-log.pdf-export {
     td {
       max-height: none;
+    }
+
+    div.activity-note {
+      display: block;
+      overflow: visible;
     }
 
     div.range-comment-container {

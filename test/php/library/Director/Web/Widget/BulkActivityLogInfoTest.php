@@ -112,7 +112,7 @@ class BulkActivityLogInfoTest extends BaseTestCase
     }
 
     /**
-     * Render the widget without the restore form, it needs a real request
+     * Render the widget without the forms, they need a real request
      *
      * @param int[] $ids
      */
@@ -122,6 +122,11 @@ class BulkActivityLogInfoTest extends BaseTestCase
             protected function createRestoreForm(array $restoreItems)
             {
                 return 'restore-form-placeholder';
+            }
+
+            protected function createNoteForm(array $ids)
+            {
+                return 'note-form-placeholder';
             }
         })->render();
     }

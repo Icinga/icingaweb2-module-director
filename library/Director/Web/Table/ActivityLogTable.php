@@ -36,6 +36,9 @@ class ActivityLogTable extends IntlZfQueryBasedTable
 
     protected $ranges = [];
 
+    /** @var array<int, string> Notes on single entries, by entry id */
+    protected $notes = [];
+
     /** @var ?object */
     protected $currentRange = null;
     /** @var ?HtmlElement */
@@ -90,8 +93,17 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         $this->ranges = $db->fetchAll(
             $db->select()
                 ->from('director_activity_log_remark')
+                // A remark on one entry is its note, shown under the entry
+                ->where('first_related_activity < last_related_activity')
                 ->where('first_related_activity <= ?', $last)
                 ->where('last_related_activity >= ?', $first)
+        );
+        $this->notes = $db->fetchPairs(
+            $db->select()
+                ->from('director_activity_log_remark', ['first_related_activity', 'remark'])
+                ->where('first_related_activity = last_related_activity')
+                ->where('first_related_activity >= ?', $first)
+                ->where('first_related_activity <= ?', $last)
         );
 
         return $rows;
@@ -109,9 +121,12 @@ class ActivityLogTable extends IntlZfQueryBasedTable
             $action .= 'deployed';
         }
 
-        $columns = [
-            $this::td($this->makeLink($row))->setSeparator(' '),
-        ];
+        $cell = $this::td($this->makeLink($row))->setSeparator(' ');
+        if (isset($this->notes[$row->id])) {
+            $cell->add($this->makeNote($this->notes[$row->id]));
+        }
+
+        $columns = [$cell];
         if (! $this->hasObjectFilter) {
             $columns[] = $this->makeRangeInfo($row->id);
         }
@@ -227,6 +242,11 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         }
 
         return null;
+    }
+
+    protected function makeNote(string $note): HtmlElement
+    {
+        return Html::tag('div', ['class' => 'activity-note', 'title' => $note], $note);
     }
 
     protected function makeLink($row)
