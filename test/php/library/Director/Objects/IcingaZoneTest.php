@@ -5,24 +5,16 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Test\BaseTestCase;
-use ReflectionProperty;
 
 /**
- * Zone hierarchy validation and recovery through the branch-aware loader
+ * Zone hierarchy validation and recovery
  */
 class IcingaZoneTest extends BaseTestCase
 {
-    private ?ReflectionProperty $objectStoreProperty = null;
-
-    private ?DbObjectStore $originalObjectStore = null;
-
     private bool $transactionStarted = false;
 
     public function setUp(): void
@@ -30,14 +22,8 @@ class IcingaZoneTest extends BaseTestCase
         parent::setUp();
         $this->skipForMissingDb();
 
-        $db = $this->getDb();
-        $db->getDbAdapter()->beginTransaction();
+        $this->getDb()->getDbAdapter()->beginTransaction();
         $this->transactionStarted = true;
-
-        // The public setter cannot restore the default null store.
-        $this->objectStoreProperty = new ReflectionProperty(DbObject::class, 'dbObjectStore');
-        $this->originalObjectStore = $this->objectStoreProperty->getValue();
-        DbObject::setDbObjectStore(new DbObjectStore($db, new Branch()));
     }
 
     public function tearDown(): void
@@ -47,10 +33,6 @@ class IcingaZoneTest extends BaseTestCase
                 $this->getDb()->getDbAdapter()->rollBack();
             }
         } finally {
-            if ($this->objectStoreProperty !== null) {
-                $this->objectStoreProperty->setValue(null, $this->originalObjectStore);
-            }
-
             parent::tearDown();
         }
     }

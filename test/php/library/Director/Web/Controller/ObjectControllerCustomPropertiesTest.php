@@ -6,8 +6,11 @@
 namespace Tests\Icinga\Module\Director\Web\Controller;
 
 use Icinga\Module\Director\Controllers\HostController;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
+use Icinga\Module\Director\Web\Controller\ActionController;
 use ReflectionClass;
+use ReflectionProperty;
 
 class ObjectControllerCustomPropertiesTest extends BaseTestCase
 {
@@ -51,6 +54,45 @@ class ObjectControllerCustomPropertiesTest extends BaseTestCase
 
         $this->assertFalse($property['allow_removal']);
         $this->assertFalse($property['required']);
+    }
+
+    public function testParentTemplatesAreLoadedByTheirId(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        IcingaHost::create([
+            'object_name' => '___TEST___generic-linux-template',
+            'object_type' => 'template',
+        ], $db)->store();
+
+        $host = IcingaHost::create([
+            'object_name' => '___TEST___web01.example.com',
+            'object_type' => 'object',
+            'imports'     => '___TEST___generic-linux-template',
+        ], $db);
+        $host->store();
+
+        $controller = $this->newController();
+        (new ReflectionProperty(ActionController::class, 'db'))->setValue($controller, $db);
+
+        $this->assertSame([], self::callMethod($controller, 'getObjectCustomProperties', [$host]));
+    }
+
+    public function tearDown(): void
+    {
+        if ($this->hasDb()) {
+            $db = $this->getDb();
+            foreach (['___TEST___web01.example.com', '___TEST___generic-linux-template'] as $name) {
+                if (IcingaHost::exists($name, $db)) {
+                    IcingaHost::load($name, $db)->delete();
+                }
+            }
+        }
+
+        parent::tearDown();
     }
 
     private function newController(): HostController

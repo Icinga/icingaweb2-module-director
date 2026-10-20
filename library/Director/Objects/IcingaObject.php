@@ -590,7 +590,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         $id = $object->get('id');
-        // Happens when load() get's a branched object, created in the branch
         if ($id !== null) {
             $this->reallySet($name, $id);
             unset($this->unresolvedRelatedProperties[$name]);
@@ -905,7 +904,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
         $id = $this->get('id');
         if ($id === null) {
-            // Do not fail for branches. Should be handled otherwise
             // TODO: throw an Exception, once we are able to deal with this
             return [];
         }
