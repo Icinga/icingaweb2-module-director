@@ -973,9 +973,10 @@ abstract class ObjectController extends ActionController
 
         $uuids = [];
         $db = $this->db();
+        $class = DbObjectTypeRegistry::classByType($type);
         foreach ($parents as $parent) {
             $uuids[] = DbUtil::quoteBinaryCompat(
-                IcingaObject::loadByType($type, $parent, $db)->get('uuid'),
+                $class::loadWithAutoIncId($parent, $db)->get('uuid'),
                 $db->getDbAdapter()
             );
         }
