@@ -26,6 +26,8 @@ use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
+    protected $hasChangeNote = true;
+
     /** @var IcingaHost */
     private $host;
 
@@ -940,6 +942,12 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         $this->redirectOnSuccess($msg);
+    }
+
+    protected function offersChangeNote(): bool
+    {
+        // Override forms save through their own path, no log entry to attach to
+        return ! $this->providesOverrides() && parent::offersChangeNote();
     }
 
     public function onSuccess()

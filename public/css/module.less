@@ -1101,6 +1101,12 @@ form.director-form textarea {
     height: auto;
 }
 
+// The remark field starts as one line and grows with its text
+form.director-form textarea.auto-grow {
+    field-sizing: content;
+    min-height: 0;
+}
+
 form.director-form dd ul.errors {
     list-style-type: none;
     padding-left: 0.3em;

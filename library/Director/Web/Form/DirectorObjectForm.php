@@ -17,6 +17,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -55,6 +56,9 @@ abstract class DirectorObjectForm extends DirectorForm
     protected $className;
 
     protected $deleteButtonName;
+
+    /** @var bool Offer a remark field that is saved with the Activity Log entry */
+    protected $hasChangeNote = false;
 
     protected $displayGroups = [];
 
@@ -552,6 +556,40 @@ abstract class DirectorObjectForm extends DirectorForm
             );
             $this->addDeleteButton();
         }
+
+        $this->addChangeNoteElement();
+    }
+
+    protected function offersChangeNote(): bool
+    {
+        return $this->hasChangeNote;
+    }
+
+    protected function addChangeNoteElement(): void
+    {
+        if (! $this->offersChangeNote()) {
+            return;
+        }
+
+        $this->addElement('textarea', 'change_note', [
+            'label'       => $this->translate('Remark'),
+            'placeholder' => $this->translate('Add a note to your changes'),
+            'rows'        => 1,
+            'class'       => 'auto-grow',
+            'ignore'      => true,
+            'order'       => 990,
+        ]);
+    }
+
+    /**
+     * Let the Activity Log entry of this object carry the remark that was sent
+     */
+    protected function setPendingChangeNote(IcingaObject $object): void
+    {
+        $note = trim((string) $this->getRequest()->getPost('change_note', ''));
+        if ($note !== '') {
+            DirectorActivityLog::setPendingNote($object, $note);
+        }
     }
 
     /**
@@ -720,17 +758,25 @@ abstract class DirectorObjectForm extends DirectorForm
             // saving below overwrites that history
             $removedImportNames = $this->removedImportNames();
 
-            $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
-                $object->store();
+            if ($object instanceof IcingaObject) {
+                $this->setPendingChangeNote($object);
+            }
 
-                if (! empty($removedImportNames)) {
-                    PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
-                        $object,
-                        $removedImportNames,
-                        $this->getDb()
-                    );
-                }
-            });
+            try {
+                $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
+                    $object->store();
+
+                    if (! empty($removedImportNames)) {
+                        PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
+                            $object,
+                            $removedImportNames,
+                            $this->getDb()
+                        );
+                    }
+                });
+            } finally {
+                DirectorActivityLog::clearPendingNote();
+            }
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -973,9 +1019,18 @@ abstract class DirectorObjectForm extends DirectorForm
             );
         }
 
-        if ($object->delete()) {
-            $this->setSuccessUrl($url);
+        if ($object instanceof IcingaObject) {
+            $this->setPendingChangeNote($object);
         }
+
+        try {
+            if ($object->delete()) {
+                $this->setSuccessUrl($url);
+            }
+        } finally {
+            DirectorActivityLog::clearPendingNote();
+        }
+
         $this->redirectOnSuccess($msg);
     }
 

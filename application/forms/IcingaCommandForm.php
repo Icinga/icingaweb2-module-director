@@ -9,6 +9,8 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaCommandForm extends DirectorObjectForm
 {
+    protected $hasChangeNote = true;
+
     public function setup()
     {
         $this->addObjectTypeElement();
