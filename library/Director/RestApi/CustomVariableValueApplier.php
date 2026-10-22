@@ -57,7 +57,8 @@ class CustomVariableValueApplier
         // database there is no way to recover what they used to be
         $oldVars = $this->plainVars($objectVars->getOriginalVars());
         $wipeValuesInDb = $request->method === 'PUT' && $object->get('id');
-        // only templates allow attach/detach, and only for types that support it at all
+        // Only templates get their attachments replaced by a PUT, and only for types that
+        // support it at all. A command can attach here too, but never detaches.
         $wipePropertyAttachmentsInDb = $wipeValuesInDb
             && $request->actionName === 'variables'
             && $object->isTemplate()
@@ -245,7 +246,7 @@ class CustomVariableValueApplier
             ));
         }
 
-        if (! $object->isTemplate()) {
+        if (! $object->definesCustomProperties()) {
             throw new NotFoundError(sprintf(
                 'The custom variable %s should be first added to one of the imported templates for this object',
                 $key
@@ -254,7 +255,10 @@ class CustomVariableValueApplier
 
         if ($request->method === 'POST') {
             throw new NotFoundError(sprintf(
-                'The custom variable %s should be first added to the template',
+                $object->isTemplate()
+                    ? 'The custom variable %s should be first added to the template'
+                    : 'The custom variable %s should be first added to the command'
+                        . ' with a PUT request or on its Custom Variables tab',
                 $key
             ));
         }
