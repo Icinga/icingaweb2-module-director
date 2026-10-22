@@ -46,6 +46,9 @@ class DictionaryItem extends FieldsetElement
     /** @var bool Whether a removable item offers the Required toggle */
     private bool $allowRequiredToggle = true;
 
+    /** @var bool Whether the item offers an input for its value */
+    private bool $showValue = true;
+
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->fields = $items;
@@ -189,6 +192,10 @@ class DictionaryItem extends FieldsetElement
                 'disabled' => true,
                 'ignore' => true,
             ]);
+        }
+
+        if (! $this->showValue) {
+            return;
         }
 
         // Pass down this item's own stored value, so each child gets its current value
@@ -754,6 +761,20 @@ class DictionaryItem extends FieldsetElement
     }
 
     /**
+     * Set whether the item offers an input for its value
+     *
+     * @param bool $show
+     *
+     * @return $this
+     */
+    public function setShowValue(bool $show = true): static
+    {
+        $this->showValue = $show;
+
+        return $this;
+    }
+
+    /**
      * Whether this item's own value is unchanged from what it started with
      *
      * Lets a parent fixed-array/fixed-dictionary tell an untouched child from an
@@ -802,6 +823,11 @@ class DictionaryItem extends FieldsetElement
     public function getItem(bool $applyUnchangedDefaults = true): array
     {
         $values = ['name' => $this->getElement('name')->getValue()];
+        if (! $this->showValue) {
+            // No input was rendered, so there is nothing to read back
+            return $values;
+        }
+
         $itemValue = $this->getElement('var');
         if ($itemValue instanceof NestedDictionary or $itemValue instanceof Dictionary) {
             // Fixed-array/fixed-dictionary is all or nothing, one edited child rewrites

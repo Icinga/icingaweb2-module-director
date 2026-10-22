@@ -23,6 +23,9 @@ class Dictionary extends FieldsetElement
     /** @var bool Whether removable items offer the Required toggle */
     protected bool $allowRequiredToggle = true;
 
+    /** @var bool Whether items offer an input for their value */
+    protected bool $showValues = true;
+
     /** @var bool Whether the dictionary is an array */
     protected bool $isArray = false;
 
@@ -60,6 +63,20 @@ class Dictionary extends FieldsetElement
     public function setAllowRequiredToggle(bool $allow = true): static
     {
         $this->allowRequiredToggle = $allow;
+
+        return $this;
+    }
+
+    /**
+     * Set if items offer an input for their value
+     *
+     * @param bool $show
+     *
+     * @return $this
+     */
+    public function setShowValues(bool $show = true): static
+    {
+        $this->showValues = $show;
 
         return $this;
     }
@@ -146,7 +163,8 @@ class Dictionary extends FieldsetElement
             }
 
             $element = (new DictionaryItem((string) $count, $item))
-                ->setAllowRequiredToggle($this->allowRequiredToggle);
+                ->setAllowRequiredToggle($this->allowRequiredToggle)
+                ->setShowValue($this->showValues);
 
             // Only allow removal of items if the dictionary allows it and the item allows it
             if (
