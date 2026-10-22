@@ -35,4 +35,30 @@ class ArrayElementTest extends TestCase
 
         $this->assertSame(['New York', 'Remote'], $element->getValue());
     }
+
+    public function testInheritedPlaceholderShowsWhileThereAreNoOwnValues(): void
+    {
+        $element = (new ArrayElement('locations'))->setPlaceHolder('Berlin (Inherited from office-template)');
+
+        $this->assertStringStartsWith(
+            'Berlin (Inherited from office-template). ',
+            $this->renderedPlaceholder($element)
+        );
+    }
+
+    public function testInheritedPlaceholderDisappearsOnceOwnValuesAreSet(): void
+    {
+        $element = (new ArrayElement('locations'))->setPlaceHolder('Berlin (Inherited from office-template)');
+        $element->setValue(['Hamburg']);
+
+        $this->assertStringNotContainsString('Inherited from', $this->renderedPlaceholder($element));
+    }
+
+    private function renderedPlaceholder(ArrayElement $element): string
+    {
+        // The placeholder is worked out while rendering, so read it from the html
+        preg_match('/placeholder="([^"]*)"/', $element->render(), $matches);
+
+        return html_entity_decode($matches[1] ?? '');
+    }
 }
