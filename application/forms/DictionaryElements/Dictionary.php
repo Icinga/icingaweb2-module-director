@@ -20,6 +20,9 @@ class Dictionary extends FieldsetElement
     /** @var bool Whether to allow removal of item */
     protected bool $allowItemRemoval = false;
 
+    /** @var bool Whether removable items offer the Required toggle */
+    protected bool $allowRequiredToggle = true;
+
     /** @var bool Whether the dictionary is an array */
     protected bool $isArray = false;
 
@@ -43,6 +46,20 @@ class Dictionary extends FieldsetElement
     public function setAllowItemRemoval(bool $allow = false): static
     {
         $this->allowItemRemoval = $allow;
+
+        return $this;
+    }
+
+    /**
+     * Set if removable items offer the Required toggle
+     *
+     * @param bool $allow
+     *
+     * @return $this
+     */
+    public function setAllowRequiredToggle(bool $allow = true): static
+    {
+        $this->allowRequiredToggle = $allow;
 
         return $this;
     }
@@ -128,7 +145,8 @@ class Dictionary extends FieldsetElement
                 $item['parent_uuid'] = DbUtil::binaryResult($item['parent_uuid']);
             }
 
-            $element = new DictionaryItem((string) $count, $item);
+            $element = (new DictionaryItem((string) $count, $item))
+                ->setAllowRequiredToggle($this->allowRequiredToggle);
 
             // Only allow removal of items if the dictionary allows it and the item allows it
             if (

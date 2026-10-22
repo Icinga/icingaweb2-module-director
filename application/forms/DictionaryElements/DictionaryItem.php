@@ -43,6 +43,9 @@ class DictionaryItem extends FieldsetElement
     /** @var ?FormElement Remove button */
     private ?FormElement $removeButton = null;
 
+    /** @var bool Whether a removable item offers the Required toggle */
+    private bool $allowRequiredToggle = true;
+
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->fields = $items;
@@ -148,11 +151,13 @@ class DictionaryItem extends FieldsetElement
 
         if ($this->removeButton !== null) {
             $this->addAttributes(['class' => ['removable']]);
-            $this->addElement('checkbox', 'item_required_' . $this->getName(), [
-                'label' => $this->translate('Required in inheriting objects'),
-                'class' => 'item-required-checkbox',
-                'value' => ($this->fields['required_current'] ?? false) ? 'y' : 'n'
-            ]);
+            if ($this->allowRequiredToggle) {
+                $this->addElement('checkbox', 'item_required_' . $this->getName(), [
+                    'label' => $this->translate('Required in inheriting objects'),
+                    'class' => 'item-required-checkbox',
+                    'value' => ($this->fields['required_current'] ?? false) ? 'y' : 'n'
+                ]);
+            }
 
             if (! $isTopLevel) {
                 $this->addHtml(new HtmlElement('div', null, $this->removeButton));
@@ -730,6 +735,20 @@ class DictionaryItem extends FieldsetElement
     public function setRemoveButton(?FormElement $removeButton): static
     {
         $this->removeButton = $removeButton;
+
+        return $this;
+    }
+
+    /**
+     * Set whether a removable item offers the Required toggle
+     *
+     * @param bool $allow
+     *
+     * @return $this
+     */
+    public function setAllowRequiredToggle(bool $allow = true): static
+    {
+        $this->allowRequiredToggle = $allow;
 
         return $this;
     }
