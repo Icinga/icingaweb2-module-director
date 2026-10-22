@@ -12,7 +12,9 @@ use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
 use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -27,6 +29,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
     private const PREFIX = '___TEST___';
     private const TEMPLATE_NAME = self::PREFIX . 'applier-host';
     private const CONCRETE_HOST_NAME = self::PREFIX . 'applier-host-concrete';
+    private const COMMAND_NAME = self::PREFIX . 'check_backup';
     private const ENV_KEY = self::PREFIX . 'applier_env';
     private const MYSQL_KEY = self::PREFIX . 'applier_mysql';
     private const DATALIST_KEY = self::PREFIX . 'applier_env_choice';
@@ -571,6 +574,139 @@ class CustomVariableValueApplierTest extends BaseTestCase
         ));
     }
 
+    public function testPostOnATemplateNamesTheTemplateWhenThePropertyIsNotAttached(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $this->assertPostIsRejected(
+            $db,
+            $this->createTemplate($db),
+            'The custom variable ' . self::ENV_KEY . ' should be first added to the template'
+        );
+    }
+
+    public function testPostOnACommandTemplateStillNamesTheTemplate(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $this->assertPostIsRejected(
+            $db,
+            $this->createCommand($db, 'template'),
+            'The custom variable ' . self::ENV_KEY . ' should be first added to the template'
+        );
+    }
+
+    public function testPostOnACommandPointsToPutWhenThePropertyIsNotAttached(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $this->assertPostIsRejected(
+            $db,
+            $this->createCommand($db, 'object'),
+            'The custom variable ' . self::ENV_KEY
+            . ' should be first added to the command with a PUT request or on its Custom Variables tab'
+        );
+    }
+
+    public function testPostOnAnExternalCommandPointsToPutWhenThePropertyIsNotAttached(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $this->assertPostIsRejected(
+            $db,
+            $this->createCommand($db, 'external_object'),
+            'The custom variable ' . self::ENV_KEY
+            . ' should be first added to the command with a PUT request or on its Custom Variables tab'
+        );
+    }
+
+    public function testPutOnACommandAttachesNewProperties(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->assertPutAttachesPropertyOnCommand($this->getDb(), 'object');
+    }
+
+    public function testPutOnAnExternalCommandAttachesNewProperties(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->assertPutAttachesPropertyOnCommand($this->getDb(), 'external_object');
+    }
+
+    public function testPutOnAnExternalCommandReplacesValuesButKeepsAttachments(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+        $command = $this->createCommand($db, 'external_object');
+        foreach ([self::ENV_KEY, self::MYSQL_KEY] as $key) {
+            $property = DirectorProperty::create([
+                'uuid'       => Uuid::uuid4()->getBytes(),
+                'key_name'   => $key,
+                'value_type' => 'string',
+                'label'      => $key,
+            ], $db);
+            $property->store();
+            $dba->insert('icinga_command_property', [
+                'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
+                'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+                'required'      => 'n',
+            ]);
+        }
+
+        $command->vars()->set(self::MYSQL_KEY, 'db-primary');
+        $command->store($db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $command,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $attached = $dba->fetchCol(
+            $dba->select()
+                ->from(['icp' => 'icinga_command_property'], [])
+                ->join(['dp' => 'director_property'], 'dp.uuid = icp.property_uuid', ['dp.key_name'])
+                ->where('icp.command_uuid = ?', DbUtil::quoteBinaryCompat($command->get('uuid'), $dba))
+                ->order('dp.key_name')
+        );
+        $this->assertSame(
+            [self::ENV_KEY, self::MYSQL_KEY],
+            $attached,
+            'A PUT must not detach a variable that is left out of the body'
+        );
+
+        $vars = IcingaCommand::load(self::COMMAND_NAME, $db)->getVars();
+        $this->assertSame('production', $vars->{self::ENV_KEY});
+        $this->assertFalse(isset($vars->{self::MYSQL_KEY}), 'A PUT still replaces the values');
+    }
+
     public function testDetachingATemplatePropertyClearsAnImportingHostsLocalOverride(): void
     {
         if ($this->skipForMissingDb()) {
@@ -715,6 +851,74 @@ class CustomVariableValueApplierTest extends BaseTestCase
         return $host;
     }
 
+    private function assertPutAttachesPropertyOnCommand($db, string $objectType): void
+    {
+        $command = $this->createCommand($db, $objectType);
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::ENV_KEY,
+            'value_type' => 'string',
+            'label'      => 'Environment',
+        ], $db)->store();
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $command,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $dba = $db->getDbAdapter();
+        $required = $dba->fetchOne(
+            $dba->select()
+                ->from(['icp' => 'icinga_command_property'], ['required'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = icp.property_uuid', [])
+                ->where('dp.key_name = ?', self::ENV_KEY)
+                ->where(
+                    'icp.command_uuid = ?',
+                    DbUtil::quoteBinaryCompat($command->get('uuid'), $dba)
+                )
+        );
+
+        $this->assertEquals('n', $required, 'The command should have the property attached');
+    }
+
+    private function assertPostIsRejected($db, IcingaObject $object, string $expectedMessage): void
+    {
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::ENV_KEY,
+            'value_type' => 'string',
+            'label'      => 'Environment',
+        ], $db)->store();
+
+        $this->expectException(NotFoundError::class);
+        $this->expectExceptionMessage($expectedMessage);
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $object,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'POST',
+            false
+        ));
+    }
+
+    private function createCommand($db, string $objectType): IcingaCommand
+    {
+        if (IcingaCommand::exists(self::COMMAND_NAME, $db)) {
+            IcingaCommand::load(self::COMMAND_NAME, $db)->delete();
+        }
+
+        $command = IcingaCommand::create([
+            'object_name' => self::COMMAND_NAME,
+            'object_type' => $objectType,
+        ]);
+        $command->store($db);
+
+        return $command;
+    }
+
     private function createConcreteHost($db): IcingaHost
     {
         if (IcingaHost::exists(self::CONCRETE_HOST_NAME, $db)) {
@@ -795,6 +999,10 @@ class CustomVariableValueApplierTest extends BaseTestCase
                     );
                     $host->delete();
                 }
+            }
+
+            if (IcingaCommand::exists(self::COMMAND_NAME, $db)) {
+                IcingaCommand::load(self::COMMAND_NAME, $db)->delete();
             }
 
             $dba->delete(
