@@ -395,6 +395,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
+     * Whether custom properties can be attached to this object directly
+     *
+     * @return bool
+     */
+    public function definesCustomProperties(): bool
+    {
+        return $this->supportsCustomProperties() && $this->isTemplate();
+    }
+
+    /**
      * Whether there exist Groups for this object type
      *
      * @return bool

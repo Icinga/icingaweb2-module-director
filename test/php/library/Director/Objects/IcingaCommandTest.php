@@ -177,6 +177,18 @@ class IcingaCommandTest extends BaseTestCase
         );
     }
 
+    public function testEveryCommandObjectTypeDefinesCustomProperties(): void
+    {
+        foreach (['object', 'template', 'external_object'] as $type) {
+            $command = IcingaCommand::create([
+                'object_name' => 'check_backup',
+                'object_type' => $type,
+            ]);
+
+            $this->assertTrue($command->definesCustomProperties(), $type);
+        }
+    }
+
     public function testSimpleSetIfIsRendered()
     {
         $command = $this->command();
