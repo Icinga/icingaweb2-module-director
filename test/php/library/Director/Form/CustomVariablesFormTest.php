@@ -9,6 +9,7 @@ use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -65,6 +66,48 @@ class CustomVariablesFormTest extends BaseTestCase
 
         $method->invoke($form);
         $this->addToAssertionCount(1);
+    }
+
+    public function testAttachingNewPropertyToNonTemplateCommandIsAllowedForAdmin(): void
+    {
+        $command = IcingaCommand::create([
+            'object_name' => 'check_backup',
+            'object_type' => 'object',
+        ]);
+
+        $form = (new CustomVariablesForm($command))->setIsAdmin(true);
+        $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
+
+        $method->invoke($form);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testAttachingNewPropertyToExternalCommandIsAllowedForAdmin(): void
+    {
+        $command = IcingaCommand::create([
+            'object_name' => 'ping4',
+            'object_type' => 'external_object',
+        ]);
+
+        $form = (new CustomVariablesForm($command))->setIsAdmin(true);
+        $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
+
+        $method->invoke($form);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testAttachingNewPropertyToCommandWithoutAdminThrows(): void
+    {
+        $command = IcingaCommand::create([
+            'object_name' => 'check_backup',
+            'object_type' => 'object',
+        ]);
+
+        $form = new CustomVariablesForm($command);
+        $method = new ReflectionMethod($form, 'assertCanAttachNewVariable');
+
+        $this->expectException(SecurityException::class);
+        $method->invoke($form);
     }
 
     public function testIsValueUnsetTreatsZeroStringAsSet(): void
