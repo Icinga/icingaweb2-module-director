@@ -120,22 +120,25 @@ class CustomVariablesForm extends CompatForm
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         $properties = $this->objectProperties;
-        if ($this->object->isTemplate()) {
-            // Templates define the schema, they don't fill it in, so required never applies here.
-            // required_current keeps the real flag around so the row can still show it as a toggle.
-            foreach ($properties as &$property) {
+        foreach ($properties as &$property) {
+            if ($this->ignoresRequired($property)) {
+                // required_current keeps the real flag around so the row can still show it as a toggle.
                 $property['required_current'] = $property['required'] ?? false;
                 $property['required'] = false;
             }
-
-            unset($property);
         }
+
+        unset($property);
 
         $dictionary = (new Dictionary(
             'properties',
             $properties,
             ['class' => 'no-border']
-        ))->setAllowItemRemoval($this->object->isTemplate());
+        ))->setAllowItemRemoval($this->object->definesCustomProperties())
+            // Nothing enforces it for commands yet, so only templates get the toggle
+            ->setAllowRequiredToggle($this->object->isTemplate())
+            // An external object is never deployed, so a value typed here would go nowhere
+            ->setShowValues(! $this->object->isExternal());
 
         $saveButton = $this->createElement('submit', 'save', [
             'label' => $this->isOverrideServiceVars()
@@ -334,8 +337,8 @@ class CustomVariablesForm extends CompatForm
         /** @var Dictionary $dictionary */
         $dictionary = $this->getElement('properties');
 
-        if ($this->object->isTemplate()) {
-            // Only reachable from a template's own tab, which never enforces required.
+        if ($this->ignoresRequired($propertyData)) {
+            // Only reachable from a tab that attaches the variable itself, which never enforces required.
             $propertyData['required_current'] = $propertyData['required'] ?? false;
             $propertyData['required'] = false;
         }
@@ -352,7 +355,9 @@ class CustomVariablesForm extends CompatForm
         }
 
         $propertyData['uuid'] = DbUtil::binaryResult($propertyData['uuid']);
-        $newItem = new DictionaryItem((string) $index, $propertyData);
+        $newItem = (new DictionaryItem((string) $index, $propertyData))
+            ->setAllowRequiredToggle($this->object->isTemplate())
+            ->setShowValue(! $this->object->isExternal());
 
         $this->decorate($newItem);
         if ($removeButton !== null) {
@@ -405,11 +410,32 @@ class CustomVariablesForm extends CompatForm
     }
 
     /**
+     * Whether the required flag of the given row has to be ignored
+     *
+     * Templates define the schema, they don't fill it in, so required never
+     * applies to them. A command is the same for the variables it attaches
+     * itself, but it still has to fill in what an imported command template
+     * requires.
+     *
+     * @param array $property
+     *
+     * @return bool
+     */
+    private function ignoresRequired(array $property): bool
+    {
+        if ($this->object->isTemplate()) {
+            return true;
+        }
+
+        return $this->object->definesCustomProperties() && ($property['allow_removal'] ?? false);
+    }
+
+    /**
      * Assert that a new custom variable may be attached to $this->object
      *
      * Custom variables are only meant to be attached directly to a
-     * template, and needs director/admin. Some template types, like
-     * service sets, never support attaching one at all.
+     * template or a command, and needs director/admin. Some template
+     * types, like service sets, never support attaching one at all.
      *
      * @return void
      *
@@ -425,9 +451,9 @@ class CustomVariablesForm extends CompatForm
             ));
         }
 
-        if (! $this->object->isTemplate()) {
+        if (! $this->object->definesCustomProperties()) {
             throw new LogicException(sprintf(
-                'Custom Variables can only be attached directly to a template, got %s',
+                'Custom Variables can only be attached directly to a template or a command, got %s',
                 $this->object->getObjectName()
             ));
         }
@@ -550,7 +576,8 @@ class CustomVariablesForm extends CompatForm
                     [
                         $type . '_uuid' => DbUtil::quoteBinaryCompat($this->object->uuid, $db),
                         'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $db),
-                        'required' => ($requiredFlags[$key] ?? ($property['required'] ?? false)) ? 'y' : 'n'
+                        'required' => $this->object->isTemplate()
+                            && ($requiredFlags[$key] ?? ($property['required'] ?? false)) ? 'y' : 'n'
                     ]
                 );
             } elseif (

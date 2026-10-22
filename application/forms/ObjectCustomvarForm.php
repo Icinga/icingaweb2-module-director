@@ -72,12 +72,15 @@ class ObjectCustomvarForm extends CompatForm
 
         $this->addElement($propertyElement);
 
-        $this->addElement('checkbox', 'required', [
-            'label'       => $this->translate('Required'),
-            'description' => $this->translate(
-                'Whether objects using this template must provide a value for this variable'
-            )
-        ]);
+        // Nothing enforces it for commands yet, so only templates get the toggle
+        if ($this->object->isTemplate()) {
+            $this->addElement('checkbox', 'required', [
+                'label'       => $this->translate('Required'),
+                'description' => $this->translate(
+                    'Whether objects using this template must provide a value for this variable'
+                )
+            ]);
+        }
 
         $this->addElement('submit', 'submit', [
             'label' => $this->translate('Add')
