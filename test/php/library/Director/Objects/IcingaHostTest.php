@@ -1145,6 +1145,21 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testOnlyHostTemplatesDefineCustomProperties(): void
+    {
+        $template = IcingaHost::create([
+            'object_name' => 'linux-server',
+            'object_type' => 'template',
+        ]);
+        $object = IcingaHost::create([
+            'object_name' => 'app-server-01',
+            'object_type' => 'object',
+        ]);
+
+        $this->assertTrue($template->definesCustomProperties());
+        $this->assertFalse($object->definesCustomProperties());
+    }
+
     public function testResolvingADescendantDoesNotContaminateAnAncestorsInheritedCache(): void
     {
         if ($this->skipForMissingDb()) {

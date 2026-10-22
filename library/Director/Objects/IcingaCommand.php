@@ -205,6 +205,16 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
     }
 
     /**
+     * Commands don't have to import a template, and external ones can't
+     *
+     * @return bool
+     */
+    public function definesCustomProperties(): bool
+    {
+        return $this->supportsCustomProperties();
+    }
+
+    /**
      * @return bool
      * @throws \Zend_Db_Select_Exception
      */
