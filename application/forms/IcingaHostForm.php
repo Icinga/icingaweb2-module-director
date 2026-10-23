@@ -18,6 +18,8 @@ use gipfl\IcingaWeb2\Link;
 
 class IcingaHostForm extends DirectorObjectForm
 {
+    protected $hasChangeNote = true;
+
     public function setup()
     {
         $this->addObjectTypeElement();

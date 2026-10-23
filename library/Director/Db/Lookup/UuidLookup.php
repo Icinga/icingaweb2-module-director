@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2021 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Director\Db\Branch;
+namespace Icinga\Module\Director\Db\Lookup;
 
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
@@ -24,7 +24,6 @@ class UuidLookup
      */
     public static function findServiceUuid(
         Db $connection,
-        Branch $branch,
         ?string $objectType = null,
         $key = null,
         ?IcingaHost $host = null,
@@ -51,42 +50,20 @@ class UuidLookup
                 $query->where('host_id = ?', $hostId);
             }
         }
-        $uuid = self::fetchOptionalUuid($connection, $query);
 
-        if ($uuid === null && $branch->isBranch()) {
-            // TODO: use different tables?
-            $query = $db->select()
-                ->from('branched_icinga_service', 'uuid')
-                ->where('branch_uuid = ?', $connection->quoteBinary($branch->getUuid()->getBytes()));
-            if ($objectType) {
-                $query->where('object_type = ?', $objectType);
-            }
-            $query = self::addKeyToQuery($connection, $query, $key);
-            if ($host) {
-                // TODO: uuid?
-                $query->where('host = ?', $host->getObjectName());
-            }
-            if ($set) {
-                $query->where('service_set = ?', $set->getObjectName());
-            }
-
-            $uuid = self::fetchOptionalUuid($connection, $query);
-        }
-
-        return $uuid;
+        return self::fetchOptionalUuid($connection, $query);
     }
 
     /**
      * @param int|string|array $key
      * @param string $table
      * @param Db $connection
-     * @param Branch $branch
      * @return UuidInterface
      * @throws NotFoundError
      */
-    public static function requireUuidForKey($key, $table, Db $connection, Branch $branch)
+    public static function requireUuidForKey($key, $table, Db $connection)
     {
-        $uuid = self::findUuidForKey($key, $table, $connection, $branch);
+        $uuid = self::findUuidForKey($key, $table, $connection);
         if ($uuid === null) {
             throw new NotFoundError('No such object available');
         }
@@ -98,25 +75,14 @@ class UuidLookup
      * @param int|string|array $key
      * @param string $table
      * @param Db $connection
-     * @param Branch $branch
      * @return ?UuidInterface
      */
-    public static function findUuidForKey($key, $table, Db $connection, Branch $branch)
+    public static function findUuidForKey($key, $table, Db $connection)
     {
         $db = $connection->getDbAdapter();
         $query = self::addKeyToQuery($connection, $db->select()->from($table, 'uuid'), $key);
-        $uuid = self::fetchOptionalUuid($connection, $query);
-        if ($uuid === null && $branch->isBranch()) {
-            if (is_array($key) && isset($key['host_id'])) {
-                $key['host'] = IcingaHost::loadWithAutoIncId((int) $key['host_id'], $connection)->getObjectName();
-                unset($key['host_id']);
-            }
-            $query = self::addKeyToQuery($connection, $db->select()->from("branched_$table", 'uuid'), $key);
-            $query->where('branch_uuid = ?', $connection->quoteBinary($branch->getUuid()->getBytes()));
-            $uuid = self::fetchOptionalUuid($connection, $query);
-        }
 
-        return $uuid;
+        return self::fetchOptionalUuid($connection, $query);
     }
 
     protected static function addKeyToQuery(Db $connection, $query, $key)

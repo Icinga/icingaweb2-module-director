@@ -98,7 +98,7 @@ class ObjectCustomvarForm extends CompatForm
         $db = $this->db->getDbAdapter();
         $class = DbObjectTypeRegistry::classByType($type);
         foreach ($parents as $parent) {
-            $uuids[] = $class::load($parent, $this->object->getConnection())->get('uuid');
+            $uuids[] = $class::loadWithAutoIncId($parent, $this->object->getConnection())->get('uuid');
         }
 
         $uuids[] = $this->object->get('uuid');

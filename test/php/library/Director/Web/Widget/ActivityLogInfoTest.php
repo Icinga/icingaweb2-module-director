@@ -17,6 +17,10 @@ class ActivityLogInfoTest extends BaseTestCase
 {
     private const HOST_NAME = '___TEST___web01.example.com';
     private const RESTORE_MARKER = 'restore-form-placeholder';
+    private const NOTE_MARKER = 'note-form-placeholder';
+
+    /** @var int|null */
+    private $noteId;
 
     public function testVarsOnlyRestModificationEntryCanBeOpened(): void
     {
@@ -84,8 +88,38 @@ class ActivityLogInfoTest extends BaseTestCase
         $this->assertStringNotContainsString(self::RESTORE_MARKER, $html);
     }
 
+    public function testDetailViewOffersTheNoteFormAndTheEmbeddedViewOnlyShowsTheNote(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createHost($db);
+        $this->noteId = $this->latestEntryId();
+        $db->getDbAdapter()->insert('director_activity_log_remark', [
+            'first_related_activity' => $this->noteId,
+            'last_related_activity'  => $this->noteId,
+            'remark'                 => 'Ticket OPS-123',
+        ]);
+
+        $html = $this->infoFor($this->noteId)->showTab(null)->render();
+        $this->assertStringContainsString(self::NOTE_MARKER, $html);
+
+        $embedded = $this->infoFor($this->noteId)->setEmbedded(true)->showTab(null)->render();
+        $this->assertStringContainsString('Ticket OPS-123', $embedded);
+        $this->assertStringNotContainsString(self::NOTE_MARKER, $embedded);
+    }
+
     protected function tearDown(): void
     {
+        if ($this->hasDb() && $this->noteId !== null) {
+            $this->getDb()->getDbAdapter()->delete(
+                'director_activity_log_remark',
+                ['first_related_activity = ?' => $this->noteId]
+            );
+        }
+
         if ($this->hasDb() && IcingaHost::exists(self::HOST_NAME, $this->getDb())) {
             IcingaHost::load(self::HOST_NAME, $this->getDb())->delete();
         }
@@ -126,6 +160,11 @@ class ActivityLogInfoTest extends BaseTestCase
             protected function getRestoreForm()
             {
                 return $this->marker;
+            }
+
+            protected function getNoteForm(?string $note)
+            {
+                return 'note-form-placeholder';
             }
 
             public function former()

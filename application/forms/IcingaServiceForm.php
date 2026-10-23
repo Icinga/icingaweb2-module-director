@@ -26,6 +26,8 @@ use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
+    protected $hasChangeNote = true;
+
     /** @var IcingaHost */
     private $host;
 
@@ -141,7 +143,6 @@ class IcingaServiceForm extends DirectorObjectForm
             return;
         }
         $hasDeleteButton = false;
-        $isBranch = $this->branch && $this->branch->isBranch();
 
         if ($this->hasBeenBlacklisted()) {
             $this->addHtml(
@@ -149,24 +150,22 @@ class IcingaServiceForm extends DirectorObjectForm
                 ['name' => 'HINT_blacklisted']
             );
             $group = null;
-            if (! $isBranch) {
-                $label = $this->translate('Reactivate');
-                $this->addDeleteButton($label);
+            $label = $this->translate('Reactivate');
+            $this->addDeleteButton($label);
 
-                if (! $this->isBlacklistedInCurrentHost()) {
-                    $this->getElement($label)
-                        ->setAttrib(
-                            'title',
-                            sprintf(
-                                $this->translate('This service is deactivated on host template "%s"'),
-                                $this->getBlacklistedAncestor()->getObjectName()
-                            )
+            if (! $this->isBlacklistedInCurrentHost()) {
+                $this->getElement($label)
+                    ->setAttrib(
+                        'title',
+                        sprintf(
+                            $this->translate('This service is deactivated on host template "%s"'),
+                            $this->getBlacklistedAncestor()->getObjectName()
                         )
-                        ->setAttrib('disabled', true);
-                }
-
-                $hasDeleteButton = true;
+                    )
+                    ->setAttrib('disabled', true);
             }
+
+            $hasDeleteButton = true;
 
             $this->setSubmitLabel(false);
         } else {
@@ -196,10 +195,8 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->setSubmitLabel(false);
             }
 
-            if (! $isBranch) {
-                $this->addDeleteButton($this->translate('Deactivate'));
-                $hasDeleteButton = true;
-            }
+            $this->addDeleteButton($this->translate('Deactivate'));
+            $hasDeleteButton = true;
         }
 
         if (! $this->hasSubmitButton() && $hasDeleteButton) {
@@ -877,10 +874,6 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function enumHostsAndTemplates()
     {
-        if ($this->branch && $this->branch->isBranch()) {
-            return $this->enumHosts();
-        }
-
         return [
             $this->translate('Templates') => $this->enumHostTemplates(),
             $this->translate('Hosts')     => $this->enumHosts(),
@@ -897,9 +890,6 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $db = $this->db->getDbAdapter();
         $table = new ObjectsTableHost($this->db, $this->getAuth());
-        if ($this->branch && $this->branch->isBranch()) {
-            $table->setBranchUuid($this->branch->getUuid());
-        }
         $result = [];
         foreach ($db->fetchAll($table->getQuery()->reset(\Zend_Db_Select::LIMIT_COUNT)) as $row) {
             $result[$row->object_name] = $row->object_name;
@@ -942,7 +932,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->translate($host->getObjectName())
             );
 
-            $this->getDbObjectStore()->store($host);
+            $host->store();
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -952,6 +942,12 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         $this->redirectOnSuccess($msg);
+    }
+
+    protected function offersChangeNote(): bool
+    {
+        // Override forms save through their own path, no log entry to attach to
+        return ! $this->providesOverrides() && parent::offersChangeNote();
     }
 
     public function onSuccess()

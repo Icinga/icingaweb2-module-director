@@ -1101,6 +1101,12 @@ form.director-form textarea {
     height: auto;
 }
 
+// The remark field starts as one line and grows with its text
+form.director-form textarea.auto-grow {
+    field-sizing: content;
+    min-height: 0;
+}
+
 form.director-form dd ul.errors {
     list-style-type: none;
     padding-left: 0.3em;
@@ -1367,6 +1373,51 @@ th.table-header-day {
   text-align: right;
 }
 
+// Green for created, amber for modified, red for deleted
+@activity-created: @color-ok;
+@activity-modified: @color-warning;
+@activity-deleted: @color-critical;
+
+.bulk-activity-summary {
+  margin-bottom: 2em;
+
+  p.activity-counts {
+    margin-bottom: 0.5em;
+
+    strong {
+      margin-right: 1em;
+    }
+  }
+
+  // A restore turns the change around, so a create ends up red and a delete green
+  .activity-badge {
+    display: inline-block;
+    margin-right: 0.5em;
+    padding: 0 0.75em;
+    border: 1px solid @gray-light;
+    border-radius: 1em;
+
+    &.action-create, &.undo-delete {
+      border-color: @activity-created;
+      background-color: fade(@activity-created, 15%);
+    }
+
+    &.action-modify, &.undo-modify {
+      border-color: @activity-modified;
+      background-color: fade(@activity-modified, 15%);
+    }
+
+    &.action-delete, &.undo-create {
+      border-color: @activity-deleted;
+      background-color: fade(@activity-deleted, 15%);
+    }
+
+    &.undo-skipped {
+      background-color: @gray-lighter;
+    }
+  }
+}
+
 table.activity-log {
     td {
       max-height: 2em;
@@ -1379,6 +1430,16 @@ table.activity-log {
         text-align: right;
         white-space: nowrap;
         width:10%;
+    }
+
+    // Long notes are cut after two lines, the full text is in the tooltip
+    div.activity-note {
+        color: @gray;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        word-break: break-word;
     }
 
     tr td:first-child {
@@ -1396,19 +1457,19 @@ table.activity-log {
 
     tr.action-create td:first-child::before {
         // icon-plus
-        color: @color-pending;
+        color: @activity-created;
         content: '\e805';
     }
 
     tr.action-modify td:first-child::before {
         // icon-wrench
-        color: @color-ok;
+        color: @activity-modified;
         content: '\e83d';
     }
 
     tr.action-delete td:first-child::before {
         // icon-cancel
-        color: @color-critical;
+        color: @activity-deleted;
         content: '\e804';
     }
 
@@ -1427,11 +1488,6 @@ table.activity-log {
                 color: @text-color;
             }
         }
-    }
-
-    tr.branched {
-        background-color: @gray-lightest;
-        color: @color-pending;
     }
 
     tr.undeployed td:first-child::before {
@@ -1493,8 +1549,59 @@ table.activity-log {
     }
 }
 
-tr.branch_modified {
-  color: @color-pending;
+table.activity-log.pdf-export {
+    td {
+      max-height: none;
+    }
+
+    div.activity-note {
+      display: block;
+      overflow: visible;
+    }
+
+    div.range-comment-container {
+      position: static;
+      height: auto;
+    }
+
+    a.range-comment {
+      height: auto;
+      overflow: visible;
+    }
+
+    // Every day has its own thead, so only the empty spacer one should repeat
+    // on each page. Otherwise the first day's date shows up on every page.
+    thead {
+      display: table-row-group;
+
+      &:first-of-type {
+        display: table-header-group;
+      }
+    }
+
+    // The fixed page header only gets room from the body on page 1. The
+    // repeating spacer keeps rows clear of it on later pages too. Core's pdf
+    // layout reserves 37px for it on a 9pt (12px) base font.
+    th.pdf-page-spacer {
+      height: (37px / 12px) * 1em;
+      padding: 0;
+      border: 0;
+    }
+}
+
+// Chrome only counts pages inside the page margin
+@page {
+    @bottom-center {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: sans-serif;
+        font-size: 0.9em;
+        color: var(--default-text-color-light, @default-text-color-light);
+    }
+}
+
+// The spacer already reserves that room on page 1
+body:has(table.activity-log.pdf-export) {
+    padding-top: 0;
 }
 
 table.config-diff {
@@ -1905,13 +2012,13 @@ div.exception {
 }
 
 h2.action-create::before {
-  color: @color-pending;
+  color: @activity-created;
 }
 h2.action-modify::before {
-  color: @color-ok;
+  color: @activity-modified;
 }
 h2.action-delete::before {
-  color: @color-critical;
+  color: @activity-deleted;
 }
 
 /* Special components */

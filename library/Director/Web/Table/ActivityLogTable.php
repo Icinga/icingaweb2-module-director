@@ -7,6 +7,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use DateTime;
 use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Util;
 use IntlDateFormatter;
@@ -15,6 +16,8 @@ use ipl\Html\HtmlElement;
 
 class ActivityLogTable extends IntlZfQueryBasedTable
 {
+    use MultiSelect;
+
     protected $filters = [];
 
     protected $lastDeployedId;
@@ -33,6 +36,9 @@ class ActivityLogTable extends IntlZfQueryBasedTable
 
     protected $ranges = [];
 
+    /** @var array<int, string> Notes on single entries, by entry id */
+    protected $notes = [];
+
     /** @var ?object */
     protected $currentRange = null;
     /** @var ?HtmlElement */
@@ -42,6 +48,8 @@ class ActivityLogTable extends IntlZfQueryBasedTable
     protected $continueRange = false;
     protected $currentRow;
 
+    protected $isPdfExport = false;
+
     public function __construct($db)
     {
         parent::__construct($db);
@@ -50,6 +58,20 @@ class ActivityLogTable extends IntlZfQueryBasedTable
     public function assemble()
     {
         $this->getAttributes()->add('class', 'activity-log');
+        if ($this->isPdfExport) {
+            $this->getAttributes()->add('class', 'pdf-export');
+        } elseif (Util::hasPermission(Permission::SHOW_CONFIG)) {
+            // Rows only get a row link with this permission, without it the
+            // remark's href="#" would be used as the row link
+            $this->enableMultiSelect('director/config/activities-bulk', 'director/config/activities', ['id']);
+        }
+    }
+
+    public function setIsPdfExport(bool $isPdfExport)
+    {
+        $this->isPdfExport = $isPdfExport;
+
+        return $this;
     }
 
     public function setLastDeployedId($id)
@@ -71,8 +93,17 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         $this->ranges = $db->fetchAll(
             $db->select()
                 ->from('director_activity_log_remark')
+                // A remark on one entry is its note, shown under the entry
+                ->where('first_related_activity < last_related_activity')
                 ->where('first_related_activity <= ?', $last)
                 ->where('last_related_activity >= ?', $first)
+        );
+        $this->notes = $db->fetchPairs(
+            $db->select()
+                ->from('director_activity_log_remark', ['first_related_activity', 'remark'])
+                ->where('first_related_activity = last_related_activity')
+                ->where('first_related_activity >= ?', $first)
+                ->where('first_related_activity <= ?', $last)
         );
 
         return $rows;
@@ -90,9 +121,12 @@ class ActivityLogTable extends IntlZfQueryBasedTable
             $action .= 'deployed';
         }
 
-        $columns = [
-            $this::td($this->makeLink($row))->setSeparator(' '),
-        ];
+        $cell = $this::td($this->makeLink($row))->setSeparator(' ');
+        if (isset($this->notes[$row->id])) {
+            $cell->add($this->makeNote($this->notes[$row->id]));
+        }
+
+        $columns = [$cell];
         if (! $this->hasObjectFilter) {
             $columns[] = $this->makeRangeInfo($row->id);
         }
@@ -112,6 +146,16 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         $day = $this->getDateFormatter()->format((new DateTime())->setTimestamp($timestamp));
 
         if ($this->lastDay !== $day) {
+            if ($this->isPdfExport && $this->lastDay === null) {
+                // Empty first header, the only one that repeats on every page
+                $this->nextHeader()->add(
+                    $this::th('', [
+                        'colspan' => $this->hasObjectFilter ? 2 : 3,
+                        'class'   => 'pdf-page-spacer'
+                    ])
+                );
+            }
+
             $this->nextHeader()->add(
                 $this::th($day, [
                     'colspan' => $this->hasObjectFilter ? 2 : 3,
@@ -200,6 +244,11 @@ class ActivityLogTable extends IntlZfQueryBasedTable
         return null;
     }
 
+    protected function makeNote(string $note): HtmlElement
+    {
+        return Html::tag('div', ['class' => 'activity-note', 'title' => $note], $note);
+    }
+
     protected function makeLink($row)
     {
         $type = $row->object_type;
@@ -238,7 +287,10 @@ class ActivityLogTable extends IntlZfQueryBasedTable
                     $row->action,
                     'director/config/activity',
                     array_merge(['id' => $row->id], $this->extraParams),
-                    ['title' => $this->translate('Show details related to this change')]
+                    [
+                        'title' => $this->translate('Show details related to this change'),
+                        'class' => 'rowaction',
+                    ]
                 ),
                 str_replace('_', ' ', $type),
                 $object

@@ -312,6 +312,63 @@ class Db extends DbConnection
         return $this->db()->fetchRow($sql);
     }
 
+    /**
+     * Get the notes written for single activity log entries
+     *
+     * A remark that spans several entries is no note, those are left out here.
+     *
+     * @param int[] $ids
+     *
+     * @return array<int, string> The note for each entry that has one
+     */
+    public function fetchActivityLogNotes(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $db = $this->db();
+
+        return $db->fetchPairs(
+            $db->select()
+                ->from('director_activity_log_remark', ['first_related_activity', 'remark'])
+                ->where('first_related_activity = last_related_activity')
+                ->where('first_related_activity IN (?)', $ids)
+        );
+    }
+
+    /**
+     * Save the same note on each entry, an empty note removes it
+     *
+     * Wrap this in a transaction when saving more than one entry.
+     *
+     * @param int[] $ids
+     * @param string $note
+     */
+    public function storeActivityLogNotes(array $ids, string $note): void
+    {
+        $db = $this->db();
+        $existing = $this->fetchActivityLogNotes($ids);
+
+        foreach ($ids as $id) {
+            $where = [
+                'first_related_activity = ?' => $id,
+                'last_related_activity = ?'  => $id,
+            ];
+            if ($note === '') {
+                $db->delete('director_activity_log_remark', $where);
+            } elseif (isset($existing[$id])) {
+                $db->update('director_activity_log_remark', ['remark' => $note], $where);
+            } else {
+                $db->insert('director_activity_log_remark', [
+                    'first_related_activity' => $id,
+                    'last_related_activity'  => $id,
+                    'remark'                 => $note,
+                ]);
+            }
+        }
+    }
+
     public function fetchActivityLogChecksumById($id, $binary = true)
     {
         $sql = sprintf(

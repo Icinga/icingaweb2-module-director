@@ -9,13 +9,10 @@ use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Forms\DirectorJobForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\DirectorJob;
-use Icinga\Module\Director\Web\Controller\BranchHelper;
 use Icinga\Module\Director\Web\Widget\JobDetails;
 
 class JobController extends ActionController
 {
-    use BranchHelper;
-
     /**
      * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
@@ -36,9 +33,6 @@ class JobController extends ActionController
         $this
             ->addSingleTab($this->translate('New Job'))
             ->addTitle($this->translate('Add a new Job'));
-        if ($this->showNotInBranch($this->translate('Creating Jobs'))) {
-            return;
-        }
 
         $this->content()->add(
             DirectorJobForm::load()
@@ -59,9 +53,6 @@ class JobController extends ActionController
             ->addJobTabs($job, 'edit')
             ->addTitle($this->translate('Job: %s'), $job->get('job_name'))
             ->addToBasketLink();
-        if ($this->showNotInBranch($this->translate('Modifying Jobs'))) {
-            return;
-        }
 
         $form = DirectorJobForm::load()
             ->setListUrl('director/jobs')

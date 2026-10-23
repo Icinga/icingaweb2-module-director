@@ -11,6 +11,8 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaServiceSetForm extends DirectorObjectForm
 {
+    protected $hasChangeNote = true;
+
     protected $host;
 
     protected $listUrl = 'director/services/sets';
