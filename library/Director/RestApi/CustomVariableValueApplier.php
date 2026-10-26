@@ -8,6 +8,7 @@ namespace Icinga\Module\Director\RestApi;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueValidator;
+use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
@@ -442,6 +443,11 @@ class CustomVariableValueApplier
         foreach ($db->getDbAdapter()->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
             $row = DbUtil::normalizeRow($row);
             $result[$row['key_name']] = $row;
+        }
+
+        // A variable the check command attaches is reachable too
+        foreach (ObjectCustomPropertySources::commandPropertiesByKey($object, $db) as $key => $row) {
+            $result[$key] ??= $row;
         }
 
         return $result;

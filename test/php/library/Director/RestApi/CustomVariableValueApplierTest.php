@@ -574,6 +574,44 @@ class CustomVariableValueApplierTest extends BaseTestCase
         ));
     }
 
+    public function testPostAcceptsCommandVarOnHostTemplate(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createCommand($db, 'external_object');
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::ENV_KEY,
+            'value_type' => 'string',
+            'label'      => 'Environment',
+        ], $db);
+        $property->store();
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_command_property', [
+            'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+        $host = $this->createTemplate($db);
+        $host->set('check_command', self::COMMAND_NAME);
+        $host->store();
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'POST',
+            false
+        ));
+
+        $var = IcingaHost::load(self::TEMPLATE_NAME, $db)->vars()->get(self::ENV_KEY);
+        $this->assertSame('production', $var->getValue());
+        $this->assertSame($property->get('uuid'), $var->getUuid()->getBytes());
+    }
+
     public function testPostOnATemplateNamesTheTemplateWhenThePropertyIsNotAttached(): void
     {
         if ($this->skipForMissingDb()) {

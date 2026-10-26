@@ -12,19 +12,11 @@ use Ramsey\Uuid\Uuid;
 use Zend_Db;
 
 /**
- * Stamps a property uuid on a synced value when a template the object
- * imports already has that property attached
+ * Links synced values to a property their object can reach through an
+ * imported template or the check command
  *
- * A sync just sets a value by name, it has no idea properties even exist.
- * This checks, for every synced object at once, whether that name is
- * already attached somewhere up its own ancestry, and links the value to
- * it if so, the same way basket restore already does for its own objects.
- *
- * A value already linked from an earlier run never gets re-checked, unless
- * this run actually changed the object's imports. Only then can a name that
- * used to resolve to a property stop doing so, or start resolving to one it
- * didn't reach before, so that is the only time it's worth paying for a
- * full re-check instead of just looking at the still-unlinked values.
+ * A sync sets values by name only. Already linked values are skipped, unless
+ * the sync changed the imports or the check command.
  */
 class ObjectCustomVariablePropertyLinker
 {
@@ -45,8 +37,10 @@ class ObjectCustomVariablePropertyLinker
                 continue;
             }
 
-            $importsChanged = $object->imports()->hasBeenModified();
-            $keys = $importsChanged ? $object->vars()->listKeys() : $object->vars()->listKeysWithoutUuid();
+            // Switching the check command changes which variables the object can reach, like a new import
+            $sourcesChanged = $object->imports()->hasBeenModified()
+                || in_array('check_command_id', $object->listModifiedProperties(), true);
+            $keys = $sourcesChanged ? $object->vars()->listKeys() : $object->vars()->listKeysWithoutUuid();
             if (empty($keys)) {
                 continue;
             }
@@ -101,17 +95,36 @@ class ObjectCustomVariablePropertyLinker
             $attachedIdsByKey[$row['key_name']][(int) $row['attached_id']] = true;
         }
 
+        // Find which of these variables any command has, with one query for the whole batch.
+        // Most synced variables belong to no command, so most objects can skip the command lookup.
+        $commandKeys = array_flip($dba->fetchCol(
+            $dba->select()
+                ->from(['dp' => 'director_property'], ['key_name'])
+                ->join(['icp' => 'icinga_command_property'], 'dp.uuid = icp.property_uuid', [])
+                ->where('dp.key_name IN (?)', array_values($allKeys))
+                ->where('dp.parent_uuid IS NULL')
+        ));
+
         foreach ($entries as [$object, $keys]) {
             $ids = $object->listAncestorIds();
             if ($object->hasBeenLoadedFromDb()) {
                 $ids[] = (int) $object->get('id');
             }
 
+            $commandProperties = null;
             foreach ($keys as $key) {
-                $reachable = isset($uuidsByKey[$key]) && self::isAttachedToAny($attachedIdsByKey[$key], $ids);
+                $uuid = null;
+                if (isset($uuidsByKey[$key]) && self::isAttachedToAny($attachedIdsByKey[$key], $ids)) {
+                    $uuid = $uuidsByKey[$key];
+                } elseif (isset($commandKeys[$key])) {
+                    // Looked up once per object, and only when the templates did not settle the key
+                    $commandProperties ??= ObjectCustomPropertySources::commandPropertiesByKey($object, $db);
+                    $uuid = $commandProperties[$key]['uuid'] ?? null;
+                }
+
                 $currentUuid = $object->vars()->get($key)?->getUuid();
 
-                if (! $reachable) {
+                if ($uuid === null) {
                     if ($currentUuid !== null) {
                         $object->vars()->clearVarUuid($key);
                     }
@@ -119,8 +132,8 @@ class ObjectCustomVariablePropertyLinker
                     continue;
                 }
 
-                if ($currentUuid === null || ! $currentUuid->equals(Uuid::fromBytes($uuidsByKey[$key]))) {
-                    $object->vars()->registerVarUuid($key, Uuid::fromBytes($uuidsByKey[$key]));
+                if ($currentUuid === null || ! $currentUuid->equals(Uuid::fromBytes($uuid))) {
+                    $object->vars()->registerVarUuid($key, Uuid::fromBytes($uuid));
                 }
             }
         }
