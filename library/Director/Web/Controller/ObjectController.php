@@ -11,6 +11,7 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
@@ -1022,26 +1023,29 @@ abstract class ObjectController extends ActionController
             return [];
         }
 
-        $type = $object->getShortTableName();
-        $parents = $object->listAncestorIds();
-
-        $uuids = [];
         $db = $this->db();
-        foreach ($parents as $parent) {
-            $uuids[] = DbUtil::quoteBinaryCompat(
-                IcingaObject::loadByType($type, $parent, $db)->get('uuid'),
-                $db->getDbAdapter()
-            );
+        $objectUuid = $object->get('uuid');
+
+        // The list is in display order, so a position also tells where a section is shown
+        $uuidsByType = [];
+        $sourceByUuid = [];
+        foreach (ObjectCustomPropertySources::for($object, $db) as $position => $source) {
+            $uuidsByType[$source['type']][] = DbUtil::quoteBinaryCompat($source['uuid'], $db->getDbAdapter());
+            $sourceByUuid[$source['uuid']] = $source + ['order' => $position];
         }
 
-        $objectUuid = $object->get('uuid');
-        $uuids[] = DbUtil::quoteBinaryCompat($objectUuid, $db->getDbAdapter());
+        // Hosts and commands have separate ids, so each type is queried on its own tables
+        $properties = [];
+        $attachments = [];
+        foreach ($uuidsByType as $sourceType => $uuids) {
+            foreach ($this->fetchReachableProperties($sourceType, $uuids, $db) as $row) {
+                $properties[$row['uuid']] ??= $row;
+            }
 
-        // a property can be attached more than once, once per ancestor plus maybe the
-        // object itself, so its own row and its attachment rows are fetched separately
-        // and folded together below instead of asking one query to be both at once
-        $properties = $this->fetchReachableProperties($type, $uuids, $db);
-        $attachments = $this->fetchReachableAttachments($type, $uuids, $db);
+            foreach ($this->fetchReachableAttachments($sourceType, $uuids, $db) as $keyName => $rows) {
+                $attachments[$keyName] = array_merge($attachments[$keyName] ?? [], $rows);
+            }
+        }
 
         if ($isOverrideVars) {
             if ($object->isApplyRule()) {
@@ -1055,9 +1059,18 @@ abstract class ObjectController extends ActionController
             $vars = json_decode(json_encode($object->getVars()), true);
         }
 
+        $origins = $isOverrideVars ? null : $object->getOriginsVars();
+
         $result = [];
         foreach ($properties as $row) {
-            $row = $this->resolveEffectiveAttachment($row, $attachments[$row['key_name']] ?? [], $objectUuid);
+            $originName = $origins->{$row['key_name']} ?? null;
+            $row = $this->resolveSection(
+                $row,
+                $attachments[$row['key_name']] ?? [],
+                $sourceByUuid,
+                $objectUuid,
+                is_string($originName) ? $originName : null
+            );
 
             if (isset($vars[$row['key_name']])) {
                 $row['value'] = $vars[$row['key_name']];
@@ -1103,7 +1116,11 @@ abstract class ObjectController extends ActionController
 
             foreach ($addedRows as $row) {
                 $row['allow_removal'] = true;
-                if (! isset($result[$row['key_name']])) {
+                $row['section'] = ['kind' => ObjectCustomPropertySources::OWN, 'name' => '', 'order' => -1];
+
+                // Only a variable the object itself attaches is old. One that is just inherited
+                // still needs its own attachment when it is saved.
+                if (! ($result[$row['key_name']]['allow_removal'] ?? false)) {
                     $row['new'] = true;
                 }
 
@@ -1181,11 +1198,11 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get every attachment row behind the given ancestor/object uuids, grouped by key_name
+     * Get every attachment row behind the given source uuids, grouped by key_name
      *
-     * A property attached through two ancestors, or through an ancestor
-     * and the object itself, ends up with more than one row here. What
-     * that means is decided elsewhere, not by just picking one.
+     * A property attached by two or more sources, such as templates, the
+     * object itself or the command, ends up with more than one row here.
+     * What that means is decided elsewhere, not by just picking one.
      *
      * @param string $type
      * @param string[] $uuids
@@ -1213,6 +1230,58 @@ abstract class ObjectController extends ActionController
         }
 
         return $result;
+    }
+
+    /**
+     * Work out which section a property is shown in
+     *
+     * The object and its templates decide first. The command only gets the row
+     * when none of them attaches the property. It is shown under the command
+     * the object uses, also when only a template of that command attaches it.
+     *
+     * @param array $property
+     * @param array<int, array{uuid: string, required: bool}> $attachments
+     * @param array $sourceByUuid
+     * @param string $objectUuid
+     * @param ?string $originName The template that gives the current value, if there is one
+     *
+     * @return array
+     */
+    private function resolveSection(
+        array $property,
+        array $attachments,
+        array $sourceByUuid,
+        string $objectUuid,
+        ?string $originName
+    ): array {
+        $viaObject = [];
+        $candidates = [];
+        foreach ($attachments as $attachment) {
+            $source = $sourceByUuid[$attachment['uuid']];
+            if ($source['kind'] !== ObjectCustomPropertySources::COMMAND) {
+                $viaObject[] = $attachment;
+                $candidates[] = $source;
+            }
+        }
+
+        if (empty($candidates)) {
+            // Only the command or one of its templates has it, so it can be neither removed nor required from here
+            $property['allow_removal'] = false;
+            $property['required'] = false;
+            $property['section'] = ObjectCustomPropertySources::pickCommandSource($sourceByUuid);
+
+            return $property;
+        }
+
+        // The attachments come back in any order, but the import order decides which template wins
+        usort($candidates, fn(array $a, array $b) => $a['order'] <=> $b['order']);
+
+        // Required is worked out over every attachment of the object and its templates,
+        // also the ones that are not shown, so hiding a copy never makes a variable optional
+        $property = $this->resolveEffectiveAttachment($property, $viaObject, $objectUuid);
+        $property['section'] = ObjectCustomPropertySources::pickSource($candidates, $originName);
+
+        return $property;
     }
 
     /**

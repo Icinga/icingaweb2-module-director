@@ -26,6 +26,7 @@ class CustomVariablesFormTest extends BaseTestCase
     private const DATALIST_HOST_NAME = self::DATALIST_PREFIX . 'cv-form-host';
     private const DATALIST_KEY = self::DATALIST_PREFIX . 'cv_form_env_choice';
     private const DATALIST_NAME = self::DATALIST_PREFIX . 'cv_form_env_list';
+    private const COMMAND_KEY = self::DATALIST_PREFIX . 'cv_form_ping_wrta';
 
     public function testAttachingNewPropertyToNonTemplateThrows(): void
     {
@@ -423,6 +424,43 @@ class CustomVariablesFormTest extends BaseTestCase
         $this->assertSame('prod', $host->vars()->get(self::DATALIST_KEY)->getValue());
     }
 
+    public function testOverridingACommandVarStoresItOnTheHostOnly(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->createDatalistTestHost($db);
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::COMMAND_KEY,
+            'value_type' => 'string',
+        ], $db);
+        $property->store();
+        $service = IcingaService::create([
+            'object_name' => self::DATALIST_PREFIX . 'ping-service',
+            'object_type' => 'template',
+        ], $db);
+
+        // The variable comes from the check command, so the row carries no attachment of its own
+        $form = new CustomVariablesForm($service, [
+            self::COMMAND_KEY => [
+                'uuid'       => $property->get('uuid'),
+                'value_type' => 'string',
+            ],
+        ]);
+        $form->setApplyGenerated($service);
+        $form->setHostForService($host);
+        $form->registerElement(new TestablePropertiesDictionary([self::COMMAND_KEY => '200']));
+
+        self::callMethod($form, 'persistPropertyChanges', []);
+
+        $host = IcingaHost::load(self::DATALIST_HOST_NAME, $db);
+        $this->assertSame('200', $host->getOverriddenServiceVars($service->getObjectName())->{self::COMMAND_KEY});
+        $this->assertNull($host->vars()->get(self::COMMAND_KEY));
+    }
+
     private function createDatalistTestHost($db): IcingaHost
     {
         if (IcingaHost::exists(self::DATALIST_HOST_NAME, $db)) {
@@ -479,6 +517,7 @@ class CustomVariablesFormTest extends BaseTestCase
             }
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::DATALIST_KEY));
+            $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::COMMAND_KEY));
             $dba->delete('director_datalist', $dba->quoteInto('list_name = ?', self::DATALIST_NAME));
         }
 
