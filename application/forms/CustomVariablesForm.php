@@ -140,6 +140,15 @@ class CustomVariablesForm extends CompatForm
             // An external object is never deployed, so a value typed here would go nowhere
             ->setShowValues(! $this->object->isExternal());
 
+        if ($this->object->definesCustomProperties()) {
+            $dictionary->setOwnHeading(sprintf(
+                $this->object->isTemplate()
+                    ? $this->translate('Added in this template "%s"')
+                    : $this->translate('Added in this command "%s"'),
+                $this->object->getObjectName()
+            ));
+        }
+
         $saveButton = $this->createElement('submit', 'save', [
             'label' => $this->isOverrideServiceVars()
                 ? $this->translate('Override Custom Variables')
