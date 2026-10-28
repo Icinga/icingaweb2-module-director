@@ -24,6 +24,7 @@ use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
+use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
@@ -48,6 +49,7 @@ use gipfl\IcingaWeb2\Link;
 use Icinga\Web\Form;
 use Icinga\Web\Notification;
 use ipl\Html\Attributes;
+use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
@@ -367,6 +369,7 @@ abstract class ObjectController extends ActionController
 
         $addedVarUuids = $this->params->getValues('addedVarUuids');
         $requiredVarUuids = $this->params->getValues('requiredVarUuids');
+        $removedKeys = $this->params->getValues('removedKeys');
         $nextSlotIndex = (int) $this->params->shift('nextSlotIndex');
 
         $form = (new ObjectCustomvarForm($this->db(), $object, $addedVarUuids))
@@ -375,6 +378,7 @@ abstract class ObjectController extends ActionController
                 $object,
                 $addedVarUuids,
                 $requiredVarUuids,
+                $removedKeys,
                 $nextSlotIndex
             ) {
                 $newUuid = $form->getValue('property');
@@ -396,6 +400,7 @@ abstract class ObjectController extends ActionController
                 );
                 $redirectUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
                 $redirectUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+                $redirectUrl->getParams()->addValues('removedKeys', $removedKeys);
 
                 $this->redirectNow($redirectUrl);
             })
@@ -470,6 +475,8 @@ abstract class ObjectController extends ActionController
             array_filter(explode(',', $this->getRequest()->getPost('requiredVarUuids', '')))
         ));
 
+        $removedKeys = $this->params->getValues('removedKeys');
+
         $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids, $requiredVarUuids);
 
         $form
@@ -488,7 +495,7 @@ abstract class ObjectController extends ActionController
                     }
 
                     $this->redirectNow(Url::fromRequest()->without(
-                        ['addedVarUuids', 'requiredVarUuids', 'newVarUuid', 'nextSlotIndex']
+                        ['addedVarUuids', 'requiredVarUuids', 'removedKeys', 'newVarUuid', 'nextSlotIndex']
                     ));
                 }
             )->on(
@@ -497,26 +504,18 @@ abstract class ObjectController extends ActionController
                     ServerRequestInterface $request,
                     CustomVariablesForm $form
                 ) use (
-                    $object,
                     $newVarUuid,
                     $nextSlotIndex,
-                    $addedVarUuids,
-                    $requiredVarUuids
+                    $removedKeys
                 ) {
                     if ($newVarUuid === null) {
                         return;
                     }
 
-                    $this->sendNewVarMultipartUpdate(
-                        $object,
-                        $form,
-                        $newVarUuid,
-                        $nextSlotIndex,
-                        $addedVarUuids,
-                        $requiredVarUuids
-                    );
+                    $this->sendNewVarMultipartUpdate($form, $newVarUuid, $nextSlotIndex, $removedKeys);
                     $this->params->remove('addedVarUuids');
                     $this->params->remove('requiredVarUuids');
+                    $this->params->remove('removedKeys');
                     $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
                 }
             )->handleRequest($this->getServerRequest());
@@ -536,6 +535,8 @@ abstract class ObjectController extends ActionController
             );
             $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
             $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+            // Rows removed but not saved yet are gone from the screen, so the rows below moved up
+            $buttonUrl->getParams()->addValues('removedKeys', $form->getElement('properties')->getItemsToRemove());
 
             $this->actions()->add(
                 Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
@@ -562,27 +563,26 @@ abstract class ObjectController extends ActionController
     /**
      * Send a multipart update for the new custom variable.
      *
-     * @param IcingaObject        $object
      * @param CustomVariablesForm $form
      * @param string              $newVarUuid
      * @param int                 $nextSlotIndex
-     * @param array               $addedVarUuids
-     * @param array               $requiredVarUuids
+     * @param string[]            $removedKeys
      *
      * @return void
      */
     private function sendNewVarMultipartUpdate(
-        IcingaObject $object,
         CustomVariablesForm $form,
         string $newVarUuid,
         int $nextSlotIndex,
-        array $addedVarUuids,
-        array $requiredVarUuids = []
+        array $removedKeys = []
     ): void {
         if (! $this->hasPermission(Permission::ADMIN)) {
             return;
         }
 
+        $object = $form->getObject();
+        $addedVarUuids = $form->getAddedVarUuids();
+        $requiredVarUuids = $form->getRequiredVarUuids();
         $type = $object->getShortTableName();
         $db = $this->db()->getDbAdapter();
         $uuidBytes = Uuid::fromString($newVarUuid)->getBytes();
@@ -645,26 +645,25 @@ abstract class ObjectController extends ActionController
             }
         }
 
-        $newItem = $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
-        $newSlotIndex = $nextSlotIndex + 1;
+        $index = $this->getSwappedRowIndex($form, $row['key_name'], $nextSlotIndex, $removedKeys);
+        if ($index !== null) {
+            // Keep the "Inherited from" hint the old row had
+            $inherited = json_decode(json_encode($object->getInheritedVars()), true);
+            if (isset($inherited[$row['key_name']])) {
+                $propertyData['inherited'] = $inherited[$row['key_name']];
+                $propertyData['inherited_from'] = $object->getOriginsVars()->{$row['key_name']};
+            }
+        }
 
-        // Fill the slot with the new DictionaryItem + next empty slot
-        $slotContent = new HtmlDocument();
-        $slotContent->add($newItem);
-        $slotContent->add(Html::tag('div', ['id' => 'new-var-slot-' . $newSlotIndex]));
-        $this->addPart($slotContent, 'new-var-slot-' . $nextSlotIndex);
-
-        // Update item-count input
-        $itemCount = $form->createElement(
-            'hidden',
-            'properties[item-count]',
-            ['value' => $newSlotIndex]
-        );
-
-        $this->addPart(
-            $itemCount,
-            'properties-item-count'
-        );
+        // A swapped row keeps the number of the row it replaces. Save matches rows by number.
+        $newItem = $form->prepareNewPropertyRow($propertyData, $index ?? $nextSlotIndex);
+        if ($index === null) {
+            $newSlotIndex = $nextSlotIndex + 1;
+            $this->appendNewRow($form, $newItem, $nextSlotIndex);
+        } else {
+            $newSlotIndex = $nextSlotIndex;
+            $this->swapInheritedRow($newItem, $row['key_name']);
+        }
 
         // Update Add Custom Variable button with new slot index
         $buttonUrl = Url::fromPath(
@@ -674,6 +673,7 @@ abstract class ObjectController extends ActionController
 
         $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
         $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+        $buttonUrl->getParams()->addValues('removedKeys', $removedKeys);
 
         $this->addPart(
             (new ButtonLink(
@@ -709,6 +709,65 @@ abstract class ObjectController extends ActionController
 
         $requiredUuidsContainer->addHtml($requiredUuidsElement);
         $this->addPart($requiredUuidsContainer, 'required-var-uuids');
+    }
+
+    /**
+     * Fill the free slot with the new row and add an empty slot behind it
+     *
+     * @param CustomVariablesForm $form
+     * @param BaseHtmlElement $newItem
+     * @param int $slotIndex The number of the free slot
+     *
+     * @return void
+     */
+    private function appendNewRow(CustomVariablesForm $form, BaseHtmlElement $newItem, int $slotIndex): void
+    {
+        $slotContent = new HtmlDocument();
+        $slotContent->add($newItem);
+        $slotContent->add(Html::tag('div', ['id' => 'new-var-slot-' . ($slotIndex + 1)]));
+        $this->addPart($slotContent, 'new-var-slot-' . $slotIndex);
+
+        // One more row, so the count goes up
+        $this->addPart(
+            $form->createElement('hidden', 'properties[item-count]', ['value' => $slotIndex + 1]),
+            'properties-item-count'
+        );
+    }
+
+    /**
+     * Move the new row into the own box and clear the inherited row it replaces
+     *
+     * @param BaseHtmlElement $newItem
+     * @param string $key
+     *
+     * @return void
+     */
+    private function swapInheritedRow(BaseHtmlElement $newItem, string $key): void
+    {
+        $this->addPart($newItem, Dictionary::getSwapTargetId($key));
+        $this->addPart(new HtmlDocument(), Dictionary::getInheritedRowId($key));
+    }
+
+    /**
+     * Get the row number of the inherited row a variable is about to replace
+     *
+     * @param CustomVariablesForm $form
+     * @param string $key
+     * @param int $nextSlotIndex The number the next new row gets
+     * @param string[] $removedKeys Variables removed on screen but not saved yet
+     *
+     * @return ?int
+     */
+    private function getSwappedRowIndex(
+        CustomVariablesForm $form,
+        string $key,
+        int $nextSlotIndex,
+        array $removedKeys
+    ): ?int {
+        $index = $form->getPropertyIndex($key, $removedKeys);
+
+        // A brand new variable comes last, so only a number below the next free one was on screen before
+        return $index !== null && $index < $nextSlotIndex ? $index : null;
     }
 
     /**

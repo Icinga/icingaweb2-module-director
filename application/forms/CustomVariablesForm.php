@@ -102,6 +102,36 @@ class CustomVariablesForm extends CompatForm
     }
 
     /**
+     * Get the object the custom variables belong to
+     *
+     * @return IcingaObject
+     */
+    public function getObject(): IcingaObject
+    {
+        return $this->object;
+    }
+
+    /**
+     * Get the custom variable Uuid strings that were newly added to the form
+     *
+     * @return string[]
+     */
+    public function getAddedVarUuids(): array
+    {
+        return $this->addedVarUuids;
+    }
+
+    /**
+     * Get the custom variable Uuid strings that were marked required this session
+     *
+     * @return string[]
+     */
+    public function getRequiredVarUuids(): array
+    {
+        return $this->requiredVarUuids;
+    }
+
+    /**
      * Set whether the current principal has director/admin
      *
      * @param bool $isAdmin
@@ -330,6 +360,32 @@ class CustomVariablesForm extends CompatForm
         $this->populate([
             'properties' => Dictionary::prepare($objectProperties)
         ]);
+    }
+
+    /**
+     * Get the row number the given variable has on screen
+     *
+     * @param string $key
+     * @param string[] $removedKeys Variables removed on screen but not saved yet
+     *
+     * @return ?int
+     */
+    public function getPropertyIndex(string $key, array $removedKeys = []): ?int
+    {
+        $index = 0;
+        foreach (array_keys($this->objectProperties) as $name) {
+            $name = (string) $name;
+            if ($name === $key) {
+                return in_array($key, $removedKeys, true) ? null : $index;
+            }
+
+            // Removed rows leave the screen, so the rows after them move up
+            if (! in_array($name, $removedKeys, true)) {
+                $index++;
+            }
+        }
+
+        return null;
     }
 
     /**

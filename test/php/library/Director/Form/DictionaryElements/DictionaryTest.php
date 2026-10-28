@@ -221,6 +221,39 @@ class DictionaryTest extends BaseTestCase
         $this->assertStringNotContainsString('Added in this template', $html);
     }
 
+    public function testInheritedRowsGetASwapTarget(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $html = $this->render($this->rows(), true, 'Added in this template "linux-web-template"');
+
+        foreach (['ping_wrta', 'os'] as $key) {
+            $this->assertStringContainsString('id="' . Dictionary::getInheritedRowId($key) . '"', $html);
+            $this->assertStringContainsString('id="' . Dictionary::getSwapTargetId($key) . '"', $html);
+            $this->assertLessThan(
+                strpos($html, 'id="' . Dictionary::getInheritedRowId($key) . '"'),
+                strpos($html, 'id="' . Dictionary::getSwapTargetId($key) . '"')
+            );
+        }
+
+        $this->assertStringNotContainsString('id="' . Dictionary::getInheritedRowId('backup_path') . '"', $html);
+        $this->assertStringNotContainsString('id="' . Dictionary::getSwapTargetId('backup_path') . '"', $html);
+    }
+
+    public function testNothingIsWrappedWhenVariablesCannotBeAdded(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $html = $this->render($this->rows());
+
+        $this->assertStringNotContainsString('dictionary-row', $html);
+        $this->assertStringNotContainsString('swap-target', $html);
+    }
+
     public function testRowsWithoutASectionHaveNoBoxes(): void
     {
         if ($this->skipForMissingDb()) {

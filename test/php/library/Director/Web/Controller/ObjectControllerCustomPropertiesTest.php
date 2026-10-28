@@ -9,6 +9,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Controllers\HostController;
 use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -291,6 +292,62 @@ class ObjectControllerCustomPropertiesTest extends BaseTestCase
         $rows = $this->loadRows(self::WEB_TEMPLATE, [$this->propertyUuid(self::OS_KEY)]);
 
         $this->assertArrayNotHasKey('new', $rows[self::OS_KEY]);
+    }
+
+    public function testAddingAnInheritedVariableReusesItsRowNumber(): void
+    {
+        $this->createFixtures();
+
+        $rows = $this->loadRows(self::WEB_TEMPLATE, [$this->propertyUuid(self::OS_KEY)]);
+        $index = $this->swappedRowIndex($rows, self::OS_KEY, count($rows));
+
+        $this->assertSame(array_search(self::OS_KEY, array_keys($rows), true), $index);
+    }
+
+    public function testAddingABrandNewVariableStillTakesTheNextSlot(): void
+    {
+        $this->createFixtures();
+
+        $this->createProperty(self::LOCATION_KEY);
+        $rows = $this->loadRows(self::WEB_TEMPLATE, [$this->propertyUuid(self::LOCATION_KEY)]);
+
+        // The new row is last, and on screen there were the rows before it
+        $this->assertNull($this->swappedRowIndex($rows, self::LOCATION_KEY, count($rows) - 1));
+    }
+
+    public function testSwappingTheLastRowOnScreenIsRecognised(): void
+    {
+        $this->createFixtures();
+
+        $rows = [self::WRTA_KEY => [], self::OS_KEY => []];
+
+        $this->assertSame(1, $this->swappedRowIndex($rows, self::OS_KEY, 2));
+    }
+
+    public function testRemovedRowsMoveTheSwappedRowUp(): void
+    {
+        $this->createFixtures();
+
+        $rows = [self::WRTA_KEY => [], self::OS_KEY => [], self::CPL_KEY => []];
+        $index = $this->swappedRowIndex($rows, self::OS_KEY, 2, [self::WRTA_KEY]);
+
+        $this->assertSame(0, $index);
+    }
+
+    /**
+     * @param array<string, array> $rows
+     * @param string[] $removedKeys
+     */
+    private function swappedRowIndex(array $rows, string $key, int $nextSlotIndex, array $removedKeys = []): ?int
+    {
+        $form = new CustomVariablesForm(IcingaHost::load(self::WEB_TEMPLATE, $this->getDb()), $rows);
+
+        return self::callMethod($this->newController(), 'getSwappedRowIndex', [
+            $form,
+            $key,
+            $nextSlotIndex,
+            $removedKeys,
+        ]);
     }
 
     private function createFixtures(): void

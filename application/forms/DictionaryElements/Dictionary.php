@@ -187,6 +187,7 @@ class Dictionary extends FieldsetElement
         $count = 0;
         $this->sections = [];
         $this->commandRows = [];
+        $swapTargets = [];
         foreach ($this->items as $item) {
             $item['uuid'] = DbUtil::binaryResult($item['uuid']);
             if (isset($item['parent_uuid'])) {
@@ -215,11 +216,30 @@ class Dictionary extends FieldsetElement
                 $this->commandRows[] = $element;
             }
 
-            $this->getSectionBody($section)->addHtml($element);
+            $row = $element;
+            if (
+                $this->allowItemRemoval
+                && $section !== null
+                && $section['kind'] !== ObjectCustomPropertySources::OWN
+            ) {
+                // Adding this variable to the object itself swaps the row for one in the own box
+                $row = Html::tag(
+                    'div',
+                    ['id' => self::getInheritedRowId($item['key_name']), 'class' => 'dictionary-row'],
+                    $element
+                );
+                $swapTargets[] = Html::tag('div', ['id' => self::getSwapTargetId($item['key_name'])]);
+            }
+
+            $this->getSectionBody($section)->addHtml($row);
             $count++;
         }
 
         if ($this->allowItemRemoval) {
+            foreach ($swapTargets as $swapTarget) {
+                $this->getSectionBody(null)->addHtml($swapTarget);
+            }
+
             // A new variable belongs to the object itself, so the slot sits in its box
             $newVarSlot = Html::tag('div', ['id' => 'new-var-slot-' . $count]);
             $this->getSectionBody(null)->addHtml($newVarSlot);
@@ -257,6 +277,30 @@ class Dictionary extends FieldsetElement
                 $this->addHtml(new EmptyStateBar($message));
             }
         }
+    }
+
+    /**
+     * Get the id of the wrapper around a row that comes from a template or the command
+     *
+     * @param string $key
+     *
+     * @return string
+     */
+    public static function getInheritedRowId(string $key): string
+    {
+        return 'dictionary-row-' . md5($key);
+    }
+
+    /**
+     * Get the id of the container in the own box that receives the row swapped in
+     *
+     * @param string $key
+     *
+     * @return string
+     */
+    public static function getSwapTargetId(string $key): string
+    {
+        return 'swap-target-' . md5($key);
     }
 
     /**

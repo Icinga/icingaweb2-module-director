@@ -111,6 +111,34 @@ class CustomVariablesFormTest extends BaseTestCase
         $method->invoke($form);
     }
 
+    public function testGetPropertyIndexReturnsTheRowNumberOfAKey(): void
+    {
+        $form = $this->formWithRows();
+
+        $this->assertSame(0, $form->getPropertyIndex('ping_wrta'));
+        $this->assertSame(2, $form->getPropertyIndex('backup_path'));
+    }
+
+    public function testGetPropertyIndexIsNullForAKeyThatIsNotListed(): void
+    {
+        $this->assertNull($this->formWithRows()->getPropertyIndex('location'));
+    }
+
+    public function testGetPropertyIndexSkipsRowsRemovedOnScreen(): void
+    {
+        $form = $this->formWithRows();
+
+        $this->assertSame(1, $form->getPropertyIndex('backup_path', ['ping_wrta']));
+        $this->assertNull($form->getPropertyIndex('ping_wrta', ['ping_wrta']));
+    }
+
+    private function formWithRows(): CustomVariablesForm
+    {
+        $host = IcingaHost::create(['object_name' => 'linux-server', 'object_type' => 'template']);
+
+        return new CustomVariablesForm($host, ['ping_wrta' => [], 'os' => [], 'backup_path' => []]);
+    }
+
     public function testIsValueUnsetTreatsZeroStringAsSet(): void
     {
         $method = new ReflectionMethod(CustomVariablesForm::class, 'isValueUnset');
