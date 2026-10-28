@@ -149,6 +149,9 @@ one accidentally unmasking the other.
 > name in an apply-for macro rule, isn't supported yet. It can render unmasked
 > in Icinga DB. A fix is planned.
 
+A `sensitive` variable that comes from the check command of a host or service
+is masked in Icinga DB Web, and gets its label there, like one on the object.
+
 ##### `fixed-array`
 An ordered list with a predefined structure. Each position has a fixed meaning configured in the property schema. The Icinga 2 config stores this as an array without keys.
 
@@ -323,7 +326,8 @@ like the external ones coming from the ITL, have no template to import. A
 host, service, user or notification that is not a template only lets you
 fill in or override values for properties already attached there or
 inherited from one of its imported templates; it has no `Add Custom
-Variable` action of its own.
+Variable` action of its own. A host or service also gets the properties of
+its check command.
 
 > The `Required` flag is only offered on templates. A command never has to
 > fill in a variable it attached itself, but a command that imports a
@@ -335,17 +339,45 @@ Variable` action of its own.
 > field for the value.
 
 * Custom variables inherited from imported templates are shown and can
-  be overridden on the object itself.
+  be overridden on the object itself. A host or service shows the ones of
+  its check command the same way.
 * `dynamic-dictionary` values are **merged** across the inheritance
   chain rather than overwritten. The rendered config uses `+=`, so a
   child template or the object itself can add further entries without
   losing the ones defined on parent templates.
 
+The `Custom Variables` tab groups variables by where they come from. The
+object's own variables come first, then one box per imported template, and
+the check command of a host or service last, in a box that starts folded.
+That box holds the variables of the command and of the command templates it
+imports. They can't be removed or marked required from the host or service.
+
+A variable that comes from more than one place is listed once. The object's
+own attachment wins, then the template that gives the value, then the
+template imported last. The command only gets the variable when neither
+the object nor one of its templates attaches it.
+
+On a command, the commands it imports get a box each. A command template is
+headed `Added by template`, any other command `Added by command`.
+
+You can also add a variable that is already inherited. It then moves into
+the object's own box, and removing it puts it back where it came from.
+
+To change the variables of a service for one host only, open the service
+from the `Services` tab of that host. A service inherited from a host
+template opens a form with the same boxes as the service's own tab,
+including the box of its check command. It only lets you override values
+with `Override Custom Variables`, you can't add or remove a variable there.
+A service that still gets its variables from the deprecated `Data fields` is
+listed a second time, under `Inherited from <template> (referencing
+deprecated Datafields)`. Use that link to override those values.
+
 Removing an imported template can also remove a value that only got there
 because of it. If an object had overridden a value it inherited from a
 template, and that template is no longer imported (directly or through
 another template), the leftover value is removed too, unless some other
-still-imported template provides the same property. In the UI, removing a
+still-imported template provides the same property, or the check command of
+the host or service still does. In the UI, removing a
 template that would take a value down with it shows a warning naming the
 affected variables and asks for confirmation before saving; the REST API
 applies the same cleanup without asking. Restoring a configuration basket
@@ -370,6 +402,12 @@ whether attached there directly or inherited.
   or is inherited from one of its imported templates.
 * An inherited value already satisfies the check, you don't need to
   repeat it on the object.
+* A requirement set on a template stays in force for everything below it.
+  A child template that attaches the same variable without `Required`
+  doesn't relax it.
+* `Required` on a command, or on a command template, is not enforced on the
+  hosts and services that use the command. It only applies on a command that
+  imports the command template.
 * For `fixed-array` and `fixed-dictionary` properties, an attachment
   whose children are all empty/default (e.g. a blank fixed array) is
   treated as having no value, so the required check still triggers
