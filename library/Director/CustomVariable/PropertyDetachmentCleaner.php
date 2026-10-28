@@ -145,9 +145,9 @@ class PropertyDetachmentCleaner
         // checking against, so force a fresh read
         IcingaTemplateRepository::clear();
         $tree = IcingaTemplateRepository::instanceByType($type, $db)->tree();
-        $result = [];
+        $reachableIdsByHolder = [];
 
-        foreach ($removedRowsByHolderId as $holderId => $removedRows) {
+        foreach (array_keys($removedRowsByHolderId) as $holderId) {
             $isHolderTheObjectItself = $holderId === $objectId;
             $holderAncestorIds = $tree->getAncestorsById($holderId);
 
@@ -159,14 +159,27 @@ class PropertyDetachmentCleaner
             // excludes $object (its attachment row may not be up to date
             // yet) and, pre-save, the ancestors about to be cut off, since
             // the tree here still shows the soon to be dropped import
-            // one query per holder, revisit if that shows up slow at scale
-            $reachableIds = array_values(array_diff(
+            $reachableIdsByHolder[$holderId] = array_values(array_diff(
                 array_merge(array_keys($holderAncestorIds), [$holderId]),
                 array_merge([$objectId], $cutAncestorIds)
             ));
-            $stillReachableUuids = self::propertyUuidsAttachedToIds($reachableIds, $type, $dbAdapter);
-            $orphanedRows = array_diff_key($removedRows, $stillReachableUuids);
+        }
 
+        $attachedByObjectId = self::fetchAttachedUuidsByObject(
+            array_unique(array_merge(...array_values($reachableIdsByHolder))),
+            $type,
+            $quotedPropertyUuids,
+            $db
+        );
+
+        $result = [];
+        foreach ($reachableIdsByHolder as $holderId => $reachableIds) {
+            $stillReachableUuids = [];
+            foreach ($reachableIds as $reachableId) {
+                $stillReachableUuids += $attachedByObjectId[$reachableId] ?? [];
+            }
+
+            $orphanedRows = array_diff_key($removedRowsByHolderId[$holderId], $stillReachableUuids);
             if (! empty($orphanedRows)) {
                 $result[$holderId] = $orphanedRows;
             }
@@ -175,6 +188,46 @@ class PropertyDetachmentCleaner
         // Only hosts and services have a check command
         if ($object->hasRelation('check_command')) {
             return self::dropCoveredByCommand($type, $result, $cutAncestorIds, $db);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Which of the given properties each object has attached, all in one query
+     *
+     * @param int[]    $objectIds
+     * @param string   $type                Short table name, like "host"
+     * @param string[] $quotedPropertyUuids Only these properties are looked at, already quoted
+     * @param Db       $db                  Database connection
+     *
+     * @return array<int, array<string, true>> Keyed by object id, then by the hex of the property uuid
+     */
+    private static function fetchAttachedUuidsByObject(
+        array $objectIds,
+        string $type,
+        array $quotedPropertyUuids,
+        Db $db
+    ): array {
+        if (empty($objectIds)) {
+            return [];
+        }
+
+        $dbAdapter = $db->getDbAdapter();
+        $rows = $dbAdapter->fetchAll(
+            $dbAdapter->select()
+                ->from(['iop' => 'icinga_' . $type . '_property'], ['property_uuid' => 'iop.property_uuid'])
+                ->join(['io' => 'icinga_' . $type], "io.uuid = iop.{$type}_uuid", ['id' => 'io.id'])
+                ->where('io.id IN (?)', $objectIds)
+                ->where('iop.property_uuid IN (?)', $quotedPropertyUuids),
+            [],
+            PDO::FETCH_ASSOC
+        );
+
+        $result = [];
+        foreach ($rows as $row) {
+            $row = DbUtil::normalizeRow($row);
+            $result[(int) $row['id']][bin2hex($row['property_uuid'])] = true;
         }
 
         return $result;
