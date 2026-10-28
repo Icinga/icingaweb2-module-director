@@ -8,6 +8,7 @@ namespace Tests\Icinga\Module\Director\CustomVariable;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
@@ -27,6 +28,9 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
     private const SERVICE_TEMPLATE_TWO_NAME = self::PREFIX . 'import-cleanup-svc-storage';
     private const SERVICE_LEAF_NAME = self::PREFIX . 'import-cleanup-svc-leaf';
     private const CHILD_TEMPLATE_PREFIX = self::PREFIX . 'import-cleanup-child-';
+    private const PING_COMMAND_NAME = self::PREFIX . 'import-cleanup-ping';
+    private const DISK_COMMAND_NAME = self::PREFIX . 'import-cleanup-disk';
+    private const PLUGIN_COMMAND_TEMPLATE_NAME = self::PREFIX . 'import-cleanup-plugin';
 
     public function testValueSurvivesWhenAnotherRemainingImportStillProvidesTheProperty(): void
     {
@@ -601,6 +605,195 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         );
     }
 
+    public function testValueSurvivesWhenTheCheckCommandAttachesIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $template = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $template, $db);
+        $this->attachCommandProperty($property, $this->createCommand(self::PING_COMMAND_NAME, 'object', [], $db), $db);
+
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports([self::TEMPLATE_ONE_NAME]);
+        $leaf->set('check_command', self::PING_COMMAND_NAME);
+        $leaf->store($db);
+        $this->saveRegionValue(IcingaHost::load(self::LEAF_HOST_NAME, $db), $db);
+
+        $this->detachProperty($property, $template, $db);
+        $this->removeStaleValues($property, $template, $db);
+
+        $this->assertEquals(
+            'eu-west',
+            IcingaHost::load(self::LEAF_HOST_NAME, $db)->vars()->get(self::REGION_KEY)?->getValue(),
+            'a value the check command still attaches must not be wiped'
+        );
+    }
+
+    public function testValueIsRemovedWhenTheCheckCommandDoesNotAttachIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $template = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $template, $db);
+        $this->createCommand(self::PING_COMMAND_NAME, 'object', [], $db);
+
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports([self::TEMPLATE_ONE_NAME]);
+        $leaf->set('check_command', self::PING_COMMAND_NAME);
+        $leaf->store($db);
+        $this->saveRegionValue(IcingaHost::load(self::LEAF_HOST_NAME, $db), $db);
+
+        $this->detachProperty($property, $template, $db);
+        $this->removeStaleValues($property, $template, $db);
+
+        $this->assertNull(
+            IcingaHost::load(self::LEAF_HOST_NAME, $db)->vars()->get(self::REGION_KEY),
+            'a command that does not attach the property gives the value no reason to stay'
+        );
+    }
+
+    public function testCommandOfTheLastImportDecidesIfTheValueStays(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateOne = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $templateTwo = $this->createTemplate(self::TEMPLATE_TWO_NAME, $db);
+        $this->attachProperty($property, $templateOne, $db);
+        $this->attachCommandProperty($property, $this->createCommand(self::PING_COMMAND_NAME, 'object', [], $db), $db);
+        $this->createCommand(self::DISK_COMMAND_NAME, 'object', [], $db);
+
+        $templateOne->set('check_command', self::PING_COMMAND_NAME);
+        $templateOne->store($db);
+        $templateTwo->set('check_command', self::DISK_COMMAND_NAME);
+        $templateTwo->store($db);
+
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports([self::TEMPLATE_ONE_NAME, self::TEMPLATE_TWO_NAME]);
+        $leaf->store($db);
+        $this->saveRegionValue(IcingaHost::load(self::LEAF_HOST_NAME, $db), $db);
+
+        $this->detachProperty($property, $templateOne, $db);
+        $this->removeStaleValues($property, $templateOne, $db);
+
+        $this->assertNull(
+            IcingaHost::load(self::LEAF_HOST_NAME, $db)->vars()->get(self::REGION_KEY),
+            'the import listed last wins, and its command does not attach the property'
+        );
+    }
+
+    public function testValueSurvivesWhenACommandTemplateAttachesIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $template = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $template, $db);
+        $commandTemplate = $this->createCommand(self::PLUGIN_COMMAND_TEMPLATE_NAME, 'template', [], $db);
+        $this->attachCommandProperty($property, $commandTemplate, $db);
+        $this->createCommand(self::PING_COMMAND_NAME, 'object', [self::PLUGIN_COMMAND_TEMPLATE_NAME], $db);
+
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports([self::TEMPLATE_ONE_NAME]);
+        $leaf->set('check_command', self::PING_COMMAND_NAME);
+        $leaf->store($db);
+        $this->saveRegionValue(IcingaHost::load(self::LEAF_HOST_NAME, $db), $db);
+
+        $this->detachProperty($property, $template, $db);
+        $this->removeStaleValues($property, $template, $db);
+
+        $this->assertEquals(
+            'eu-west',
+            IcingaHost::load(self::LEAF_HOST_NAME, $db)->vars()->get(self::REGION_KEY)?->getValue(),
+            'a property attached by a template of the command counts for the command too'
+        );
+    }
+
+    public function testTemplateKeepsItsOwnValueWhenItsCheckCommandAttachesIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $template = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $template, $db);
+        $this->attachCommandProperty($property, $this->createCommand(self::PING_COMMAND_NAME, 'object', [], $db), $db);
+        $template->set('check_command', self::PING_COMMAND_NAME);
+        $template->store($db);
+        $this->saveRegionValue(IcingaHost::load(self::TEMPLATE_ONE_NAME, $db), $db);
+
+        $this->detachProperty($property, $template, $db);
+        $this->removeStaleValues($property, $template, $db);
+
+        $this->assertEquals(
+            'eu-west',
+            IcingaHost::load(self::TEMPLATE_ONE_NAME, $db)->vars()->get(self::REGION_KEY)?->getValue(),
+            'the template that loses the attachment keeps a value its own command still attaches'
+        );
+    }
+
+    private function createCommand(string $name, string $objectType, array $imports, $db): IcingaCommand
+    {
+        $command = IcingaCommand::create([
+            'object_name' => $name,
+            'object_type' => $objectType,
+            'command'     => '/usr/lib/nagios/plugins/check_dummy',
+        ], $db);
+        if (! empty($imports)) {
+            $command->setImports($imports);
+        }
+
+        $command->store();
+
+        return $command;
+    }
+
+    private function attachCommandProperty(DirectorProperty $property, IcingaCommand $command, $db): void
+    {
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_command_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+    }
+
+    private function saveRegionValue(IcingaHost $host, $db): void
+    {
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::REGION_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+    }
+
+    private function removeStaleValues(DirectorProperty $property, IcingaHost $template, $db): void
+    {
+        PropertyDetachmentCleaner::removeStaleValues(
+            $template,
+            [DbUtil::quoteBinaryCompat($property->get('uuid'), $db->getDbAdapter())],
+            $db
+        );
+    }
+
     /**
      * Create templates that import the first one, each with its own value
      */
@@ -752,6 +945,27 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
                         )
                     );
                     $host->delete();
+                }
+            }
+
+            // The command imports the command template, so it goes first
+            $commandNames = [
+                self::PING_COMMAND_NAME,
+                self::DISK_COMMAND_NAME,
+                self::PLUGIN_COMMAND_TEMPLATE_NAME,
+            ];
+
+            foreach ($commandNames as $commandName) {
+                if (IcingaCommand::exists($commandName, $db)) {
+                    $command = IcingaCommand::load($commandName, $db);
+                    $dba->delete(
+                        'icinga_command_property',
+                        $dba->quoteInto(
+                            'command_uuid = ?',
+                            DbUtil::quoteBinaryCompat(DbUtil::binaryResult($command->get('uuid')), $dba)
+                        )
+                    );
+                    $command->delete();
                 }
             }
 

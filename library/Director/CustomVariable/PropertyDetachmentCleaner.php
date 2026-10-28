@@ -83,10 +83,10 @@ class PropertyDetachmentCleaner
      * Every holder that would actually lose one of the given properties,
      * mapped to just the rows they'd lose
      *
-     * A holder can still reach a lost property through another ancestor or
-     * its own direct attachment, so each one gets checked before being
-     * included. Shared by the real cleanup and the pre-save preview, so
-     * both always agree on who's affected.
+     * A holder can still reach a lost property through another ancestor,
+     * its own direct attachment or its check command, so each one gets
+     * checked before being included. Shared by the real cleanup and the
+     * pre-save preview, so both always agree on who's affected.
      *
      * @param IcingaObject $object              The object losing these properties
      * @param string[]     $quotedPropertyUuids These uuids, already quoted for use in a query
@@ -172,7 +172,185 @@ class PropertyDetachmentCleaner
             }
         }
 
+        // Only hosts and services have a check command
+        if ($object->hasRelation('check_command')) {
+            return self::dropCoveredByCommand($type, $result, $cutAncestorIds, $db);
+        }
+
         return $result;
+    }
+
+    /**
+     * Drop the rows a holder's check command still attaches
+     *
+     * The templates never see the command, so it gets checked here. A holder
+     * keeps its value when its command, or a command template above it,
+     * attaches the property.
+     *
+     * @param string $type             Short table name, like "host"
+     * @param array  $holders          Rows each holder would lose, keyed by holder id
+     * @param int[]  $removedImportIds Imports about to be dropped
+     * @param Db     $db               Database connection
+     *
+     * @return array<int, array<string, array{uuid: string, varname: string}>>
+     */
+    private static function dropCoveredByCommand(
+        string $type,
+        array $holders,
+        array $removedImportIds,
+        Db $db
+    ): array {
+        if (empty($holders)) {
+            return $holders;
+        }
+
+        $commandIdsByProperty = self::fetchCommandIdsByProperty($holders, $db);
+        if (empty($commandIdsByProperty)) {
+            return $holders;
+        }
+
+        // The check command each host or service ends up with, its own or the one from its imports
+        $checkCommandIdByHolder = self::fetchCheckCommandIds($type, array_keys($holders), $removedImportIds, $db);
+        $commandTree = IcingaTemplateRepository::instanceByType('command', $db)->tree();
+
+        foreach ($holders as $holderId => $rows) {
+            $checkCommandId = $checkCommandIdByHolder[$holderId] ?? null;
+            if ($checkCommandId === null) {
+                continue;
+            }
+
+            $commandAndParentIds = array_merge(
+                [$checkCommandId],
+                array_keys($commandTree->getAncestorsById($checkCommandId))
+            );
+            foreach (array_keys($rows) as $uuidHex) {
+                if (! empty(array_intersect($commandAndParentIds, $commandIdsByProperty[$uuidHex] ?? []))) {
+                    unset($holders[$holderId][$uuidHex]);
+                }
+            }
+
+            if (empty($holders[$holderId])) {
+                unset($holders[$holderId]);
+            }
+        }
+
+        return $holders;
+    }
+
+    /**
+     * Commands that attach the properties the holders would lose, directly
+     *
+     * @param array $holders Rows each holder would lose, keyed by holder id
+     * @param Db    $db      Database connection
+     *
+     * @return array<string, int[]> Command ids, keyed by the hex of the property uuid
+     */
+    private static function fetchCommandIdsByProperty(array $holders, Db $db): array
+    {
+        $propertyUuids = [];
+        foreach ($holders as $rows) {
+            foreach ($rows as $uuidHex => $row) {
+                $propertyUuids[$uuidHex] = $row['uuid'];
+            }
+        }
+
+        $dbAdapter = $db->getDbAdapter();
+        $rows = $dbAdapter->fetchAll(
+            $dbAdapter->select()
+                ->from(['cp' => 'icinga_command_property'], ['property_uuid' => 'cp.property_uuid'])
+                ->join(['c' => 'icinga_command'], 'c.uuid = cp.command_uuid', ['id' => 'c.id'])
+                ->where('cp.property_uuid IN (?)', DbUtil::quoteBinaryCompat(array_values($propertyUuids), $dbAdapter)),
+            [],
+            PDO::FETCH_ASSOC
+        );
+
+        $result = [];
+        foreach ($rows as $row) {
+            $row = DbUtil::normalizeRow($row);
+            $result[bin2hex($row['property_uuid'])][] = (int) $row['id'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * The check command each holder ends up with, worked out from ids only
+     * so the holders don't have to be loaded
+     *
+     * Same rule as for the objects themselves. The holder's own command wins,
+     * otherwise the one from the import listed last that has one.
+     *
+     * @param string $type             Short table name, like "host"
+     * @param int[]  $holderIds
+     * @param int[]  $removedImportIds Imports about to be dropped, their commands don't count
+     * @param Db     $db               Database connection
+     *
+     * @return array<int, ?int> Command ids, keyed by holder id
+     */
+    private static function fetchCheckCommandIds(string $type, array $holderIds, array $removedImportIds, Db $db): array
+    {
+        $dbAdapter = $db->getDbAdapter();
+        $tree = IcingaTemplateRepository::instanceByType($type, $db)->tree();
+        $objectIds = $holderIds;
+        foreach ($holderIds as $holderId) {
+            $objectIds = array_merge($objectIds, array_keys($tree->getAncestorsById($holderId)));
+        }
+
+        $objectIds = array_values(array_unique($objectIds));
+        $ownCommandIds = $dbAdapter->fetchPairs(
+            $dbAdapter->select()
+                ->from('icinga_' . $type, ['id', 'check_command_id'])
+                ->where('id IN (?)', $objectIds)
+        );
+
+        $imports = $dbAdapter->fetchAll(
+            $dbAdapter->select()
+                ->from('icinga_' . $type . '_inheritance', [$type . '_id', 'parent_' . $type . '_id'])
+                ->where($type . '_id IN (?)', $objectIds)
+                ->order('weight'),
+            [],
+            PDO::FETCH_NUM
+        );
+
+        $importIds = [];
+        foreach ($imports as [$childId, $parentId]) {
+            if (! in_array((int) $parentId, $removedImportIds, true)) {
+                $importIds[(int) $childId][] = (int) $parentId;
+            }
+        }
+
+        $result = [];
+        foreach ($holderIds as $holderId) {
+            $result[$holderId] = self::findCheckCommandId($holderId, $ownCommandIds, $importIds);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Own check command of the object, or else the first one found going
+     * through its imports from the last to the first
+     *
+     * @param int               $objectId
+     * @param array<int, ?int>  $ownCommandIds Command ids, keyed by object id
+     * @param array<int, int[]> $importIds     Imported ids in import order, keyed by object id
+     *
+     * @return ?int
+     */
+    private static function findCheckCommandId(int $objectId, array $ownCommandIds, array $importIds): ?int
+    {
+        if (isset($ownCommandIds[$objectId])) {
+            return (int) $ownCommandIds[$objectId];
+        }
+
+        foreach (array_reverse($importIds[$objectId] ?? []) as $importId) {
+            $commandId = self::findCheckCommandId($importId, $ownCommandIds, $importIds);
+            if ($commandId !== null) {
+                return $commandId;
+            }
+        }
+
+        return null;
     }
 
     /**
