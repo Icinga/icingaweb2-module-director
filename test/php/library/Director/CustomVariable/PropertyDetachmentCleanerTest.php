@@ -26,6 +26,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
     private const SERVICE_TEMPLATE_ONE_NAME = self::PREFIX . 'import-cleanup-svc-network';
     private const SERVICE_TEMPLATE_TWO_NAME = self::PREFIX . 'import-cleanup-svc-storage';
     private const SERVICE_LEAF_NAME = self::PREFIX . 'import-cleanup-svc-leaf';
+    private const CHILD_TEMPLATE_PREFIX = self::PREFIX . 'import-cleanup-child-';
 
     public function testValueSurvivesWhenAnotherRemainingImportStillProvidesTheProperty(): void
     {
@@ -561,6 +562,62 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         );
     }
 
+    /**
+     * A template with hundreds of child templates used to run the request out of
+     * memory, so the cleanup has to free memory as it goes.
+     */
+    public function testCleanupFreesMemoryWithManyChildTemplates(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $template = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $template, $db);
+        $this->createChildTemplates($property, 120, $db);
+        $this->detachProperty($property, $template, $db);
+
+        // Switch off the automatic cleanup so only the one in the loop can run
+        gc_collect_cycles();
+        gc_disable();
+        try {
+            $runsBefore = gc_status()['runs'];
+            PropertyDetachmentCleaner::removeStaleValues(
+                $template,
+                [DbUtil::quoteBinaryCompat($property->get('uuid'), $db->getDbAdapter())],
+                $db
+            );
+            $runsDuringCleanup = gc_status()['runs'] - $runsBefore;
+        } finally {
+            gc_enable();
+        }
+
+        $this->assertGreaterThanOrEqual(
+            2,
+            $runsDuringCleanup,
+            'the cleanup should free memory on its own, 120 child templates is more than two batches'
+        );
+    }
+
+    /**
+     * Create templates that import the first one, each with its own value
+     */
+    private function createChildTemplates(DirectorProperty $property, int $count, $db): void
+    {
+        for ($i = 1; $i <= $count; $i++) {
+            $child = IcingaHost::create([
+                'object_name' => self::CHILD_TEMPLATE_PREFIX . $i,
+                'object_type' => 'template',
+            ], $db);
+            $child->setImports([self::TEMPLATE_ONE_NAME]);
+            $child->vars()->set(self::REGION_KEY, 'eu-west-' . $i);
+            $child->vars()->registerVarUuid(self::REGION_KEY, Uuid::fromBytes($property->get('uuid')));
+            $child->store();
+        }
+    }
+
     private function createProperty($db): DirectorProperty
     {
         $property = DirectorProperty::create([
@@ -664,6 +721,16 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         if ($this->hasDb()) {
             $db = $this->getDb();
             $dba = $db->getDbAdapter();
+
+            // The child templates import template one, so they go first
+            $childNames = $dba->fetchCol(
+                $dba->select()
+                    ->from('icinga_host', ['object_name'])
+                    ->where('object_name LIKE ?', self::CHILD_TEMPLATE_PREFIX . '%')
+            );
+            foreach ($childNames as $childName) {
+                IcingaHost::load($childName, $db)->delete();
+            }
 
             // leaf imports mid, mid imports template one, so they have to go
             // in that order or a delete gets rejected as still in use
