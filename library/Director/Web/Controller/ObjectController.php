@@ -64,6 +64,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
+/**
+ * @phpstan-import-type Section from ObjectCustomPropertySources
+ */
 abstract class ObjectController extends ActionController
 {
     use ObjectRestrictions;
@@ -1298,13 +1301,13 @@ abstract class ObjectController extends ActionController
      * when none of them attaches the property. It is shown under the command
      * the object uses, also when only a template of that command attaches it.
      *
-     * @param array $property
+     * @param array<string, mixed> $property
      * @param array<int, array{uuid: string, required: bool}> $attachments
-     * @param array $sourceByUuid
+     * @param array<string, Section> $sourceByUuid
      * @param string $objectUuid
      * @param ?string $originName The template that gives the current value, if there is one
      *
-     * @return array
+     * @return array<string, mixed>
      */
     private function resolveSection(
         array $property,
