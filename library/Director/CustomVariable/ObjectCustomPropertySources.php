@@ -5,11 +5,14 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use PDO;
+use RuntimeException;
 
 /**
  * Lists the places an object can get custom properties from
@@ -23,6 +26,13 @@ use PDO;
  *     type: string,
  *     uuid: string,
  *     object_type: string
+ * }
+ * @phpstan-type CommandProperty array{
+ *     key_name: string,
+ *     uuid: string,
+ *     value_type: string,
+ *     label: ?string,
+ *     category: ?string
  * }
  */
 class ObjectCustomPropertySources
@@ -64,19 +74,48 @@ class ObjectCustomPropertySources
      * @param IcingaObject $object
      * @param Db $db
      *
-     * @return array<string, array{
-     *     key_name: string,
-     *     uuid: string,
-     *     value_type: string,
-     *     label: ?string,
-     *     category: ?string
-     * }>
+     * @return array<string, CommandProperty>
      */
     public static function commandPropertiesByKey(IcingaObject $object, Db $db): array
     {
+        $commandId = self::resolveCommandId($object);
+
+        return $commandId === null ? [] : self::commandPropertiesByCommandId($commandId, $db);
+    }
+
+    /**
+     * Get the id of the check command the object uses, also when it only gets it through a template
+     *
+     * Only the id is looked up, so a batch can group objects by command before loading any.
+     *
+     * @param IcingaObject $object
+     *
+     * @return ?int
+     */
+    public static function resolveCommandId(IcingaObject $object): ?int
+    {
+        if (! $object->hasRelation('check_command')) {
+            return null;
+        }
+
+        $commandId = $object->getSingleResolvedProperty('check_command_id');
+
+        return $commandId ? (int) $commandId : null;
+    }
+
+    /**
+     * Get the properties attached to the given command and its templates, by key name
+     *
+     * @param int $commandId
+     * @param Db $db
+     *
+     * @return array<string, CommandProperty>
+     */
+    public static function commandPropertiesByCommandId(int $commandId, Db $db): array
+    {
         $dba = $db->getDbAdapter();
         $uuids = [];
-        foreach (self::commandSources($object, $db) as $source) {
+        foreach (self::commandSourcesOf(self::loadCommand($commandId, $db), $db) as $source) {
             $uuids[] = DbUtil::quoteBinaryCompat($source['uuid'], $dba);
         }
 
@@ -199,16 +238,24 @@ class ObjectCustomPropertySources
      */
     private static function commandSources(IcingaObject $object, Db $db): array
     {
-        if (! $object->hasRelation('check_command')) {
+        $commandId = self::resolveCommandId($object);
+        if ($commandId === null) {
             return [];
         }
 
-        // Also finds a command the object only gets through a template
-        $command = $object->getResolvedRelated('check_command');
-        if ($command === null) {
-            return [];
-        }
+        return self::commandSourcesOf(self::loadCommand($commandId, $db), $db);
+    }
 
+    /**
+     * Get the command and the templates it imports, templates first
+     *
+     * @param IcingaCommand $command
+     * @param Db $db
+     *
+     * @return array<int, PropertySource>
+     */
+    private static function commandSourcesOf(IcingaCommand $command, Db $db): array
+    {
         $sources = [];
         $templates = IcingaTemplateRepository::instanceByObject($command, $db)->getTemplatesFor($command, true);
         foreach ($templates as $template) {
@@ -218,6 +265,25 @@ class ObjectCustomPropertySources
         $sources[] = self::describe(self::COMMAND, $command);
 
         return $sources;
+    }
+
+    /**
+     * Load the command with the given id
+     *
+     * @param int $commandId
+     * @param Db $db
+     *
+     * @return IcingaCommand
+     *
+     * @throws RuntimeException When there is no such command
+     */
+    private static function loadCommand(int $commandId, Db $db): IcingaCommand
+    {
+        try {
+            return IcingaCommand::loadWithAutoIncId($commandId, $db);
+        } catch (NotFoundError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e);
+        }
     }
 
     /**
