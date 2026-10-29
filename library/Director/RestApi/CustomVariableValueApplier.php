@@ -140,8 +140,8 @@ class CustomVariableValueApplier
 
             $hasChanged = $wipeValuesInDb || $objectVars->hasBeenModified();
             $newVars = $this->plainVars($objectVars);
-            // the changed flag can say yes even when a value was just resubmitted
-            // unchanged, so compare the real values instead of trusting that flag
+            // Linking a value to its property is a write but not a change worth logging,
+            // so compare the real values instead of trusting the changed flag
             if (json_encode($oldVars) !== json_encode($newVars)) {
                 // sensitive values are not masked here, same as the web form's
                 // own save path, this is a known gap to close later
@@ -208,24 +208,19 @@ class CustomVariableValueApplier
                 return;
             }
 
-            $var->setModified();
+            $propertyUuid = Uuid::fromBytes($customProperties[$key]['uuid']);
             CustomVariableValueValidator::assertMatchesType(
                 $key,
                 $value,
                 $customProperties[$key]['value_type'],
-                Uuid::fromBytes($customProperties[$key]['uuid']),
+                $propertyUuid,
                 $this->db
             );
             if ($customProperties[$key]['value_type'] === 'datalist-strict') {
-                CustomVariableValueValidator::assertDatalistValueAllowed(
-                    $key,
-                    $value,
-                    Uuid::fromBytes($customProperties[$key]['uuid']),
-                    $this->db
-                );
+                CustomVariableValueValidator::assertDatalistValueAllowed($key, $value, $propertyUuid, $this->db);
             }
 
-            $objectVars->registerVarUuid($key, Uuid::fromBytes($customProperties[$key]['uuid']));
+            $objectVars->registerVarUuid($key, $propertyUuid);
 
             return;
         }

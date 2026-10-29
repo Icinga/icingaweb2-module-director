@@ -317,8 +317,9 @@ two on its own. Run
 
     icingacli director hosts refreshCustomVars
 
-to fix that. It scans **every host in the database** and writes back any
-variable matching a Custom Property by name, even if the value didn't change.
+to fix that. It scans **every host in the database** and links any variable
+matching a Custom Property by name. Variables that are already linked are left
+as they are, and no values are changed.
 
 
 Import/Export Director Objects
