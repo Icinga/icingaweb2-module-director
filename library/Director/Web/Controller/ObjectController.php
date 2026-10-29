@@ -1197,7 +1197,7 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get the property definitions reachable through the given ancestor/object uuids
+     * Get the property definitions reachable through the given object, template or command uuids
      *
      * One row per property, even if it's attached more than once. Who
      * attached it and whether it's required is worked out separately.

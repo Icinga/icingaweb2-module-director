@@ -14,6 +14,7 @@ use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -35,6 +36,7 @@ class ObjectControllerCustomPropertiesTest extends BaseTestCase
     private const CHILD_COMMAND = self::PREFIX . 'ping-child';
     private const DATABASE_HOST = self::PREFIX . 'db01.example.com';
     private const SERVICE = self::PREFIX . 'ping';
+    private const SERVICE_SET = self::PREFIX . 'basic-checks';
     private const OS_KEY = self::PREFIX . 'os';
     private const WRTA_KEY = self::PREFIX . 'ping_wrta';
     private const CPL_KEY = self::PREFIX . 'ping_cpl';
@@ -158,13 +160,44 @@ class ObjectControllerCustomPropertiesTest extends BaseTestCase
         $controller = $this->controllerWithDb();
         (new ReflectionProperty(ObjectController::class, 'object'))->setValue($controller, $host);
         (new ReflectionProperty(ActionController::class, 'params'))
-            ->setValue($controller, new UrlParams(['service' => self::SERVICE]));
+            ->setValue($controller, (new UrlParams())->set('service', self::SERVICE));
 
         $rows = self::callMethod($controller, 'getObjectCustomProperties', [$service, true, [], []]);
 
         $this->assertSame(ObjectCustomPropertySources::COMMAND, $rows[self::WRTA_KEY]['section']['kind']);
         $this->assertSame(self::COMMAND, $rows[self::WRTA_KEY]['section']['name']);
         $this->assertSame('200', $rows[self::WRTA_KEY]['value']);
+    }
+
+    public function testOverrideFormListsTheCommandVarOfAServiceInAServiceSet(): void
+    {
+        $this->createFixtures();
+        $db = $this->getDb();
+
+        IcingaServiceSet::create([
+            'object_name' => self::SERVICE_SET,
+            'object_type' => 'template',
+        ], $db)->store();
+        $service = IcingaService::create([
+            'object_name'   => self::SERVICE,
+            'object_type'   => 'object',
+            'service_set'   => self::SERVICE_SET,
+            'check_command' => self::COMMAND,
+        ], $db);
+        $service->store($db);
+
+        $host = IcingaHost::load(self::WEB_HOST, $db);
+        $host->overrideServiceVars(self::SERVICE, (object) [self::WRTA_KEY => '300'])->store();
+
+        $controller = $this->controllerWithDb();
+        (new ReflectionProperty(ObjectController::class, 'object'))->setValue($controller, $host);
+        (new ReflectionProperty(ActionController::class, 'params'))
+            ->setValue($controller, (new UrlParams())->set('service', self::SERVICE));
+
+        $rows = self::callMethod($controller, 'getObjectCustomProperties', [$service, true, [], []]);
+
+        $this->assertSame(ObjectCustomPropertySources::COMMAND, $rows[self::WRTA_KEY]['section']['kind']);
+        $this->assertSame('300', $rows[self::WRTA_KEY]['value']);
     }
 
     public function testCommandRequiredFlagIsIgnored(): void
@@ -418,6 +451,10 @@ class ObjectControllerCustomPropertiesTest extends BaseTestCase
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
+            if (IcingaServiceSet::exists(self::SERVICE_SET, $db)) {
+                IcingaServiceSet::load(self::SERVICE_SET, $db)->delete();
+            }
+
             $hosts = [
                 self::DATABASE_HOST,
                 self::WEB_HOST,
