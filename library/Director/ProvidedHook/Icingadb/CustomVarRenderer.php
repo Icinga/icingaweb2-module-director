@@ -11,6 +11,7 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
+use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
@@ -458,6 +459,11 @@ class CustomVarRenderer extends CustomVarRendererHook
 
         foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
             $result[$row['key_name']] = $row;
+        }
+
+        // The object and its templates come first, the command only fills what is missing
+        foreach (ObjectCustomPropertySources::commandPropertiesByKey($object, $db) as $keyName => $row) {
+            $result[$keyName] ??= $row;
         }
 
         return $result;
