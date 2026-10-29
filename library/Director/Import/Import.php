@@ -108,7 +108,7 @@ class Import
             array(
                 'source_id'       => $this->source->get('id'),
                 'rowset_checksum' => $this->quoteBinary($this->rowsetChecksum()),
-                'start_time'      => date('Y-m-d H:i:s'),
+                'start_time'      => (new \DateTimeImmutable())->format('Y-m-d H:i:s.u'),
                 'succeeded'       => 'y'
             )
         );

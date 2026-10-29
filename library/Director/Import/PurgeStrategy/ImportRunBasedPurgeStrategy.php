@@ -24,7 +24,12 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
 
     protected function getLastSync()
     {
-        return strtotime($this->getSyncRule()->getLastSyncTimestamp());
+        $lastSync = $this->getSyncRule()->getLastSyncTimestamp();
+        if ($lastSync === false || $lastSync === '') {
+            return null;
+        }
+
+        return $lastSync;
     }
 
     // TODO: NAMING!
