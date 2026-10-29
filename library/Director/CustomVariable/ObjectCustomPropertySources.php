@@ -16,16 +16,24 @@ use PDO;
  *
  * Host and command ids come from different tables, so every entry says which
  * type it is. Never mix the two kinds of ids in one list.
+ *
+ * @phpstan-type PropertySource array{
+ *     kind: string,
+ *     name: string,
+ *     type: string,
+ *     uuid: string,
+ *     object_type: string
+ * }
  */
 class ObjectCustomPropertySources
 {
-    /** The object itself, shown first and without a heading */
+    /** @var string The object itself, shown first and without a heading */
     public const OWN = 'own';
 
-    /** A template the object imports */
+    /** @var string A template the object imports */
     public const TEMPLATE = 'template';
 
-    /** The command the object uses, or a template of that command */
+    /** @var string The command the object uses, or a template of that command */
     public const COMMAND = 'command';
 
     /**
@@ -38,7 +46,7 @@ class ObjectCustomPropertySources
      * @param IcingaObject $object
      * @param Db $db
      *
-     * @return array<int, array{kind: string, name: string, type: string, uuid: string, object_type: string}>
+     * @return array<int, PropertySource>
      */
     public static function for(IcingaObject $object, Db $db): array
     {
@@ -56,7 +64,13 @@ class ObjectCustomPropertySources
      * @param IcingaObject $object
      * @param Db $db
      *
-     * @return array<string, array{key_name: string, uuid: string, value_type: string, label: ?string}>
+     * @return array<string, array{
+     *     key_name: string,
+     *     uuid: string,
+     *     value_type: string,
+     *     label: ?string,
+     *     category: ?string
+     * }>
      */
     public static function commandPropertiesByKey(IcingaObject $object, Db $db): array
     {
@@ -78,6 +92,9 @@ class ObjectCustomPropertySources
                 'value_type' => 'dp.value_type',
                 'label'      => 'dp.label'
             ])
+            ->joinLeft(['cpc' => 'director_datafield_category'], 'dp.category_id = cpc.id', [
+                'category' => 'cpc.category_name'
+            ])
             ->where('iop.command_uuid IN (?)', $uuids)
             ->where('dp.parent_uuid IS NULL');
 
@@ -96,11 +113,11 @@ class ObjectCustomPropertySources
      * The object itself comes first, then the template that provides the value,
      * then the template imported last.
      *
-     * @param array<int, array{kind: string, name: string, type: string, uuid: string, object_type: string}> $sources
+     * @param array<int, PropertySource> $sources
      *        The sources that attach the property, in import order
      * @param ?string $valueTemplateName The template that provides the value, if any
      *
-     * @return array{kind: string, name: string, type: string, uuid: string, object_type: string}
+     * @return PropertySource
      */
     public static function pickSource(array $sources, ?string $valueTemplateName): array
     {
@@ -131,9 +148,9 @@ class ObjectCustomPropertySources
      * of all of them are shown together under the command itself, which is
      * the last command in the list.
      *
-     * @param array<array{kind: string, name: string, type: string, uuid: string, object_type: string}> $sources
+     * @param array<PropertySource> $sources
      *
-     * @return ?array{kind: string, name: string, type: string, uuid: string, object_type: string}
+     * @return ?PropertySource
      */
     public static function pickCommandSource(array $sources): ?array
     {
@@ -152,7 +169,7 @@ class ObjectCustomPropertySources
      * @param IcingaObject $object
      * @param Db $db
      *
-     * @return array<int, array{kind: string, name: string, type: string, uuid: string, object_type: string}>
+     * @return array<int, PropertySource>
      */
     private static function objectSources(IcingaObject $object, Db $db): array
     {
@@ -178,7 +195,7 @@ class ObjectCustomPropertySources
      * @param IcingaObject $object
      * @param Db $db
      *
-     * @return array<int, array{kind: string, name: string, type: string, uuid: string, object_type: string}>
+     * @return array<int, PropertySource>
      */
     private static function commandSources(IcingaObject $object, Db $db): array
     {
@@ -209,7 +226,7 @@ class ObjectCustomPropertySources
      * @param string $kind One of the constants of this class
      * @param IcingaObject $source
      *
-     * @return array{kind: string, name: string, type: string, uuid: string, object_type: string}
+     * @return PropertySource
      */
     private static function describe(string $kind, IcingaObject $source): array
     {
