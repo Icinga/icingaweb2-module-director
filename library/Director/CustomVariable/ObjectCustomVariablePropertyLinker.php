@@ -17,6 +17,8 @@ use Zend_Db;
  *
  * A sync sets values by name only. Already linked values are skipped, unless
  * the sync changed the imports or the check command.
+ *
+ * @phpstan-import-type CommandProperty from ObjectCustomPropertySources
  */
 class ObjectCustomVariablePropertyLinker
 {
@@ -109,6 +111,9 @@ class ObjectCustomVariablePropertyLinker
                 ->where('dp.parent_uuid IS NULL')
         ));
 
+        // The properties of a command do not depend on the object, so each command is looked up once
+        $commandPropertiesById = [];
+
         foreach ($entries as [$object, $keys]) {
             $ids = $object->listAncestorIds();
             if ($object->hasBeenLoadedFromDb()) {
@@ -121,8 +126,8 @@ class ObjectCustomVariablePropertyLinker
                 if (isset($uuidsByKey[$key]) && self::isAttachedToAny($attachedIdsByKey[$key], $ids)) {
                     $uuid = $uuidsByKey[$key];
                 } elseif (isset($commandKeys[$key])) {
-                    // Looked up once per object, and only when the templates did not settle the key
-                    $commandProperties ??= ObjectCustomPropertySources::commandPropertiesByKey($object, $db);
+                    // Looked up once per command, and only when the templates did not settle the key
+                    $commandProperties ??= self::commandProperties($object, $db, $commandPropertiesById);
                     $uuid = $commandProperties[$key]['uuid'] ?? null;
                 }
 
@@ -141,6 +146,25 @@ class ObjectCustomVariablePropertyLinker
                 }
             }
         }
+    }
+
+    /**
+     * Get the properties of the check command the object uses, from the batch cache when known
+     *
+     * @param IcingaObject $object
+     * @param Db $db
+     * @param array<int, array<string, CommandProperty>> $cache properties already looked up, keyed by command id
+     *
+     * @return array<string, CommandProperty>
+     */
+    private static function commandProperties(IcingaObject $object, Db $db, array &$cache): array
+    {
+        $commandId = ObjectCustomPropertySources::resolveCommandId($object);
+        if ($commandId === null) {
+            return [];
+        }
+
+        return $cache[$commandId] ??= ObjectCustomPropertySources::commandPropertiesByCommandId($commandId, $db);
     }
 
     /**

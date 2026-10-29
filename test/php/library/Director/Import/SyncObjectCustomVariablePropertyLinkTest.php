@@ -217,6 +217,52 @@ class SyncObjectCustomVariablePropertyLinkTest extends SyncTest
         $this->assertVarUuid('production', null);
     }
 
+    public function testSyncLooksUpACommandOnlyOnceForManyHosts(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createCommandWithProperty(self::COMMAND_NAME);
+        $rows = [];
+        foreach (range(1, 5) as $number) {
+            $rows[] = ['host' => 'SYNCTEST_synced_host_' . $number, 'env' => 'production'];
+        }
+
+        $this->runImport($rows);
+        $this->setUpHostSyncWithCommand(self::COMMAND_NAME);
+
+        $profiler = $this->getDb()->getDbAdapter()->getProfiler();
+        $profiler->setEnabled(true);
+        $this->sync->apply();
+        $profiler->setEnabled(false);
+
+        $commandQueries = array_filter(
+            $profiler->getQueryProfiles() ?: [],
+            fn ($profile) => str_contains($profile->getQuery(), 'icinga_command_property')
+        );
+
+        // One for which keys any command has, one for the single command all hosts share
+        $this->assertCount(2, $commandQueries);
+
+        $dba = $this->getDb()->getDbAdapter();
+        $unlinked = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_var', ['COUNT(*)'])
+                ->where('varname = ?', self::PROP_KEY_NAME)
+                ->where('property_uuid IS NULL')
+        );
+        $this->assertSame(0, (int) $unlinked, 'every host must be linked to the property of the shared command');
+        $this->assertEquals(
+            5,
+            (int) $dba->fetchOne(
+                $dba->select()
+                    ->from('icinga_host_var', ['COUNT(*)'])
+                    ->where('property_uuid = ?', DbUtil::quoteBinaryCompat($property->get('uuid'), $dba))
+            )
+        );
+    }
+
     public function testSyncClearsUuidWhenCommandChangesTogetherWithAnotherField(): void
     {
         if ($this->skipForMissingDb()) {
