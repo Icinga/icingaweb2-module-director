@@ -11,6 +11,7 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
@@ -23,6 +24,7 @@ use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
+use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
@@ -47,6 +49,7 @@ use gipfl\IcingaWeb2\Link;
 use Icinga\Web\Form;
 use Icinga\Web\Notification;
 use ipl\Html\Attributes;
+use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
@@ -61,6 +64,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
+/**
+ * @phpstan-import-type Section from ObjectCustomPropertySources
+ */
 abstract class ObjectController extends ActionController
 {
     use ObjectRestrictions;
@@ -366,6 +372,7 @@ abstract class ObjectController extends ActionController
 
         $addedVarUuids = $this->params->getValues('addedVarUuids');
         $requiredVarUuids = $this->params->getValues('requiredVarUuids');
+        $removedKeys = $this->params->getValues('removedKeys');
         $nextSlotIndex = (int) $this->params->shift('nextSlotIndex');
 
         $form = (new ObjectCustomvarForm($this->db(), $object, $addedVarUuids))
@@ -374,6 +381,7 @@ abstract class ObjectController extends ActionController
                 $object,
                 $addedVarUuids,
                 $requiredVarUuids,
+                $removedKeys,
                 $nextSlotIndex
             ) {
                 $newUuid = $form->getValue('property');
@@ -395,6 +403,7 @@ abstract class ObjectController extends ActionController
                 );
                 $redirectUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
                 $redirectUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+                $redirectUrl->getParams()->addValues('removedKeys', $removedKeys);
 
                 $this->redirectNow($redirectUrl);
             })
@@ -469,6 +478,8 @@ abstract class ObjectController extends ActionController
             array_filter(explode(',', $this->getRequest()->getPost('requiredVarUuids', '')))
         ));
 
+        $removedKeys = $this->params->getValues('removedKeys');
+
         $form = $this->prepareCustomPropertiesForm($object, null, $addedVarUuids, $requiredVarUuids);
 
         $form
@@ -487,7 +498,7 @@ abstract class ObjectController extends ActionController
                     }
 
                     $this->redirectNow(Url::fromRequest()->without(
-                        ['addedVarUuids', 'requiredVarUuids', 'newVarUuid', 'nextSlotIndex']
+                        ['addedVarUuids', 'requiredVarUuids', 'removedKeys', 'newVarUuid', 'nextSlotIndex']
                     ));
                 }
             )->on(
@@ -496,26 +507,18 @@ abstract class ObjectController extends ActionController
                     ServerRequestInterface $request,
                     CustomVariablesForm $form
                 ) use (
-                    $object,
                     $newVarUuid,
                     $nextSlotIndex,
-                    $addedVarUuids,
-                    $requiredVarUuids
+                    $removedKeys
                 ) {
                     if ($newVarUuid === null) {
                         return;
                     }
 
-                    $this->sendNewVarMultipartUpdate(
-                        $object,
-                        $form,
-                        $newVarUuid,
-                        $nextSlotIndex,
-                        $addedVarUuids,
-                        $requiredVarUuids
-                    );
+                    $this->sendNewVarMultipartUpdate($form, $newVarUuid, $nextSlotIndex, $removedKeys);
                     $this->params->remove('addedVarUuids');
                     $this->params->remove('requiredVarUuids');
+                    $this->params->remove('removedKeys');
                     $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
                 }
             )->handleRequest($this->getServerRequest());
@@ -535,6 +538,8 @@ abstract class ObjectController extends ActionController
             );
             $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
             $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+            // Rows removed but not saved yet are gone from the screen, so the rows below moved up
+            $buttonUrl->getParams()->addValues('removedKeys', $form->getElement('properties')->getItemsToRemove());
 
             $this->actions()->add(
                 Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
@@ -561,27 +566,26 @@ abstract class ObjectController extends ActionController
     /**
      * Send a multipart update for the new custom variable.
      *
-     * @param IcingaObject        $object
      * @param CustomVariablesForm $form
      * @param string              $newVarUuid
      * @param int                 $nextSlotIndex
-     * @param array               $addedVarUuids
-     * @param array               $requiredVarUuids
+     * @param string[]            $removedKeys
      *
      * @return void
      */
     private function sendNewVarMultipartUpdate(
-        IcingaObject $object,
         CustomVariablesForm $form,
         string $newVarUuid,
         int $nextSlotIndex,
-        array $addedVarUuids,
-        array $requiredVarUuids = []
+        array $removedKeys = []
     ): void {
         if (! $this->hasPermission(Permission::ADMIN)) {
             return;
         }
 
+        $object = $form->getObject();
+        $addedVarUuids = $form->getAddedVarUuids();
+        $requiredVarUuids = $form->getRequiredVarUuids();
         $type = $object->getShortTableName();
         $db = $this->db()->getDbAdapter();
         $uuidBytes = Uuid::fromString($newVarUuid)->getBytes();
@@ -644,26 +648,25 @@ abstract class ObjectController extends ActionController
             }
         }
 
-        $newItem = $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
-        $newSlotIndex = $nextSlotIndex + 1;
+        $index = $this->getSwappedRowIndex($form, $row['key_name'], $nextSlotIndex, $removedKeys);
+        if ($index !== null) {
+            // Keep the "Inherited from" hint the old row had
+            $inherited = json_decode(json_encode($object->getInheritedVars()), true);
+            if (isset($inherited[$row['key_name']])) {
+                $propertyData['inherited'] = $inherited[$row['key_name']];
+                $propertyData['inherited_from'] = $object->getOriginsVars()->{$row['key_name']};
+            }
+        }
 
-        // Fill the slot with the new DictionaryItem + next empty slot
-        $slotContent = new HtmlDocument();
-        $slotContent->add($newItem);
-        $slotContent->add(Html::tag('div', ['id' => 'new-var-slot-' . $newSlotIndex]));
-        $this->addPart($slotContent, 'new-var-slot-' . $nextSlotIndex);
-
-        // Update item-count input
-        $itemCount = $form->createElement(
-            'hidden',
-            'properties[item-count]',
-            ['value' => $newSlotIndex]
-        );
-
-        $this->addPart(
-            $itemCount,
-            'properties-item-count'
-        );
+        // A swapped row keeps the number of the row it replaces. Save matches rows by number.
+        $newItem = $form->prepareNewPropertyRow($propertyData, $index ?? $nextSlotIndex);
+        if ($index === null) {
+            $newSlotIndex = $nextSlotIndex + 1;
+            $this->appendNewRow($form, $newItem, $nextSlotIndex);
+        } else {
+            $newSlotIndex = $nextSlotIndex;
+            $this->swapInheritedRow($newItem, $row['key_name']);
+        }
 
         // Update Add Custom Variable button with new slot index
         $buttonUrl = Url::fromPath(
@@ -673,6 +676,7 @@ abstract class ObjectController extends ActionController
 
         $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
         $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+        $buttonUrl->getParams()->addValues('removedKeys', $removedKeys);
 
         $this->addPart(
             (new ButtonLink(
@@ -708,6 +712,65 @@ abstract class ObjectController extends ActionController
 
         $requiredUuidsContainer->addHtml($requiredUuidsElement);
         $this->addPart($requiredUuidsContainer, 'required-var-uuids');
+    }
+
+    /**
+     * Fill the free slot with the new row and add an empty slot behind it
+     *
+     * @param CustomVariablesForm $form
+     * @param BaseHtmlElement $newItem
+     * @param int $slotIndex The number of the free slot
+     *
+     * @return void
+     */
+    private function appendNewRow(CustomVariablesForm $form, BaseHtmlElement $newItem, int $slotIndex): void
+    {
+        $slotContent = new HtmlDocument();
+        $slotContent->add($newItem);
+        $slotContent->add(Html::tag('div', ['id' => 'new-var-slot-' . ($slotIndex + 1)]));
+        $this->addPart($slotContent, 'new-var-slot-' . $slotIndex);
+
+        // One more row, so the count goes up
+        $this->addPart(
+            $form->createElement('hidden', 'properties[item-count]', ['value' => $slotIndex + 1]),
+            'properties-item-count'
+        );
+    }
+
+    /**
+     * Move the new row into the own box and clear the inherited row it replaces
+     *
+     * @param BaseHtmlElement $newItem
+     * @param string $key
+     *
+     * @return void
+     */
+    private function swapInheritedRow(BaseHtmlElement $newItem, string $key): void
+    {
+        $this->addPart($newItem, Dictionary::getSwapTargetId($key));
+        $this->addPart(new HtmlDocument(), Dictionary::getInheritedRowId($key));
+    }
+
+    /**
+     * Get the row number of the inherited row a variable is about to replace
+     *
+     * @param CustomVariablesForm $form
+     * @param string $key
+     * @param int $nextSlotIndex The number the next new row gets
+     * @param string[] $removedKeys Variables removed on screen but not saved yet
+     *
+     * @return ?int
+     */
+    private function getSwappedRowIndex(
+        CustomVariablesForm $form,
+        string $key,
+        int $nextSlotIndex,
+        array $removedKeys
+    ): ?int {
+        $index = $form->getPropertyIndex($key, $removedKeys);
+
+        // A brand new variable comes last, so only a number below the next free one was on screen before
+        return $index !== null && $index < $nextSlotIndex ? $index : null;
     }
 
     /**
@@ -1022,26 +1085,29 @@ abstract class ObjectController extends ActionController
             return [];
         }
 
-        $type = $object->getShortTableName();
-        $parents = $object->listAncestorIds();
-
-        $uuids = [];
         $db = $this->db();
-        foreach ($parents as $parent) {
-            $uuids[] = DbUtil::quoteBinaryCompat(
-                IcingaObject::loadByType($type, $parent, $db)->get('uuid'),
-                $db->getDbAdapter()
-            );
+        $objectUuid = $object->get('uuid');
+
+        // The list is in display order, so a position also tells where a section is shown
+        $uuidsByType = [];
+        $sourceByUuid = [];
+        foreach (ObjectCustomPropertySources::for($object, $db) as $position => $source) {
+            $uuidsByType[$source['type']][] = DbUtil::quoteBinaryCompat($source['uuid'], $db->getDbAdapter());
+            $sourceByUuid[$source['uuid']] = $source + ['order' => $position];
         }
 
-        $objectUuid = $object->get('uuid');
-        $uuids[] = DbUtil::quoteBinaryCompat($objectUuid, $db->getDbAdapter());
+        // Hosts and commands have separate ids, so each type is queried on its own tables
+        $properties = [];
+        $attachments = [];
+        foreach ($uuidsByType as $sourceType => $uuids) {
+            foreach ($this->fetchReachableProperties($sourceType, $uuids, $db) as $row) {
+                $properties[$row['uuid']] ??= $row;
+            }
 
-        // a property can be attached more than once, once per ancestor plus maybe the
-        // object itself, so its own row and its attachment rows are fetched separately
-        // and folded together below instead of asking one query to be both at once
-        $properties = $this->fetchReachableProperties($type, $uuids, $db);
-        $attachments = $this->fetchReachableAttachments($type, $uuids, $db);
+            foreach ($this->fetchReachableAttachments($sourceType, $uuids, $db) as $keyName => $rows) {
+                $attachments[$keyName] = array_merge($attachments[$keyName] ?? [], $rows);
+            }
+        }
 
         if ($isOverrideVars) {
             if ($object->isApplyRule()) {
@@ -1055,9 +1121,18 @@ abstract class ObjectController extends ActionController
             $vars = json_decode(json_encode($object->getVars()), true);
         }
 
+        $origins = $isOverrideVars ? null : $object->getOriginsVars();
+
         $result = [];
         foreach ($properties as $row) {
-            $row = $this->resolveEffectiveAttachment($row, $attachments[$row['key_name']] ?? [], $objectUuid);
+            $originName = $origins->{$row['key_name']} ?? null;
+            $row = $this->resolveSection(
+                $row,
+                $attachments[$row['key_name']] ?? [],
+                $sourceByUuid,
+                $objectUuid,
+                is_string($originName) ? $originName : null
+            );
 
             if (isset($vars[$row['key_name']])) {
                 $row['value'] = $vars[$row['key_name']];
@@ -1103,7 +1178,11 @@ abstract class ObjectController extends ActionController
 
             foreach ($addedRows as $row) {
                 $row['allow_removal'] = true;
-                if (! isset($result[$row['key_name']])) {
+                $row['section'] = ['kind' => ObjectCustomPropertySources::OWN, 'name' => '', 'order' => -1];
+
+                // Only a variable the object itself attaches is old. One that is just inherited
+                // still needs its own attachment when it is saved.
+                if (! ($result[$row['key_name']]['allow_removal'] ?? false)) {
                     $row['new'] = true;
                 }
 
@@ -1121,7 +1200,7 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get the property definitions reachable through the given ancestor/object uuids
+     * Get the property definitions reachable through the given object, template or command uuids
      *
      * One row per property, even if it's attached more than once. Who
      * attached it and whether it's required is worked out separately.
@@ -1181,11 +1260,11 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get every attachment row behind the given ancestor/object uuids, grouped by key_name
+     * Get every attachment row behind the given source uuids, grouped by key_name
      *
-     * A property attached through two ancestors, or through an ancestor
-     * and the object itself, ends up with more than one row here. What
-     * that means is decided elsewhere, not by just picking one.
+     * A property attached by two or more sources, such as templates, the
+     * object itself or the command, ends up with more than one row here.
+     * What that means is decided elsewhere, not by just picking one.
      *
      * @param string $type
      * @param string[] $uuids
@@ -1213,6 +1292,58 @@ abstract class ObjectController extends ActionController
         }
 
         return $result;
+    }
+
+    /**
+     * Work out which section a property is shown in
+     *
+     * The object and its templates decide first. The command only gets the row
+     * when none of them attaches the property. It is shown under the command
+     * the object uses, also when only a template of that command attaches it.
+     *
+     * @param array<string, mixed> $property
+     * @param array<int, array{uuid: string, required: bool}> $attachments
+     * @param array<string, Section> $sourceByUuid
+     * @param string $objectUuid
+     * @param ?string $originName The template that gives the current value, if there is one
+     *
+     * @return array<string, mixed>
+     */
+    private function resolveSection(
+        array $property,
+        array $attachments,
+        array $sourceByUuid,
+        string $objectUuid,
+        ?string $originName
+    ): array {
+        $viaObject = [];
+        $candidates = [];
+        foreach ($attachments as $attachment) {
+            $source = $sourceByUuid[$attachment['uuid']];
+            if ($source['kind'] !== ObjectCustomPropertySources::COMMAND) {
+                $viaObject[] = $attachment;
+                $candidates[] = $source;
+            }
+        }
+
+        if (empty($candidates)) {
+            // Only the command or one of its templates has it, so it can be neither removed nor required from here
+            $property['allow_removal'] = false;
+            $property['required'] = false;
+            $property['section'] = ObjectCustomPropertySources::pickCommandSource($sourceByUuid);
+
+            return $property;
+        }
+
+        // The attachments come back in any order, but the import order decides which template wins
+        usort($candidates, fn(array $a, array $b) => $a['order'] <=> $b['order']);
+
+        // Required is worked out over every attachment of the object and its templates,
+        // also the ones that are not shown, so hiding a copy never makes a variable optional
+        $property = $this->resolveEffectiveAttachment($property, $viaObject, $objectUuid);
+        $property['section'] = ObjectCustomPropertySources::pickSource($candidates, $originName);
+
+        return $property;
     }
 
     /**

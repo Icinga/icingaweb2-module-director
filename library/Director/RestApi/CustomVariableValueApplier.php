@@ -8,6 +8,7 @@ namespace Icinga\Module\Director\RestApi;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueValidator;
+use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
@@ -202,7 +203,14 @@ class CustomVariableValueApplier
 
         $var = $objectVars->get($key);
 
-        if (isset($customProperties[$key])) {
+        // A template PUT takes over a variable only the check command attaches, like the UI does.
+        // POST never changes attachments, and the base endpoint only sets values.
+        $takesOver = $request->actionName === 'variables'
+            && $request->method === 'PUT'
+            && $object->isTemplate()
+            && ($customProperties[$key]['from_command'] ?? false);
+
+        if (isset($customProperties[$key]) && ! $takesOver) {
             // a real null clears the value, nothing left to check its shape against
             if ($value === null || $var === null) {
                 return;
@@ -248,7 +256,10 @@ class CustomVariableValueApplier
 
         if (! $object->definesCustomProperties()) {
             throw new NotFoundError(sprintf(
-                'The custom variable %s should be first added to one of the imported templates for this object',
+                $object->hasRelation('check_command')
+                    ? 'The custom variable %s should be first added to one of the imported templates'
+                        . ' or to the check command for this object'
+                    : 'The custom variable %s should be first added to one of the imported templates for this object',
                 $key
             ));
         }
@@ -405,7 +416,7 @@ class CustomVariableValueApplier
 
     /**
      * Get the custom properties linked to the given object, including
-     * properties inherited from its ancestors
+     * properties inherited from its ancestors and from its check command
      *
      * @param IcingaObject $object
      *
@@ -442,6 +453,11 @@ class CustomVariableValueApplier
         foreach ($db->getDbAdapter()->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
             $row = DbUtil::normalizeRow($row);
             $result[$row['key_name']] = $row;
+        }
+
+        // A variable the check command attaches is reachable too
+        foreach (ObjectCustomPropertySources::commandPropertiesByKey($object, $db) as $key => $row) {
+            $result[$key] ??= $row + ['from_command' => true];
         }
 
         return $result;

@@ -6,6 +6,7 @@
 namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\ObjectsCommand;
+use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -37,6 +38,11 @@ class HostsCommand extends ObjectsCommand
         foreach ($this->getObjects() as $o) {
             $vars = $o->vars();
             $objectCustomVariables = $this->getObjectCustomVariables($o);
+
+            // The object and its templates win, the check command only fills what is missing
+            foreach (ObjectCustomPropertySources::commandPropertiesByKey($o, $o->getConnection()) as $key => $row) {
+                $objectCustomVariables[$key] ??= $row;
+            }
 
             foreach ($objectCustomVariables as $key => $property) {
                 $var = $vars->get($key);

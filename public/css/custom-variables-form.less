@@ -15,6 +15,38 @@
     outline: none;
   }
 
+  .dictionary-section {
+    margin-top: 1em;
+    padding: 0.5em 0.5em 0.25em;
+    border: 1px solid @gray-light;
+    border-radius: 1em;
+
+    > summary {
+      font-weight: bold;
+      margin: 0 0 0.5em;
+      cursor: pointer;
+
+      &::before {
+        margin-right: 0.5em;
+      }
+
+      // No ring after a mouse click, keyboard focus keeps its ring
+      &:focus:not(:focus-visible) {
+        outline: none;
+      }
+    }
+
+    // Hide a box with no rows. The own box shows again once a row is added.
+    &:not(:has(.dictionary-item)) {
+      display: none;
+    }
+
+    // The rows pull their right edge out by 1em, give it back so they stay inside the border
+    > .dictionary-section-body {
+      padding-right: 1em;
+    }
+  }
+
   .control-group:has(> fieldset) {
     .dictionary,
     .nested-dictionary,
@@ -62,8 +94,15 @@
 }
 
 .nested-dictionary-item.collapsed > legend::before,
-.dictionary-item.collapsible.collapsed > legend::before {
+.dictionary-item.collapsible.collapsed > legend::before,
+.dictionary-section.collapsed > summary::before {
   content: '\e820';
+}
+
+.dictionary-section > summary::before {
+  // Down arrow, same as the legends
+  font-family: 'ifont';
+  content: '\e81d';
 }
 
 .nested-dictionary-item > legend,

@@ -5,11 +5,18 @@
 
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
+use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\Db\DbUtil;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
+use ipl\Html\ValidHtml;
 use ipl\Web\Widget\EmptyStateBar;
 
+/**
+ * @phpstan-import-type Section from ObjectCustomPropertySources
+ */
 class Dictionary extends FieldsetElement
 {
     protected $defaultAttributes = ['class' => 'dictionary'];
@@ -31,6 +38,18 @@ class Dictionary extends FieldsetElement
 
     /** @var bool Whether dictionary is a child dictionary */
     private bool $isChild = false;
+
+    /**
+     * @var array<string, array{order: int, html: ValidHtml, body: HtmlDocument}> The boxes the rows are drawn
+     *      in, keyed by section
+     */
+    private array $sections = [];
+
+    /** @var DictionaryItem[] The rows drawn in the command box */
+    private array $commandRows = [];
+
+    /** @var ?string Heading for the object's own rows */
+    private ?string $ownHeading = null;
 
     public function __construct(string $name, array $items, $attributes = null)
     {
@@ -91,6 +110,22 @@ class Dictionary extends FieldsetElement
     public function setIsChild(bool $isChild = true): static
     {
         $this->isChild = $isChild;
+
+        return $this;
+    }
+
+    /**
+     * Set the heading for the rows the object itself added
+     *
+     * Without a heading the own rows are drawn without a box.
+     *
+     * @param ?string $heading
+     *
+     * @return $this
+     */
+    public function setOwnHeading(?string $heading): static
+    {
+        $this->ownHeading = $heading;
 
         return $this;
     }
@@ -156,6 +191,9 @@ class Dictionary extends FieldsetElement
         $this->addElement('hidden', 'items_removed', ['value' => json_encode(array_keys($removedItems))]);
         $this->addElement('hidden', 'items_added', ['value' => implode(', ', $addedItems)]);
         $count = 0;
+        $this->sections = [];
+        $this->commandRows = [];
+        $swapTargets = [];
         foreach ($this->items as $item) {
             $item['uuid'] = DbUtil::binaryResult($item['uuid']);
             if (isset($item['parent_uuid'])) {
@@ -175,21 +213,64 @@ class Dictionary extends FieldsetElement
                 $element->setRemoveButton($this->getElement('remove_' . $count));
             }
 
-            $this->addElement($element);
+            // Put the row in its section box instead of straight into the dictionary.
+            // Its number still follows the data order.
+            $this->registerElement($element)->decorate($element);
+
+            $section = $item['section'] ?? null;
+            if ($section !== null && $section['kind'] === ObjectCustomPropertySources::COMMAND) {
+                $this->commandRows[] = $element;
+            }
+
+            $row = $element;
+            if (
+                $this->allowItemRemoval
+                && $section !== null
+                && $section['kind'] !== ObjectCustomPropertySources::OWN
+            ) {
+                // Adding this variable to the object itself swaps the row for one in the own box
+                $row = Html::tag(
+                    'div',
+                    ['id' => self::getInheritedRowId($item['key_name']), 'class' => 'dictionary-row'],
+                    $element
+                );
+                $swapTargets[] = Html::tag('div', ['id' => self::getSwapTargetId($item['key_name'])]);
+            }
+
+            $this->getSectionBody($section)->addHtml($row);
             $count++;
+        }
+
+        if ($this->allowItemRemoval) {
+            foreach ($swapTargets as $swapTarget) {
+                $this->getSectionBody(null)->addHtml($swapTarget);
+            }
+
+            // A new variable belongs to the object itself, so the slot sits in its box
+            $newVarSlot = Html::tag('div', ['id' => 'new-var-slot-' . $count]);
+            $this->getSectionBody(null)->addHtml($newVarSlot);
+        }
+
+        // The slot makes the own box exist even without own rows, so a new variable lands under the heading
+        $ownId = ObjectCustomPropertySources::OWN . ':';
+        if (isset($this->sections[$ownId]) && $this->ownHeading !== null) {
+            $this->sections[$ownId]['html'] = $this->createGroup(
+                ['dictionary-section', 'own', 'collapsible'],
+                $this->ownHeading,
+                HtmlElement::create('div', ['class' => 'dictionary-section-body'], $this->sections[$ownId]['body']),
+                true
+            );
+        }
+
+        uasort($this->sections, fn(array $a, array $b) => $a['order'] <=> $b['order']);
+        foreach ($this->sections as $section) {
+            $this->addHtml($section['html']);
         }
 
         $this->clearPopulatedValue('item-count');
         $itemCountInput = $this->createElement('hidden', 'item-count', ['ignore' => true, 'value' => $count]);
         $this->registerElement($itemCountInput);
         $this->addHtml(Html::tag('div', ['id' => $this->getName() . '-item-count'], $itemCountInput));
-
-
-        $newVarSlot = Html::tag('div', ['id' => 'new-var-slot-' . $count]);
-
-        if ($this->allowItemRemoval) {
-            $this->addHtml($newVarSlot);
-        }
 
         if ($count === 0) {
             if (! $this->isChild) {
@@ -202,6 +283,125 @@ class Dictionary extends FieldsetElement
                 $this->addHtml(new EmptyStateBar($message));
             }
         }
+    }
+
+    /**
+     * Get the id of the wrapper around a row that comes from a template or the command
+     *
+     * @param string $key
+     *
+     * @return string
+     */
+    public static function getInheritedRowId(string $key): string
+    {
+        return 'dictionary-row-' . md5($key);
+    }
+
+    /**
+     * Get the id of the container in the own box that receives the row swapped in
+     *
+     * @param string $key
+     *
+     * @return string
+     */
+    public static function getSwapTargetId(string $key): string
+    {
+        return 'swap-target-' . md5($key);
+    }
+
+    /**
+     * Get the box the rows of the given section are drawn in
+     *
+     * @param ?Section $section The section the rows belong to, null for the object itself
+     *
+     * @return HtmlDocument
+     */
+    private function getSectionBody(?array $section): HtmlDocument
+    {
+        if ($section === null || $section['kind'] === ObjectCustomPropertySources::OWN) {
+            // The object's own rows always come first, whatever its name is
+            $section = ['kind' => ObjectCustomPropertySources::OWN, 'name' => '', 'order' => -1];
+        }
+
+        $id = $section['kind'] . ':' . $section['name'];
+        if (! isset($this->sections[$id])) {
+            $this->sections[$id] = ['order' => $section['order']] + $this->createSection($section);
+        }
+
+        return $this->sections[$id]['body'];
+    }
+
+    /**
+     * Create the box for one section
+     *
+     * @param Section $section The kind, name and order of the section
+     *
+     * @return array{html: ValidHtml, body: HtmlDocument}
+     */
+    private function createSection(array $section): array
+    {
+        if ($section['kind'] === ObjectCustomPropertySources::OWN) {
+            // No box and no heading, so rows without a section look as they always did
+            $body = new HtmlDocument();
+
+            return ['html' => $body, 'body' => $body];
+        }
+
+        $body = HtmlElement::create('div', ['class' => 'dictionary-section-body']);
+        if ($section['kind'] === ObjectCustomPropertySources::COMMAND) {
+            $html = $this->createGroup(
+                ['dictionary-section', 'command', 'collapsible'],
+                sprintf($this->translate('Added by command "%s"'), $section['name']),
+                $body,
+                false
+            );
+
+            // The rows get validated after the box is built, so a failed row opens it when it renders
+            $html->getAttributes()->registerAttributeCallback('open', function () {
+                foreach ($this->commandRows as $row) {
+                    if ($row->hasBeenValidated() && ! $row->isValid()) {
+                        return true;
+                    }
+                }
+
+                return null;
+            });
+        } else {
+            // A command can import a plain command too, only a command template is called a template
+            $isPlainCommand = ($section['type'] ?? null) === 'command'
+                && ($section['object_type'] ?? 'template') !== 'template';
+            $heading = $isPlainCommand
+                ? $this->translate('Added by command "%s"')
+                : $this->translate('Added by template "%s"');
+            $html = $this->createGroup(
+                ['dictionary-section', 'template', 'collapsible'],
+                sprintf($heading, $section['name']),
+                $body,
+                true
+            );
+        }
+
+        return ['html' => $html, 'body' => $body];
+    }
+
+    /**
+     * Create a foldable box around the given rows
+     *
+     * A details element and not a fieldset, so the input names of the rows stay as they are.
+     *
+     * @param string[] $classes
+     * @param string $heading
+     * @param ValidHtml $body
+     * @param bool $open Whether the box starts unfolded
+     *
+     * @return HtmlElement
+     */
+    private function createGroup(array $classes, string $heading, ValidHtml $body, bool $open): HtmlElement
+    {
+        // The collapsible class lets Icinga Web fold it. A closed box gets no open attribute at all
+        $attributes = array_filter(['class' => $classes, 'open' => $open, 'data-no-persistence' => true]);
+
+        return HtmlElement::create('details', $attributes, [HtmlElement::create('summary', null, $heading), $body]);
     }
 
     /**

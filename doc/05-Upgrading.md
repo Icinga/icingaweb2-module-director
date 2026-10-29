@@ -95,6 +95,12 @@ through this endpoint, check it against the [updated
 rules](70-REST-API.md#Custom-Variables-not-configured) before upgrading,
 otherwise some of those writes may start failing.
 
+The same endpoint, and `POST director/host` with `vars`, now also accept
+variables that only the check command of a host or service attaches. A value
+for such a variable is checked against the property's type like any other
+attached variable, so a value of the wrong shape is now rejected instead of
+being stored as it was.
+
 If you use `icingacli director migrate datafields` to move legacy Data
 Fields onto the new Custom Property system, note that a Data List field
 with the old `Suggest, extend list` behavior now migrates to a plain

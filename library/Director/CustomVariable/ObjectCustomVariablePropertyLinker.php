@@ -12,25 +12,19 @@ use Ramsey\Uuid\Uuid;
 use Zend_Db;
 
 /**
- * Stamps a property uuid on a synced value when a template the object
- * imports already has that property attached
+ * Links synced values to a property their object can reach through an
+ * imported template or the check command
  *
- * A sync just sets a value by name, it has no idea properties even exist.
- * This checks, for every synced object at once, whether that name is
- * already attached somewhere up its own ancestry, and links the value to
- * it if so, the same way basket restore already does for its own objects.
+ * A sync sets values by name only. Already linked values are skipped, unless
+ * the sync changed the imports or the check command.
  *
- * A value already linked from an earlier run never gets re-checked, unless
- * this run actually changed the object's imports. Only then can a name that
- * used to resolve to a property stop doing so, or start resolving to one it
- * didn't reach before, so that is the only time it's worth paying for a
- * full re-check instead of just looking at the still-unlinked values.
+ * @phpstan-import-type CommandProperty from ObjectCustomPropertySources
  */
 class ObjectCustomVariablePropertyLinker
 {
     /**
      * Links every synced object's values to a property, wherever one is
-     * already attached somewhere in that object's own ancestry
+     * already attached on the object, its templates or its check command
      *
      * @param IcingaObject[] $objects the objects a sync run just prepared
      * @param Db $db the target database this sync run is writing to
@@ -45,8 +39,12 @@ class ObjectCustomVariablePropertyLinker
                 continue;
             }
 
-            $importsChanged = $object->imports()->hasBeenModified();
-            $keys = $importsChanged ? $object->vars()->listKeys() : $object->vars()->listKeysWithoutUuid();
+            // Switching the check command changes which variables the object can reach, like a new import.
+            // Sync sets it by name, so resolve it first or it is not marked as modified yet.
+            $object->resolveUnresolvedRelatedProperties();
+            $sourcesChanged = $object->imports()->hasBeenModified()
+                || in_array('check_command_id', $object->listModifiedProperties(), true);
+            $keys = $sourcesChanged ? $object->vars()->listKeys() : $object->vars()->listKeysWithoutUuid();
             if (empty($keys)) {
                 continue;
             }
@@ -61,6 +59,8 @@ class ObjectCustomVariablePropertyLinker
 
     /**
      * Does the actual linking for one object type, one query for the whole batch
+     *
+     * A variable no template settles falls back to the properties of the check command.
      *
      * @param string $type the object type's short name, host, service and so on
      * @param array<int, array{0: IcingaObject, 1: string[]}> $entries one entry per object,
@@ -101,17 +101,39 @@ class ObjectCustomVariablePropertyLinker
             $attachedIdsByKey[$row['key_name']][(int) $row['attached_id']] = true;
         }
 
+        // Find which of these variables any command has, with one query for the whole batch.
+        // Most synced variables belong to no command, so most objects can skip the command lookup.
+        $commandKeys = array_flip($dba->fetchCol(
+            $dba->select()
+                ->from(['dp' => 'director_property'], ['key_name'])
+                ->join(['icp' => 'icinga_command_property'], 'dp.uuid = icp.property_uuid', [])
+                ->where('dp.key_name IN (?)', array_values($allKeys))
+                ->where('dp.parent_uuid IS NULL')
+        ));
+
+        // The properties of a command do not depend on the object, so each command is looked up once
+        $commandPropertiesById = [];
+
         foreach ($entries as [$object, $keys]) {
             $ids = $object->listAncestorIds();
             if ($object->hasBeenLoadedFromDb()) {
                 $ids[] = (int) $object->get('id');
             }
 
+            $commandProperties = null;
             foreach ($keys as $key) {
-                $reachable = isset($uuidsByKey[$key]) && self::isAttachedToAny($attachedIdsByKey[$key], $ids);
+                $uuid = null;
+                if (isset($uuidsByKey[$key]) && self::isAttachedToAny($attachedIdsByKey[$key], $ids)) {
+                    $uuid = $uuidsByKey[$key];
+                } elseif (isset($commandKeys[$key])) {
+                    // Looked up once per command, and only when the templates did not settle the key
+                    $commandProperties ??= self::commandProperties($object, $db, $commandPropertiesById);
+                    $uuid = $commandProperties[$key]['uuid'] ?? null;
+                }
+
                 $currentUuid = $object->vars()->get($key)?->getUuid();
 
-                if (! $reachable) {
+                if ($uuid === null) {
                     if ($currentUuid !== null) {
                         $object->vars()->clearVarUuid($key);
                     }
@@ -119,11 +141,30 @@ class ObjectCustomVariablePropertyLinker
                     continue;
                 }
 
-                if ($currentUuid === null || ! $currentUuid->equals(Uuid::fromBytes($uuidsByKey[$key]))) {
-                    $object->vars()->registerVarUuid($key, Uuid::fromBytes($uuidsByKey[$key]));
+                if ($currentUuid === null || ! $currentUuid->equals(Uuid::fromBytes($uuid))) {
+                    $object->vars()->registerVarUuid($key, Uuid::fromBytes($uuid));
                 }
             }
         }
+    }
+
+    /**
+     * Get the properties of the check command the object uses, from the batch cache when known
+     *
+     * @param IcingaObject $object
+     * @param Db $db
+     * @param array<int, array<string, CommandProperty>> $cache properties already looked up, keyed by command id
+     *
+     * @return array<string, CommandProperty>
+     */
+    private static function commandProperties(IcingaObject $object, Db $db, array &$cache): array
+    {
+        $commandId = ObjectCustomPropertySources::resolveCommandId($object);
+        if ($commandId === null) {
+            return [];
+        }
+
+        return $cache[$commandId] ??= ObjectCustomPropertySources::commandPropertiesByCommandId($commandId, $db);
     }
 
     /**

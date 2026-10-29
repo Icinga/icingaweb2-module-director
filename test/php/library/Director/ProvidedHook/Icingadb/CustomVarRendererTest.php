@@ -11,10 +11,14 @@ use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\ProvidedHook\Icingadb\CustomVarRenderer;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Module\Icingadb\Model\Host;
+use Icinga\Module\Icingadb\Model\Service;
 use ipl\Html\ValidHtml;
 use ReflectionMethod;
 use Ramsey\Uuid\Uuid;
@@ -27,6 +31,12 @@ class CustomVarRendererTest extends BaseTestCase
     private const TEMPLATE_NAME = self::PREFIX . 'webserver-template';
     private const PROPERTY_KEY = self::PREFIX . 'ssh_credentials';
     private const CATEGORY_NAME = self::PREFIX . 'monitoring_team';
+    private const COMMAND_NAME = self::PREFIX . 'check-postgres';
+    private const COMMAND_HOST_NAME = self::PREFIX . 'db01.example.com';
+    private const COMMAND_TEMPLATE_NAME = self::PREFIX . 'database-servers';
+    private const COMMAND_PROPERTY_KEY = self::PREFIX . 'db_password';
+    private const COMMAND_CATEGORY_NAME = self::PREFIX . 'database_team';
+    private const COMMAND_SERVICE_NAME = self::PREFIX . 'postgres-connections';
 
     public function setUp(): void
     {
@@ -621,6 +631,134 @@ class CustomVarRendererTest extends BaseTestCase
         }
     }
 
+    public function testSensitiveVarFromTheCheckCommandIsMasked(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->createCommandVarFixture('sensitive');
+
+        $renderer = new CustomVarRenderer();
+        $icingadbHost = new Host(['name' => self::COMMAND_HOST_NAME]);
+
+        $this->assertTrue($renderer->prefetchForObject($icingadbHost));
+        $this->assertSame(
+            '***',
+            $renderer->renderCustomVarValue(self::COMMAND_PROPERTY_KEY, 's3cr3t'),
+            'A sensitive property only the check command provides must still be masked'
+        );
+    }
+
+    public function testSensitiveVarFromTheCommandOfAnImportedTemplateIsMasked(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // The host never names a command, it only gets one through the template it imports
+        $this->createCommandVarFixture('sensitive', viaTemplate: true);
+
+        $renderer = new CustomVarRenderer();
+        $icingadbHost = new Host(['name' => self::COMMAND_HOST_NAME]);
+
+        $this->assertTrue($renderer->prefetchForObject($icingadbHost));
+        $this->assertSame(
+            '***',
+            $renderer->renderCustomVarValue(self::COMMAND_PROPERTY_KEY, 's3cr3t'),
+            'A sensitive property of a command the host only gets through a template must be masked'
+        );
+    }
+
+    public function testVarOnBothTemplateAndCommandIsStillMasked(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // Same property from two sources, the command must not clash with the template's copy
+        $this->createCommandVarFixture('sensitive', templateAttaches: true);
+
+        $renderer = new CustomVarRenderer();
+        $icingadbHost = new Host(['name' => self::COMMAND_HOST_NAME]);
+
+        $this->assertTrue($renderer->prefetchForObject($icingadbHost));
+        $this->assertSame(
+            '***',
+            $renderer->renderCustomVarValue(self::COMMAND_PROPERTY_KEY, 's3cr3t'),
+            'A sensitive property attached by a template and the command must stay masked'
+        );
+    }
+
+    public function testSensitiveVarFromTheCheckCommandOfAServiceIsMasked(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        // The host has no command, only the service does
+        $this->createCommandVarFixture('sensitive', onService: true);
+
+        $renderer = new CustomVarRenderer();
+        $icingadbService = new Service(['name' => self::COMMAND_SERVICE_NAME]);
+        $icingadbService->host = new Host(['name' => self::COMMAND_HOST_NAME]);
+
+        $this->assertTrue($renderer->prefetchForObject($icingadbService));
+        $this->assertSame(
+            '***',
+            $renderer->renderCustomVarValue(self::COMMAND_PROPERTY_KEY, 's3cr3t'),
+            'A sensitive property only the check command of a service provides must still be masked'
+        );
+    }
+
+    public function testVarOnlyTheCheckCommandProvidesKeepsItsCategory(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->createCommandVarFixture('string', category: self::COMMAND_CATEGORY_NAME);
+
+        $renderer = new CustomVarRenderer();
+        $icingadbHost = new Host(['name' => self::COMMAND_HOST_NAME]);
+
+        $this->assertTrue($renderer->prefetchForObject($icingadbHost));
+
+        $method = new ReflectionMethod(CustomVarRenderer::class, 'getObjectCustomProperties');
+        $rows = $method->invoke($renderer, IcingaHost::load(self::COMMAND_HOST_NAME, $this->getDb()));
+
+        $this->assertSame(self::COMMAND_CATEGORY_NAME, $rows[self::COMMAND_PROPERTY_KEY]['category']);
+    }
+
+    public function testSensitiveChildOfACommandDictionaryIsMasked(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createCommandVarFixture('fixed-dictionary');
+
+        // Removed with its parent, the child goes through the foreign key
+        DirectorProperty::create([
+            'uuid'        => Uuid::uuid4()->getBytes(),
+            'parent_uuid' => DirectorProperty::load(self::COMMAND_PROPERTY_KEY, $db)->get('uuid'),
+            'key_name'    => 'password',
+            'value_type'  => 'sensitive',
+            'label'       => 'Password',
+        ], $db)->store();
+
+        $renderer = new CustomVarRenderer();
+        $icingadbHost = new Host(['name' => self::COMMAND_HOST_NAME]);
+
+        $this->assertTrue($renderer->prefetchForObject($icingadbHost));
+        $this->assertSame(
+            '***',
+            $renderer->renderCustomVarValue('password', 's3cr3t', self::COMMAND_PROPERTY_KEY),
+            'A sensitive child of a dictionary only the command provides must be masked'
+        );
+    }
+
     public function testSensitiveFixedArrayItemMasksInFullyRenderedHtml(): void
     {
         $renderer = new TestableCustomVarRenderer();
@@ -769,8 +907,148 @@ class CustomVarRendererTest extends BaseTestCase
         $this->assertFalse($method->invoke($renderer, $hostVar, 'vhost-', 'vhost-status.example.com'));
     }
 
+    /**
+     * Create a host that uses a check command carrying one custom variable
+     *
+     * By default the host and its templates attach nothing, so the command is the only source.
+     *
+     * @param string $valueType
+     * @param bool $viaTemplate Give the command to an imported template instead of the host
+     * @param bool $templateAttaches Let the imported template attach the variable as well
+     * @param bool $onService Give the command to a service of the host instead of the host
+     * @param ?string $category Name of a category to put the variable in
+     *
+     * @return void
+     */
+    private function createCommandVarFixture(
+        string $valueType,
+        bool $viaTemplate = false,
+        bool $templateAttaches = false,
+        bool $onService = false,
+        ?string $category = null
+    ): void {
+        $this->dropCommandVarFixture();
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $command = IcingaCommand::create([
+            'object_name' => self::COMMAND_NAME,
+            'object_type' => 'external_object',
+            'command'     => 'check_postgres',
+        ], $db);
+        $command->store();
+
+        $propertyData = [
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::COMMAND_PROPERTY_KEY,
+            'value_type' => $valueType,
+            'label'      => 'Database password',
+        ];
+        if ($category !== null) {
+            $categoryObject = DirectorDatafieldCategory::create([
+                'category_name' => $category,
+            ], $db);
+            $categoryObject->store();
+            $propertyData['category_id'] = $categoryObject->get('id');
+        }
+
+        $property = DirectorProperty::create($propertyData, $db);
+        $property->store();
+
+        $dba->insert('icinga_command_property', [
+            'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+
+        $hasTemplate = $viaTemplate || $templateAttaches;
+        if ($hasTemplate) {
+            $templateProperties = [
+                'object_name' => self::COMMAND_TEMPLATE_NAME,
+                'object_type' => 'template',
+            ];
+            if ($viaTemplate) {
+                $templateProperties['check_command'] = self::COMMAND_NAME;
+            }
+
+            $template = IcingaHost::create($templateProperties, $db);
+            $template->store();
+
+            if ($templateAttaches) {
+                $dba->insert('icinga_host_property', [
+                    'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+                    'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+                    'required'      => 'n',
+                ]);
+            }
+        }
+
+        $hostProperties = [
+            'object_name' => self::COMMAND_HOST_NAME,
+            'object_type' => 'object',
+        ];
+        if (! $viaTemplate && ! $onService) {
+            $hostProperties['check_command'] = self::COMMAND_NAME;
+        }
+
+        $host = IcingaHost::create($hostProperties, $db);
+        if ($hasTemplate) {
+            $host->set('imports', [self::COMMAND_TEMPLATE_NAME]);
+        }
+
+        $host->store();
+
+        if ($onService) {
+            IcingaService::create([
+                'object_name'   => self::COMMAND_SERVICE_NAME,
+                'object_type'   => 'object',
+                'host_id'       => $host->get('id'),
+                'check_command' => self::COMMAND_NAME,
+            ], $db)->store();
+        }
+    }
+
+    /**
+     * Remove what createCommandVarFixture() made, safe to call when nothing exists
+     *
+     * @return void
+     */
+    private function dropCommandVarFixture(): void
+    {
+        if (! $this->hasDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        // The host goes first, it imports the template and points at the command
+        foreach ([self::COMMAND_HOST_NAME, self::COMMAND_TEMPLATE_NAME] as $hostName) {
+            if (IcingaHost::exists($hostName, $db)) {
+                IcingaHost::load($hostName, $db)->delete();
+            }
+        }
+
+        if (IcingaCommand::exists(self::COMMAND_NAME, $db)) {
+            IcingaCommand::load(self::COMMAND_NAME, $db)->delete();
+        }
+
+        if (DirectorProperty::exists(self::COMMAND_PROPERTY_KEY, $db)) {
+            DirectorProperty::load(self::COMMAND_PROPERTY_KEY, $db)->delete();
+        }
+
+        if (DirectorDatafieldCategory::exists(self::COMMAND_CATEGORY_NAME, $db)) {
+            DirectorDatafieldCategory::load(self::COMMAND_CATEGORY_NAME, $db)->delete();
+        }
+
+        // The tree remembers ids from the objects deleted above
+        IcingaTemplateRepository::clear();
+    }
+
     protected function tearDown(): void
     {
+        $this->dropCommandVarFixture();
+
         $db = $this->hasDb() ? $this->getDb() : null;
 
         if ($db && IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
