@@ -7,12 +7,9 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Forms\IcingaTemplateChoiceForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
-use Icinga\Module\Director\Web\Controller\BranchHelper;
 
 class TemplatechoiceController extends ActionController
 {
-    use BranchHelper;
-
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/admin');
@@ -36,9 +33,6 @@ class TemplatechoiceController extends ActionController
             ->optionallyLoad($this->params->get('name'))
             ->setListUrl("director/templatechoices/$type")
             ->handleRequest();
-        if ($this->showNotInBranch($this->translate('Modifying Template Choices'))) {
-            return;
-        }
         $this->content()->add($form);
     }
 }

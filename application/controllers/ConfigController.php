@@ -9,29 +9,29 @@ use gipfl\Diff\HtmlRenderer\SideBySideDiff;
 use gipfl\Diff\PhpDiff;
 use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\Forms\SettingsForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Settings;
-use Icinga\Module\Director\Web\Controller\BranchHelper;
 use Icinga\Module\Director\Web\Table\ActivityLogTable;
-use Icinga\Module\Director\Web\Table\BranchActivityTable;
 use Icinga\Module\Director\Web\Table\ConfigFileDiffTable;
 use Icinga\Module\Director\Web\Table\DeploymentLogTable;
 use Icinga\Module\Director\Web\Table\GeneratedConfigFileTable;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Tabs\InfraTabs;
 use Icinga\Module\Director\Web\Widget\ActivityLogInfo;
+use Icinga\Module\Director\Web\Widget\BulkActivityLogInfo;
 use Icinga\Module\Director\Web\Widget\DeployedConfigInfoHeader;
 use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
+use Icinga\Web\Widget\Tabextension\OutputFormat;
 use Exception;
 use RuntimeException;
 use ipl\Html\Html;
@@ -42,8 +42,6 @@ use gipfl\IcingaWeb2\Url;
 
 class ConfigController extends ActionController
 {
-    use BranchHelper;
-
     protected $isApified = true;
 
     protected function checkDirectorPermissions()
@@ -71,15 +69,13 @@ class ConfigController extends ActionController
             // No problem, Icinga might be reloading
         }
 
-        if (! $this->getBranch()->isBranch()) {
-            // TODO: a form!
-            $this->actions()->add(Link::create(
-                $this->translate('Render config'),
-                'director/config/store',
-                null,
-                ['class' => 'icon-wrench']
-            ));
-        }
+        // TODO: a form!
+        $this->actions()->add(Link::create(
+            $this->translate('Render config'),
+            'director/config/store',
+            null,
+            ['class' => 'icon-wrench']
+        ));
 
         $this->tabs(new InfraTabs($this->Auth()))->activate('deploymentlog');
         $table = new DeploymentLogTable($this->db());
@@ -158,19 +154,21 @@ class ConfigController extends ActionController
         if ($this->sendNotFoundForRestApi()) {
             return;
         }
+
         $this->assertPermission('director/audit');
-        $this->showOptionalBranchActivity();
         $this->setAutorefreshInterval(10);
-        $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog');
+        $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog')->extend(new OutputFormat());
         $this->addTitle($this->translate('Activity Log'));
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
+        $isPdfExport = $this->url()->getParam('format') === 'pdf';
         $table = new ActivityLogTable($this->db());
         $table->setLastDeployedId($lastDeployedId);
+        $table->setIsPdfExport($isPdfExport);
         if ($idRangeEx = $this->url()->getParam('idRangeEx')) {
             $table->applyFilter(Filter::fromQueryString($idRangeEx));
         }
         $filter = Filter::fromQueryString(
-            $this->url()->without(['page', 'limit', 'q', 'idRangeEx'])->getQueryString()
+            $this->url()->without(['page', 'limit', 'q', 'idRangeEx', 'format'])->getQueryString()
         );
         $table->applyFilter($filter);
         if ($this->url()->hasParam('author')) {
@@ -191,7 +189,8 @@ class ConfigController extends ActionController
                 ['class' => 'icon-user', 'data-base-target' => '_self']
             ));
         }
-        if ($this->hasPermission(Permission::DEPLOY) && ! $this->getBranch()->isBranch()) {
+
+        if ($this->hasPermission(Permission::DEPLOY)) {
             if ($this->db()->hasDeploymentEndpoint()) {
                 $this->actions()->add(DeployConfigForm::load()
                     ->setDb($this->db())
@@ -210,6 +209,13 @@ class ConfigController extends ActionController
                     ))
                 );
             }
+        }
+
+        // Export the whole filtered log, not only the page we are on
+        if ($isPdfExport && ! $this->url()->hasParam('limit')) {
+            $table->getQuery()->limit(count($table));
+            // Forget the page too, or the paginator still skips rows
+            $this->url()->shift('page');
         }
 
         $table->renderTo($this);
@@ -242,6 +248,67 @@ class ConfigController extends ActionController
         $this->addTitle($info->getTitle());
         $this->controls()->prepend($info->getPagination($this->url()));
         $this->content()->add($info);
+    }
+
+    /**
+     * Show the selected activity log entries together, with one button to restore
+     * all of them
+     *
+     * Restoring starts with the newest change, so on a shared object the oldest
+     * one wins.
+     *
+     * @throws \Icinga\Security\SecurityException
+     */
+    public function activitiesBulkAction()
+    {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
+        $this->assertPermission('director/showconfig');
+        $ids = $this->getBulkSelectedActivityIds();
+        if (empty($ids)) {
+            throw new NotFoundError('No activity log entries have been selected');
+        }
+
+        $this->addSingleTab($this->translate('Bulk activity view'))
+            ->addTitle($this->translate('%d selected activities'), count($ids));
+
+        $info = new BulkActivityLogInfo($this->db(), $ids);
+        // Let the restore form handle its request now, not later while rendering
+        $info->ensureAssembled();
+        $this->content()->add($info);
+    }
+
+    /**
+     * Get the ids from the multiselect filter, newest first
+     *
+     * The order in the query only follows how the table was listed, so sort them
+     * here.
+     *
+     * @return int[]
+     */
+    protected function getBulkSelectedActivityIds()
+    {
+        $ids = [];
+        foreach (Filter::fromQueryString($this->params->toString())->filters() as $sub) {
+            if ($sub instanceof FilterExpression) {
+                if ($sub->getColumn() === 'id') {
+                    $ids[] = (int) $sub->getExpression();
+                }
+
+                continue;
+            }
+
+            foreach ($sub->filters() as $expression) {
+                if ($expression->getColumn() === 'id') {
+                    $ids[] = (int) $expression->getExpression();
+                }
+            }
+        }
+
+        rsort($ids, SORT_NUMERIC);
+
+        return $ids;
     }
 
     /**
@@ -300,7 +367,6 @@ class ConfigController extends ActionController
             $config,
             $this->db(),
             $this->api(),
-            $this->getBranch(),
             $deploymentId
         ));
 
@@ -449,32 +515,6 @@ class ConfigController extends ActionController
             )));
     }
 
-    protected function showOptionalBranchActivity()
-    {
-        if ($this->url()->hasParam('idRangeEx')) {
-            return;
-        }
-        $branch = $this->getBranch();
-        if ($branch->isBranch() && (int) $this->params->get('page', '1') === 1) {
-            $table = new BranchActivityTable($branch->getUuid(), $this->db());
-            if (count($table) > 0) {
-                $this->content()->add(Hint::info(Html::sprintf($this->translate(
-                    'The following modifications are visible in this %s only...'
-                ), Branch::requireHook()->linkToBranch(
-                    $branch,
-                    $this->Auth(),
-                    $this->translate('configuration branch')
-                ))));
-                $this->content()->add($table);
-                $this->content()->add(Html::tag('br'));
-                $this->content()->add(Hint::ok($this->translate(
-                    '...and the modifications below are already in the main branch:'
-                )));
-                $this->content()->add(Html::tag('br'));
-            }
-        }
-    }
-
     /**
      * @param $checksum
      */
@@ -482,6 +522,7 @@ class ConfigController extends ActionController
     {
         if ($this->getRequest()->isApiRequest()) {
             $this->sendJson($this->getResponse(), (object) array('checksum' => $checksum));
+
             return;
         } else {
             $url = Url::fromPath('director/config/deployments');
@@ -502,6 +543,7 @@ class ConfigController extends ActionController
 
         if ($this->getRequest()->isApiRequest()) {
             $this->sendJsonError($this->getResponse(), 'Config deployment failed' . $extra);
+
             return;
         } else {
             $url = Url::fromPath('director/config/files', array('checksum' => $checksum));

@@ -19,8 +19,6 @@ use Ramsey\Uuid\Uuid;
 
 class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 {
-    use TableWithBranchSupport;
-
     /** @var IcingaServiceSet */
     protected $set;
 
@@ -184,9 +182,6 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 
     protected function getRowClasses($row)
     {
-        if ($row->branch_uuid !== null) {
-            return ['branch_modified'];
-        }
         return [];
     }
 
@@ -220,15 +215,14 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     {
         $connection = $this->connection();
         assert($connection instanceof Db);
-        $builder = new ServiceSetQueryBuilder($connection, $this->branchUuid);
+        $builder = new ServiceSetQueryBuilder($connection);
         $query = $builder->selectServicesForSet($this->set);
-        $alias = $this->branchUuid ? 'u' : 'o';
 
         if ($this->affectedHost) {
             if ($hostId = $this->affectedHost->get('id')) {
                 $query->joinLeft(
                     ['hsb' => 'icinga_host_service_blacklist'],
-                    $this->db()->quoteInto("$alias.id = hsb.service_id AND hsb.host_id = ?", $hostId),
+                    $this->db()->quoteInto("o.id = hsb.service_id AND hsb.host_id = ?", $hostId),
                     []
                 )->columns([
                     'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"

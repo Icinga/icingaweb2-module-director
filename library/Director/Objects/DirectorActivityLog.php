@@ -48,6 +48,12 @@ class DirectorActivityLog extends DbObject
     /** @var ?string */
     protected static $overriddenUsername = null;
 
+    /** @var ?IcingaObject The object a pending note belongs to */
+    protected static $noteObject = null;
+
+    /** @var ?string */
+    protected static $pendingNote = null;
+
     /**
      * @param $name
      *
@@ -141,7 +147,7 @@ class DirectorActivityLog extends DbObject
             'new_props'   => $newProps,
         ]);
 
-        return static::create($data)->store($db);
+        return static::storeEntry($data, $object, $db);
     }
 
     public static function logModification(IcingaObject $object, Db $db)
@@ -150,6 +156,7 @@ class DirectorActivityLog extends DbObject
         $newProps = $object->toJson(null, true);
 
         return self::logModificationChange(
+            $object,
             $object->getObjectName(),
             $object->getTableName(),
             $oldProps,
@@ -185,6 +192,7 @@ class DirectorActivityLog extends DbObject
         $newProps = json_encode($newPlain);
 
         return self::logModificationChange(
+            $object,
             $object->getObjectName(),
             $object->getTableName(),
             $oldProps,
@@ -194,6 +202,7 @@ class DirectorActivityLog extends DbObject
     }
 
     private static function logModificationChange(
+        IcingaObject $object,
         string $name,
         string $type,
         string $oldProps,
@@ -227,7 +236,7 @@ class DirectorActivityLog extends DbObject
             'new_props'   => $newProps,
         ]);
 
-        return static::create($data)->store($db);
+        return static::storeEntry($data, $object, $db);
     }
 
     public static function logRemoval(IcingaObject $object, Db $db)
@@ -268,7 +277,7 @@ class DirectorActivityLog extends DbObject
             'old_props'   => $oldProps
         ]);
 
-        return static::create($data)->store($db);
+        return static::storeEntry($data, $object, $db);
     }
 
     public static function audit(Db $db, $properties)
@@ -288,6 +297,37 @@ class DirectorActivityLog extends DbObject
         }
 
         Logger::info('(director) ' . implode(' ', $log));
+    }
+
+    /**
+     * Save this note on the entry logged for the object, instead of the
+     * entries of other objects stored along with it
+     *
+     * @param IcingaObject $object
+     * @param string $note
+     */
+    public static function setPendingNote(IcingaObject $object, string $note): void
+    {
+        self::$noteObject = $object;
+        self::$pendingNote = $note;
+    }
+
+    public static function clearPendingNote(): void
+    {
+        self::$noteObject = null;
+        self::$pendingNote = null;
+    }
+
+    private static function storeEntry(array $data, IcingaObject $object, Db $db)
+    {
+        $entry = static::create($data);
+        $stored = $entry->store($db);
+
+        if ($stored && self::$pendingNote !== null && self::$noteObject === $object) {
+            $db->storeActivityLogNotes([(int) $entry->get('id')], self::$pendingNote);
+        }
+
+        return $stored;
     }
 
     public static function overrideUsername($username)

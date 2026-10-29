@@ -10,15 +10,14 @@ use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
-use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -52,14 +51,14 @@ abstract class DirectorObjectForm extends DirectorForm
     /** @var IcingaObject */
     protected $object;
 
-    /** @var Branch */
-    protected $branch;
-
     protected $objectName;
 
     protected $className;
 
     protected $deleteButtonName;
+
+    /** @var bool Offer a remark field that is saved with the Activity Log entry */
+    protected $hasChangeNote = false;
 
     protected $displayGroups = [];
 
@@ -557,6 +556,40 @@ abstract class DirectorObjectForm extends DirectorForm
             );
             $this->addDeleteButton();
         }
+
+        $this->addChangeNoteElement();
+    }
+
+    protected function offersChangeNote(): bool
+    {
+        return $this->hasChangeNote;
+    }
+
+    protected function addChangeNoteElement(): void
+    {
+        if (! $this->offersChangeNote()) {
+            return;
+        }
+
+        $this->addElement('textarea', 'change_note', [
+            'label'       => $this->translate('Remark'),
+            'placeholder' => $this->translate('Add a note to your changes'),
+            'rows'        => 1,
+            'class'       => 'auto-grow',
+            'ignore'      => true,
+            'order'       => 990,
+        ]);
+    }
+
+    /**
+     * Let the Activity Log entry of this object carry the remark that was sent
+     */
+    protected function setPendingChangeNote(IcingaObject $object): void
+    {
+        $note = trim((string) $this->getRequest()->getPost('change_note', ''));
+        if ($note !== '') {
+            DirectorActivityLog::setPendingNote($object, $note);
+        }
     }
 
     /**
@@ -725,17 +758,25 @@ abstract class DirectorObjectForm extends DirectorForm
             // saving below overwrites that history
             $removedImportNames = $this->removedImportNames();
 
-            $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
-                $this->getDbObjectStore()->store($object);
+            if ($object instanceof IcingaObject) {
+                $this->setPendingChangeNote($object);
+            }
 
-                if (! empty($removedImportNames)) {
-                    PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
-                        $object,
-                        $removedImportNames,
-                        $this->getDb()
-                    );
-                }
-            });
+            try {
+                $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
+                    $object->store();
+
+                    if (! empty($removedImportNames)) {
+                        PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
+                            $object,
+                            $removedImportNames,
+                            $this->getDb()
+                        );
+                    }
+                });
+            } finally {
+                DirectorActivityLog::clearPendingNote();
+            }
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -978,19 +1019,19 @@ abstract class DirectorObjectForm extends DirectorForm
             );
         }
 
-        if ($this->getDbObjectStore()->delete($object)) {
-            $this->setSuccessUrl($url);
+        if ($object instanceof IcingaObject) {
+            $this->setPendingChangeNote($object);
         }
-        $this->redirectOnSuccess($msg);
-    }
 
-    /**
-     * @return DbObjectStore
-     */
-    protected function getDbObjectStore()
-    {
-        $store = new DbObjectStore($this->getDb(), $this->branch);
-        return $store;
+        try {
+            if ($object->delete()) {
+                $this->setSuccessUrl($url);
+            }
+        } finally {
+            DirectorActivityLog::clearPendingNote();
+        }
+
+        $this->redirectOnSuccess($msg);
     }
 
     protected function addDeleteButton($label = null)
@@ -1120,9 +1161,6 @@ abstract class DirectorObjectForm extends DirectorForm
 
     public function loadObject($id)
     {
-        if ($this->branch && $this->branch->isBranch()) {
-            throw new \RuntimeException('Calling loadObject from form in a branch');
-        }
         /** @var DbObject $class */
         $class = $this->getObjectClassname();
         if (is_int($id)) {
@@ -1972,13 +2010,6 @@ abstract class DirectorObjectForm extends DirectorForm
     public function hasPermission($permission)
     {
         return Util::hasPermission($permission);
-    }
-
-    public function setBranch(Branch $branch)
-    {
-        $this->branch = $branch;
-
-        return $this;
     }
 
     protected function allowsExperimental()
