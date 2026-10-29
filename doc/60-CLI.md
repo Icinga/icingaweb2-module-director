@@ -319,6 +319,8 @@ two on its own. Run
 
 to fix that. It scans **every host in the database** and writes back any
 variable matching a Custom Property by name, even if the value didn't change.
+The Custom Properties of a host, its templates and its check command are
+all looked at, in that order.
 
 
 Import/Export Director Objects
