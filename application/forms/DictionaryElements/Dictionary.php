@@ -14,6 +14,9 @@ use ipl\Html\HtmlElement;
 use ipl\Html\ValidHtml;
 use ipl\Web\Widget\EmptyStateBar;
 
+/**
+ * @phpstan-import-type Section from ObjectCustomPropertySources
+ */
 class Dictionary extends FieldsetElement
 {
     protected $defaultAttributes = ['class' => 'dictionary'];
@@ -36,7 +39,10 @@ class Dictionary extends FieldsetElement
     /** @var bool Whether dictionary is a child dictionary */
     private bool $isChild = false;
 
-    /** @var array The boxes the rows are drawn in, keyed by section */
+    /**
+     * @var array<string, array{order: int, html: ValidHtml, body: HtmlDocument}> The boxes the rows are drawn
+     *      in, keyed by section
+     */
     private array $sections = [];
 
     /** @var DictionaryItem[] The rows drawn in the command box */
@@ -306,7 +312,7 @@ class Dictionary extends FieldsetElement
     /**
      * Get the box the rows of the given section are drawn in
      *
-     * @param ?array $section The section the rows belong to, null for the object itself
+     * @param ?Section $section The section the rows belong to, null for the object itself
      *
      * @return HtmlDocument
      */
@@ -328,7 +334,7 @@ class Dictionary extends FieldsetElement
     /**
      * Create the box for one section
      *
-     * @param array $section The kind, name and order of the section
+     * @param Section $section The kind, name and order of the section
      *
      * @return array{html: ValidHtml, body: HtmlDocument}
      */
