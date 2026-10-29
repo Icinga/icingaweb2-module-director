@@ -612,6 +612,62 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $this->assertSame($property->get('uuid'), $var->getUuid()->getBytes());
     }
 
+    public function testVariablesEndpointAcceptsCommandVarOnConcreteHost(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createCommandWithProperty($db, 'string');
+        $host = $this->createConcreteHost($db);
+        $host->set('check_command', self::COMMAND_NAME);
+        $host->store();
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $var = IcingaHost::load(self::CONCRETE_HOST_NAME, $db)->vars()->get(self::ENV_KEY);
+        $this->assertSame('production', $var->getValue());
+        $this->assertSame($property->get('uuid'), $var->getUuid()->getBytes());
+    }
+
+    public function testVariablesEndpointChecksTheShapeOfACommandVarOnConcreteHost(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createCommandWithProperty($db, 'fixed-array');
+        $host = $this->createConcreteHost($db);
+        $host->set('check_command', self::COMMAND_NAME);
+        $host->store();
+
+        $this->expectException(InvalidArgumentException::class);
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'PUT',
+            false
+        ));
+    }
+
+    public function testPutOnACommandTemplateAttachesNewProperties(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->assertPutAttachesPropertyOnCommand($this->getDb(), 'template');
+    }
+
     public function testPostOnATemplateNamesTheTemplateWhenThePropertyIsNotAttached(): void
     {
         if ($this->skipForMissingDb()) {
@@ -955,6 +1011,27 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $command->store($db);
 
         return $command;
+    }
+
+    private function createCommandWithProperty($db, string $valueType): DirectorProperty
+    {
+        $command = $this->createCommand($db, 'external_object');
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::ENV_KEY,
+            'value_type' => $valueType,
+            'label'      => 'Environment',
+        ], $db);
+        $property->store();
+
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_command_property', [
+            'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+
+        return $property;
     }
 
     private function createConcreteHost($db): IcingaHost

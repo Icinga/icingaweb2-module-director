@@ -217,6 +217,41 @@ class SyncObjectCustomVariablePropertyLinkTest extends SyncTest
         $this->assertVarUuid('production', null);
     }
 
+    public function testSyncClearsUuidWhenCommandChangesTogetherWithAnotherField(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $property = $this->createCommandWithProperty(self::COMMAND_NAME);
+        $this->createCommand(self::OTHER_COMMAND_NAME);
+
+        $this->runImport([[
+            'host'    => 'SYNCTEST_synced_host',
+            'env'     => 'production',
+            'address' => '192.0.2.10',
+        ]]);
+        $commandProperty = $this->setUpHostSyncWithCommand(self::COMMAND_NAME);
+        $this->setUpProperty([
+            'source_expression' => '${address}',
+            'destination_field' => 'address',
+            'priority'          => 13,
+        ]);
+        $this->sync->apply();
+        $this->assertVarUuid('production', $property->get('uuid'));
+
+        $this->runImport([[
+            'host'    => 'SYNCTEST_synced_host',
+            'env'     => 'production',
+            'address' => '192.0.2.20',
+        ]]);
+        $commandProperty->set('source_expression', self::OTHER_COMMAND_NAME)->store();
+        $this->resync();
+        $this->sync->apply();
+
+        $this->assertVarUuid('production', null);
+    }
+
     private function resync(): void
     {
         // a sync rule caches its properties once loaded, a real second sync run

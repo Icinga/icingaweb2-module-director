@@ -406,7 +406,7 @@ class CustomVariableValueApplier
 
     /**
      * Get the custom properties linked to the given object, including
-     * properties inherited from its ancestors
+     * properties inherited from its ancestors and from its check command
      *
      * @param IcingaObject $object
      *

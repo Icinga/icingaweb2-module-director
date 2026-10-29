@@ -22,7 +22,7 @@ class ObjectCustomVariablePropertyLinker
 {
     /**
      * Links every synced object's values to a property, wherever one is
-     * already attached somewhere in that object's own ancestry
+     * already attached on the object, its templates or its check command
      *
      * @param IcingaObject[] $objects the objects a sync run just prepared
      * @param Db $db the target database this sync run is writing to
@@ -37,7 +37,9 @@ class ObjectCustomVariablePropertyLinker
                 continue;
             }
 
-            // Switching the check command changes which variables the object can reach, like a new import
+            // Switching the check command changes which variables the object can reach, like a new import.
+            // Sync sets it by name, so resolve it first or it is not marked as modified yet.
+            $object->resolveUnresolvedRelatedProperties();
             $sourcesChanged = $object->imports()->hasBeenModified()
                 || in_array('check_command_id', $object->listModifiedProperties(), true);
             $keys = $sourcesChanged ? $object->vars()->listKeys() : $object->vars()->listKeysWithoutUuid();
@@ -55,6 +57,8 @@ class ObjectCustomVariablePropertyLinker
 
     /**
      * Does the actual linking for one object type, one query for the whole batch
+     *
+     * A variable no template settles falls back to the properties of the check command.
      *
      * @param string $type the object type's short name, host, service and so on
      * @param array<int, array{0: IcingaObject, 1: string[]}> $entries one entry per object,
