@@ -13,6 +13,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
+use InvalidArgumentException;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use stdClass;
@@ -46,9 +47,12 @@ class CustomVariableValueApplier
      *              own modification tracking, checked before storeToDb() resets it.
      *
      * @throws NotFoundError
+     * @throws InvalidArgumentException If a value is sent to the variables endpoint of an external object
      */
     public function apply(CustomVarApplyRequest $request): bool
     {
+        $this->assertNoValuesForExternalObject($request);
+
         $object = $request->object;
         $dbAdapter = $this->db->getDbAdapter();
         $type = $object->getShortTableName();
@@ -279,9 +283,13 @@ class CustomVariableValueApplier
         $propertyRow = DbUtil::normalizeRow($propertyRow);
         $customPropertyUuid = $propertyRow['uuid'];
 
-        // key is real, not rejected, but nothing to attach for a null value
-        // on a property that was never attached here to begin with
+        // Key is real, not rejected. A null value attaches nothing, except on an external
+        // object, which never takes a value and so gets attached by a null.
         if ($var === null) {
+            if ($object->isExternal()) {
+                $this->insertAttachment($object, $customPropertyUuid);
+            }
+
             return;
         }
 
@@ -302,14 +310,57 @@ class CustomVariableValueApplier
             );
         }
 
+        $this->insertAttachment($object, $customPropertyUuid);
+        $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
+    }
+
+    /**
+     * Attach the given property directly to the given object, as not required
+     *
+     * @param IcingaObject $object
+     * @param string $propertyUuid The property's binary uuid
+     *
+     * @return void
+     */
+    private function insertAttachment(IcingaObject $object, string $propertyUuid): void
+    {
+        $dbAdapter = $this->db->getDbAdapter();
         $type = $object->getShortTableName();
         $dbAdapter->insert('icinga_' . $type . '_property', [
-            'property_uuid' => DbUtil::quoteBinaryCompat($customPropertyUuid, $dbAdapter),
+            'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid, $dbAdapter),
             $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
             'required' => 'n'
         ]);
+    }
 
-        $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
+    /**
+     * Assert that the request sets no value on the variables endpoint of an external object
+     *
+     * An external object is never deployed, so a value stored on it would never take
+     * effect. A null value is accepted, it attaches the variable without a value.
+     *
+     * @param CustomVarApplyRequest $request
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException If any variable in the request has a non-null value
+     */
+    private function assertNoValuesForExternalObject(CustomVarApplyRequest $request): void
+    {
+        if ($request->actionName !== 'variables' || ! $request->object->isExternal()) {
+            return;
+        }
+
+        foreach ($request->overRiddenCustomVars as $key => $value) {
+            if ($value !== null) {
+                throw new InvalidArgumentException(sprintf(
+                    'The custom variable %s can not have a value, %s is an external object and is never deployed.'
+                    . ' Send null to attach the variable without a value',
+                    $key,
+                    $request->object->getObjectName()
+                ));
+            }
+        }
     }
 
     /**

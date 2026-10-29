@@ -289,6 +289,19 @@ variable left out of the body keeps its attachment and only loses its value.
 A command can still attach a variable that isn't used on it yet, the same
 way a template can.
 
+An **external command**, like the ones coming from the ITL, is never
+rendered into the deployed configuration, so it can't have values. Every
+variable in a `POST` or `PUT` body for it must be `null`, otherwise the
+whole request is rejected with `422 Unprocessable Entity` and nothing is
+changed. A `PUT` with `null` attaches a variable that isn't used on the
+command yet.
+
+    PUT director/command/variables?name=http
+
+```json
+{ "http_vhost": null }
+```
+
 On any other object (host, service, user, notification), `PUT` only
 replaces values: it can never attach a variable that isn't already
 available to the object through one of its imported templates; see
@@ -456,9 +469,9 @@ same as it does for plain values.
 Both `POST` and `PUT` can update the value of a variable that is
 already attached to the object (or inherited from one of its imported
 templates). Only `PUT`, and only when the target object is itself a
-**template** or a **command**, can additionally attach a variable that is configured
-under `Custom Variables` but not yet used on that template; Director
-creates the attachment and then stores the value in the same call.
+**template** or a **command**, can additionally attach a variable that is
+configured under `Custom Variables` but not yet used on that object;
+Director creates the attachment and then stores the value in the same call.
 
     PUT director/host/variables?name=generic-host
 
@@ -537,7 +550,8 @@ The message depends on how the variable is unknown.
   **is** configured under `Custom Variables`, just not yet attached to
   that object, is a silent no-op: nothing is attached, nothing is
   rejected. Only a non-`null` value on this path actually attaches the
-  property.
+  property. An external command is the exception. It never takes a
+  value, so a `null` value attaches the property there.
 
 ```
 HTTP/1.1 404 Not Found
