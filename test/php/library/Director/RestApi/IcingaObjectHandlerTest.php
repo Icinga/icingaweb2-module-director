@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\RestApi;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaApiUser;
@@ -46,6 +47,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
     private const API_USER_NAME = self::PREFIX . 'automation';
     private const HOSTGROUP_TEMPLATE_NAME = self::PREFIX . 'hostgroup-template';
     private const HOSTGROUP_LEAF_NAME = self::PREFIX . 'hostgroup-leaf';
+    private const EXTERNAL_COMMAND_NAME = self::PREFIX . 'http';
 
     public function testObjectChangeAndCustomVarValidationFailureRollBackTogether(): void
     {
@@ -709,6 +711,46 @@ class IcingaObjectHandlerTest extends BaseTestCase
         }
     }
 
+    public function testValueOnTheVariablesEndpointOfAnExternalCommandIsUnprocessable(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithRegionProperty($db);
+
+        // processApiRequest() answers an InvalidArgumentException with 422
+        $this->expectException(InvalidArgumentException::class);
+        $this->putExternalCommandVariables($db, $command, new Response(), [self::REGION_KEY => 'eu-west']);
+    }
+
+    public function testNullOnTheVariablesEndpointOfAnExternalCommandAttachesAndKeepsItsValues(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithRegionProperty($db);
+        $response = new Response();
+
+        $this->putExternalCommandVariables($db, $command, $response, [self::REGION_KEY => null]);
+
+        $this->assertEquals(200, $response->getHttpResponseCode());
+        $dba = $db->getDbAdapter();
+        $this->assertEquals(1, $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_command_property', ['COUNT(*)'])
+                ->where('command_uuid = ?', DbUtil::quoteBinaryCompat($command->get('uuid'), $dba))
+        ), 'The variable must be attached');
+        $this->assertSame(
+            '$check_address$',
+            IcingaCommand::load(self::EXTERNAL_COMMAND_NAME, $db)->getVars()->http_address ?? null,
+            'The values imported by kickstart must be kept'
+        );
+    }
+
     public function testDeleteIsAllowedOnTheIndexAction(): void
     {
         IcingaObjectHandler::assertDeleteAllowed('index');
@@ -769,6 +811,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
                 $host->delete();
             }
 
+            $this->deleteIfExists('command', self::EXTERNAL_COMMAND_NAME, $db);
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::DB_CONNECTION_KEY));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::REGION_KEY));
 
@@ -779,6 +822,53 @@ class IcingaObjectHandlerTest extends BaseTestCase
         }
 
         parent::tearDown();
+    }
+
+    private function createExternalCommandWithRegionProperty(Db $db): IcingaCommand
+    {
+        $this->deleteIfExists('command', self::EXTERNAL_COMMAND_NAME, $db);
+        $command = IcingaCommand::create([
+            'object_name' => self::EXTERNAL_COMMAND_NAME,
+            'object_type' => 'external_object',
+        ]);
+        $command->vars()->set('http_address', '$check_address$');
+        $command->store($db);
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::REGION_KEY,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db)->store();
+
+        return IcingaCommand::load(self::EXTERNAL_COMMAND_NAME, $db);
+    }
+
+    /**
+     * @param array<string, mixed> $vars
+     */
+    private function putExternalCommandVariables(
+        Db $db,
+        IcingaCommand $command,
+        Response $response,
+        array $vars
+    ): void {
+        $handler = new IcingaObjectHandler(new Request(), $response, $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $writeRequest = new IcingaObjectWriteRequest(
+            $command,
+            [],
+            'command',
+            'variables',
+            'PUT',
+            false,
+            $vars,
+            false,
+            new UrlParams()
+        );
+
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest): void {
+            $method->invoke($handler, $writeRequest);
+        });
     }
 
     private function deleteServiceFixtures($db): void

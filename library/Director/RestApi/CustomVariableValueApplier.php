@@ -13,6 +13,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
+use InvalidArgumentException;
 use PDO;
 use Ramsey\Uuid\Uuid;
 use stdClass;
@@ -38,17 +39,27 @@ class CustomVariableValueApplier
      * used for a POST carrying a full "vars" dictionary at the base
      * object endpoint.
      *
+     * On the variables endpoint of an external object, only attachments change.
+     * See attachToExternalObject() for the rules.
+     *
      * @param CustomVarApplyRequest $request
      *
      * @return bool Whether anything was actually wiped or written. A PUT always
      *              counts as a change since it replaces the full set regardless
-     *              of the end result. Otherwise this reflects CustomVariables'
-     *              own modification tracking, checked before storeToDb() resets it.
+     *              of the end result. On the variables endpoint of an external
+     *              object, this is whether a variable got attached. Otherwise this
+     *              reflects CustomVariables' own modification tracking, checked
+     *              before storeToDb() resets it.
      *
      * @throws NotFoundError
+     * @throws InvalidArgumentException If a value is sent to the variables endpoint of an external object
      */
     public function apply(CustomVarApplyRequest $request): bool
     {
+        if ($request->actionName === 'variables' && $request->object->isExternal()) {
+            return $this->attachToExternalObject($request);
+        }
+
         $object = $request->object;
         $dbAdapter = $this->db->getDbAdapter();
         $type = $object->getShortTableName();
@@ -239,6 +250,105 @@ class CustomVariableValueApplier
             return;
         }
 
+        $propertyRow = $this->findAttachableProperty($request, $key);
+        $customPropertyUuid = $propertyRow['uuid'];
+
+        // key is real, not rejected, but nothing to attach for a null value
+        // on a property that was never attached here to begin with
+        if ($var === null) {
+            return;
+        }
+
+        $var->setModified();
+        CustomVariableValueValidator::assertMatchesType(
+            $key,
+            $value,
+            $propertyRow['value_type'],
+            Uuid::fromBytes($customPropertyUuid),
+            $this->db
+        );
+        if ($propertyRow['value_type'] === 'datalist-strict') {
+            CustomVariableValueValidator::assertDatalistValueAllowed(
+                $key,
+                $value,
+                Uuid::fromBytes($customPropertyUuid),
+                $this->db
+            );
+        }
+
+        $this->insertAttachment($object, $customPropertyUuid);
+        $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
+    }
+
+    /**
+     * Attach the requested variables to an external object and leave its values untouched
+     *
+     * The values of an external object come from kickstart and are not edited in Director.
+     * Every value in the request must be null. A PUT attaches each requested variable
+     * that is configured but not yet attached. A POST attaches nothing, so it only
+     * accepts variables that are already attached. Every variable is checked before
+     * anything is attached.
+     *
+     * @param CustomVarApplyRequest $request
+     *
+     * @return bool Whether a variable got attached
+     *
+     * @throws NotFoundError If a variable is not attached and can't be attached
+     * @throws InvalidArgumentException If a variable has a value other than null
+     */
+    private function attachToExternalObject(CustomVarApplyRequest $request): bool
+    {
+        $object = $request->object;
+        $customProperties = $this->getObjectCustomProperties($object);
+        $newAttachments = [];
+
+        foreach ($request->overRiddenCustomVars as $key => $value) {
+            if (isset($customProperties[$key])) {
+                if ($value !== null) {
+                    throw new InvalidArgumentException(sprintf(
+                        'The custom variable %s can not have a value on %s because the values'
+                        . ' of an external object come from kickstart',
+                        $key,
+                        $object->getObjectName()
+                    ));
+                }
+
+                continue;
+            }
+
+            $propertyRow = $this->findAttachableProperty($request, $key);
+            if ($value !== null) {
+                throw new InvalidArgumentException(sprintf(
+                    'The custom variable %s can only be attached to %s with a null value because the values'
+                    . ' of an external object come from kickstart',
+                    $key,
+                    $object->getObjectName()
+                ));
+            }
+
+            $newAttachments[] = $propertyRow['uuid'];
+        }
+
+        foreach ($newAttachments as $propertyUuid) {
+            $this->insertAttachment($object, $propertyUuid);
+        }
+
+        return $newAttachments !== [];
+    }
+
+    /**
+     * Get the property to attach for a variable that is not attached to the object yet
+     *
+     * @param CustomVarApplyRequest $request
+     * @param string $key
+     *
+     * @return array{uuid: string, value_type: string} The property's binary uuid and its value type
+     *
+     * @throws NotFoundError If the request can't attach the variable to the object
+     */
+    private function findAttachableProperty(CustomVarApplyRequest $request, string $key): array
+    {
+        $object = $request->object;
         if (! $object->supportsCustomProperties()) {
             throw new NotFoundError(sprintf(
                 'The custom variable %s can not be attached, this object type does not support custom properties',
@@ -276,40 +386,27 @@ class CustomVariableValueApplier
             ));
         }
 
-        $propertyRow = DbUtil::normalizeRow($propertyRow);
-        $customPropertyUuid = $propertyRow['uuid'];
+        return DbUtil::normalizeRow($propertyRow);
+    }
 
-        // key is real, not rejected, but nothing to attach for a null value
-        // on a property that was never attached here to begin with
-        if ($var === null) {
-            return;
-        }
-
-        $var->setModified();
-        CustomVariableValueValidator::assertMatchesType(
-            $key,
-            $value,
-            $propertyRow['value_type'],
-            Uuid::fromBytes($customPropertyUuid),
-            $this->db
-        );
-        if ($propertyRow['value_type'] === 'datalist-strict') {
-            CustomVariableValueValidator::assertDatalistValueAllowed(
-                $key,
-                $value,
-                Uuid::fromBytes($customPropertyUuid),
-                $this->db
-            );
-        }
-
+    /**
+     * Attach the given property directly to the given object
+     *
+     * @param IcingaObject $object
+     * @param string $propertyUuid The property's binary uuid
+     * @param 'y'|'n' $required
+     *
+     * @return void
+     */
+    private function insertAttachment(IcingaObject $object, string $propertyUuid, string $required = 'n'): void
+    {
+        $dbAdapter = $this->db->getDbAdapter();
         $type = $object->getShortTableName();
         $dbAdapter->insert('icinga_' . $type . '_property', [
-            'property_uuid' => DbUtil::quoteBinaryCompat($customPropertyUuid, $dbAdapter),
+            'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid, $dbAdapter),
             $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
-            'required' => 'n'
+            'required' => $required,
         ]);
-
-        $objectVars->registerVarUuid($key, Uuid::fromBytes($customPropertyUuid));
     }
 
     /**
@@ -349,13 +446,7 @@ class CustomVariableValueApplier
             }
         }
 
-        $type = $object->getShortTableName();
-        $dbAdapter = $this->db->getDbAdapter();
-        $dbAdapter->insert('icinga_' . $type . '_property', [
-            'property_uuid' => DbUtil::quoteBinaryCompat($attachment['uuid'], $dbAdapter),
-            $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
-            'required' => $attachment['required']
-        ]);
+        $this->insertAttachment($object, $attachment['uuid'], $attachment['required']);
 
         $var = $objectVars->get($key);
         if ($var !== null) {
