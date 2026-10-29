@@ -30,6 +30,18 @@ class ObjectControllerCustomPropertiesTest extends BaseTestCase
         );
     }
 
+    public function testAnAncestorRequiringItIsKeptBesideADirectAttachment(): void
+    {
+        $controller = $this->newController();
+
+        $property = $this->callResolve($controller, [
+            ['uuid' => 'object', 'required' => false],
+            ['uuid' => 'ancestor', 'required' => true],
+        ], 'object');
+
+        $this->assertTrue($property['required_by_ancestor']);
+    }
+
     public function testAnyAncestorRequiringItIsEnoughWithoutADirectAttachment(): void
     {
         $controller = $this->newController();

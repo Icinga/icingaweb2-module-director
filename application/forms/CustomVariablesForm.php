@@ -124,7 +124,7 @@ class CustomVariablesForm extends CompatForm
             if ($this->ignoresRequired($property)) {
                 // required_current keeps the real flag around so the row can still show it as a toggle.
                 $property['required_current'] = $property['required'] ?? false;
-                $property['required'] = false;
+                $property['required'] = $this->isRequiredByAncestor($property);
             }
         }
 
@@ -338,9 +338,9 @@ class CustomVariablesForm extends CompatForm
         $dictionary = $this->getElement('properties');
 
         if ($this->ignoresRequired($propertyData)) {
-            // Only reachable from a tab that attaches the variable itself, which never enforces required.
+            // Only reachable from a tab that attaches the variable itself, so only an inherited requirement applies.
             $propertyData['required_current'] = $propertyData['required'] ?? false;
-            $propertyData['required'] = false;
+            $propertyData['required'] = $this->isRequiredByAncestor($propertyData);
         }
 
         if ($propertyData['allow_removal']) {
@@ -415,9 +415,9 @@ class CustomVariablesForm extends CompatForm
      * Templates define the schema, they don't fill it in, so required never
      * applies to them. A command is the same for the variables it attaches
      * itself, but it still has to fill in what an imported command template
-     * requires.
+     * requires, see isRequiredByAncestor().
      *
-     * @param array $property
+     * @param array<string, mixed> $property
      *
      * @return bool
      */
@@ -428,6 +428,21 @@ class CustomVariablesForm extends CompatForm
         }
 
         return $this->object->definesCustomProperties() && ($property['allow_removal'] ?? false);
+    }
+
+    /**
+     * Whether the given row still has to be filled in once its own required flag is ignored
+     *
+     * That is the case when the object is not a template and an imported
+     * template requires the variable, even if the object attaches it itself.
+     *
+     * @param array<string, mixed> $property
+     *
+     * @return bool
+     */
+    private function isRequiredByAncestor(array $property): bool
+    {
+        return ! $this->object->isTemplate() && ($property['required_by_ancestor'] ?? false);
     }
 
     /**

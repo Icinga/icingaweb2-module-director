@@ -6,7 +6,6 @@
 namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Application\Config;
-use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -32,15 +31,8 @@ class CustomVariablesFormCommandTest extends BaseTestCase
             return;
         }
 
-        // The dictionary items open their own connection, point it at the test DB
-        $resource = getenv('DIRECTOR_TESTDB_RES');
-        Config::module('director')->setSection('db', ['resource' => $resource]);
-        $config = ResourceFactory::getResourceConfig($resource);
-        $config->dbname = getenv('DIRECTOR_TESTDB');
-        $config->host = getenv('DIRECTOR_TESTDB_HOST');
-        $config->port = getenv('DIRECTOR_TESTDB_PORT');
-        $config->username = getenv('DIRECTOR_TESTDB_USER');
-        $config->password = getenv('DIRECTOR_TESTDB_PASSWORD');
+        // The dictionary items open their own connection, point it at the resource BaseTestCase uses
+        Config::module('director')->setSection('db', ['resource' => static::getDbResourceName()]);
     }
 
     public function testCommandRowHasNoRequiredToggle(): void
@@ -50,7 +42,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         }
 
         $command = $this->createCommand('object');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => false]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => false]));
 
         $this->assertStringNotContainsString('item_required_0', $form->render());
     }
@@ -62,7 +54,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         }
 
         $command = $this->createCommand('template');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => false]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => false]));
 
         $this->assertStringContainsString('item_required_0', $form->render());
     }
@@ -76,7 +68,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         // What a 1.11 upgrade leaves behind for a command with a required field
         $command = $this->createCommand('object');
         $this->attach($command, 'y');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => true]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => true]));
         $form->populate(['properties' => [
             'item-count' => 1,
             0 => ['name' => self::KEY, 'type' => 'string', 'var' => '/srv/backup'],
@@ -94,7 +86,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         }
 
         $command = $this->createCommand('object');
-        $form = $this->buildForm($command, $this->rowFor($command, ['new' => true, 'required' => true]));
+        $form = $this->buildForm($command, $this->rowFor(['new' => true, 'required' => true]));
         // Someone ticking the toggle, or posting it by hand
         $form->populate(['properties' => [
             'item-count' => 1,
@@ -114,7 +106,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
 
         $command = $this->createCommand('object');
         $this->attach($command, 'y');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => true]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => true]));
 
         $this->assertStringNotContainsString('required', $this->renderValueInput($form));
     }
@@ -127,9 +119,35 @@ class CustomVariablesFormCommandTest extends BaseTestCase
 
         // Not removable here, the requirement comes from an imported command template
         $command = $this->createCommand('object');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => true, 'allow_removal' => false]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => true, 'allow_removal' => false]));
 
         $this->assertStringContainsString('required', $this->renderValueInput($form));
+    }
+
+    public function testRequiredFromAnImportedTemplateStillDemandsAValueWhenTheCommandAttachesItToo(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $command = $this->createCommand('object');
+        $this->attach($command, 'n');
+        $form = $this->buildForm($command, $this->rowFor(['required' => false, 'required_by_ancestor' => true]));
+
+        $this->assertStringContainsString('required', $this->renderValueInput($form));
+    }
+
+    public function testRequiredFromAnImportedTemplateDoesNotDemandAValueOnATemplate(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $command = $this->createCommand('template');
+        $this->attach($command, 'n');
+        $form = $this->buildForm($command, $this->rowFor(['required' => false, 'required_by_ancestor' => true]));
+
+        $this->assertStringNotContainsString('required', $this->renderValueInput($form));
     }
 
     public function testRequiredInheritedByACommandTemplateDoesNotDemandAValue(): void
@@ -140,7 +158,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
 
         // Templates define the schema, so they never have to fill it in
         $command = $this->createCommand('template');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => true, 'allow_removal' => false]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => true, 'allow_removal' => false]));
 
         $this->assertStringNotContainsString('required', $this->renderValueInput($form));
     }
@@ -153,7 +171,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
 
         $command = $this->createCommand('external_object');
         $this->attach($command, 'n');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => false]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => false]));
         $form->populate(['properties' => [
             'item-count' => 1,
             'items_removed' => json_encode([self::KEY]),
@@ -172,7 +190,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         }
 
         $command = $this->createCommand('external_object');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => false]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => false]));
         $html = $form->render();
 
         $this->assertStringContainsString('Backup path', $html, 'The variable should still be listed');
@@ -186,7 +204,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         }
 
         $command = $this->createCommand('object');
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => false]));
+        $form = $this->buildForm($command, $this->rowFor(['required' => false]));
 
         $this->assertStringContainsString('name="properties[0][var]"', $form->render());
     }
@@ -198,7 +216,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         }
 
         $command = $this->createCommand('external_object');
-        $form = $this->buildForm($command, $this->rowFor($command, ['new' => true]));
+        $form = $this->buildForm($command, $this->rowFor(['new' => true]));
         $form->populate(['properties' => [
             'item-count' => 1,
             0 => ['name' => self::KEY, 'type' => 'string'],
@@ -224,7 +242,7 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         $command->store($this->getDb());
         $command = IcingaCommand::load(self::COMMAND_NAME, $this->getDb());
 
-        $form = $this->buildForm($command, $this->rowFor($command, ['required' => false, 'value' => '/srv/backup']));
+        $form = $this->buildForm($command, $this->rowFor(['required' => false, 'value' => '/srv/backup']));
         $form->populate(['properties' => [
             'item-count' => 1,
             0 => ['name' => self::KEY, 'type' => 'string'],
@@ -301,11 +319,11 @@ class CustomVariablesFormCommandTest extends BaseTestCase
     }
 
     /**
-     * @param array $extra Row flags like new or required
+     * @param array<string, mixed> $extra Row flags like new or required
      *
-     * @return array
+     * @return array<string, array<string, mixed>>
      */
-    private function rowFor(IcingaCommand $command, array $extra): array
+    private function rowFor(array $extra): array
     {
         return [self::KEY => array_merge([
             'key_name'      => self::KEY,
@@ -316,6 +334,9 @@ class CustomVariablesFormCommandTest extends BaseTestCase
         ], $extra)];
     }
 
+    /**
+     * @param array<string, array<string, mixed>> $rows
+     */
     private function buildForm(IcingaCommand $command, array $rows): CustomVariablesForm
     {
         $form = (new CustomVariablesForm($command, $rows))->setIsAdmin(true);

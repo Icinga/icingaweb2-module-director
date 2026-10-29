@@ -1220,7 +1220,9 @@ abstract class ObjectController extends ActionController
      *
      * A direct attachment on the object always wins. Without one, any
      * ancestor requiring it is enough, an object can't quietly drop a
-     * requirement it inherited.
+     * requirement it inherited. Whether an ancestor requires it is also kept
+     * on its own in required_by_ancestor, because a command must still fill in
+     * what an imported template requires, even for a variable it attaches itself.
      *
      * @param array $property
      * @param array<int, array{uuid: string, required: bool}> $attachments
@@ -1243,6 +1245,7 @@ abstract class ObjectController extends ActionController
 
         $property['allow_removal'] = $direct !== null;
         $property['required'] = $direct !== null ? $direct['required'] : $requiredByAnAncestor;
+        $property['required_by_ancestor'] = $requiredByAnAncestor;
 
         return $property;
     }
