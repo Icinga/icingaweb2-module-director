@@ -27,6 +27,14 @@ use RuntimeException;
  *     uuid: string,
  *     object_type: string
  * }
+ * @phpstan-type Section array{
+ *     kind: string,
+ *     name: string,
+ *     order: int,
+ *     type?: string,
+ *     uuid?: string,
+ *     object_type?: string
+ * }
  * @phpstan-type CommandProperty array{
  *     key_name: string,
  *     uuid: string,
