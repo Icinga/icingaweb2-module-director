@@ -361,6 +361,7 @@ abstract class ObjectController extends ActionController
     {
         $this->assertPermission('director/admin');
         $object = $this->requireObject();
+        $this->assertDefinesCustomProperties($object);
         $this->view->title = sprintf($this->translate('Add Custom Variable: %s'), $this->object->getObjectName());
 
         $addedVarUuids = $this->params->getValues('addedVarUuids');
@@ -400,6 +401,22 @@ abstract class ObjectController extends ActionController
             ->handleRequest($this->getServerRequest());
 
         $this->content()->add($form);
+    }
+
+    /**
+     * Make sure custom variables can be added to the given object directly
+     *
+     * @param IcingaObject $object
+     *
+     * @return void
+     *
+     * @throws NotFoundError
+     */
+    private function assertDefinesCustomProperties(IcingaObject $object): void
+    {
+        if (! $object->definesCustomProperties()) {
+            throw new NotFoundError('Custom variables can not be added to this object');
+        }
     }
 
     protected function addFieldsFormAndTable($object, $type)
@@ -509,35 +526,29 @@ abstract class ObjectController extends ActionController
 
         $this->prepareApplyForHeader();
 
-        if ($this->object->isTemplate()) {
-            if ($this->hasPermission(Permission::ADMIN)) {
-                $slotIndex = $form->getElement('properties')->getItemCount();
+        if ($object->definesCustomProperties() && $this->hasPermission(Permission::ADMIN)) {
+            $slotIndex = $form->getElement('properties')->getItemCount();
 
-                $buttonUrl = Url::fromPath(
-                    'director/' . $this->getType() . '/add-var',
-                    ['uuid' => $this->getUuidFromUrl(), 'nextSlotIndex' => $slotIndex]
-                );
-                $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
-                $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+            $buttonUrl = Url::fromPath(
+                'director/' . $this->getType() . '/add-var',
+                ['uuid' => $this->getUuidFromUrl(), 'nextSlotIndex' => $slotIndex]
+            );
+            $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
+            $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
 
-                $this->actions()->add(
-                    Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
-                        (new ButtonLink(
-                            $this->translate('Add Custom Variable'),
-                            $buttonUrl->getAbsoluteUrl(),
-                            null,
-                            ['class' => 'control-button']
-                        ))->openInModal()
-                    ])
-                );
-            }
-
-            if ($form) {
-                $this->content()->add($form);
-            }
-        } elseif ($form) {
-            $this->content()->add($form);
+            $this->actions()->add(
+                Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
+                    (new ButtonLink(
+                        $this->translate('Add Custom Variable'),
+                        $buttonUrl->getAbsoluteUrl(),
+                        null,
+                        ['class' => 'control-button']
+                    ))->openInModal()
+                ])
+            );
         }
+
+        $this->content()->add($form);
 
         $this->addTitle(
             $this->translate('Custom Variables: %s'),

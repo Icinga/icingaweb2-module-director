@@ -284,8 +284,13 @@ still present in the body is preserved across that detach/reattach cycle;
 changing the flag still requires the `Custom Variables` tab of the template
 the variable was attached on.
 
-On any other object (host, service, command, user, notification), `PUT`
-only replaces values: it can never attach a variable that isn't already
+On a **command**, `PUT` replaces values and never detaches anything. A
+variable left out of the body keeps its attachment and only loses its value.
+A command can still attach a variable that isn't used on it yet, the same
+way a template can.
+
+On any other object (host, service, user, notification), `PUT` only
+replaces values: it can never attach a variable that isn't already
 available to the object through one of its imported templates; see
 [Attaching a variable to a template for the first
 time](#Custom-Variables-attach-template) below for how that's restricted.
@@ -451,9 +456,9 @@ same as it does for plain values.
 Both `POST` and `PUT` can update the value of a variable that is
 already attached to the object (or inherited from one of its imported
 templates). Only `PUT`, and only when the target object is itself a
-**template**, can additionally attach a variable that is configured
-under `Custom Variables` but not yet used on that template; Director
-creates the attachment and then stores the value in the same call.
+**template** or a **command**, can additionally attach a variable that is
+configured under `Custom Variables` but not yet used on that object;
+Director creates the attachment and then stores the value in the same call.
 
     PUT director/host/variables?name=generic-host
 
@@ -476,10 +481,10 @@ Content-Type: application/json
 }
 ```
 
-The same restriction applies to non-template objects (hosts, services,
-...) regardless of method. A variable must first be attached to one of
-the object's imported templates before it can be set on the object
-itself.
+The same restriction applies to hosts, services, users and notifications
+that are not templates, regardless of method. A variable must first be
+attached to one of the object's imported templates before it can be set on
+the object itself.
 
 ```
 HTTP/1.1 404 Not Found
@@ -512,20 +517,27 @@ Content-Type: application/json
 
 The message depends on how the variable is unknown.
 
-* On `POST`, or on `PUT` to a non-template object, a variable that isn't
-  yet attached to the object gets the same "should be first added..."
-  error shown above, whether or not it has been configured under `Custom
-  Variables` elsewhere. This applies whether the value sent is `null` or
-  real, a `null` value does not change the outcome on these paths.
-* Only `PUT` to a **template** distinguishes the case where the variable
-  has never been configured under `Custom Variables` at all, meaning
-  there is no matching top-level entry in `Custom Variables` to attach.
-  An unknown key like this is rejected below, whether or not the value
-  is `null`.
-* A `null` value in a template `PUT` for a key that **is** configured
-  under `Custom Variables`, just not yet attached to this template, is a
-  silent no-op: nothing is attached, nothing is rejected. Only a
-  non-`null` value on this path actually attaches the property.
+* A variable not yet attached to the object is rejected, whether or not it
+  is configured under `Custom Variables` elsewhere. A `null` value is
+  rejected the same way as a real value. The error depends on the object.
+  * `POST` to a template gives "The custom variable
+    `<custom var name>` should be first added to the template".
+  * `POST` to a command gives "The custom variable `<custom var name>`
+    should be first added to the command with a PUT request or on its
+    Custom Variables tab".
+  * `POST` or `PUT` to a host, service, user or notification that is not
+    a template gives "The custom variable `<custom var name>` should be
+    first added to one of the imported templates for this object".
+* Only `PUT` to a **template** or a **command** distinguishes the case
+  where the variable has never been configured under `Custom Variables`
+  at all, meaning there is no matching top-level entry in
+  `Custom Variables` to attach. An unknown key like this is rejected
+  below, whether or not the value is `null`.
+* A `null` value in a `PUT` to a template or a command for a key that
+  **is** configured under `Custom Variables`, just not yet attached to
+  that object, is a silent no-op: nothing is attached, nothing is
+  rejected. Only a non-`null` value on this path actually attaches the
+  property.
 
 ```
 HTTP/1.1 404 Not Found

@@ -317,11 +317,22 @@ template detail pages, next to the `Fields (Deprecated)` tab. Service sets
 never expose this tab: just like `Fields (Deprecated)`, custom variable
 attachment isn't supported on service sets at all, by design.
 
-Only a **template** can attach a configured property with `Add Custom
-Variable`, adding it to the schema that concrete objects then fill in. A
-concrete object's `Custom Variables` tab only lets you fill in or override
-values for properties already attached there or inherited from one of its
-imported templates; it has no `Add Custom Variable` action of its own.
+Only a **template** or a **command** can attach a configured property with
+`Add Custom Variable`. Commands are the exception because many of them,
+like the external ones coming from the ITL, have no template to import. A
+host, service, user or notification that is not a template only lets you
+fill in or override values for properties already attached there or
+inherited from one of its imported templates; it has no `Add Custom
+Variable` action of its own.
+
+> The `Required` flag is only offered on templates. A command never has to
+> fill in a variable it attached itself, but a command that imports a
+> command template still has to fill in what that template requires.
+
+> An external command, like the ones coming from the ITL, is never rendered
+> into the deployed configuration. Its `Custom Variables` tab therefore only
+> lists the attached variables and lets you add or remove them, without a
+> field for the value.
 
 * Custom variables inherited from imported templates are shown and can
   be overridden on the object itself.

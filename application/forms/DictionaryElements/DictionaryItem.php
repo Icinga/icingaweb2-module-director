@@ -30,7 +30,7 @@ use Zend_Db_Adapter_Abstract;
 /**
  * @phpstan-type DictionaryItemDataType array{
  *      name: string,
- *      value: mixed
+ *      value?: mixed
  *  }
  */
 class DictionaryItem extends FieldsetElement
@@ -42,6 +42,12 @@ class DictionaryItem extends FieldsetElement
 
     /** @var ?FormElement Remove button */
     private ?FormElement $removeButton = null;
+
+    /** @var bool Whether a removable item offers the Required toggle */
+    private bool $allowRequiredToggle = true;
+
+    /** @var bool Whether the item offers an input for its value */
+    private bool $showValue = true;
 
     public function __construct(string $name, array $items, $attributes = null)
     {
@@ -148,11 +154,13 @@ class DictionaryItem extends FieldsetElement
 
         if ($this->removeButton !== null) {
             $this->addAttributes(['class' => ['removable']]);
-            $this->addElement('checkbox', 'item_required_' . $this->getName(), [
-                'label' => $this->translate('Required in inheriting objects'),
-                'class' => 'item-required-checkbox',
-                'value' => ($this->fields['required_current'] ?? false) ? 'y' : 'n'
-            ]);
+            if ($this->allowRequiredToggle) {
+                $this->addElement('checkbox', 'item_required_' . $this->getName(), [
+                    'label' => $this->translate('Required in inheriting objects'),
+                    'class' => 'item-required-checkbox',
+                    'value' => ($this->fields['required_current'] ?? false) ? 'y' : 'n'
+                ]);
+            }
 
             if (! $isTopLevel) {
                 $this->addHtml(new HtmlElement('div', null, $this->removeButton));
@@ -184,6 +192,10 @@ class DictionaryItem extends FieldsetElement
                 'disabled' => true,
                 'ignore' => true,
             ]);
+        }
+
+        if (! $this->showValue) {
+            return;
         }
 
         // Pass down this item's own stored value, so each child gets its current value
@@ -735,6 +747,34 @@ class DictionaryItem extends FieldsetElement
     }
 
     /**
+     * Set whether a removable item offers the Required toggle
+     *
+     * @param bool $allow
+     *
+     * @return $this
+     */
+    public function setAllowRequiredToggle(bool $allow = true): static
+    {
+        $this->allowRequiredToggle = $allow;
+
+        return $this;
+    }
+
+    /**
+     * Set whether the item offers an input for its value
+     *
+     * @param bool $show
+     *
+     * @return $this
+     */
+    public function setShowValue(bool $show = true): static
+    {
+        $this->showValue = $show;
+
+        return $this;
+    }
+
+    /**
      * Whether this item's own value is unchanged from what it started with
      *
      * Lets a parent fixed-array/fixed-dictionary tell an untouched child from an
@@ -783,6 +823,11 @@ class DictionaryItem extends FieldsetElement
     public function getItem(bool $applyUnchangedDefaults = true): array
     {
         $values = ['name' => $this->getElement('name')->getValue()];
+        if (! $this->showValue) {
+            // No input was rendered, so there is nothing to read back
+            return $values;
+        }
+
         $itemValue = $this->getElement('var');
         if ($itemValue instanceof NestedDictionary or $itemValue instanceof Dictionary) {
             // Fixed-array/fixed-dictionary is all or nothing, one edited child rewrites
