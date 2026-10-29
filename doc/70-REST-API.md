@@ -254,7 +254,8 @@ all accepted, matching the types described in
 [Working with custom variables](12-Handling-custom-variables.md). The
 custom variable must already be configured under `Custom Variables`
 **and** already be attached to (or inherited from) the object you are
-updating. What happens when a variable isn't attached yet depends on the
+updating. A host or service also gets the variables of its check command.
+What happens when a variable isn't attached yet depends on the
 method and the object type. See [Attaching a variable to a template for
 the first time](#Custom-Variables-attach-template) and
 [Variable not configured](#Custom-Variables-not-configured) below.
@@ -291,7 +292,8 @@ way a template can.
 
 On any other object (host, service, user, notification), `PUT` only
 replaces values: it can never attach a variable that isn't already
-available to the object through one of its imported templates; see
+available to the object through one of its imported templates or, for a host
+or service, its check command; see
 [Attaching a variable to a template for the first
 time](#Custom-Variables-attach-template) below for how that's restricted.
 
@@ -459,6 +461,10 @@ templates). Only `PUT`, and only when the target object is itself a
 **template** or a **command**, can additionally attach a variable that is
 configured under `Custom Variables` but not yet used on that object;
 Director creates the attachment and then stores the value in the same call.
+This includes a variable that only the check command of a host or service
+template attaches. A `PUT` on that template attaches it to the template
+itself, the same as adding it on the `Custom Variables` tab. A `POST` only
+stores the value.
 
     PUT director/host/variables?name=generic-host
 
@@ -483,8 +489,8 @@ Content-Type: application/json
 
 The same restriction applies to hosts, services, users and notifications
 that are not templates, regardless of method. A variable must first be
-attached to one of the object's imported templates before it can be set on
-the object itself.
+attached to one of the object's imported templates, or to its check command
+for a host or service, before it can be set on the object itself.
 
 ```
 HTTP/1.1 404 Not Found
@@ -493,7 +499,7 @@ Content-Type: application/json
 
 ```json
 {
-    "error": "The custom variable datacenter should be first added to one of the imported templates for this object"
+    "error": "The custom variable datacenter should be first added to one of the imported templates or to the check command for this object"
 }
 ```
 
