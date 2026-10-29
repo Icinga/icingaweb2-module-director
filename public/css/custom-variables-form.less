@@ -24,19 +24,6 @@
     > summary {
       font-weight: bold;
       margin: 0 0 0.5em;
-    }
-
-    // Hide a box with no rows. The own box shows again once a row is added.
-    &:not(:has(.dictionary-item)) {
-      display: none;
-    }
-
-    // The rows pull their right edge out by 1em, give it back so they stay inside the border
-    > .dictionary-section-body {
-      padding-right: 1em;
-    }
-
-    > summary {
       cursor: pointer;
 
       &::before {
@@ -47,6 +34,16 @@
       &:focus:not(:focus-visible) {
         outline: none;
       }
+    }
+
+    // Hide a box with no rows. The own box shows again once a row is added.
+    &:not(:has(.dictionary-item)) {
+      display: none;
+    }
+
+    // The rows pull their right edge out by 1em, give it back so they stay inside the border
+    > .dictionary-section-body {
+      padding-right: 1em;
     }
   }
 
