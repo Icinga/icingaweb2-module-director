@@ -30,7 +30,7 @@ use Zend_Db_Adapter_Abstract;
 /**
  * @phpstan-type DictionaryItemDataType array{
  *      name: string,
- *      value: mixed
+ *      value?: mixed
  *  }
  */
 class DictionaryItem extends FieldsetElement
