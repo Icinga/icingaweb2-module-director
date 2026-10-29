@@ -337,6 +337,40 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         );
     }
 
+    public function testPreviewStaysConservativeWhenTheStoredCheckCommandAttachesTheValue(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateOne = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $templateOne, $db);
+        $this->attachCommandProperty($property, $this->createCommand(self::PING_COMMAND_NAME, 'object', [], $db), $db);
+
+        $mid = $this->createTemplate(self::MID_TEMPLATE_NAME, $db);
+        $mid->setImports([self::TEMPLATE_ONE_NAME]);
+        $mid->store($db);
+
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports([self::MID_TEMPLATE_NAME]);
+        $leaf->set('check_command', self::PING_COMMAND_NAME);
+        $leaf->store($db);
+        $this->saveRegionValue(IcingaHost::load(self::LEAF_HOST_NAME, $db), $db);
+
+        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved(
+            IcingaHost::load(self::MID_TEMPLATE_NAME, $db),
+            []
+        );
+
+        $this->assertEquals(
+            [self::REGION_KEY],
+            $atRisk,
+            'the preview only sees the stored command, so it warns and leaves the check to the real cleanup'
+        );
+    }
+
     public function testPreviewFlagsAValueThatWouldLoseItsOnlyProvider(): void
     {
         if ($this->skipForMissingDb()) {
