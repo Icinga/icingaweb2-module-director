@@ -203,7 +203,14 @@ class CustomVariableValueApplier
 
         $var = $objectVars->get($key);
 
-        if (isset($customProperties[$key])) {
+        // A template PUT takes over a variable only the check command attaches, like the UI does.
+        // POST never changes attachments, and the base endpoint only sets values.
+        $takesOver = $request->actionName === 'variables'
+            && $request->method === 'PUT'
+            && $object->isTemplate()
+            && ($customProperties[$key]['from_command'] ?? false);
+
+        if (isset($customProperties[$key]) && ! $takesOver) {
             // a real null clears the value, nothing left to check its shape against
             if ($value === null || $var === null) {
                 return;
@@ -249,7 +256,10 @@ class CustomVariableValueApplier
 
         if (! $object->definesCustomProperties()) {
             throw new NotFoundError(sprintf(
-                'The custom variable %s should be first added to one of the imported templates for this object',
+                $object->hasRelation('check_command')
+                    ? 'The custom variable %s should be first added to one of the imported templates'
+                        . ' or to the check command for this object'
+                    : 'The custom variable %s should be first added to one of the imported templates for this object',
                 $key
             ));
         }
@@ -447,7 +457,7 @@ class CustomVariableValueApplier
 
         // A variable the check command attaches is reachable too
         foreach (ObjectCustomPropertySources::commandPropertiesByKey($object, $db) as $key => $row) {
-            $result[$key] ??= $row;
+            $result[$key] ??= $row + ['from_command' => true];
         }
 
         return $result;

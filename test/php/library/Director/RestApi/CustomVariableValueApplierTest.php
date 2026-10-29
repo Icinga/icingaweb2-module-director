@@ -637,6 +637,76 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $this->assertSame($property->get('uuid'), $var->getUuid()->getBytes());
     }
 
+    public function testPutOnAHostTemplateAttachesACommandVar(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createCommandWithProperty($db, 'string');
+        $host = $this->createTemplate($db);
+        $host->set('check_command', self::COMMAND_NAME);
+        $host->store();
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $host,
+            [self::ENV_KEY => 'production'],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $dba = $db->getDbAdapter();
+        $attached = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_property', ['COUNT(*)'])
+                ->where('host_uuid = ?', DbUtil::quoteBinaryCompat($host->get('uuid'), $dba))
+                ->where('property_uuid = ?', DbUtil::quoteBinaryCompat($property->get('uuid'), $dba))
+        );
+        $this->assertEquals(1, (int) $attached, 'a template PUT must attach the variable the command has');
+
+        $var = IcingaHost::load(self::TEMPLATE_NAME, $db)->vars()->get(self::ENV_KEY);
+        $this->assertSame('production', $var->getValue());
+        $this->assertSame($property->get('uuid'), $var->getUuid()->getBytes());
+    }
+
+    public function testSecondPutOnAHostTemplateDoesNotAttachTheCommandVarTwice(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createCommandWithProperty($db, 'string');
+        $host = $this->createTemplate($db);
+        $host->set('check_command', self::COMMAND_NAME);
+        $host->store();
+
+        $applier = new CustomVariableValueApplier($db);
+        foreach (['production', 'staging'] as $value) {
+            $applier->apply(new CustomVarApplyRequest(
+                IcingaHost::load(self::TEMPLATE_NAME, $db),
+                [self::ENV_KEY => $value],
+                'variables',
+                'PUT',
+                false
+            ));
+        }
+
+        $dba = $db->getDbAdapter();
+        $attached = $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_host_property', ['COUNT(*)'])
+                ->where('property_uuid = ?', DbUtil::quoteBinaryCompat($property->get('uuid'), $dba))
+        );
+        $this->assertEquals(1, (int) $attached);
+        $this->assertSame(
+            'staging',
+            IcingaHost::load(self::TEMPLATE_NAME, $db)->vars()->get(self::ENV_KEY)->getValue()
+        );
+    }
+
     public function testVariablesEndpointChecksTheShapeOfACommandVarOnConcreteHost(): void
     {
         if ($this->skipForMissingDb()) {
