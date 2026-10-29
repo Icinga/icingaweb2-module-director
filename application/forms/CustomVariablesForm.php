@@ -415,11 +415,13 @@ class CustomVariablesForm extends CompatForm
      * Templates define the schema, they don't fill it in, so required never
      * applies to them. A command is the same for the variables it attaches
      * itself, but it still has to fill in what an imported command template
-     * requires, see isRequiredByAncestor().
+     * requires.
      *
      * @param array<string, mixed> $property
      *
      * @return bool
+     *
+     * @see self::isRequiredByAncestor()
      */
     private function ignoresRequired(array $property): bool
     {
