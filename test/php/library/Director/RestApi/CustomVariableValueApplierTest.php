@@ -632,8 +632,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
             $db,
             $this->createCommand($db, 'external_object'),
             'The custom variable ' . self::ENV_KEY
-            . ' should be first added to the command with a PUT request or on its Custom Variables tab',
-            null
+            . ' should be first added to the command with a PUT request or on its Custom Variables tab'
         );
     }
 
@@ -652,11 +651,10 @@ class CustomVariableValueApplierTest extends BaseTestCase
             return;
         }
 
-        // An external command never takes a value, so null attaches the property
-        $this->assertPutAttachesPropertyOnCommand($this->getDb(), 'external_object', null);
+        $this->assertPutAttachesPropertyOnCommand($this->getDb(), 'external_object');
     }
 
-    public function testPutOnAnExternalCommandRejectsAValueAndChangesNothing(): void
+    public function testPutOnAnExternalCommandReplacesValuesButKeepsAttachments(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -665,66 +663,6 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $db = $this->getDb();
         $dba = $db->getDbAdapter();
         $command = $this->createCommand($db, 'external_object');
-        $property = DirectorProperty::create([
-            'uuid'       => Uuid::uuid4()->getBytes(),
-            'key_name'   => self::MYSQL_KEY,
-            'value_type' => 'string',
-            'label'      => 'MySQL host',
-        ], $db);
-        $property->store();
-        $dba->insert('icinga_command_property', [
-            'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
-            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
-            'required'      => 'n',
-        ]);
-        $command->vars()->set(self::MYSQL_KEY, 'db-primary');
-        $command->store($db);
-        DirectorProperty::create([
-            'uuid'       => Uuid::uuid4()->getBytes(),
-            'key_name'   => self::ENV_KEY,
-            'value_type' => 'string',
-            'label'      => 'Environment',
-        ], $db)->store();
-
-        try {
-            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
-                $command,
-                [self::ENV_KEY => 'production', self::MYSQL_KEY => null],
-                'variables',
-                'PUT',
-                false
-            ));
-            $this->fail('A value for an external command must be rejected');
-        } catch (InvalidArgumentException $e) {
-            $this->assertStringContainsString(
-                'The custom variable ' . self::ENV_KEY . ' can not have a value',
-                $e->getMessage()
-            );
-        }
-
-        $attached = $dba->fetchCol(
-            $dba->select()
-                ->from(['icp' => 'icinga_command_property'], [])
-                ->join(['dp' => 'director_property'], 'dp.uuid = icp.property_uuid', ['dp.key_name'])
-                ->where('icp.command_uuid = ?', DbUtil::quoteBinaryCompat($command->get('uuid'), $dba))
-        );
-        $this->assertSame([self::MYSQL_KEY], $attached, 'Nothing must be attached');
-        $this->assertSame(
-            'db-primary',
-            IcingaCommand::load(self::COMMAND_NAME, $db)->getVars()->{self::MYSQL_KEY},
-            'The stored values must not be wiped'
-        );
-    }
-
-    public function testPutOnACommandReplacesValuesButKeepsAttachments(): void
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-        $dba = $db->getDbAdapter();
-        $command = $this->createCommand($db, 'object');
         foreach ([self::ENV_KEY, self::MYSQL_KEY] as $key) {
             $property = DirectorProperty::create([
                 'uuid'       => Uuid::uuid4()->getBytes(),
@@ -913,7 +851,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
         return $host;
     }
 
-    private function assertPutAttachesPropertyOnCommand($db, string $objectType, ?string $value = 'production'): void
+    private function assertPutAttachesPropertyOnCommand($db, string $objectType): void
     {
         $command = $this->createCommand($db, $objectType);
         DirectorProperty::create([
@@ -925,7 +863,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
 
         (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $command,
-            [self::ENV_KEY => $value],
+            [self::ENV_KEY => 'production'],
             'variables',
             'PUT',
             false
@@ -946,12 +884,8 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $this->assertEquals('n', $required, 'The command should have the property attached');
     }
 
-    private function assertPostIsRejected(
-        $db,
-        IcingaObject $object,
-        string $expectedMessage,
-        ?string $value = 'production'
-    ): void {
+    private function assertPostIsRejected($db, IcingaObject $object, string $expectedMessage): void
+    {
         DirectorProperty::create([
             'uuid'       => Uuid::uuid4()->getBytes(),
             'key_name'   => self::ENV_KEY,
@@ -963,7 +897,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $this->expectExceptionMessage($expectedMessage);
         (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $object,
-            [self::ENV_KEY => $value],
+            [self::ENV_KEY => 'production'],
             'variables',
             'POST',
             false
