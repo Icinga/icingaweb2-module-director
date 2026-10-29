@@ -374,8 +374,8 @@ class IcingaObjectHandler extends RequestHandler
         ));
 
         // persistChanges() only checks the object's own columns, so it may have
-        // already set 304 even though the applier above really changed the
-        // database. Fix that up without touching a 201 already earned.
+        // already set 304 even though the applier above really changed a value.
+        // Fix that up without touching a 201 already earned.
         if ($varsWereChanged && $this->response->getHttpResponseCode() === 304) {
             $this->response->setHttpResponseCode(200);
         }
