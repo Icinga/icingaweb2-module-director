@@ -331,7 +331,8 @@ its check command.
 
 > The `Required` flag is only offered on templates. A command never has to
 > fill in a variable it attached itself, but a command that imports a
-> command template still has to fill in what that template requires.
+> command template still has to fill in what that template requires, unless
+> that command attaches the variable itself.
 
 > An external command, like the ones coming from the ITL, is never rendered
 > into the deployed configuration. Its `Custom Variables` tab therefore only
@@ -361,25 +362,28 @@ On a command, the commands it imports get a box each. A command template is
 headed `Added by template`, any other command `Added by command`.
 
 You can also add a variable that is already inherited. It then moves into
-the object's own box, and removing it puts it back where it came from.
+the object's own box. Removing it puts it back where it came from once you
+save.
 
 To change the variables of a service for one host only, open the service
 from the `Services` tab of that host. A service inherited from a host
 template opens a form with the same boxes as the service's own tab,
 including the box of its check command. It only lets you override values
-with `Override Custom Variables`, you can't add or remove a variable there.
-A service that still gets its variables from the deprecated `Data fields` is
-listed a second time, under `Inherited from <template> (referencing
-deprecated Datafields)`. Use that link to override those values.
+with `Override Custom Variables`. You can't add or remove a variable there.
+Every service inherited from a host template is listed twice, under
+`Inherited from <template>` and under `Inherited from <template>
+(referencing deprecated Datafields)`. Use the second link to override
+values that still come from the deprecated `Data fields`.
 
 Removing an imported template can also remove a value that only got there
 because of it. If an object had overridden a value it inherited from a
 template, and that template is no longer imported (directly or through
 another template), the leftover value is removed too, unless some other
 still-imported template provides the same property, or the check command of
-the host or service still does. In the UI, removing a
-template that would take a value down with it shows a warning naming the
-affected variables and asks for confirmation before saving; the REST API
+the host or service still does. In the UI, removing a template that would
+take a value down with it shows a warning naming the affected variables and
+asks for confirmation before saving. The warning does not look at the check
+command, so it can name a value that is kept in the end. The REST API
 applies the same cleanup without asking. Restoring a configuration basket
 that drops a property attachment applies the same cleanup as well, see
 [Restoring Custom Variable Schema Changes](30-Configuration-Baskets.md#Restoring-Custom-Variables)
@@ -407,7 +411,8 @@ whether attached there directly or inherited.
   doesn't relax it.
 * `Required` on a command, or on a command template, is not enforced on the
   hosts and services that use the command. It only applies on a command that
-  imports the command template.
+  imports the command template, and only while that command does not attach
+  the variable itself.
 * For `fixed-array` and `fixed-dictionary` properties, an attachment
   whose children are all empty/default (e.g. a blank fixed array) is
   treated as having no value, so the required check still triggers
