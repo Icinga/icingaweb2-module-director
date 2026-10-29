@@ -184,6 +184,67 @@ class ObjectCustomPropertySourcesTest extends BaseTestCase
         $this->assertSame([], ObjectCustomPropertySources::commandPropertiesByKey($host, $this->getDb()));
     }
 
+    public function testCommandIdIsFoundForAnOwnCommandAndForOneFromATemplate(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->createFixtures();
+        $db = $this->getDb();
+
+        $this->assertSame(
+            (int) IcingaCommand::load(self::EXTERNAL_COMMAND, $db)->get('id'),
+            ObjectCustomPropertySources::resolveCommandId(IcingaHost::load(self::WEB_TEMPLATE, $db))
+        );
+        $this->assertSame(
+            (int) IcingaCommand::load(self::CHILD_COMMAND, $db)->get('id'),
+            ObjectCustomPropertySources::resolveCommandId(IcingaHost::load(self::INHERITING_HOST, $db))
+        );
+    }
+
+    public function testCommandIdIsNullWithoutACommandOrACommandRelation(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->createFixtures();
+        $db = $this->getDb();
+
+        $this->assertNull(ObjectCustomPropertySources::resolveCommandId(IcingaHost::load(self::GENERIC_TEMPLATE, $db)));
+        $this->assertNull(ObjectCustomPropertySources::resolveCommandId(IcingaUser::load(self::USER_NAME, $db)));
+    }
+
+    public function testCommandPropertiesByCommandIdMatchTheOnesFoundThroughAnObject(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->createFixtures();
+        $db = $this->getDb();
+        $host = IcingaHost::load(self::INHERITING_HOST, $db);
+
+        $byId = ObjectCustomPropertySources::commandPropertiesByCommandId(
+            (int) IcingaCommand::load(self::CHILD_COMMAND, $db)->get('id'),
+            $db
+        );
+
+        $this->assertSame([self::CPL_KEY], array_keys($byId));
+        $this->assertEquals(ObjectCustomPropertySources::commandPropertiesByKey($host, $db), $byId);
+    }
+
+    public function testCommandPropertiesByCommandIdFailForAnUnknownCommand(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $this->expectException(\RuntimeException::class);
+        ObjectCustomPropertySources::commandPropertiesByCommandId(2147483000, $this->getDb());
+    }
+
     public function testPickSourcePrefersTheObjectsOwnSource(): void
     {
         $source = ObjectCustomPropertySources::pickSource([
