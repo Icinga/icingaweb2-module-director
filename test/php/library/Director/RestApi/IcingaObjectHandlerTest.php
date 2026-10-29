@@ -303,7 +303,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
     }
 
-    public function testResubmittingValueStoredBeforeAttachmentLinksItToTheProperty(): void
+    public function testResubmittingValueStoredBeforeAttachmentLinksItAndStaysNotModified(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -323,12 +323,17 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
 
         $this->attachRegionProperty($db, $template);
-        $this->postToHost($db, self::IMPORT_DROP_LEAF_HOST, [
+        $status = $this->postToHost($db, self::IMPORT_DROP_LEAF_HOST, [
             'object_name' => self::IMPORT_DROP_LEAF_HOST,
             'object_type' => 'object',
             'imports'     => [self::TEMPLATE_NAME],
         ], [self::REGION_KEY => 'eu-west']);
 
+        $this->assertEquals(
+            304,
+            $status,
+            'Linking an unchanged value to its property is not a change, so it must report 304'
+        );
         $this->assertNotNull(
             IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db)->vars()->get(self::REGION_KEY)->getUuid(),
             'The unchanged value must still get linked to the property it now belongs to'

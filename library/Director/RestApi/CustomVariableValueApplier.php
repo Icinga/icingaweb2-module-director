@@ -40,10 +40,11 @@ class CustomVariableValueApplier
      *
      * @param CustomVarApplyRequest $request
      *
-     * @return bool Whether anything was actually wiped or written. A PUT always
+     * @return bool Whether a value was actually wiped or changed. A PUT always
      *              counts as a change since it replaces the full set regardless
-     *              of the end result. Otherwise this reflects CustomVariables'
-     *              own modification tracking, checked before storeToDb() resets it.
+     *              of the end result. Otherwise the values before and after are
+     *              compared, so linking an unchanged value to its property
+     *              does not count.
      *
      * @throws NotFoundError
      */
@@ -138,11 +139,12 @@ class CustomVariableValueApplier
                 }
             }
 
-            $hasChanged = $wipeValuesInDb || $objectVars->hasBeenModified();
             $newVars = $this->plainVars($objectVars);
-            // Linking a value to its property is a write but not a change worth logging,
-            // so compare the real values instead of trusting the changed flag
-            if (json_encode($oldVars) !== json_encode($newVars)) {
+            // Linking a value to its property is a write but not a change, so
+            // compare the real values instead of trusting the changed flag
+            $valuesChanged = json_encode($oldVars) !== json_encode($newVars);
+            $hasChanged = $wipeValuesInDb || $valuesChanged;
+            if ($valuesChanged) {
                 // sensitive values are not masked here, same as the web form's
                 // own save path, this is a known gap to close later
                 DirectorActivityLog::logCustomVariableModification($object, $oldVars, $newVars, $this->db);
