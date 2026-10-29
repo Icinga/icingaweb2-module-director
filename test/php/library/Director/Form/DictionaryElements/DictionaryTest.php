@@ -6,7 +6,6 @@
 namespace Tests\Icinga\Module\Director\Form\DictionaryElements;
 
 use Icinga\Application\Config;
-use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\CustomVariable\ObjectCustomPropertySources;
 use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -23,15 +22,10 @@ class DictionaryTest extends BaseTestCase
             return;
         }
 
-        // The items open their own connection, point it at the test DB
-        $resource = getenv('DIRECTOR_TESTDB_RES');
-        Config::module('director')->setSection('db', ['resource' => $resource]);
-        $config = ResourceFactory::getResourceConfig($resource);
-        $config->dbname = getenv('DIRECTOR_TESTDB');
-        $config->host = getenv('DIRECTOR_TESTDB_HOST');
-        $config->port = getenv('DIRECTOR_TESTDB_PORT');
-        $config->username = getenv('DIRECTOR_TESTDB_USER');
-        $config->password = getenv('DIRECTOR_TESTDB_PASSWORD');
+        // This runs the migrations and points the shared resource config at the test DB
+        $this->getDb();
+        // The items open their own connection through the module's db resource
+        Config::module('director')->setSection('db', ['resource' => static::getDbResourceName()]);
     }
 
     public function testRowsAreDrawnInOwnTemplateCommandOrder(): void
