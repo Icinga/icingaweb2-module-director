@@ -208,24 +208,19 @@ class CustomVariableValueApplier
                 return;
             }
 
-            $var->setModified();
+            $propertyUuid = Uuid::fromBytes($customProperties[$key]['uuid']);
             CustomVariableValueValidator::assertMatchesType(
                 $key,
                 $value,
                 $customProperties[$key]['value_type'],
-                Uuid::fromBytes($customProperties[$key]['uuid']),
+                $propertyUuid,
                 $this->db
             );
             if ($customProperties[$key]['value_type'] === 'datalist-strict') {
-                CustomVariableValueValidator::assertDatalistValueAllowed(
-                    $key,
-                    $value,
-                    Uuid::fromBytes($customProperties[$key]['uuid']),
-                    $this->db
-                );
+                CustomVariableValueValidator::assertDatalistValueAllowed($key, $value, $propertyUuid, $this->db);
             }
 
-            $objectVars->registerVarUuid($key, Uuid::fromBytes($customProperties[$key]['uuid']));
+            $objectVars->registerVarUuid($key, $propertyUuid);
 
             return;
         }

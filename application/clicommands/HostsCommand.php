@@ -22,9 +22,10 @@ class HostsCommand extends ObjectsCommand
     /**
      * Relink existing custom variables to a matching Custom Property
      *
-     * Scans every host in the database and writes back any variable that
-     * matches a Custom Property by name, even if its value didn't change.
-     * Run this after adding a Custom Property for variables hosts already had.
+     * Scans every host in the database and links any variable that matches a
+     * Custom Property by name. Variables already linked to that Custom
+     * Property are left as they are, and no values are changed. Run this after
+     * adding a Custom Property for variables hosts already had.
      *
      * USAGE
      *
