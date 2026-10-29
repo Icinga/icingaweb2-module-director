@@ -193,7 +193,7 @@ class Dictionary extends FieldsetElement
 
         if ($count === 0) {
             if (! $this->isChild) {
-                $message = $this->translate('No custom variables have been added yet');
+                $message = $this->translate('No custom variables have been added to the template yet');
             } else {
                 $message = $this->translate('No fields configured');
             }
