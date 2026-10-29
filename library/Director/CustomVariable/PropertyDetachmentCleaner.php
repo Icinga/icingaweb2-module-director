@@ -18,6 +18,8 @@ use stdClass;
 /**
  * Cleans up values left behind once a property is no longer reachable,
  * detached directly or lost with its template
+ *
+ * @phpstan-type RowsByHolder array<int, array<string, array{uuid: string, varname: string}>>
  */
 class PropertyDetachmentCleaner
 {
@@ -99,7 +101,7 @@ class PropertyDetachmentCleaner
      *                                          Can over-warn if a holder also imports one of
      *                                          these directly, fine for a warning-only check
      *
-     * @return array<int, array<string, array{uuid: string, varname: string}>>
+     * @return RowsByHolder
      */
     private static function findHoldersLosingValues(
         IcingaObject $object,
@@ -243,11 +245,11 @@ class PropertyDetachmentCleaner
      * keeps its value when its command, or a command template above it,
      * attaches the property.
      *
-     * @param string $type             Short table name, like "host"
-     * @param array  $holders          Rows each holder would lose, keyed by holder id
-     * @param Db     $db               Database connection
+     * @param string       $type    Short table name, like "host"
+     * @param RowsByHolder $holders Rows each holder would lose, keyed by holder id
+     * @param Db           $db      Database connection
      *
-     * @return array<int, array<string, array{uuid: string, varname: string}>>
+     * @return RowsByHolder
      */
     private static function dropCoveredByCommand(
         string $type,
@@ -294,8 +296,8 @@ class PropertyDetachmentCleaner
     /**
      * Commands that attach the properties the holders would lose, directly
      *
-     * @param array $holders Rows each holder would lose, keyed by holder id
-     * @param Db    $db      Database connection
+     * @param RowsByHolder $holders Rows each holder would lose, keyed by holder id
+     * @param Db           $db      Database connection
      *
      * @return array<string, int[]> Command ids, keyed by the hex of the property uuid
      */
