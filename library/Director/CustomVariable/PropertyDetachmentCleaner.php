@@ -28,8 +28,9 @@ class PropertyDetachmentCleaner
      * Wipe the saved value for the given properties, on this object and
      * everything below it with no other way left to reach them
      *
-     * A holder may still reach a lost property through another ancestor or
-     * its own direct attachment, so each one gets checked first. Logged and
+     * A holder may still reach a lost property through another ancestor, its
+     * own direct attachment or its check command, so each one gets checked
+     * first. Logged and
      * deleted per holder, since two holders can lose a different subset.
      *
      * @param IcingaObject $object              The object losing these properties
@@ -86,7 +87,8 @@ class PropertyDetachmentCleaner
      * A holder can still reach a lost property through another ancestor,
      * its own direct attachment or its check command, so each one gets
      * checked before being included. Shared by the real cleanup and the
-     * pre-save preview, so both always agree on who's affected.
+     * pre-save preview. Only the cleanup checks the check command, so the
+     * preview can warn about a value that the cleanup keeps.
      *
      * @param IcingaObject $object              The object losing these properties
      * @param string[]     $quotedPropertyUuids These uuids, already quoted for use in a query
@@ -185,9 +187,10 @@ class PropertyDetachmentCleaner
             }
         }
 
-        // Only hosts and services have a check command
-        if ($object->hasRelation('check_command')) {
-            return self::dropCoveredByCommand($type, $result, $cutAncestorIds, $db);
+        // Only hosts and services have a check command. The pre-save preview passes
+        // the cut ancestors and only sees the stored tree and command, so it skips this.
+        if ($object->hasRelation('check_command') && empty($cutAncestorIds)) {
+            return self::dropCoveredByCommand($type, $result, $db);
         }
 
         return $result;
@@ -242,7 +245,6 @@ class PropertyDetachmentCleaner
      *
      * @param string $type             Short table name, like "host"
      * @param array  $holders          Rows each holder would lose, keyed by holder id
-     * @param int[]  $removedImportIds Imports about to be dropped
      * @param Db     $db               Database connection
      *
      * @return array<int, array<string, array{uuid: string, varname: string}>>
@@ -250,7 +252,6 @@ class PropertyDetachmentCleaner
     private static function dropCoveredByCommand(
         string $type,
         array $holders,
-        array $removedImportIds,
         Db $db
     ): array {
         if (empty($holders)) {
@@ -263,7 +264,7 @@ class PropertyDetachmentCleaner
         }
 
         // The check command each host or service ends up with, its own or the one from its imports
-        $checkCommandIdByHolder = self::fetchCheckCommandIds($type, array_keys($holders), $removedImportIds, $db);
+        $checkCommandIdByHolder = self::fetchCheckCommandIds($type, array_keys($holders), $db);
         $commandTree = IcingaTemplateRepository::instanceByType('command', $db)->tree();
 
         foreach ($holders as $holderId => $rows) {
@@ -335,12 +336,11 @@ class PropertyDetachmentCleaner
      *
      * @param string $type             Short table name, like "host"
      * @param int[]  $holderIds
-     * @param int[]  $removedImportIds Imports about to be dropped, their commands don't count
      * @param Db     $db               Database connection
      *
      * @return array<int, ?int> Command ids, keyed by holder id
      */
-    private static function fetchCheckCommandIds(string $type, array $holderIds, array $removedImportIds, Db $db): array
+    private static function fetchCheckCommandIds(string $type, array $holderIds, Db $db): array
     {
         $dbAdapter = $db->getDbAdapter();
         $tree = IcingaTemplateRepository::instanceByType($type, $db)->tree();
@@ -367,9 +367,7 @@ class PropertyDetachmentCleaner
 
         $importIds = [];
         foreach ($imports as [$childId, $parentId]) {
-            if (! in_array((int) $parentId, $removedImportIds, true)) {
-                $importIds[(int) $childId][] = (int) $parentId;
-            }
+            $importIds[(int) $childId][] = (int) $parentId;
         }
 
         $result = [];
