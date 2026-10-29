@@ -346,6 +346,9 @@ its check command.
   chain rather than overwritten. The rendered config uses `+=`, so a
   child template or the object itself can add further entries without
   losing the ones defined on parent templates.
+  This only applies to a dictionary that a template attaches. One that only
+  the check command attaches is not merged, the value of the object replaces
+  the ones of its templates.
 
 The `Custom Variables` tab groups variables by where they come from. The
 object's own variables come first, then one box per imported template, and
