@@ -40,10 +40,11 @@ class CustomVariableValueApplier
      *
      * @param CustomVarApplyRequest $request
      *
-     * @return bool Whether anything was actually wiped or written. A PUT always
+     * @return bool Whether a value was actually wiped or changed. A PUT always
      *              counts as a change since it replaces the full set regardless
-     *              of the end result. Otherwise this reflects CustomVariables'
-     *              own modification tracking, checked before storeToDb() resets it.
+     *              of the end result. Otherwise the values before and after are
+     *              compared, so linking an unchanged value to its property
+     *              does not count.
      *
      * @throws NotFoundError
      */
@@ -138,11 +139,12 @@ class CustomVariableValueApplier
                 }
             }
 
-            $hasChanged = $wipeValuesInDb || $objectVars->hasBeenModified();
             $newVars = $this->plainVars($objectVars);
-            // the changed flag can say yes even when a value was just resubmitted
-            // unchanged, so compare the real values instead of trusting that flag
-            if (json_encode($oldVars) !== json_encode($newVars)) {
+            // Linking a value to its property is a write but not a change, so
+            // compare the real values instead of trusting the changed flag
+            $valuesChanged = json_encode($oldVars) !== json_encode($newVars);
+            $hasChanged = $wipeValuesInDb || $valuesChanged;
+            if ($valuesChanged) {
                 // sensitive values are not masked here, same as the web form's
                 // own save path, this is a known gap to close later
                 DirectorActivityLog::logCustomVariableModification($object, $oldVars, $newVars, $this->db);
@@ -208,24 +210,19 @@ class CustomVariableValueApplier
                 return;
             }
 
-            $var->setModified();
+            $propertyUuid = Uuid::fromBytes($customProperties[$key]['uuid']);
             CustomVariableValueValidator::assertMatchesType(
                 $key,
                 $value,
                 $customProperties[$key]['value_type'],
-                Uuid::fromBytes($customProperties[$key]['uuid']),
+                $propertyUuid,
                 $this->db
             );
             if ($customProperties[$key]['value_type'] === 'datalist-strict') {
-                CustomVariableValueValidator::assertDatalistValueAllowed(
-                    $key,
-                    $value,
-                    Uuid::fromBytes($customProperties[$key]['uuid']),
-                    $this->db
-                );
+                CustomVariableValueValidator::assertDatalistValueAllowed($key, $value, $propertyUuid, $this->db);
             }
 
-            $objectVars->registerVarUuid($key, Uuid::fromBytes($customProperties[$key]['uuid']));
+            $objectVars->registerVarUuid($key, $propertyUuid);
 
             return;
         }

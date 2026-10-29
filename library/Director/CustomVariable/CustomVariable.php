@@ -111,6 +111,11 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     public function setUuid(UuidInterface $uuid): static
     {
+        // Same link again is not a change, so don't flag the var for a rewrite
+        if ($this->uuid?->equals($uuid)) {
+            return $this;
+        }
+
         $this->uuid = $uuid;
         $this->modified = true;
 
@@ -124,6 +129,10 @@ abstract class CustomVariable implements IcingaConfigRenderer
      */
     public function clearUuid(): static
     {
+        if ($this->uuid === null) {
+            return $this;
+        }
+
         $this->uuid = null;
         $this->modified = true;
 

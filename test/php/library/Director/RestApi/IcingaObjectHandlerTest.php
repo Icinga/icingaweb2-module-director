@@ -241,6 +241,105 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
     }
 
+    public function testResubmittingUnchangedInheritedPropertyValueKeepsNotModified(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createTemplateWithRegionProperty($db);
+        $this->createLeafHostWithRegion($db, 'eu-west');
+
+        $status = $this->postToHost($db, self::IMPORT_DROP_LEAF_HOST, [
+            'object_name' => self::IMPORT_DROP_LEAF_HOST,
+            'object_type' => 'object',
+            'imports'     => [self::TEMPLATE_NAME],
+        ], [self::REGION_KEY => 'eu-west']);
+
+        $this->assertEquals(
+            304,
+            $status,
+            'Sending the same value again for an attached custom property must keep reporting 304'
+        );
+    }
+
+    public function testResubmittingUnchangedDirectPropertyValueKeepsNotModified(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createTemplateWithRegionProperty($db);
+        $data = ['object_name' => self::TEMPLATE_NAME, 'object_type' => 'template'];
+
+        $this->postToHost($db, self::TEMPLATE_NAME, $data, [self::REGION_KEY => 'eu-west']);
+        $status = $this->postToHost($db, self::TEMPLATE_NAME, $data, [self::REGION_KEY => 'eu-west']);
+
+        $this->assertEquals(304, $status);
+    }
+
+    public function testChangedPropertyValueStillReportsSuccess(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createTemplateWithRegionProperty($db);
+        $this->createLeafHostWithRegion($db, 'eu-west');
+
+        $status = $this->postToHost($db, self::IMPORT_DROP_LEAF_HOST, [
+            'object_name' => self::IMPORT_DROP_LEAF_HOST,
+            'object_type' => 'object',
+            'imports'     => [self::TEMPLATE_NAME],
+        ], [self::REGION_KEY => 'us-east']);
+
+        $this->assertEquals(200, $status);
+        $this->assertEquals(
+            'us-east',
+            IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db)->vars()->get(self::REGION_KEY)->getValue()
+        );
+    }
+
+    public function testResubmittingValueStoredBeforeAttachmentLinksItAndStaysNotModified(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $template = IcingaHost::create([
+            'object_name' => self::TEMPLATE_NAME,
+            'object_type' => 'template',
+        ]);
+        $template->store($db);
+
+        // The value is saved as a plain variable while nothing is attached yet
+        $this->createLeafHostWithRegion($db, 'eu-west');
+        $this->assertNull(
+            IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db)->vars()->get(self::REGION_KEY)->getUuid()
+        );
+
+        $this->attachRegionProperty($db, $template);
+        $status = $this->postToHost($db, self::IMPORT_DROP_LEAF_HOST, [
+            'object_name' => self::IMPORT_DROP_LEAF_HOST,
+            'object_type' => 'object',
+            'imports'     => [self::TEMPLATE_NAME],
+        ], [self::REGION_KEY => 'eu-west']);
+
+        $this->assertEquals(
+            304,
+            $status,
+            'Linking an unchanged value to its property is not a change, so it must report 304'
+        );
+        $this->assertNotNull(
+            IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db)->vars()->get(self::REGION_KEY)->getUuid(),
+            'The unchanged value must still get linked to the property it now belongs to'
+        );
+    }
+
     public function testPutDroppingAnImportRemovesTheValueThatOnlyExistedBecauseOfIt(): void
     {
         if ($this->skipForMissingDb()) {
@@ -699,6 +798,95 @@ class IcingaObjectHandlerTest extends BaseTestCase
             $this->deleteIfExists($type, $child, $db);
             $this->deleteIfExists($type, $parent, $db);
         }
+    }
+
+    /**
+     * Create the template and attach the region property to it
+     */
+    private function createTemplateWithRegionProperty($db): void
+    {
+        if (IcingaHost::exists(self::TEMPLATE_NAME, $db)) {
+            IcingaHost::load(self::TEMPLATE_NAME, $db)->delete();
+        }
+
+        $template = IcingaHost::create([
+            'object_name' => self::TEMPLATE_NAME,
+            'object_type' => 'template',
+        ]);
+        $template->store($db);
+        $this->attachRegionProperty($db, $template);
+    }
+
+    /**
+     * Create the region property and attach it to the given template
+     */
+    private function attachRegionProperty($db, IcingaHost $template): void
+    {
+        $regionProperty = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::REGION_KEY,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db);
+        $regionProperty->store();
+
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_host_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($regionProperty->get('uuid'), $dba),
+            'host_uuid'     => DbUtil::quoteBinaryCompat($template->get('uuid'), $dba),
+        ]);
+    }
+
+    /**
+     * Create a host importing the template and store the region value on it
+     */
+    private function createLeafHostWithRegion($db, string $region): void
+    {
+        if (IcingaHost::exists(self::IMPORT_DROP_LEAF_HOST, $db)) {
+            IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db)->delete();
+        }
+
+        $leaf = IcingaHost::create([
+            'object_name' => self::IMPORT_DROP_LEAF_HOST,
+            'object_type' => 'object',
+        ]);
+        $leaf->setImports([self::TEMPLATE_NAME]);
+        $leaf->store($db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            IcingaHost::load(self::IMPORT_DROP_LEAF_HOST, $db),
+            [self::REGION_KEY => $region],
+            'index',
+            'POST',
+            false
+        ));
+    }
+
+    /**
+     * Send a POST for the given host and return the HTTP status it ends up with
+     */
+    private function postToHost($db, string $name, array $data, array $vars): int
+    {
+        $response = new Response();
+        $handler = new IcingaObjectHandler(new Request(), $response, $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $writeRequest = new IcingaObjectWriteRequest(
+            IcingaHost::load($name, $db),
+            $data,
+            'host',
+            'index',
+            'POST',
+            true,
+            $vars,
+            false,
+            new UrlParams()
+        );
+
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest) {
+            $method->invoke($handler, $writeRequest);
+        });
+
+        return $response->getHttpResponseCode();
     }
 
     private function deleteIfExists(string $type, string $name, $db): void
