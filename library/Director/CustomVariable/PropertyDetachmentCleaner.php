@@ -21,6 +21,9 @@ use stdClass;
  */
 class PropertyDetachmentCleaner
 {
+    /** Objects to clean between two garbage collections */
+    private const COLLECT_GARBAGE_EVERY = 50;
+
     /**
      * Wipe the saved value for the given properties, on this object and
      * everything below it with no other way left to reach them
@@ -45,6 +48,7 @@ class PropertyDetachmentCleaner
         $objectId = (int) $object->get('id');
         $class = DbObjectTypeRegistry::classByType($type);
 
+        $cleanedCount = 0;
         foreach ($orphanedRowsByHolderId as $holderId => $orphanedRows) {
             $holder = $holderId === $objectId
                 ? $object
@@ -66,6 +70,12 @@ class PropertyDetachmentCleaner
                 . ' AND '
                 . $dbAdapter->quoteInto($type . '_id = ?', $holderId)
             );
+
+            // Each object cleaned leaves unused data behind, free it or a big template runs out of memory
+            $cleanedCount++;
+            if ($cleanedCount % self::COLLECT_GARBAGE_EVERY === 0) {
+                gc_collect_cycles();
+            }
         }
     }
 
