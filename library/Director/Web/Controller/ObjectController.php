@@ -805,7 +805,8 @@ abstract class ObjectController extends ActionController
             $object,
             $isOverrideVars,
             $addedVarUuids,
-            $requiredVarUuids
+            $requiredVarUuids,
+            $host
         );
         $form = (new CustomVariablesForm($object, $objectProperties))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
@@ -833,6 +834,42 @@ abstract class ObjectController extends ActionController
         $form->load($result);
 
         return $form;
+    }
+
+    /**
+     * Custom variable form submit handler
+     *
+     * @param CustomVariablesForm $form
+     * @param IcingaObject $host
+     *
+     * @return void
+     */
+    protected function customVarFormOnSubmit(CustomVariablesForm $form, IcingaObject $host): void
+    {
+        $form
+            ->on(
+                CustomVariablesForm::ON_SUBMIT,
+                function (CustomVariablesForm $form) use ($host) {
+                    if ($form->varsHasBeenModified()) {
+                        Notification::success(
+                            sprintf(
+                                $this->translate(
+                                    "Custom variables have been successfully overridden"
+                                    . " for service '%s' on host '%s'"
+                                ),
+                                $form->object->getObjectName(),
+                                $host->getObjectName()
+                            )
+                        );
+                    } else {
+                        Notification::success(
+                            $this->translate('There is nothing to change.')
+                        );
+                    }
+
+                    $this->redirectNow(Url::fromRequest());
+                }
+            );
     }
 
     /**
@@ -1072,6 +1109,7 @@ abstract class ObjectController extends ActionController
      *                                       the object's own
      * @param string[]     $addedVarUuids    UUID strings of properties added this session
      * @param string[]     $requiredVarUuids UUID strings of properties marked required this session
+     * @param ?IcingaHost  $host             Host that holds the overrides, defaults to the controller's object
      *
      * @return array
      */
@@ -1079,7 +1117,8 @@ abstract class ObjectController extends ActionController
         IcingaObject $object,
         bool $isOverrideVars = false,
         array $addedVarUuids = [],
-        array $requiredVarUuids = []
+        array $requiredVarUuids = [],
+        ?IcingaHost $host = null
     ): array {
         if ($object->uuid === null) {
             return [];
@@ -1110,13 +1149,8 @@ abstract class ObjectController extends ActionController
         }
 
         if ($isOverrideVars) {
-            if ($object->isApplyRule()) {
-                $serviceName = $object->getObjectName();
-            } else {
-                $serviceName = $this->params->getRequired('service');
-            }
-
-            $vars = json_decode(json_encode($this->object->getOverriddenServiceVars($serviceName)), true);
+            $host ??= $this->object;
+            $vars = json_decode(json_encode($host->getOverriddenServiceVars($object->getObjectName())), true);
         } else {
             $vars = json_decode(json_encode($object->getVars()), true);
         }

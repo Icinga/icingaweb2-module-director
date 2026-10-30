@@ -10,6 +10,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
+use Icinga\Module\Director\Forms\HostServiceBlacklistForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
@@ -20,6 +21,8 @@ use Icinga\Module\Director\Web\Table\IcingaAppliedServiceTable;
 use Icinga\Web\Widget\Tab;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Widget\Tabs;
+use gipfl\Web\Widget\Hint;
+use ipl\Web\Url;
 
 class ServiceController extends ObjectController
 {
@@ -29,6 +32,9 @@ class ServiceController extends ObjectController
     protected $set;
 
     protected $apply;
+
+    /** @var bool Show the form for the deprecated datafields instead of the custom properties */
+    private $deprecated = false;
 
     protected function checkDirectorPermissions()
     {
@@ -147,6 +153,12 @@ class ServiceController extends ObjectController
         }
     }
 
+    public function editdeprecatedAction()
+    {
+        $this->deprecated = true;
+        $this->editAction();
+    }
+
     public function editAction()
     {
         $this->tabs()->activate('modify');
@@ -155,6 +167,13 @@ class ServiceController extends ObjectController
         $object = $this->object;
         $this->addTitle($object->getObjectName());
         if ($object->isTemplate() && $this->showNotInBranch($this->translate('Modifying Templates'))) {
+            return;
+        }
+
+        $overrideService = $this->host && $object->usesVarOverrides();
+        if ($overrideService && ! $this->deprecated) {
+            $this->addOverrideForm($object);
+
             return;
         }
 
@@ -174,7 +193,9 @@ class ServiceController extends ObjectController
         if ($this->set) {
             $form->setServiceSet($this->set);
         }
-        if ($this->host && $object->usesVarOverrides()) {
+
+        if ($overrideService) {
+            // The old form needs the overrides of the host as the vars of a pretend service
             $fake = IcingaService::create(array(
                 'object_type' => 'object',
                 'host_id' => $object->get('host_id'),
@@ -216,6 +237,46 @@ class ServiceController extends ObjectController
         }
 
         $this->content()->add($form);
+    }
+
+    /**
+     * Show the form to override the custom variables of a service on its host
+     *
+     * @param IcingaService $object
+     *
+     * @return void
+     */
+    private function addOverrideForm(IcingaService $object): void
+    {
+        $host = $this->host;
+        $this->actions()->add(Link::create(
+            $this->translate('back'),
+            'director/host/services',
+            ['uuid' => $host->getUniqueId()->toString()],
+            ['class' => 'icon-left-big']
+        ));
+        $this->view->subtitle = sprintf($this->translate('(on %s)'), $host->object_name);
+
+        $deactivateForm = (new HostServiceBlacklistForm($this->db(), $host, $object))
+            ->on(HostServiceBlacklistForm::ON_SUBMIT, function () {
+                $this->redirectNow(Url::fromRequest());
+            })
+            ->handleRequest($this->getServerRequest());
+
+        if ($deactivateForm->hasBeenBlacklisted()) {
+            $this->content()->add(
+                Hint::warning($this->translate('This Service has been deactivated on this host'))
+            );
+            $this->content()->add($deactivateForm);
+
+            return;
+        }
+
+        $this->controls()->prepend($deactivateForm);
+        $form = $this->prepareCustomPropertiesForm($object, $host);
+        $this->customVarFormOnSubmit($form, $host);
+        $form->setHostForService($host);
+        $this->content()->add($form->handleRequest($this->getServerRequest()));
     }
 
     public function assignAction()

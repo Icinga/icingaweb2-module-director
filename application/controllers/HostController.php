@@ -8,14 +8,11 @@ namespace Icinga\Module\Director\Controllers;
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Forms\CustomVariableForm;
-use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\HostServiceBlacklistForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Integration\Icingadb\IcingadbBackend;
 use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
-use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
-use Icinga\Web\Notification;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -246,6 +243,20 @@ class HostController extends ObjectController
 
         if (count($table)) {
             $content->add($table);
+        }
+
+        // A table of its own, a clone would share the query and its filter
+        $deprecatedTable = (new ObjectsTableService($this->db(), $this->Auth()))
+            ->setHost($host)
+            ->setBranch($branch)
+            ->setTitle($this->translate(
+                'Individual Service objects with overrides (referencing deprecated Datafields)'
+            ))
+            ->useDeprecatedLink()
+            ->onlyWithVarOverrides()
+            ->removeQueryLimit();
+        if (count($deprecatedTable)) {
+            $content->add($deprecatedTable);
         }
 
         /** @var IcingaHost[] $parents */
@@ -709,42 +720,6 @@ class HostController extends ObjectController
         }
 
         $this->commonForServices();
-    }
-
-    /**
-     * Custom variable form submit handler
-     *
-     * @param CustomVariablesForm $form
-     * @param IcingaObject $host
-     *
-     * @return void
-     */
-    private function customVarFormOnSubmit(CustomVariablesForm $form, IcingaObject $host): void
-    {
-        $form
-            ->on(
-                CustomVariablesForm::ON_SUBMIT,
-                function (CustomVariablesForm $form) use ($host) {
-                    if ($form->varsHasBeenModified()) {
-                        Notification::success(
-                            sprintf(
-                                $this->translate(
-                                    "Custom variables have been successfully overridden"
-                                    . " for service '%s' on host '%s'"
-                                ),
-                                $form->object->getObjectName(),
-                                $host->getObjectName()
-                            )
-                        );
-                    } else {
-                        Notification::success(
-                            $this->translate('There is nothing to change.')
-                        );
-                    }
-
-                    $this->redirectNow(Url::fromRequest());
-                }
-            );
     }
 
     /**
