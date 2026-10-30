@@ -169,6 +169,31 @@ class ObjectControllerCustomPropertiesTest extends BaseTestCase
         $this->assertSame('200', $rows[self::WRTA_KEY]['value']);
     }
 
+    public function testOverrideFormUsesTheGivenHostForASingleService(): void
+    {
+        $this->createFixtures();
+        $db = $this->getDb();
+
+        $host = IcingaHost::load(self::WEB_HOST, $db);
+        $service = IcingaService::create([
+            'object_name'       => self::SERVICE,
+            'object_type'       => 'object',
+            'host_id'           => $host->get('id'),
+            'check_command'     => self::COMMAND,
+            'use_var_overrides' => 'y',
+        ], $db);
+        $service->store($db);
+        $host->overrideServiceVars(self::SERVICE, (object) [self::WRTA_KEY => '400'])->store();
+
+        // The controller of a service has the service as its object and no service in the request
+        $controller = $this->controllerWithDb();
+        (new ReflectionProperty(ObjectController::class, 'object'))->setValue($controller, $service);
+
+        $rows = self::callMethod($controller, 'getObjectCustomProperties', [$service, true, [], [], $host]);
+
+        $this->assertSame('400', $rows[self::WRTA_KEY]['value']);
+    }
+
     public function testOverrideFormListsTheCommandVarOfAServiceInAServiceSet(): void
     {
         $this->createFixtures();

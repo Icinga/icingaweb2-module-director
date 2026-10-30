@@ -318,7 +318,8 @@ class CustomVariablesForm extends CompatForm
     {
         return $this->applyGenerated
             || $this->inheritedServiceFrom
-            || ($this->host && $this->set);
+            || ($this->host && $this->set)
+            || ($this->host && $this->object instanceof IcingaService && $this->object->usesVarOverrides());
     }
 
     /**
