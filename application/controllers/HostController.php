@@ -245,6 +245,20 @@ class HostController extends ObjectController
             $content->add($table);
         }
 
+        // A table of its own, a clone would share the query and its filter
+        $deprecatedTable = (new ObjectsTableService($this->db(), $this->Auth()))
+            ->setHost($host)
+            ->setBranch($branch)
+            ->setTitle($this->translate(
+                'Individual Service objects with overrides (referencing deprecated Datafields)'
+            ))
+            ->useDeprecatedLink()
+            ->onlyWithVarOverrides()
+            ->removeQueryLimit();
+        if (count($deprecatedTable)) {
+            $content->add($deprecatedTable);
+        }
+
         /** @var IcingaHost[] $parents */
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);

@@ -26,6 +26,9 @@ class ObjectsTableService extends ObjectsTable
     /** @var bool Use deprecated links instead of the new links for the services */
     private $useDeprecatedLink = false;
 
+    /** @var bool Only list the services that allow overriding their variables on the host */
+    private $onlyWithVarOverrides = false;
+
     /** @var IcingaHost */
     protected $inheritedBy;
 
@@ -45,6 +48,7 @@ class ObjectsTableService extends ObjectsTable
         'id'               => 'o.id',
         'uuid'             => 'o.uuid',
         'blacklisted'      => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
+        'use_var_overrides' => 'o.use_var_overrides',
     ];
 
     protected $searchColumns = [
@@ -77,6 +81,20 @@ class ObjectsTableService extends ObjectsTable
     public function useDeprecatedLink(bool $useDeprecatedLink = true): self
     {
         $this->useDeprecatedLink = $useDeprecatedLink;
+
+        return $this;
+    }
+
+    /**
+     * Only list the services that allow overriding their variables on the host
+     *
+     * @param bool $onlyWithVarOverrides
+     *
+     * @return $this
+     */
+    public function onlyWithVarOverrides(bool $onlyWithVarOverrides = true): self
+    {
+        $this->onlyWithVarOverrides = $onlyWithVarOverrides;
 
         return $this;
     }
@@ -202,9 +220,14 @@ class ObjectsTableService extends ObjectsTable
             return $this->getInheritedServiceLink($row, $target);
         }
 
+        $url = 'director/service/edit';
+        if ($this->useDeprecatedLink) {
+            $url .= 'deprecated';
+        }
+
         return Link::create(
             $row->object_name,
-            'director/service/edit',
+            $url,
             $params
         );
     }
@@ -272,6 +295,11 @@ class ObjectsTableService extends ObjectsTable
                     $subQuery->where('h.id = ?', $this->host->get('id'));
                 }
             }
+        }
+
+        if ($this->onlyWithVarOverrides) {
+            // The branch query is a union, so the column has no table prefix there
+            $query->where(($this->branchUuid ? '' : 'o.') . "use_var_overrides = 'y'");
         }
 
         return $query;

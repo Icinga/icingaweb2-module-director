@@ -33,6 +33,9 @@ class ServiceController extends ObjectController
 
     protected $apply;
 
+    /** @var bool Show the form for the deprecated datafields instead of the custom properties */
+    private $deprecated = false;
+
     protected function checkDirectorPermissions()
     {
         if (
@@ -150,6 +153,12 @@ class ServiceController extends ObjectController
         }
     }
 
+    public function editdeprecatedAction()
+    {
+        $this->deprecated = true;
+        $this->editAction();
+    }
+
     public function editAction()
     {
         $this->tabs()->activate('modify');
@@ -161,7 +170,8 @@ class ServiceController extends ObjectController
             return;
         }
 
-        if ($this->host && $object->usesVarOverrides()) {
+        $overrideService = $this->host && $object->usesVarOverrides();
+        if ($overrideService && ! $this->deprecated) {
             $this->addOverrideForm($object);
 
             return;
@@ -183,7 +193,22 @@ class ServiceController extends ObjectController
         if ($this->set) {
             $form->setServiceSet($this->set);
         }
-        $form->setObject($object);
+
+        if ($overrideService) {
+            // The old form needs the overrides of the host as the vars of a pretend service
+            $fake = IcingaService::create(array(
+                'object_type' => 'object',
+                'host_id' => $object->get('host_id'),
+                'imports' => $object,
+                'object_name' => $object->object_name,
+                'use_var_overrides' => 'y',
+                'vars' => $this->host->getOverriddenServiceVars($object->object_name),
+            ), $this->db());
+
+            $form->setObject($fake);
+        } else {
+            $form->setObject($object);
+        }
 
         $form->handleRequest();
         $this->addActionClone();
