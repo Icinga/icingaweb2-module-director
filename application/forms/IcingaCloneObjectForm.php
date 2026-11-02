@@ -12,6 +12,7 @@ use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -222,6 +223,18 @@ class IcingaCloneObjectForm extends DirectorForm
 
         $store = new DbObjectStore($connection, $this->branch);
         if ($store->store($new)) {
+            // The first membership refresh happens in IcingaHost::onStore(),
+            // before a newly inserted host is marked as loaded from the DB.
+            // An apply rule depending on another applied hostgroup can only
+            // see that hostgroup after the first pass has been stored. Refresh
+            // the cloned host once more now that its existing memberships can
+            // be read, without recalculating unrelated hosts or branch data.
+            if ($new instanceof IcingaHost && ! $isBranch) {
+                (new HostGroupMembershipResolver($connection))
+                    ->setObject($new)
+                    ->refreshDb();
+            }
+
             $newId = $new->get('id');
             foreach ($services as $service) {
                 $clone = IcingaService::fromPlainObject(
