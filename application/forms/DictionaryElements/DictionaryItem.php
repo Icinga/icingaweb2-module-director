@@ -513,15 +513,20 @@ class DictionaryItem extends FieldsetElement
 
         $property['uuid'] = DbUtil::binaryResult($property['uuid'] ?? '');
 
+        $isDatalist = in_array($property['value_type'], ['datalist-strict', 'datalist-non-strict'], true);
         if (
             $property['value_type'] === 'dynamic-array'
-            || (
-                in_array($property['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
-                && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'dynamic-array'
-            )
+            || ($isDatalist && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'dynamic-array')
         ) {
+            $inherited = $property['inherited'] ?? [];
+            if ($isDatalist) {
+                // The terms show the labels of the entries, so the inherited hint has to as well
+                $datalistEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
+                $inherited = array_map(fn ($value) => $datalistEntries[$value] ?? $value, $inherited);
+            }
+
             $values['var'] = $property['value'] ?? [];
-            $values['inherited'] = implode(', ', $property['inherited'] ?? []);
+            $values['inherited'] = implode(', ', $inherited);
             $values['inherited_from'] = $property['inherited_from'] ?? '';
         } elseif ($property['value_type'] === 'fixed-dictionary' || $property['value_type'] === 'fixed-array') {
             $childrenValues = ['value' => $property['value'] ?? []];
