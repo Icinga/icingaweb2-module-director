@@ -28,8 +28,9 @@ class ObjectsTableHost extends ObjectsTable
     ];
 
     protected $showColumns = [
-        'object_name' => 'Hostname',
-        'address'     => 'Address'
+        'object_name'  => 'Hostname',
+        'display_name' => 'Display Name',
+        'address'      => 'Address'
     ];
 
     public function assemble()
