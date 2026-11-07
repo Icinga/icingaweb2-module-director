@@ -179,6 +179,9 @@ class PropertyDetachmentCleaner
      * Wipe values that only existed because of a template import which
      * just got removed
      *
+     * Does nothing for object types that can't have both imports and custom
+     * variables.
+     *
      * @param IcingaObject $object             The object whose imports changed
      * @param string[]     $removedImportNames Imports this object lost, compared to what's in the database
      * @param Db           $db                 Database connection
@@ -188,7 +191,7 @@ class PropertyDetachmentCleaner
         array $removedImportNames,
         Db $db
     ): void {
-        if (empty($removedImportNames)) {
+        if (empty($removedImportNames) || ! self::canLoseValuesToImports($object)) {
             return;
         }
 
@@ -218,6 +221,8 @@ class PropertyDetachmentCleaner
      * Only for warning the user before save, doesn't touch the database.
      * Takes the pending imports as an argument instead of reading them
      * off the object, since a form calls this before applying anything.
+     * Returns nothing for object types that can't have both imports and
+     * custom variables.
      *
      * @param IcingaObject $object             The object to check
      * @param string[]     $pendingImportNames
@@ -228,7 +233,7 @@ class PropertyDetachmentCleaner
         IcingaObject $object,
         array $pendingImportNames
     ): array {
-        if (! $object->hasBeenLoadedFromDb()) {
+        if (! self::canLoseValuesToImports($object) || ! $object->hasBeenLoadedFromDb()) {
             return [];
         }
 
@@ -266,6 +271,21 @@ class PropertyDetachmentCleaner
         }
 
         return array_values(array_unique($varnames));
+    }
+
+    /**
+     * Check whether the object's type has properties that can be lost with an import
+     *
+     * Only the types that support both imports and custom variables have the
+     * tables these properties live in.
+     *
+     * @param IcingaObject $object
+     *
+     * @return bool
+     */
+    private static function canLoseValuesToImports(IcingaObject $object): bool
+    {
+        return $object->supportsImports() && $object->supportsCustomVars();
     }
 
     /**

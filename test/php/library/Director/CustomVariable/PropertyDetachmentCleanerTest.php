@@ -8,8 +8,15 @@ namespace Tests\Icinga\Module\Director\CustomVariable;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
+use Icinga\Module\Director\Objects\IcingaDependency;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaHostGroup;
+use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaScheduledDowntime;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaTimePeriod;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
 use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -599,6 +606,59 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
             $runsDuringCleanup,
             'the cleanup should free memory on its own, 120 child templates is more than two batches'
         );
+    }
+
+    /**
+     * @return array<string, array{class-string<IcingaObject>}>
+     */
+    public static function typesWithImportsButWithoutCustomVars(): array
+    {
+        return [
+            'time period'        => [IcingaTimePeriod::class],
+            'endpoint'           => [IcingaEndpoint::class],
+            'dependency'         => [IcingaDependency::class],
+            'zone'               => [IcingaZone::class],
+            'scheduled downtime' => [IcingaScheduledDowntime::class],
+            'host group'         => [IcingaHostGroup::class],
+        ];
+    }
+
+    /**
+     * @param class-string<IcingaObject> $class
+     *
+     * @dataProvider typesWithImportsButWithoutCustomVars
+     */
+    public function testRemovingAnImportFromATypeWithoutCustomVarsHasNothingToPreviewOrClean(string $class): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $parentName = self::PREFIX . 'import-cleanup-no-vars-parent';
+        $childName = self::PREFIX . 'import-cleanup-no-vars-child';
+
+        $parent = $class::create(['object_name' => $parentName, 'object_type' => 'template'], $db);
+        $parent->store();
+        $child = $class::create(['object_name' => $childName, 'object_type' => 'template'], $db);
+        $child->setImports([$parentName]);
+        $child->store();
+
+        try {
+            $this->assertSame(
+                [],
+                PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($child, [])
+            );
+
+            $child->setImports([]);
+            $child->store();
+
+            PropertyDetachmentCleaner::removeValuesLostToRemovedImports($child, [$parentName], $db);
+            $this->assertSame([], $class::load($childName, $db)->getImports());
+        } finally {
+            $child->delete();
+            $parent->delete();
+        }
     }
 
     /**
