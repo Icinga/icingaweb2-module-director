@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\RestApi;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
@@ -751,6 +752,70 @@ class IcingaObjectHandlerTest extends BaseTestCase
         );
     }
 
+    public function testPutAcceptsTheBodyOfAGet(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->deleteIfExists('command', self::CYCLE_COMMAND_CHILD, $db);
+        $command = IcingaCommand::create([
+            'object_name' => self::CYCLE_COMMAND_CHILD,
+            'object_type' => 'object',
+            'command'     => '/usr/lib/nagios/plugins/check_http',
+        ]);
+        $command->store($db);
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::REGION_KEY,
+            'value_type' => 'string',
+            'label'      => 'Region',
+        ], $db);
+        $property->store();
+        $dba = $db->getDbAdapter();
+        $dba->insert('icinga_command_property', [
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+        $command = IcingaCommand::load(self::CYCLE_COMMAND_CHILD, $db);
+
+        $body = (array) json_decode(json_encode((new Exporter($db))->export($command)));
+        $this->assertArrayHasKey('customVariables', $body);
+        $this->assertArrayHasKey('fields', $body);
+        $body['command'] = '/usr/lib/nagios/plugins/check_https';
+
+        $response = new Response();
+        $handler = new IcingaObjectHandler(new Request(), $response, $db);
+        $method = new ReflectionMethod($handler, 'persistObjectAndApplyVars');
+        $writeRequest = new IcingaObjectWriteRequest(
+            $command,
+            $body,
+            'command',
+            'index',
+            'PUT',
+            false,
+            [],
+            false,
+            new UrlParams()
+        );
+        $db->runFailSafeTransaction(function () use ($method, $handler, $writeRequest): void {
+            $method->invoke($handler, $writeRequest);
+        });
+
+        $this->assertEquals(200, $response->getHttpResponseCode());
+        $this->assertSame(
+            '/usr/lib/nagios/plugins/check_https',
+            IcingaCommand::load(self::CYCLE_COMMAND_CHILD, $db)->get('command')
+        );
+        $this->assertEquals(1, $dba->fetchOne(
+            $dba->select()
+                ->from('icinga_command_property', ['COUNT(*)'])
+                ->where('command_uuid = ?', DbUtil::quoteBinaryCompat($command->get('uuid'), $dba))
+        ), 'The attachment must be kept');
+    }
+
     public function testDeleteIsAllowedOnTheIndexAction(): void
     {
         IcingaObjectHandler::assertDeleteAllowed('index');
@@ -812,6 +877,7 @@ class IcingaObjectHandlerTest extends BaseTestCase
             }
 
             $this->deleteIfExists('command', self::EXTERNAL_COMMAND_NAME, $db);
+            $this->deleteIfExists('command', self::CYCLE_COMMAND_CHILD, $db);
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::DB_CONNECTION_KEY));
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::REGION_KEY));
 
