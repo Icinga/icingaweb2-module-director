@@ -59,6 +59,11 @@ PUT director/host?name=hostname.example.com
 DELETE director/host?name=hostname.example.com
  gives 200 on success
 
+A `GET` response can be sent back with `PUT` or `POST`. Its `fields` and
+`customVariables` properties are ignored there. Attach custom variables with
+the [Custom Variables](#Custom-Variables) endpoint or on the
+`Custom Variables` tab instead.
+
 
 First example request with CURL
 -------------------------------
