@@ -51,11 +51,19 @@ class CustomVariableValueApplier
      *              reflects CustomVariables' own modification tracking, checked
      *              before storeToDb() resets it.
      *
-     * @throws NotFoundError
+     * @throws NotFoundError If a variable can't be set, or the variables endpoint is used
+     *   for an object type without custom variables
      * @throws InvalidArgumentException If a value is sent to the variables endpoint of an external object
      */
     public function apply(CustomVarApplyRequest $request): bool
     {
+        if ($request->actionName === 'variables' && ! $request->object->supportsCustomVars()) {
+            throw new NotFoundError(sprintf(
+                'Objects of type %s have no custom variables',
+                $request->object->getShortTableName()
+            ));
+        }
+
         if ($request->actionName === 'variables' && $request->object->isExternal()) {
             return $this->attachToExternalObject($request);
         }

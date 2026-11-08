@@ -17,6 +17,7 @@ use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaNotification;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
 use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -33,6 +34,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
     private const CONCRETE_HOST_NAME = self::PREFIX . 'applier-host-concrete';
     private const COMMAND_NAME = self::PREFIX . 'check_backup';
     private const NOTIFICATION_NAME = self::PREFIX . 'applier-mail';
+    private const ZONE_NAME = self::PREFIX . 'applier-zone';
     private const ENV_KEY = self::PREFIX . 'applier_env';
     private const MYSQL_KEY = self::PREFIX . 'applier_mysql';
     private const ADDRESS_KEY = self::PREFIX . 'applier_address';
@@ -884,6 +886,33 @@ class CustomVariableValueApplierTest extends BaseTestCase
         );
     }
 
+    public function testVariablesEndpointOfAnObjectTypeWithoutCustomVariablesIsNotFound(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $zone = IcingaZone::create([
+            'object_name' => self::ZONE_NAME,
+            'object_type' => 'external_object',
+        ]);
+        $zone->store($db);
+
+        try {
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+                $zone,
+                [self::ENV_KEY => null],
+                'variables',
+                'PUT',
+                false
+            ));
+            $this->fail('The variables endpoint of a zone must not exist');
+        } catch (NotFoundError $e) {
+            $this->assertSame('Objects of type zone have no custom variables', $e->getMessage());
+        }
+    }
+
     public function testPutOnACommandReplacesValuesButKeepsAttachments(): void
     {
         if ($this->skipForMissingDb()) {
@@ -1300,6 +1329,10 @@ class CustomVariableValueApplierTest extends BaseTestCase
 
             if (IcingaNotification::exists(self::NOTIFICATION_NAME, $db)) {
                 IcingaNotification::load(self::NOTIFICATION_NAME, $db)->delete();
+            }
+
+            if (IcingaZone::exists(self::ZONE_NAME, $db)) {
+                IcingaZone::load(self::ZONE_NAME, $db)->delete();
             }
 
             $dba->delete(

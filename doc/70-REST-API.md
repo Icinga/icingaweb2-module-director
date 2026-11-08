@@ -247,6 +247,9 @@ endpoint.
     POST director/<objectType>/variables?<params>
     PUT  director/<objectType>/variables?<params>
 
+Object types without custom variables, such as zones and endpoints, answer
+`404 Not Found` on this endpoint.
+
 This endpoint requires `director/admin`, regardless of object type. Call
 it with a JSON body whose keys are variable names and values are the new
 values. Strings, numbers, booleans, arrays and nested dictionaries are
