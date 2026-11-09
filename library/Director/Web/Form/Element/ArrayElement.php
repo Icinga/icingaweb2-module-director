@@ -24,6 +24,9 @@ class ArrayElement extends TermInput
     /**
      * Sets the placeholder text for the current instance.
      *
+     * The element shows the text only while it has no terms. Once terms exist,
+     * only the default hint remains.
+     *
      * @param string $placeholder The placeholder text to set.
      *
      * @return $this
@@ -39,15 +42,17 @@ class ArrayElement extends TermInput
     {
         parent::assemble();
 
-        $valuePlaceHolder = $this->translate('Separate multiple values by comma.');
-        if ($this->placeholder) {
-            $valuePlaceHolder = $this->placeholder . '. ' . $valuePlaceHolder;
-        }
-
         $this->getElement('value')
             ->getAttributes()
             ->set('data-no-auto-submit-on-remove', false)
-            ->registerAttributeCallback('placeholder', function () use ($valuePlaceHolder) {
+            ->registerAttributeCallback('placeholder', function () {
+                $valuePlaceHolder = $this->translate('Separate multiple values by comma.');
+
+                // Once there are own values, the inherited one is overridden, so don't hint at it
+                if ($this->placeholder && empty($this->getTerms())) {
+                    $valuePlaceHolder = $this->placeholder . '. ' . $valuePlaceHolder;
+                }
+
                 return $valuePlaceHolder;
             })
             ->registerAttributeCallback('data-auto-submit', function () {

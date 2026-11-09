@@ -840,14 +840,14 @@ class DictionaryItemTest extends BaseTestCase
                 'uuid' => $property->get('uuid'),
                 'key_name' => $property->get('key_name'),
                 'value_type' => $type,
-                'inherited' => ['dev', 'prod'],
+                'inherited' => ['dev', 'prod', 'removed'],
                 'inherited_from' => 'base-template',
             ];
             $item = new DictionaryItem('0', $data);
             $item->populate(DictionaryItem::prepare($data));
             $item->ensureAssembled();
 
-            $this->assertStringContainsString('dev, prod (Inherited from base-template)', (string) $item);
+            $this->assertStringContainsString('Dev, Prod, removed (Inherited from base-template)', (string) $item);
             $this->assertSame([], $item->getElement('var')->getValue());
             $this->assertSame([], $item->getItem()['value']);
         }
