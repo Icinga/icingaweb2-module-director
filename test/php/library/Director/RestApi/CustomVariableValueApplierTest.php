@@ -9,12 +9,15 @@ use Icinga\Authentication\Auth;
 use Icinga\Authentication\Role;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaNotification;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
 use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -30,8 +33,11 @@ class CustomVariableValueApplierTest extends BaseTestCase
     private const TEMPLATE_NAME = self::PREFIX . 'applier-host';
     private const CONCRETE_HOST_NAME = self::PREFIX . 'applier-host-concrete';
     private const COMMAND_NAME = self::PREFIX . 'check_backup';
+    private const NOTIFICATION_NAME = self::PREFIX . 'applier-mail';
+    private const ZONE_NAME = self::PREFIX . 'applier-zone';
     private const ENV_KEY = self::PREFIX . 'applier_env';
     private const MYSQL_KEY = self::PREFIX . 'applier_mysql';
+    private const ADDRESS_KEY = self::PREFIX . 'applier_address';
     private const DATALIST_KEY = self::PREFIX . 'applier_env_choice';
     private const DATALIST_NAME = self::PREFIX . 'applier_env_list';
 
@@ -632,7 +638,8 @@ class CustomVariableValueApplierTest extends BaseTestCase
             $db,
             $this->createCommand($db, 'external_object'),
             'The custom variable ' . self::ENV_KEY
-            . ' should be first added to the command with a PUT request or on its Custom Variables tab'
+            . ' should be first added to the command with a PUT request or on its Custom Variables tab',
+            null
         );
     }
 
@@ -651,10 +658,262 @@ class CustomVariableValueApplierTest extends BaseTestCase
             return;
         }
 
-        $this->assertPutAttachesPropertyOnCommand($this->getDb(), 'external_object');
+        // An external command never takes a value, so null attaches the property
+        $this->assertPutAttachesPropertyOnCommand($this->getDb(), 'external_object', null);
     }
 
-    public function testPutOnAnExternalCommandReplacesValuesButKeepsAttachments(): void
+    public function testNullPutOnAnExternalCommandAttachesWithoutTouchingItsValues(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithValues($db);
+
+        $changed = (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $command,
+            [self::ENV_KEY => null],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $this->assertTrue($changed, 'Attaching a variable must count as a change');
+        $this->assertSame([self::ENV_KEY, self::MYSQL_KEY], $this->fetchCommandAttachments($command, $db));
+        $this->assertExternalCommandValuesAreKept($db);
+    }
+
+    public function testPutOnAnExternalCommandWithNothingNewToAttachReportsNoChange(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithValues($db);
+
+        $changed = (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $command,
+            [self::MYSQL_KEY => null],
+            'variables',
+            'PUT',
+            false
+        ));
+
+        $this->assertFalse($changed);
+        $this->assertSame([self::MYSQL_KEY], $this->fetchCommandAttachments($command, $db));
+        $this->assertExternalCommandValuesAreKept($db);
+    }
+
+    public function testNullPostOnAnExternalCommandKeepsTheValueOfAnAttachedVariable(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithValues($db);
+
+        $changed = (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $command,
+            [self::MYSQL_KEY => null],
+            'variables',
+            'POST',
+            false
+        ));
+
+        $this->assertFalse($changed);
+        $this->assertExternalCommandValuesAreKept($db);
+    }
+
+    public function testPutOnAnExternalCommandRejectsAValueAndChangesNothing(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithValues($db);
+
+        try {
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+                $command,
+                [self::MYSQL_KEY => null, self::ENV_KEY => 'production'],
+                'variables',
+                'PUT',
+                false
+            ));
+            $this->fail('A value for an external command must be rejected');
+        } catch (InvalidArgumentException $e) {
+            $this->assertSame(
+                'The custom variable ' . self::ENV_KEY . ' can only be attached to ' . self::COMMAND_NAME
+                . ' with a null value because the values of an external object come from kickstart',
+                $e->getMessage()
+            );
+        }
+
+        $this->assertSame([self::MYSQL_KEY], $this->fetchCommandAttachments($command, $db), 'Nothing must be attached');
+        $this->assertExternalCommandValuesAreKept($db);
+    }
+
+    public function testValueForAnUnknownKeyOnAnExternalCommandIsNotFound(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithValues($db);
+
+        try {
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+                $command,
+                [self::PREFIX . 'unknown' => 'production'],
+                'variables',
+                'PUT',
+                false
+            ));
+            $this->fail('An unknown key must be rejected');
+        } catch (NotFoundError $e) {
+            $this->assertSame(
+                "'" . self::PREFIX . "unknown' is not configured in Icinga Director as a custom variable",
+                $e->getMessage()
+            );
+        }
+    }
+
+    public function testPostOnAnExternalCommandRejectsAValueForAnAttachedVariable(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithValues($db);
+
+        try {
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+                $command,
+                [self::MYSQL_KEY => 'db-replica'],
+                'variables',
+                'POST',
+                false
+            ));
+            $this->fail('A value for an external command must be rejected');
+        } catch (InvalidArgumentException $e) {
+            $this->assertSame(
+                'The custom variable ' . self::MYSQL_KEY . ' can not have a value on ' . self::COMMAND_NAME
+                . ' because the values of an external object come from kickstart',
+                $e->getMessage()
+            );
+        }
+
+        $this->assertExternalCommandValuesAreKept($db);
+    }
+
+    public function testBaseEndpointStillStoresValuesOnAnExternalCommand(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $command = $this->createExternalCommandWithValues($db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $command,
+            [self::MYSQL_KEY => 'db-replica'],
+            'index',
+            'POST',
+            false
+        ));
+
+        $this->assertSame(
+            'db-replica',
+            IcingaCommand::load(self::COMMAND_NAME, $db)->getVars()->{self::MYSQL_KEY}
+        );
+    }
+
+    public function testVariablesEndpointOfAnExternalNotificationKeepsItsValues(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $notification = IcingaNotification::create([
+            'object_name' => self::NOTIFICATION_NAME,
+            'object_type' => 'external_object',
+        ]);
+        $notification->vars()->set(self::ADDRESS_KEY, 'oncall@example.com');
+        $notification->store($db);
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::ENV_KEY,
+            'value_type' => 'string',
+            'label'      => 'Environment',
+        ], $db)->store();
+
+        $changed = (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            IcingaNotification::load(self::NOTIFICATION_NAME, $db),
+            [],
+            'variables',
+            'PUT',
+            false
+        ));
+        $this->assertFalse($changed);
+
+        try {
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+                IcingaNotification::load(self::NOTIFICATION_NAME, $db),
+                [self::ENV_KEY => 'production'],
+                'variables',
+                'PUT',
+                false
+            ));
+            $this->fail('A variable that an external notification can not attach must be rejected');
+        } catch (NotFoundError $e) {
+            $this->assertStringContainsString(
+                'should be first added to one of the imported templates',
+                $e->getMessage()
+            );
+        }
+
+        $this->assertSame(
+            'oncall@example.com',
+            IcingaNotification::load(self::NOTIFICATION_NAME, $db)->vars()->get(self::ADDRESS_KEY)->getValue()
+        );
+    }
+
+    public function testVariablesEndpointOfAnObjectTypeWithoutCustomVariablesIsNotFound(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $zone = IcingaZone::create([
+            'object_name' => self::ZONE_NAME,
+            'object_type' => 'external_object',
+        ]);
+        $zone->store($db);
+
+        try {
+            (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+                $zone,
+                [self::ENV_KEY => null],
+                'variables',
+                'PUT',
+                false
+            ));
+            $this->fail('The variables endpoint of a zone must not exist');
+        } catch (NotFoundError $e) {
+            $this->assertSame('Objects of type zone have no custom variables', $e->getMessage());
+        }
+    }
+
+    public function testPutOnACommandReplacesValuesButKeepsAttachments(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -662,7 +921,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
 
         $db = $this->getDb();
         $dba = $db->getDbAdapter();
-        $command = $this->createCommand($db, 'external_object');
+        $command = $this->createCommand($db, 'object');
         foreach ([self::ENV_KEY, self::MYSQL_KEY] as $key) {
             $property = DirectorProperty::create([
                 'uuid'       => Uuid::uuid4()->getBytes(),
@@ -851,7 +1110,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
         return $host;
     }
 
-    private function assertPutAttachesPropertyOnCommand($db, string $objectType): void
+    private function assertPutAttachesPropertyOnCommand($db, string $objectType, ?string $value = 'production'): void
     {
         $command = $this->createCommand($db, $objectType);
         DirectorProperty::create([
@@ -863,7 +1122,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
 
         (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $command,
-            [self::ENV_KEY => 'production'],
+            [self::ENV_KEY => $value],
             'variables',
             'PUT',
             false
@@ -884,8 +1143,12 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $this->assertEquals('n', $required, 'The command should have the property attached');
     }
 
-    private function assertPostIsRejected($db, IcingaObject $object, string $expectedMessage): void
-    {
+    private function assertPostIsRejected(
+        $db,
+        IcingaObject $object,
+        string $expectedMessage,
+        ?string $value = 'production'
+    ): void {
         DirectorProperty::create([
             'uuid'       => Uuid::uuid4()->getBytes(),
             'key_name'   => self::ENV_KEY,
@@ -897,7 +1160,7 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $this->expectExceptionMessage($expectedMessage);
         (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
             $object,
-            [self::ENV_KEY => 'production'],
+            [self::ENV_KEY => $value],
             'variables',
             'POST',
             false
@@ -917,6 +1180,65 @@ class CustomVariableValueApplierTest extends BaseTestCase
         $command->store($db);
 
         return $command;
+    }
+
+    /**
+     * Create an external command like kickstart does, with values but only some of them attached
+     *
+     * MYSQL_KEY is attached and has a value, ADDRESS_KEY only has a value and ENV_KEY is
+     * configured but neither attached nor set.
+     */
+    private function createExternalCommandWithValues(Db $db): IcingaCommand
+    {
+        $dba = $db->getDbAdapter();
+        $command = $this->createCommand($db, 'external_object');
+        $property = DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::MYSQL_KEY,
+            'value_type' => 'string',
+            'label'      => 'MySQL host',
+        ], $db);
+        $property->store();
+        $dba->insert('icinga_command_property', [
+            'command_uuid'  => DbUtil::quoteBinaryCompat($command->get('uuid'), $dba),
+            'property_uuid' => DbUtil::quoteBinaryCompat($property->get('uuid'), $dba),
+            'required'      => 'n',
+        ]);
+        DirectorProperty::create([
+            'uuid'       => Uuid::uuid4()->getBytes(),
+            'key_name'   => self::ENV_KEY,
+            'value_type' => 'string',
+            'label'      => 'Environment',
+        ], $db)->store();
+
+        $command->vars()->set(self::MYSQL_KEY, 'db-primary');
+        $command->vars()->set(self::ADDRESS_KEY, '$check_address$');
+        $command->store($db);
+
+        return IcingaCommand::load(self::COMMAND_NAME, $db);
+    }
+
+    private function assertExternalCommandValuesAreKept(Db $db): void
+    {
+        $vars = IcingaCommand::load(self::COMMAND_NAME, $db)->getVars();
+        $this->assertSame('db-primary', $vars->{self::MYSQL_KEY} ?? null, 'The attached value must be kept');
+        $this->assertSame('$check_address$', $vars->{self::ADDRESS_KEY} ?? null, 'The plain value must be kept');
+    }
+
+    /**
+     * @return string[] The key names of the variables attached directly to the command, sorted
+     */
+    private function fetchCommandAttachments(IcingaCommand $command, Db $db): array
+    {
+        $dba = $db->getDbAdapter();
+
+        return $dba->fetchCol(
+            $dba->select()
+                ->from(['icp' => 'icinga_command_property'], [])
+                ->join(['dp' => 'director_property'], 'dp.uuid = icp.property_uuid', ['dp.key_name'])
+                ->where('icp.command_uuid = ?', DbUtil::quoteBinaryCompat($command->get('uuid'), $dba))
+                ->order('dp.key_name')
+        );
     }
 
     private function createConcreteHost($db): IcingaHost
@@ -1003,6 +1325,14 @@ class CustomVariableValueApplierTest extends BaseTestCase
 
             if (IcingaCommand::exists(self::COMMAND_NAME, $db)) {
                 IcingaCommand::load(self::COMMAND_NAME, $db)->delete();
+            }
+
+            if (IcingaNotification::exists(self::NOTIFICATION_NAME, $db)) {
+                IcingaNotification::load(self::NOTIFICATION_NAME, $db)->delete();
+            }
+
+            if (IcingaZone::exists(self::ZONE_NAME, $db)) {
+                IcingaZone::load(self::ZONE_NAME, $db)->delete();
             }
 
             $dba->delete(

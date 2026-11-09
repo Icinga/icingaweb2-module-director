@@ -59,6 +59,11 @@ PUT director/host?name=hostname.example.com
 DELETE director/host?name=hostname.example.com
  gives 200 on success
 
+A `GET` response can be sent back with `PUT` or `POST`. Its `fields` and
+`customVariables` properties are ignored there. Attach custom variables with
+the [Custom Variables](#Custom-Variables) endpoint or on the
+`Custom Variables` tab instead.
+
 
 First example request with CURL
 -------------------------------
@@ -247,6 +252,9 @@ endpoint.
     POST director/<objectType>/variables?<params>
     PUT  director/<objectType>/variables?<params>
 
+Object types without custom variables, such as zones and endpoints, answer
+`404 Not Found` on this endpoint.
+
 This endpoint requires `director/admin`, regardless of object type. Call
 it with a JSON body whose keys are variable names and values are the new
 values. Strings, numbers, booleans, arrays and nested dictionaries are
@@ -284,12 +292,41 @@ still present in the body is preserved across that detach/reattach cycle;
 changing the flag still requires the `Custom Variables` tab of the template
 the variable was attached on.
 
-On a **command**, `PUT` replaces values and never detaches anything. A
-variable left out of the body keeps its attachment and only loses its value.
-A command can still attach a variable that isn't used on it yet, the same
-way a template can.
+On a **command** that is not external, `PUT` replaces values and never
+detaches anything. A variable left out of the body keeps its attachment and
+only loses its value. A command can still attach a variable that isn't used
+on it yet, the same way a template can.
 
-On any other object (host, service, user, notification), `PUT` only
+On an **external object**, like the commands that kickstart imports from
+the ITL, the values come from kickstart and are not edited in Director.
+This endpoint never changes them. Every variable in a `POST` or `PUT` body
+for an external object must be `null`, otherwise the whole request is
+rejected with `422 Unprocessable Entity` and nothing is changed. A `null`
+keeps the value of a variable that is already attached, and a `PUT` removes
+no values. On an external command, a `PUT` with `null` attaches a variable
+that isn't used on the command yet. These rules apply to this endpoint only.
+The base endpoint of an external object still stores the values it gets.
+
+    PUT director/command/variables?name=http
+
+```json
+{ "http_vhost": null }
+```
+
+A value instead of `null` is rejected:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "The custom variable http_vhost can only be attached to http with a null value because the values of an external object come from kickstart"
+}
+```
+
+On any other host, service, user or notification, `PUT` only
 replaces values: it can never attach a variable that isn't already
 available to the object through one of its imported templates; see
 [Attaching a variable to a template for the first
@@ -537,7 +574,8 @@ The message depends on how the variable is unknown.
   **is** configured under `Custom Variables`, just not yet attached to
   that object, is a silent no-op: nothing is attached, nothing is
   rejected. Only a non-`null` value on this path actually attaches the
-  property.
+  property. An external command is the exception. Its values come from
+  kickstart, so a `null` value attaches the property there.
 
 ```
 HTTP/1.1 404 Not Found
