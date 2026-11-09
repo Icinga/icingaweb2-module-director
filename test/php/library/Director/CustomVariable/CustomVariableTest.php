@@ -354,4 +354,56 @@ class CustomVariableTest extends TestCase
         $b = CustomVariable::create('disk_thresholds', []);
         $this->assertTrue($a->equals($b));
     }
+
+    public function testSettingTheSameUuidAgainKeepsTheVarUnmodified(): void
+    {
+        $uuid = Uuid::uuid4();
+        $var = CustomVariable::create('region', 'eu-west')->setUuid($uuid);
+        $var->setUnmodified();
+
+        $var->setUuid(Uuid::fromString($uuid->toString()));
+
+        $this->assertFalse($var->hasBeenModified());
+    }
+
+    public function testSettingADifferentUuidMarksTheVarModified(): void
+    {
+        $var = CustomVariable::create('region', 'eu-west')->setUuid(Uuid::uuid4());
+        $var->setUnmodified();
+
+        $var->setUuid(Uuid::uuid4());
+
+        $this->assertTrue($var->hasBeenModified());
+    }
+
+    public function testSettingAUuidOnAPlainVarMarksItModified(): void
+    {
+        $var = CustomVariable::create('region', 'eu-west');
+        $var->setUnmodified();
+
+        $var->setUuid(Uuid::uuid4());
+
+        $this->assertTrue($var->hasBeenModified());
+    }
+
+    public function testClearingAMissingUuidKeepsTheVarUnmodified(): void
+    {
+        $var = CustomVariable::create('region', 'eu-west');
+        $var->setUnmodified();
+
+        $var->clearUuid();
+
+        $this->assertFalse($var->hasBeenModified());
+    }
+
+    public function testClearingAnExistingUuidMarksTheVarModified(): void
+    {
+        $var = CustomVariable::create('region', 'eu-west')->setUuid(Uuid::uuid4());
+        $var->setUnmodified();
+
+        $var->clearUuid();
+
+        $this->assertTrue($var->hasBeenModified());
+        $this->assertNull($var->getUuid());
+    }
 }
