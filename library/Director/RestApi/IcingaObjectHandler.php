@@ -6,6 +6,7 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Exception;
+use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
@@ -18,6 +19,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\OverrideHelper;
+use Icinga\Security\SecurityException;
 use InvalidArgumentException;
 use RuntimeException;
 use stdClass;
@@ -136,6 +138,9 @@ class IcingaObjectHandler extends RequestHandler
             return;
         } catch (InvalidArgumentException $e) {
             $this->sendJsonError($e, 422);
+            return;
+        } catch (SecurityException $e) {
+            $this->sendJsonError($e, 403);
             return;
         } catch (Exception $e) {
             $this->sendJsonError($e);
@@ -264,6 +269,44 @@ class IcingaObjectHandler extends RequestHandler
      * @return IcingaObject The object to respond with
      */
     protected function persistObjectAndApplyVars(IcingaObjectWriteRequest $request): IcingaObject
+    {
+        $guard = new RestrictedWriteGuard($this->db, Auth::getInstance());
+        $guard->before($this->getObjectToBeChanged($request));
+        $object = $this->persistUnguardedObjectAndApplyVars($request);
+        $guard->after($object);
+
+        return $object;
+    }
+
+    /**
+     * Get the object a write request is going to change
+     *
+     * @param IcingaObjectWriteRequest $request
+     *
+     * @return ?IcingaObject null if a new object is going to be created
+     */
+    protected function getObjectToBeChanged(IcingaObjectWriteRequest $request): ?IcingaObject
+    {
+        if ($request->object !== null) {
+            return $request->object;
+        }
+
+        if ($request->actionName !== 'variables' && $request->allowsOverrides && $request->type === 'service') {
+            // Overrides are stored on the host, see setServiceProperties()
+            return IcingaHost::load($request->params->getRequired('host'), $this->db);
+        }
+
+        return null;
+    }
+
+    /**
+     * See persistObjectAndApplyVars(), without checking director/filter/hosts
+     *
+     * @param IcingaObjectWriteRequest $request
+     *
+     * @return IcingaObject The object to respond with
+     */
+    protected function persistUnguardedObjectAndApplyVars(IcingaObjectWriteRequest $request): IcingaObject
     {
         $db = $this->db;
         $object = $request->object;
