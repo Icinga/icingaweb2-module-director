@@ -5,8 +5,14 @@
 
 namespace Tests\Icinga\Module\Director\Form;
 
+use Icinga\Application\Icinga;
+use Icinga\Module\Director\Forms\IcingaApiUserForm;
 use Icinga\Module\Director\Forms\IcingaTemplateChoiceForm;
+use Icinga\Module\Director\Objects\IcingaApiUser;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
+use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
 use Icinga\Module\Director\Test\BaseTestCase;
 
 class IcingaTemplateChoiceFormTest extends BaseTestCase
@@ -14,6 +20,15 @@ class IcingaTemplateChoiceFormTest extends BaseTestCase
     protected const TEMPLATE_NAME = '___TEST___service_template_choice';
 
     protected $templateId;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        // IcingaTemplateChoiceForm::create() needs the module loaded, which
+        // only happens by accident when another test has run before
+        Icinga::app()->getModuleManager()->loadModule('director');
+    }
 
     public function testServiceAssociatedTemplateUsesIdAsOptionKey()
     {
@@ -59,6 +74,111 @@ class IcingaTemplateChoiceFormTest extends BaseTestCase
             self::TEMPLATE_NAME,
             $members[self::TEMPLATE_NAME]
         );
+    }
+
+    public function testSavingChangedHostTemplateChoicePersistsIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $template = IcingaHost::create([
+            'object_name' => self::TEMPLATE_NAME . '_host',
+            'object_type' => 'template',
+        ], $db);
+        $template->store();
+
+        $choice = IcingaTemplateChoiceHost::create([
+            'object_name'          => self::TEMPLATE_NAME . '_host_choice',
+            'min_required'         => 0,
+            'max_allowed'          => 1,
+            'required_template_id' => $template->get('id'),
+        ], $db);
+        $choice->setMembers([$template->getObjectName()]);
+        $choice->store();
+
+        try {
+            $choice->set('min_required', 1);
+            IcingaTemplateChoiceForm::create('host', $db)->setObject($choice)->setApiRequest()->onSuccess();
+
+            $this->assertSame(
+                '1',
+                (string) IcingaTemplateChoiceHost::load(self::TEMPLATE_NAME . '_host_choice', $db)->get('min_required')
+            );
+        } finally {
+            $choice->delete();
+            $template->delete();
+        }
+    }
+
+    public function testSavingChangedServiceTemplateChoicePersistsIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $template = IcingaService::create([
+            'object_name' => self::TEMPLATE_NAME . '_service',
+            'object_type' => 'template',
+        ], $db);
+        $template->store();
+
+        $choice = IcingaTemplateChoiceService::create([
+            'object_name'          => self::TEMPLATE_NAME . '_service_choice',
+            'min_required'         => 0,
+            'max_allowed'          => 1,
+            'required_template_id' => $template->get('id'),
+        ], $db);
+        $choice->setMembers([$template->getObjectName()]);
+        $choice->store();
+
+        try {
+            $choice->set('min_required', 1);
+            IcingaTemplateChoiceForm::create('service', $db)->setObject($choice)->setApiRequest()->onSuccess();
+
+            $this->assertSame(
+                '1',
+                (string) IcingaTemplateChoiceService::load(
+                    self::TEMPLATE_NAME . '_service_choice',
+                    $db
+                )->get('min_required')
+            );
+        } finally {
+            $choice->delete();
+            $template->delete();
+        }
+    }
+
+    public function testSavingChangedApiUserPersistsIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $user = IcingaApiUser::create([
+            'object_name' => self::TEMPLATE_NAME . '_apiuser',
+            'object_type' => 'external_object',
+            'password'    => 'secret',
+        ], $db);
+        $user->store();
+
+        try {
+            $user->set('password', 'changed');
+            (new IcingaApiUserForm())->setDb($db)->setObject($user)->setApiRequest()->onSuccess();
+
+            $this->assertSame(
+                'changed',
+                IcingaApiUser::load(self::TEMPLATE_NAME . '_apiuser', $db)->get('password')
+            );
+        } finally {
+            $user->delete();
+        }
     }
 
     public function tearDown(): void

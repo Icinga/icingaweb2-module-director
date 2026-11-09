@@ -1520,7 +1520,11 @@ abstract class DirectorObjectForm extends DirectorForm
      */
     protected function removedImportNames(): array
     {
-        if (! $this->object instanceof IcingaObject || ! $this->object->hasBeenLoadedFromDb()) {
+        if (
+            ! $this->object instanceof IcingaObject
+            || ! $this->object->supportsImports()
+            || ! $this->object->hasBeenLoadedFromDb()
+        ) {
             return [];
         }
 
