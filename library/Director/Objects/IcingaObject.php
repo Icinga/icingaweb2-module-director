@@ -3073,7 +3073,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $props = [];
 
         if ($resolved) {
-            $p = $this->getInheritedProperties();
+            // A copy, the cached inherited properties must not get the object's own ones
+            $p = clone $this->getInheritedProperties();
             foreach ($this->properties as $k => $v) {
                 if ($v === null && property_exists($p, $k)) {
                     continue;
