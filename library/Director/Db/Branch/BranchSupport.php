@@ -86,10 +86,27 @@ class BranchSupport
         return in_array($table, self::OBJECT_TABLES, true);
     }
 
+    /**
+     * Get whether the given sync rule can sync into a branch
+     *
+     * Branches cannot store template choices, so rules setting the template choice are not supported.
+     *
+     * @param SyncRule $rule
+     *
+     * @return bool
+     */
     public static function existsForSyncRule(SyncRule $rule)
     {
-        return static::existsForTableName(
-            DbObjectTypeRegistry::tableNameByType($rule->get('object_type'))
-        );
+        if (! static::existsForTableName(DbObjectTypeRegistry::tableNameByType($rule->get('object_type')))) {
+            return false;
+        }
+
+        foreach ($rule->getSyncProperties() as $property) {
+            if ($property->get('destination_field') === 'template_choice') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
