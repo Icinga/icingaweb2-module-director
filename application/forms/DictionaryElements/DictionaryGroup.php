@@ -13,6 +13,9 @@ use ipl\Html\Text;
 
 /**
  * A foldable box with the custom variable rows that come from one source
+ *
+ * The box renders open when it starts open or when one of its rows failed
+ * validation.
  */
 class DictionaryGroup extends BaseHtmlElement
 {
@@ -66,6 +69,22 @@ class DictionaryGroup extends BaseHtmlElement
 
     protected function registerAttributeCallbacks(Attributes $attributes): void
     {
-        $attributes->registerAttributeCallback('open', fn () => $this->open ? true : null);
+        $attributes->registerAttributeCallback('open', fn() => $this->open || $this->hasInvalidItem() ? true : null);
+    }
+
+    /**
+     * Check whether one of the rows failed validation
+     *
+     * @return bool
+     */
+    protected function hasInvalidItem(): bool
+    {
+        foreach ($this->items as $item) {
+            if ($item->hasBeenValidated() && ! $item->isValid()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

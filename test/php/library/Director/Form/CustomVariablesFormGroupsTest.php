@@ -88,6 +88,40 @@ class CustomVariablesFormGroupsTest extends BaseTestCase
         $this->assertStringNotContainsString('<b>x</b>', $html);
     }
 
+    public function testARowThatFailedValidationRendersExpandedAndOpensItsBox(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $owner = $this->createFixtureProperty('owner');
+        $warning = $this->createFixtureProperty('warning');
+        $host = $this->createFixtureHost('web01');
+
+        $form = $this->buildForm($host, [
+            $this->row($owner, 'host:1'),
+            $this->row($warning, 'command', true),
+        ], [
+            $this->group('host:1', 'Added by template "linux"'),
+            $this->group('command', 'Added by command "check-disk"', false),
+        ]);
+        $form->populate(['properties' => [
+            'item-count' => 2,
+            0            => ['name' => $this->fx('owner'), 'type' => 'string', 'var' => 'ops'],
+            1            => ['name' => $this->fx('warning'), 'type' => 'string', 'var' => ''],
+        ]]);
+        // validates the rows like a submission does, without the session bound CSRF token of the form
+        $this->assertFalse($form->ensureAssembled()->getElement('properties')->isValid());
+        $html = $form->render();
+
+        preg_match_all('/<details([^>]*)>/', $html, $boxes);
+        preg_match_all('/<fieldset([^>]*dictionary-item[^>]*)>/', $html, $rows);
+        $this->assertStringContainsString(' open', $boxes[1][1], 'the command box opens for its failed row');
+        $this->assertStringNotContainsString('data-no-persistence', $rows[1][0]);
+        $this->assertStringContainsString('data-no-persistence', $rows[1][1]);
+        $this->assertStringContainsString('data-state-collapses', $rows[1][1]);
+    }
+
     public function tearDown(): void
     {
         $this->removeFixtures();

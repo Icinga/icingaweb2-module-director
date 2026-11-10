@@ -363,6 +363,12 @@ itself. Removing the attachment again brings the variable back to the box it
 came from. A value that the object set itself stays, and the inherited value
 shows as the placeholder of the field.
 
+When saving fails because a value is missing or invalid, the variables that
+failed open up with their message. When the browser rejects a value before
+sending it, for example an empty required field inside a folded box, the
+box and the variable open so that the browser can show its message there.
+Variables opened this way fold again on reload.
+
 <a id="Check-command-custom-variables"></a>### Variables of the check command
 
 A host or service reaches the custom variables attached to its effective
