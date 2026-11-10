@@ -375,6 +375,37 @@ whether attached there directly or inherited.
   treated as having no value, so the required check still triggers
   instead of silently passing.
 
+<a id="Restricting-hosts"></a>Restricting hosts by custom variables
+-------------------------------------------------------------------
+
+The restriction `director/filter/hosts` limits a role to the hosts matching a
+filter and to the services of these hosts, similar to the restrictions of
+Icinga DB Web:
+
+    host.vars.team[]=Team_A
+    host.vars.team=Team_A|hostgroup.name=linux
+    host.name=web*&!(host.vars.env=test)
+
+Combine filters with `&`, `|`, `!` and parentheses. Allowed columns are
+`host.name`, `hostgroup.name` and `host.vars.<name>`, others are refused with
+an error message.
+
+Some details worth knowing:
+
+* The filter works like an assign filter of an apply rule: arrays match if
+  any of their elements matches, `team[]` is the same as `team`. Values
+  inherited from templates and hostgroups assigned by an assign filter count
+  as well.
+* Templates are not available to restricted users.
+* If a user has several roles, hosts matching the filter of any of them are
+  shown. A role without this restriction doesn't lift the ones of other roles.
+* `director/filter/hosts` and `director/filter/hostgroups` must both allow a
+  host.
+* A host can't be stored if it wouldn't match the filter anymore. Custom
+  variables used in the filter stay editable as long as this holds true, like
+  for `director/filter/hostgroups`. A new host gets a hostgroup assigned by an
+  assign filter only after it has been stored, so this doesn't count here.
+
 Apply For rules
 ---------------
 

@@ -24,6 +24,11 @@ and permissions that have been assigned to web users will also be enforced
 for API users. In addition, the permission `director/api` is required for
 any API access.
 
+For users restricted by `director/filter/hosts` (see [Restricting hosts by custom
+variables](12-Handling-custom-variables.md#Restricting-hosts)), other hosts and
+their services can't be accessed. A request that would store a host outside of
+the filter fails with `403 Forbidden` and changes nothing.
+
 Versioning
 ----------
 

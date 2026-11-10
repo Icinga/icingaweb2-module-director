@@ -6,6 +6,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Objects\IcingaUser;
+use Icinga\Module\Director\Restriction\HostFilterRestriction;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use ipl\Html\Html;
 use Icinga\Exception\NotFoundError;
@@ -107,13 +108,15 @@ class SuggestController extends ActionController
         $this->assertPermission('director/hosts');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
-            ->from('icinga_host', 'object_name')
-            ->order('object_name');
+            ->from(['o' => 'icinga_host'], 'o.object_name')
+            ->order('o.object_name');
 
         if ($type !== null) {
-            $query->where('object_type = ?', $type);
+            $query->where('o.object_type = ?', $type);
         }
         $restriction = new HostgroupRestriction($this->db(), $this->Auth());
+        $restriction->filterHostsQuery($query);
+        $restriction = new HostFilterRestriction($this->db(), $this->Auth());
         $restriction->filterHostsQuery($query);
 
         return $db->fetchCol($query);

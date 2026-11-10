@@ -6,6 +6,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use gipfl\Web\Widget\Hint;
+use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Auth\Permission;
@@ -16,7 +17,9 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Restriction\HostFilterRestriction;
 use Icinga\Module\Director\Web\Form\DirectorForm;
+use Icinga\Security\SecurityException;
 
 class IcingaCloneObjectForm extends DirectorForm
 {
@@ -195,6 +198,8 @@ class IcingaCloneObjectForm extends DirectorForm
             $new->set('host', $host);
         }
 
+        $this->assertHostFilterAllows($new, $this->getValue('target_host'));
+
         $services = [];
         $sets = [];
         if ($object instanceof IcingaHost) {
@@ -279,6 +284,38 @@ class IcingaCloneObjectForm extends DirectorForm
             }
 
             $this->redirectOnSuccess($msg);
+        }
+    }
+
+    /**
+     * Assert that director/filter/hosts allows the given clone
+     *
+     * Hint: a new host has no applied groups yet, only its own groups and vars count
+     *
+     * @param IcingaObject $new The clone, not stored yet
+     * @param ?string $targetHost The host a service should be cloned to
+     *
+     * @return void
+     *
+     * @throws SecurityException
+     */
+    protected function assertHostFilterAllows(IcingaObject $new, ?string $targetHost): void
+    {
+        $connection = $new->getConnection();
+        $restriction = new HostFilterRestriction($connection, Auth::getInstance());
+        if (! $restriction->isRestricted()) {
+            return;
+        }
+
+        $host = $new instanceof IcingaHost ? $new : null;
+        if ($targetHost) {
+            $host = IcingaHost::load($targetHost, $connection);
+        }
+
+        if ($host !== null && ! $restriction->allowsHost($host)) {
+            throw new SecurityException(
+                'Unable to store a host with the given properties because of insufficient permissions'
+            );
         }
     }
 

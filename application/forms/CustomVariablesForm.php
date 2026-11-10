@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueValidator;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Db\DbUtil;
@@ -15,6 +16,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Restriction\HostFilterRestriction;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
@@ -689,6 +691,38 @@ class CustomVariablesForm extends CompatForm
             }
 
             $vars->storeToDb($object);
+            $this->assertHostFilterAllows($object);
+        }
+    }
+
+    /**
+     * Assert that the given object still matches director/filter/hosts, if it is a host
+     *
+     * Has to be called after storing the variables, the running transaction gets rolled back on failure
+     *
+     * @param IcingaObject $object
+     *
+     * @return void
+     *
+     * @throws SecurityException
+     */
+    private function assertHostFilterAllows(IcingaObject $object): void
+    {
+        if (! $object instanceof IcingaHost) {
+            return;
+        }
+
+        $connection = $object->getConnection();
+        $restriction = new HostFilterRestriction($connection, Auth::getInstance());
+        if (! $restriction->isRestricted()) {
+            return;
+        }
+
+        // A fresh object, the given one might have resolved its variables before they changed
+        if (! $restriction->allowsHost($object::requireWithUniqueId($object->getUniqueId(), $connection))) {
+            throw new SecurityException(
+                'Unable to store a host with the given properties because of insufficient permissions'
+            );
         }
     }
 }

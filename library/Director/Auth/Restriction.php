@@ -10,6 +10,7 @@ class Restriction
     public const MONITORING_RW_OBJECT_FILTER = 'director/monitoring/rw-object-filter';
     public const ICINGADB_RW_OBJECT_FILTER = 'director/icingadb/rw-object-filter';
     public const FILTER_HOSTGROUPS = 'director/filter/hostgroups';
+    public const FILTER_HOSTS = 'director/filter/hosts';
 
     // Hint: by-name-Filters are being fetched with variable names, like "director/$type/apply/filter-by-name"
     public const NOTIFICATION_APPLY_FILTER_BY_NAME = 'director/notification/apply/filter-by-name';
