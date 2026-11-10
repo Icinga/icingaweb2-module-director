@@ -7,7 +7,9 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use InvalidArgumentException;
@@ -506,6 +508,33 @@ abstract class GroupMembershipResolver
     }
 
     protected function recheckAllObjects($groups)
+    {
+        // Supplied objects can contain unsaved changes, and caller-owned caches must outlive this evaluation.
+        $ownsCache = $this->objects === null && ! PrefetchCache::shouldBeUsed();
+        try {
+            if ($ownsCache) {
+                PrefetchCache::initialize($this->connection);
+                IcingaObject::prefetchAllRelationsByType($this->getType(), $this->connection);
+                $groupClass = DbObjectTypeRegistry::classByType($this->getType() . 'group');
+                $groupClass::prefetchAll($this->connection);
+            }
+
+            $this->evaluateObjects($groups);
+        } finally {
+            if ($ownsCache) {
+                PrefetchCache::forget();
+            }
+        }
+    }
+
+    /**
+     * Evaluate dynamic and static group memberships
+     *
+     * @param Filter[] $groups
+     *
+     * @return void
+     */
+    protected function evaluateObjects(array $groups): void
     {
         $mappings = [];
         $staticGroups = [];
