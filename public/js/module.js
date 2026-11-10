@@ -35,7 +35,35 @@
             this.module.on('mousedown', '.director-suggestions li', this.clickSuggestion);
             this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
+            // invalid does not bubble, catch it on its way down to the control instead
+            document.addEventListener('invalid', this.revealInvalidCustomVariable.bind(this), true);
             this.module.icinga.logger.debug('Director module initialized');
+        },
+
+        /**
+         * Open the boxes and rows of the Custom Variables form around a control the browser rejects
+         *
+         * The browser shows its message only at a visible control. A row opened
+         * here does not store its state, so one click on its legend collapses it
+         * again and a reload shows it collapsed.
+         *
+         * @param ev
+         */
+        revealInvalidCustomVariable: function (ev) {
+            var control = ev.target;
+            if (! (control instanceof Element) || ! control.closest('form.custom-variables-form')) {
+                return;
+            }
+
+            var collapsible = this.module.icinga.behaviors.collapsible;
+            for (var el = control.parentElement; el !== null && el.tagName !== 'FORM'; el = el.parentElement) {
+                if (el.tagName === 'DETAILS') {
+                    el.open = true;
+                } else if (el.classList.contains('collapsible') && el.classList.contains('collapsed')) {
+                    el.dataset.noPersistence = '';
+                    collapsible.expand(el);
+                }
+            }
         },
 
         tabWantsFullscreen: function (ev) {

@@ -6,10 +6,7 @@
 namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\ObjectsCommand;
-use Icinga\Module\Director\Db\DbUtil;
-use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaObject;
-use PDO;
+use Icinga\Module\Director\CustomVariable\CustomPropertySources;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -23,9 +20,11 @@ class HostsCommand extends ObjectsCommand
      * Relink existing custom variables to a matching Custom Property
      *
      * Scans every host in the database and links any variable that matches a
-     * Custom Property by name. Variables already linked to that Custom
-     * Property are left as they are, and no values are changed. Run this after
-     * adding a Custom Property for variables hosts already had.
+     * Custom Property the host reaches by name: one attached to the host, to
+     * one of its templates, to its check command or to a command that the
+     * check command imports. Variables already linked to a Custom Property are
+     * left as they are, and no values are changed. Run this after adding a
+     * Custom Property for variables hosts already had.
      *
      * USAGE
      *
@@ -35,97 +34,21 @@ class HostsCommand extends ObjectsCommand
      */
     public function refreshCustomVarsAction(): void
     {
-        foreach ($this->getObjects() as $o) {
-            $vars = $o->vars();
-            $objectCustomVariables = $this->getObjectCustomVariables($o);
+        $hosts = $this->getObjects();
+        $reachable = (new CustomPropertySources($this->db()))->getReachablePropertyUuids(
+            'host',
+            array_map(fn($host) => (int) $host->get('id'), $hosts)
+        );
 
-            foreach ($objectCustomVariables as $key => $property) {
-                $var = $vars->get($key);
-                if ($var && $property['uuid'] !== null) {
-                    $var->setUuid(Uuid::fromBytes($property['uuid']));
-                    $vars->set($key, $var);
+        foreach ($hosts as $host) {
+            $vars = $host->vars();
+            foreach ($reachable[(int) $host->get('id')] as $key => $uuid) {
+                if ($vars->get($key)?->getUuid() === null) {
+                    $vars->registerVarUuid($key, Uuid::fromBytes($uuid));
                 }
             }
 
-            $vars->storeToDb($o);
+            $vars->storeToDb($host);
         }
-    }
-
-    /**
-     * Retrieves custom variables of the given Icinga object.
-     *
-     * @param IcingaObject $object  The Icinga object whose custom variables need to be fetched.
-     *
-     * @return array An associative array of custom variables keyed by their names and their configuration details.
-     */
-    private function getObjectCustomVariables(IcingaObject $object): array
-    {
-        if ($object->uuid === null) {
-            return [];
-        }
-
-        $objectType = $object->getShortTableName();
-
-        $parents = $object->listAncestorIds();
-
-        $uuids = [];
-        $db = $object->getConnection();
-
-        foreach ($parents as $parent) {
-            $uuids[] = DbUtil::binaryResult(IcingaHost::loadWithAutoIncId($parent, $db)->get('uuid'));
-        }
-
-        $uuids[] = DbUtil::binaryResult($object->get('uuid'));
-        $types = [
-            'string',
-            'sensitive',
-            'number',
-            'bool',
-            'fixed-array',
-            'dynamic-array',
-            'fixed-dictionary',
-            'dynamic-dictionary'
-        ];
-
-        if ($db->isPgsql()) {
-            $cases = [];
-            foreach ($types as $i => $type) {
-                $cases[] = "WHEN '$type' THEN " . ($i + 1);
-            }
-
-            $valueTypeOrder = 'CASE dp.value_type ' . implode(' ', $cases) . ' ELSE ' . (count($types) + 1) . ' END';
-        } else {
-            $valueTypeOrder = "FIELD(dp.value_type, '" . implode("', '", $types) . "')";
-        }
-
-        $query = $db->getDbAdapter()
-                    ->select()
-                    ->from(
-                        ['dp' => 'director_property'],
-                        [
-                            'key_name' => 'dp.key_name',
-                            'uuid' => 'dp.uuid',
-                            'value_type' => 'dp.value_type',
-                            'label' => 'dp.label',
-                            'children' => 'COUNT(cdp.uuid)'
-                        ]
-                    )
-                    ->join(['iop' => "icinga_$objectType" . '_property'], 'dp.uuid = iop.property_uuid', [])
-                    ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
-                    ->where(
-                        'iop.' . $objectType . '_uuid IN (?)',
-                        DbUtil::quoteBinaryCompat($uuids, $db->getDbAdapter())
-                    )
-                    ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-                    ->order($valueTypeOrder)
-                    ->order('children')
-                    ->order('key_name');
-
-        $result = [];
-        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
-            $result[$row['key_name']] = DbUtil::normalizeRow($row);
-        }
-
-        return $result;
     }
 }

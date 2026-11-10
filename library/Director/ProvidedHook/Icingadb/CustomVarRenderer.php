@@ -9,10 +9,10 @@ use gipfl\ZfDb\Adapter\Adapter;
 use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\CustomVariable\CustomPropertySources;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Daemon\Logger;
-use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Db\DbUtil;
@@ -390,30 +390,23 @@ class CustomVarRenderer extends CustomVarRendererHook
     }
 
     /**
-     * Get custom properties for the host.
+     * Get the custom properties the given host or service reaches, keyed by name
+     *
+     * Covers the properties attached to the object, to its templates, to its
+     * check command and to every command that check command imports.
      *
      * @param IcingaObject $object The host or service to fetch properties for
      *
-     * @return array
+     * @return array<string, array<string, mixed>>
      */
     protected function getObjectCustomProperties(IcingaObject $object): array
     {
-        if ($object->get('uuid') === null) {
+        $db = $this->db();
+        $reachable = (new CustomPropertySources($db))->getReachableProperties($object);
+        if (empty($reachable)) {
             return [];
         }
 
-        $type = $object->getShortTableName();
-        $parents = $object->listAncestorIds();
-
-        $uuids = [];
-        $db = $this->db();
-
-        $objectClass = DbObjectTypeRegistry::classByType($type);
-        foreach ($parents as $parent) {
-            $uuids[] = $objectClass::loadWithAutoIncId($parent, $db)->get('uuid');
-        }
-
-        $uuids[] = $object->get('uuid');
         $dbAdapter = $db->getDbAdapter();
         $query = $dbAdapter
             ->select()
@@ -423,23 +416,23 @@ class CustomVarRenderer extends CustomVarRendererHook
                     'key_name' => 'dp.key_name',
                     'uuid' => 'dp.uuid',
                     'category' => 'cpc.category_name',
-                    $type . '_uuid' => 'iop.' . $type . '_uuid',
                     'value_type' => 'dp.value_type',
                     'label' => 'dp.label',
                     'children' => 'COUNT(cdp.uuid)'
                 ]
             )
-            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
             ->joinLeft(['cdp' => 'director_property'], 'cdp.parent_uuid = dp.uuid', [])
             ->joinLeft(['cpc' => 'director_datafield_category'], 'dp.category_id = cpc.id', [])
-            ->where('iop.' . $type . '_uuid IN (?)', DbUtil::quoteBinaryCompat($uuids, $dbAdapter))
+            ->where(
+                'dp.uuid IN (?)',
+                DbUtil::quoteBinaryCompat(array_column($reachable, 'uuid'), $dbAdapter)
+            )
             ->group([
                 'dp.uuid',
                 'dp.key_name',
                 'dp.value_type',
                 'dp.label',
                 'cpc.category_name',
-                'iop.' . $type . '_uuid'
             ])
             ->order($this->valueTypeOrderExpr($db, [
                 'string',
@@ -456,7 +449,7 @@ class CustomVarRenderer extends CustomVarRendererHook
 
         $result = [];
 
-        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+        foreach ($dbAdapter->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
             $result[$row['key_name']] = $row;
         }
 

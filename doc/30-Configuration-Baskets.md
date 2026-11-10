@@ -120,6 +120,18 @@ If the snapshot no longer attaches a property to a template, restoring it remove
 any value that only existed because of that attachment. A value survives if some
 other template still provides the same property to the object holding it.
 
+If the snapshot no longer attaches a property to a command or command template,
+restoring it also removes the host and service values linked to that property
+that nothing else provides any longer. A value survives if the host or service
+itself, one of its templates, its check command or a command that the check
+command imports still provides the property. This includes hosts and services
+that do not use the command. Restoring a snapshot that changes the imports or
+the check command of an object does not remove values.
+
+These removals run once the whole snapshot is restored. A property that the
+snapshot moves from one object to another, for example from a command to the
+host template that uses it, keeps the values that the new attachment provides.
+
 A value that would otherwise be renamed or removed is left untouched, under its
 old name or type, when a legacy Data Field still claims that variable name. The
 same thing happens when a rename's new name or key is already taken by another

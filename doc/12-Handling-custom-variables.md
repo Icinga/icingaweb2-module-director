@@ -321,9 +321,10 @@ Only a **template** or a **command** can attach a configured property with
 `Add Custom Variable`. Commands are the exception because many of them,
 like the external ones coming from the ITL, have no template to import. A
 host, service, user or notification that is not a template only lets you
-fill in or override values for properties already attached there or
-inherited from one of its imported templates; it has no `Add Custom
-Variable` action of its own.
+fill in or override values for properties already attached there, inherited
+from one of its imported templates, or provided by its check command (see
+[Variables of the check command](#Check-command-custom-variables)). It has no
+`Add Custom Variable` action of its own.
 
 > The `Required` flag is only offered on templates. A command never has to
 > fill in a variable it attached itself, but a command that imports a
@@ -339,19 +340,120 @@ Variable` action of its own.
 * `dynamic-dictionary` values are **merged** across the inheritance
   chain rather than overwritten. The rendered config uses `+=`, so a
   child template or the object itself can add further entries without
-  losing the ones defined on parent templates.
+  losing the ones defined on parent templates. A `dynamic-dictionary` that
+  only the check command provides is not merged. The object's own value
+  replaces the ones of its templates (`=`), although the tab still shows the
+  inherited entries next to the own ones.
+
+The `Custom Variables` tab shows the variables in boxes by where they come
+from. The object's own box comes first. Templates and commands always show
+it, also when it is still empty, and variables added with `Add Custom
+Variable` appear there. One box per imported template follows, in import
+order. On a command, every imported command gets its own box. The box of the
+check command comes last. Every box can be folded, and only the box of the
+check command starts folded.
+
+`Add Custom Variable` also offers variables that an imported template or the
+check command already provides. Adding one moves it from its box into the
+object's own box, and saving attaches it to the template or command itself.
+On a template, the `Required` toggle applies to that attachment as usual. On
+a command, the attachment is never required, and the requirement of a
+command template no longer applies to a variable that the command attaches
+itself. Removing the attachment again brings the variable back to the box it
+came from. A value that the object set itself stays, and the inherited value
+shows as the placeholder of the field.
+
+When saving fails because a value is missing or invalid, the variables that
+failed open up with their message. When the browser rejects a value before
+sending it, for example an empty required field inside a folded box, the
+box and the variable open so that the browser can show its message there.
+Variables opened this way fold again on reload.
+
+<a id="Check-command-custom-variables"></a>### Variables of the check command
+
+A host or service reaches the custom variables attached to its effective
+check command and to every command that check command imports, directly or
+indirectly. The effective check command is the one the rendered configuration
+uses. The object's own check command wins. Without one, the check command
+comes from the imports, and the template imported last that has one wins.
+This applies to host and service templates, hosts, services, apply rules and
+the services of service sets.
+
+* A variable reachable in several ways is listed once. The object's own
+  attachment wins, then the template that gives the current value, then the
+  template imported last. The check command only lists the variables that
+  neither the object nor one of its templates attaches.
+* A variable of the check command can be filled in on the host or service,
+  but not removed or made required there. Its value renders as
+  `vars.<name>`.
+* A `Required` flag on a command or command template does not apply to the
+  hosts and services that use the command.
+* The `Modify` forms of a service on a host, for services inherited from a
+  host template, applied services and the services of a service set, list
+  the variables of the check command too. The value you save there is
+  stored on that host only, as a service variable override.
+* Icinga DB Web shows the label and the category of a variable of the check
+  command and masks a `sensitive` one, also inside a dictionary. A property
+  that the host or one of its templates attaches takes precedence.
+
+The REST API, sync and `icingacli director hosts refreshCustomVars` link such
+values to their property and check their type the same way, see
+[Custom Variables](70-REST-API.md#Custom-Variables) in the REST API
+documentation.
+
+<a id="Removing-values-that-lost-their-source"></a>### Removing values that lost their source
 
 Removing an imported template can also remove a value that only got there
 because of it. If an object had overridden a value it inherited from a
 template, and that template is no longer imported (directly or through
-another template), the leftover value is removed too, unless some other
-still-imported template provides the same property. In the UI, removing a
-template that would take a value down with it shows a warning naming the
-affected variables and asks for confirmation before saving; the REST API
-applies the same cleanup without asking. Restoring a configuration basket
-that drops a property attachment applies the same cleanup as well, see
+another template), the leftover value is removed too, unless the object
+still reaches the same property. It reaches a property through itself,
+another still-imported template, its effective check command or a command
+that check command imports. The same rule applies to the objects that import
+the changed object, each with its own templates and check command.
+
+Changing the check command works the same way. When a host or service, or a
+template above it, sets, switches or clears its check command, or an import
+change gives it another inherited check command, a value that only the
+previous check command provided is removed. This also holds when the previous
+check command came from another import, for example when a template that a
+host imports last sets a check command and replaces the one of an earlier
+import. A host or service with its own check command that still provides the
+property keeps its value.
+
+Commands follow the same rule for every host and service. Detaching a
+variable from a command or command template on its `Custom Variables` tab, or
+removing an import from a command, removes the host and service values linked
+to that variable that nothing else provides any longer. This includes hosts
+and services that do not use the command. Values that a template, the object
+itself or another command template still provides stay.
+
+Every removal leaves a `modify` entry in the activity log of the object that
+held the value. After such a change, Director also checks the remaining
+values below the changed object. A value whose name matches a variable that
+its object now reaches is linked to it, and a value linked to a variable that
+its object no longer reaches is unlinked. The values themselves stay as they
+are.
+
+In the UI, a change that would remove values shows a warning naming the
+affected variables and asks for confirmation before saving. There is one
+warning for removed templates and one for a changed check command, and one
+`Confirm` field for both. Answering `No` keeps the imports and the check
+command as they are stored and saves all other changes. The warning checks
+every object below with its own templates and check command, so it names
+exactly the values that saving removes. Detaching a variable from a command
+on its `Custom Variables` tab removes values without a warning.
+
+The REST API applies the same cleanup without asking, after it stored the
+variables of the request. A `POST` that sends a value for a variable that
+the same request makes unreachable therefore loses that value, while a `PUT`
+replaces all variables and stores such a value without a link to the
+property. Restoring a configuration basket that drops a property attachment
+applies the same cleanup as well, see
 [Restoring Custom Variable Schema Changes](30-Configuration-Baskets.md#Restoring-Custom-Variables)
-for that path.
+for that path. Sync only updates the links of the values below the
+templates and commands it changes and never removes a value, since the next
+run would bring a synced value back anyway.
 
 <a id="Required-custom-variables"></a>### Marking a custom variable as required
 

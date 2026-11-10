@@ -11,6 +11,10 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\CustomVariable\CustomPropertyPlacement;
+use Icinga\Module\Director\CustomVariable\CustomPropertySource;
+use Icinga\Module\Director\CustomVariable\CustomPropertySourceKind;
+use Icinga\Module\Director\CustomVariable\CustomPropertySources;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
@@ -85,6 +89,9 @@ abstract class ObjectController extends ActionController
 
     /** @var Multipart[] */
     protected array $parts = [];
+
+    /** @var array<int, CustomPropertySource[]> Sources of the objects shown, by object id */
+    protected array $customPropertySources = [];
 
     public function init()
     {
@@ -354,8 +361,9 @@ abstract class ObjectController extends ActionController
     /**
      * Show the add-a-variable modal and handle its submit
      *
-     * Carries the added and required var uuids along on the redirect,
-     * so the variables tab still knows about them after the reload
+     * Carries the added and required var uuids and the names of the rows
+     * removed on screen along on the redirect, so the variables tab still
+     * knows about them after the reload
      */
     public function addVarAction(): void
     {
@@ -366,6 +374,7 @@ abstract class ObjectController extends ActionController
 
         $addedVarUuids = $this->params->getValues('addedVarUuids');
         $requiredVarUuids = $this->params->getValues('requiredVarUuids');
+        $removedVars = $this->params->getValues('removedVars');
         $nextSlotIndex = (int) $this->params->shift('nextSlotIndex');
 
         $form = (new ObjectCustomvarForm($this->db(), $object, $addedVarUuids))
@@ -374,6 +383,7 @@ abstract class ObjectController extends ActionController
                 $object,
                 $addedVarUuids,
                 $requiredVarUuids,
+                $removedVars,
                 $nextSlotIndex
             ) {
                 $newUuid = $form->getValue('property');
@@ -395,6 +405,7 @@ abstract class ObjectController extends ActionController
                 );
                 $redirectUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
                 $redirectUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+                $redirectUrl->getParams()->addValues('removedVars', $removedVars);
 
                 $this->redirectNow($redirectUrl);
             })
@@ -458,6 +469,7 @@ abstract class ObjectController extends ActionController
 
         $newVarUuid = $this->params->shift('newVarUuid');
         $nextSlotIndex = (int) $this->params->shift('nextSlotIndex');
+        $removedVars = $this->params->getValues('removedVars');
 
         $addedVarUuids = array_unique(array_merge(
             $this->params->getValues('addedVarUuids'),
@@ -487,7 +499,7 @@ abstract class ObjectController extends ActionController
                     }
 
                     $this->redirectNow(Url::fromRequest()->without(
-                        ['addedVarUuids', 'requiredVarUuids', 'newVarUuid', 'nextSlotIndex']
+                        ['addedVarUuids', 'requiredVarUuids', 'removedVars', 'newVarUuid', 'nextSlotIndex']
                     ));
                 }
             )->on(
@@ -500,7 +512,8 @@ abstract class ObjectController extends ActionController
                     $newVarUuid,
                     $nextSlotIndex,
                     $addedVarUuids,
-                    $requiredVarUuids
+                    $requiredVarUuids,
+                    $removedVars
                 ) {
                     if ($newVarUuid === null) {
                         return;
@@ -512,10 +525,12 @@ abstract class ObjectController extends ActionController
                         $newVarUuid,
                         $nextSlotIndex,
                         $addedVarUuids,
-                        $requiredVarUuids
+                        $requiredVarUuids,
+                        $removedVars
                     );
                     $this->params->remove('addedVarUuids');
                     $this->params->remove('requiredVarUuids');
+                    $this->params->remove('removedVars');
                     $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
                 }
             )->handleRequest($this->getServerRequest());
@@ -527,7 +542,9 @@ abstract class ObjectController extends ActionController
         $this->prepareApplyForHeader();
 
         if ($object->definesCustomProperties() && $this->hasPermission(Permission::ADMIN)) {
-            $slotIndex = $form->getElement('properties')->getItemCount();
+            /** @var \Icinga\Module\Director\Forms\DictionaryElements\Dictionary $dictionary */
+            $dictionary = $form->getElement('properties');
+            $slotIndex = $dictionary->getItemCount();
 
             $buttonUrl = Url::fromPath(
                 'director/' . $this->getType() . '/add-var',
@@ -535,6 +552,8 @@ abstract class ObjectController extends ActionController
             );
             $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
             $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+            // rows removed on screen still have their place in the rows, but not in the form
+            $buttonUrl->getParams()->addValues('removedVars', $dictionary->getItemsToRemove());
 
             $this->actions()->add(
                 Html::tag('div', ['id' => 'add-custom-var-button', 'class' => 'add-custom-var-button'], [
@@ -561,12 +580,18 @@ abstract class ObjectController extends ActionController
     /**
      * Send a multipart update for the new custom variable.
      *
+     * The new row lands in the object's own box. When the object already
+     * reaches the variable through a template or its check command, the new
+     * row takes the index of the inherited row and the inherited row is
+     * emptied, see {@see getObjectCustomProperties()}.
+     *
      * @param IcingaObject        $object
      * @param CustomVariablesForm $form
      * @param string              $newVarUuid
-     * @param int                 $nextSlotIndex
+     * @param int                 $nextSlotIndex    Counter for the placeholders new rows are inserted into
      * @param array               $addedVarUuids
      * @param array               $requiredVarUuids
+     * @param string[]            $removedVars      Names of the rows removed on screen, they take no index
      *
      * @return void
      */
@@ -576,7 +601,8 @@ abstract class ObjectController extends ActionController
         string $newVarUuid,
         int $nextSlotIndex,
         array $addedVarUuids,
-        array $requiredVarUuids = []
+        array $requiredVarUuids = [],
+        array $removedVars = []
     ): void {
         if (! $this->hasPermission(Permission::ADMIN)) {
             return;
@@ -586,55 +612,51 @@ abstract class ObjectController extends ActionController
         $db = $this->db()->getDbAdapter();
         $uuidBytes = Uuid::fromString($newVarUuid)->getBytes();
 
-        $query = $db->select()
-            ->from(
-                ['dp' => 'director_property'],
-                [
-                    'key_name'   => 'dp.key_name',
-                    'uuid'       => 'dp.uuid',
-                    'value_type' => 'dp.value_type',
-                    'label'      => 'dp.label'
-                ]
-            )
-            ->where('dp.uuid = ?', DbUtil::quoteBinaryCompat($uuidBytes, $db));
+        $rows = array_diff_key(
+            $this->getObjectCustomProperties($object, false, $addedVarUuids, $requiredVarUuids),
+            array_flip($removedVars)
+        );
+        $index = 0;
+        $propertyData = null;
+        foreach ($rows as $row) {
+            if ($row['uuid'] === $uuidBytes) {
+                $propertyData = $row;
 
-        $row = $db->fetchRow($query, fetchMode: PDO::FETCH_ASSOC);
-        if (! $row) {
+                break;
+            }
+
+            $index++;
+        }
+
+        if ($propertyData === null || empty($propertyData['new'])) {
             return;
         }
 
-        $propertyData = [
-            'key_name'       => $row['key_name'],
-            'uuid'           => DbUtil::binaryResult($row['uuid']),
-            'value_type'     => $row['value_type'],
-            'label'          => $row['label'],
-            'allow_removal'  => true,
-            'new'            => true,
-            'required'       => in_array($newVarUuid, $requiredVarUuids, true),
-            $type . '_uuid'  => $object->get('uuid')
-        ];
+        $isTakeOver = isset($this->getObjectCustomProperties($object)[$propertyData['key_name']]);
+        unset($propertyData['value']);
+        $propertyData[$type . '_uuid'] = $object->get('uuid');
 
-        if (isset($object->vars()->{$row['key_name']})) {
+        if (isset($object->vars()->{$propertyData['key_name']})) {
             // Normalize via JSON round-trip (same as getObjectCustomProperties) so stdClass becomes array
             $existingValue = json_decode(
-                json_encode($object->vars()->{$row['key_name']}->getValue()),
+                json_encode($object->vars()->{$propertyData['key_name']}->getValue()),
                 true
             );
 
             $datalistItemType = null;
-            if (in_array($row['value_type'], ['datalist-strict', 'datalist-non-strict'], true)) {
+            if (in_array($propertyData['value_type'], ['datalist-strict', 'datalist-non-strict'], true)) {
                 $datalistItemType = $db->fetchOne(
                     $db->select()
                         ->from(['cdp' => 'director_property'], ['value_type' => 'cdp.value_type'])
-                        ->where('cdp.parent_uuid = ?', DbUtil::quoteBinaryCompat($row['uuid'], $db))
+                        ->where('cdp.parent_uuid = ?', DbUtil::quoteBinaryCompat($uuidBytes, $db))
                 );
             }
 
             $isCompatibleType = match (true) {
-                $row['value_type'] === 'string' => is_string($existingValue),
-                $row['value_type'] === 'number' => is_numeric($existingValue),
-                $row['value_type'] === 'bool' => is_bool($existingValue),
-                in_array($row['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
+                $propertyData['value_type'] === 'string' => is_string($existingValue),
+                $propertyData['value_type'] === 'number' => is_numeric($existingValue),
+                $propertyData['value_type'] === 'bool'   => is_bool($existingValue),
+                in_array($propertyData['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
                     => $datalistItemType === 'dynamic-array' ? is_array($existingValue) : is_string($existingValue),
                 default => is_array($existingValue),
             };
@@ -644,7 +666,13 @@ abstract class ObjectController extends ActionController
             }
         }
 
-        $newItem = $form->prepareNewPropertyRow($propertyData, $nextSlotIndex);
+        $inheritedVars = json_decode(json_encode($object->getInheritedVars()), true);
+        if (isset($inheritedVars[$propertyData['key_name']])) {
+            $propertyData['inherited'] = $inheritedVars[$propertyData['key_name']];
+            $propertyData['inherited_from'] = $object->getOriginsVars()->{$propertyData['key_name']};
+        }
+
+        $newItem = $form->prepareNewPropertyRow($propertyData, $index);
         $newSlotIndex = $nextSlotIndex + 1;
 
         // Fill the slot with the new DictionaryItem + next empty slot
@@ -653,11 +681,16 @@ abstract class ObjectController extends ActionController
         $slotContent->add(Html::tag('div', ['id' => 'new-var-slot-' . $newSlotIndex]));
         $this->addPart($slotContent, 'new-var-slot-' . $nextSlotIndex);
 
+        if ($isTakeOver) {
+            // The inherited row now lives in the own box, drop its old place
+            $this->addPart(new HtmlDocument(), 'custom-var-row-' . $index);
+        }
+
         // Update item-count input
         $itemCount = $form->createElement(
             'hidden',
             'properties[item-count]',
-            ['value' => $newSlotIndex]
+            ['value' => count($rows)]
         );
 
         $this->addPart(
@@ -673,6 +706,7 @@ abstract class ObjectController extends ActionController
 
         $buttonUrl->getParams()->addValues('addedVarUuids', $addedVarUuids);
         $buttonUrl->getParams()->addValues('requiredVarUuids', $requiredVarUuids);
+        $buttonUrl->getParams()->addValues('removedVars', $removedVars);
 
         $this->addPart(
             (new ButtonLink(
@@ -745,6 +779,7 @@ abstract class ObjectController extends ActionController
             $requiredVarUuids
         );
         $form = (new CustomVariablesForm($object, $objectProperties))
+            ->setGroups($this->getCustomPropertyGroups($object, $this->getCustomPropertySources($object)))
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->setAddedVarUuids($addedVarUuids)
             ->setRequiredVarUuids($requiredVarUuids)
@@ -981,28 +1016,13 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get the expression for ordering the custom properties by value type.
+     * Get custom properties for the object, including session-added ones
      *
-     * @param DbConnection $db
-     * @param array        $types
-     *
-     * @return string
-     */
-    private function valueTypeOrderExpr(DbConnection $db, array $types): string
-    {
-        if ($db->isPgsql()) {
-            $cases = [];
-            foreach ($types as $i => $type) {
-                $cases[] = "WHEN '$type' THEN " . ($i + 1);
-            }
-            return 'CASE dp.value_type ' . implode(' ', $cases) . ' ELSE ' . (count($types) + 1) . ' END';
-        }
-
-        return "FIELD(dp.value_type, '" . implode("', '", $types) . "')";
-    }
-
-    /**
-     * Get custom properties for the object, including session-added ones.
+     * Rows come in the order of their boxes, see {@see getCustomPropertyGroups()},
+     * and name their box in `group`. A property added this session that the
+     * object reaches through a template or its check command replaces that row
+     * at the same position, so it keeps its index in the form, and moves to the
+     * object's own box. Other added properties come last.
      *
      * @param IcingaObject $object
      * @param bool         $isOverrideVars   Whether to fetch service override vars instead of
@@ -1010,7 +1030,7 @@ abstract class ObjectController extends ActionController
      * @param string[]     $addedVarUuids    UUID strings of properties added this session
      * @param string[]     $requiredVarUuids UUID strings of properties marked required this session
      *
-     * @return array
+     * @return array<string, array<string, mixed>> Rows keyed by property name
      */
     protected function getObjectCustomProperties(
         IcingaObject $object,
@@ -1022,26 +1042,9 @@ abstract class ObjectController extends ActionController
             return [];
         }
 
-        $type = $object->getShortTableName();
-        $parents = $object->listAncestorIds();
-
-        $uuids = [];
         $db = $this->db();
-        foreach ($parents as $parent) {
-            $uuids[] = DbUtil::quoteBinaryCompat(
-                IcingaObject::loadByType($type, $parent, $db)->get('uuid'),
-                $db->getDbAdapter()
-            );
-        }
-
-        $objectUuid = $object->get('uuid');
-        $uuids[] = DbUtil::quoteBinaryCompat($objectUuid, $db->getDbAdapter());
-
-        // a property can be attached more than once, once per ancestor plus maybe the
-        // object itself, so its own row and its attachment rows are fetched separately
-        // and folded together below instead of asking one query to be both at once
-        $properties = $this->fetchReachableProperties($type, $uuids, $db);
-        $attachments = $this->fetchReachableAttachments($type, $uuids, $db);
+        $sources = $this->getCustomPropertySources($object);
+        $groupPositions = array_flip(array_column($this->getCustomPropertyGroups($object, $sources), 'key'));
 
         if ($isOverrideVars) {
             if ($object->isApplyRule()) {
@@ -1056,15 +1059,26 @@ abstract class ObjectController extends ActionController
         }
 
         $result = [];
-        foreach ($properties as $row) {
-            $row = $this->resolveEffectiveAttachment($row, $attachments[$row['key_name']] ?? [], $objectUuid);
+        $origins = (array) $object->getOriginsVars();
+        foreach (CustomPropertyPlacement::place($sources, $origins) as $name => $property) {
+            $row = [
+                'key_name'      => $property['key_name'],
+                'uuid'          => $property['uuid'],
+                'value_type'    => $property['value_type'],
+                'label'         => $property['label'],
+                'allow_removal' => $property['allow_removal'],
+                'required'      => $property['required'],
+                'group'         => $this->getCustomPropertyGroupKey($object, $property['source']),
+            ];
 
-            if (isset($vars[$row['key_name']])) {
-                $row['value'] = $vars[$row['key_name']];
+            if (isset($vars[$name])) {
+                $row['value'] = $vars[$name];
             }
 
-            $result[$row['key_name']] = $row;
+            $result[$name] = $row;
         }
+
+        $this->sortCustomProperties($result, $groupPositions, $db);
 
         if (! empty($addedVarUuids)) {
             $uuidBytes = array_map(
@@ -1102,17 +1116,21 @@ abstract class ObjectController extends ActionController
             });
 
             foreach ($addedRows as $row) {
-                $row['allow_removal'] = true;
-                if (! isset($result[$row['key_name']])) {
-                    $row['new'] = true;
+                if (($result[$row['key_name']]['group'] ?? null) === 'own') {
+                    // attached here already, nothing to take over
+                    continue;
                 }
 
+                $row['allow_removal'] = true;
+                $row['new'] = true;
+                $row['group'] = 'own';
                 $row['required'] = in_array(Uuid::fromBytes($row['uuid'])->toString(), $requiredVarUuids, true);
 
                 if (isset($vars[$row['key_name']])) {
                     $row['value'] = $vars[$row['key_name']];
                 }
 
+                // an inherited row keeps its position, so its index in the form stays the same
                 $result[$row['key_name']] = $row;
             }
         }
@@ -1121,130 +1139,154 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get the property definitions reachable through the given ancestor/object uuids
+     * Get the boxes of the Custom Variables tab, in display order
      *
-     * One row per property, even if it's attached more than once. Who
-     * attached it and whether it's required is worked out separately.
+     * The object's own box comes first and always shows on templates and
+     * commands, which can add variables. One box per template follows, in
+     * import order, and on a command one box per imported command. The box of
+     * a host's or service's check command comes last, under the name of the
+     * check command, and starts folded.
      *
-     * @param string $type
-     * @param string[] $uuids
-     * @param DbConnection $db
+     * @param IcingaObject           $object
+     * @param CustomPropertySource[] $sources The sources of the object
      *
-     * @return array
+     * @return array<int, array{key: string, label: string, open: bool, always: bool}>
      */
-    private function fetchReachableProperties(string $type, array $uuids, DbConnection $db): array
+    protected function getCustomPropertyGroups(IcingaObject $object, array $sources): array
     {
-        $query = $db->getDbAdapter()
-            ->select()
-            ->from(
-                ['dp' => 'director_property'],
-                [
-                    'key_name'   => 'dp.key_name',
-                    'uuid'       => 'dp.uuid',
-                    'value_type' => 'dp.value_type',
-                    'label'      => 'dp.label',
-                    'children'   => 'COUNT(cdp.uuid)'
-                ]
-            )
-            ->join(
-                ['iop' => "icinga_$type" . '_property'],
-                'dp.uuid = iop.property_uuid',
-                []
-            )
-            ->joinLeft(
-                ['cdp' => 'director_property'],
-                'cdp.parent_uuid = dp.uuid',
-                []
-            )
-            ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-            ->order($this->valueTypeOrderExpr($db, [
-                'string',
-                'number',
-                'bool',
-                'datalist-strict',
-                'datalist-non-strict',
-                'dynamic-array',
-                'fixed-dictionary',
-                'dynamic-dictionary'
-            ]))
-            ->order('children')
-            ->order('key_name');
-
-        $result = [];
-        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
-            $row['uuid'] = DbUtil::binaryResult($row['uuid']);
-            $result[] = $row;
+        $type = $object->getShortTableName();
+        $name = $object->getObjectName();
+        if ($type === 'command') {
+            $ownLabel = sprintf($this->translate('Added in this command "%s"'), $name);
+        } elseif ($object->isTemplate()) {
+            $ownLabel = sprintf($this->translate('Added in this template "%s"'), $name);
+        } else {
+            $ownLabel = sprintf($this->translate('Added in this object "%s"'), $name);
         }
 
-        return $result;
-    }
+        $groups = [[
+            'key'    => 'own',
+            'label'  => $ownLabel,
+            'open'   => true,
+            'always' => $object->definesCustomProperties(),
+        ]];
 
-    /**
-     * Get every attachment row behind the given ancestor/object uuids, grouped by key_name
-     *
-     * A property attached through two ancestors, or through an ancestor
-     * and the object itself, ends up with more than one row here. What
-     * that means is decided elsewhere, not by just picking one.
-     *
-     * @param string $type
-     * @param string[] $uuids
-     * @param DbConnection $db
-     *
-     * @return array<string, array<int, array{uuid: string, required: bool}>>
-     */
-    private function fetchReachableAttachments(string $type, array $uuids, DbConnection $db): array
-    {
-        $query = $db->getDbAdapter()
-            ->select()
-            ->from(['dp' => 'director_property'], ['key_name' => 'dp.key_name'])
-            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [
-                $type . '_uuid' => 'iop.' . $type . '_uuid',
-                'required'      => 'iop.required'
-            ])
-            ->where('iop.' . $type . '_uuid IN (?)', $uuids);
+        $checkCommand = null;
+        foreach (array_slice($sources, 1) as $source) {
+            if ($source->type !== $type) {
+                $checkCommand ??= $source;
 
-        $result = [];
-        foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
-            $result[$row['key_name']][] = [
-                'uuid'     => DbUtil::binaryResult($row[$type . '_uuid']),
-                'required' => $row['required'] === 'y'
+                continue;
+            }
+
+            $label = $source->kind === CustomPropertySourceKind::Command
+                ? $this->translate('Added by command "%s"')
+                : $this->translate('Added by template "%s"');
+            $groups[] = [
+                'key'    => $source->getKey(),
+                'label'  => sprintf($label, $source->name),
+                'open'   => true,
+                'always' => false,
             ];
         }
 
-        return $result;
+        if ($checkCommand !== null) {
+            $groups[] = [
+                'key'    => 'command',
+                'label'  => sprintf($this->translate('Added by command "%s"'), $checkCommand->name),
+                'open'   => false,
+                'always' => false,
+            ];
+        }
+
+        return $groups;
     }
 
     /**
-     * Work out whether a property is required and removable for this object
+     * Get the sources of the given object, loaded once per request
      *
-     * A direct attachment on the object always wins. Without one, any
-     * ancestor requiring it is enough, an object can't quietly drop a
-     * requirement it inherited.
+     * @param IcingaObject $object
      *
-     * @param array $property
-     * @param array<int, array{uuid: string, required: bool}> $attachments
-     * @param string $objectUuid
-     *
-     * @return array
+     * @return CustomPropertySource[]
      */
-    private function resolveEffectiveAttachment(array $property, array $attachments, string $objectUuid): array
+    protected function getCustomPropertySources(IcingaObject $object): array
     {
-        $direct = null;
-        $requiredByAnAncestor = false;
-
-        foreach ($attachments as $attachment) {
-            if ($attachment['uuid'] === $objectUuid) {
-                $direct = $attachment;
-            } elseif ($attachment['required']) {
-                $requiredByAnAncestor = true;
-            }
+        $id = spl_object_id($object);
+        if (! isset($this->customPropertySources[$id])) {
+            $this->customPropertySources[$id] = (new CustomPropertySources($this->db()))->getSources($object);
         }
 
-        $property['allow_removal'] = $direct !== null;
-        $property['required'] = $direct !== null ? $direct['required'] : $requiredByAnAncestor;
+        return $this->customPropertySources[$id];
+    }
 
-        return $property;
+    /**
+     * Get the key of the box that shows the properties of the given source
+     *
+     * @param IcingaObject         $object
+     * @param CustomPropertySource $source
+     *
+     * @return string
+     */
+    protected function getCustomPropertyGroupKey(IcingaObject $object, CustomPropertySource $source): string
+    {
+        if ($source->kind === CustomPropertySourceKind::Own) {
+            return 'own';
+        }
+
+        if ($source->type !== $object->getShortTableName()) {
+            return 'command';
+        }
+
+        return $source->getKey();
+    }
+
+    /**
+     * Sort property rows by box, then by value type, nesting and name
+     *
+     * @param array<string, array<string, mixed>> $rows           Rows keyed by property name
+     * @param array<string, int>                  $groupPositions Position of each box by key
+     * @param DbConnection                        $db
+     *
+     * @return void
+     */
+    protected function sortCustomProperties(array &$rows, array $groupPositions, DbConnection $db): void
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        $dba = $db->getDbAdapter();
+        $children = [];
+        $query = $dba->select()
+            ->from('director_property', ['parent_uuid' => 'parent_uuid', 'cnt' => 'COUNT(*)'])
+            ->where('parent_uuid IN (?)', DbUtil::quoteBinaryCompat(array_column($rows, 'uuid'), $dba))
+            ->group('parent_uuid');
+        foreach ($dba->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+            $children[DbUtil::binaryResult($row['parent_uuid'])] = (int) $row['cnt'];
+        }
+
+        $typeOrder = array_flip([
+            'string',
+            'number',
+            'bool',
+            'datalist-strict',
+            'datalist-non-strict',
+            'dynamic-array',
+            'fixed-dictionary',
+            'dynamic-dictionary',
+        ]);
+
+        uasort($rows, fn($a, $b) => [
+            $groupPositions[$a['group']] ?? PHP_INT_MAX,
+            $typeOrder[$a['value_type']] ?? PHP_INT_MAX,
+            $children[$a['uuid']] ?? 0,
+            $a['key_name'],
+        ] <=> [
+            $groupPositions[$b['group']] ?? PHP_INT_MAX,
+            $typeOrder[$b['value_type']] ?? PHP_INT_MAX,
+            $children[$b['uuid']] ?? 0,
+            $b['key_name'],
+        ]);
     }
 
     /**

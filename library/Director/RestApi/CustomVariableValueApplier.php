@@ -6,6 +6,8 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\CustomVariable\CustomPropertySourceKind;
+use Icinga\Module\Director\CustomVariable\CustomPropertySources;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueValidator;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
@@ -78,6 +80,10 @@ class CustomVariableValueApplier
         $preservedDirectAttachments = [];
 
         try {
+            if (! $wipeValuesInDb && $object->get('id')) {
+                $this->restoreStoredLinks($object, $objectVars);
+            }
+
             if ($wipeValuesInDb) {
                 $objectWhere = $dbAdapter->quoteInto("{$type}_id = ?", $object->get('id'));
                 $dbAdapter->delete('icinga_' . $type . '_var', $objectWhere);
@@ -222,6 +228,25 @@ class CustomVariableValueApplier
                 CustomVariableValueValidator::assertDatalistValueAllowed($key, $value, $propertyUuid, $this->db);
             }
 
+            // Replacing the variables of a host or service template takes over a variable that only its
+            // check command provides, the same way adding it on the template's Custom Variables tab does.
+            // The commands that a command imports are its templates, not a check command.
+            if (
+                $customProperties[$key]['source'] === CustomPropertySourceKind::Command
+                && $request->method === 'PUT'
+                && $request->actionName === 'variables'
+                && $object->isTemplate()
+                && CustomPropertySources::followsCheckCommand($object->getShortTableName())
+            ) {
+                $type = $object->getShortTableName();
+                $dbAdapter = $this->db->getDbAdapter();
+                $dbAdapter->insert('icinga_' . $type . '_property', [
+                    'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter),
+                    $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
+                    'required'      => 'n',
+                ]);
+            }
+
             $objectVars->registerVarUuid($key, $propertyUuid);
 
             return;
@@ -245,7 +270,10 @@ class CustomVariableValueApplier
 
         if (! $object->definesCustomProperties()) {
             throw new NotFoundError(sprintf(
-                'The custom variable %s should be first added to one of the imported templates for this object',
+                CustomPropertySources::followsCheckCommand($object->getShortTableName())
+                    ? 'The custom variable %s should be first added to one of the imported templates or to the'
+                        . ' check command for this object'
+                    : 'The custom variable %s should be first added to one of the imported templates for this object',
                 $key
             ));
         }
@@ -362,6 +390,38 @@ class CustomVariableValueApplier
     }
 
     /**
+     * Give the unmodified variables of a stored object the links they have in the database
+     *
+     * The object store rebuilds an object from its plain properties, which carry
+     * no links. Without them, a value that this request updates would be stored
+     * without its link, also when the request removes the value's property. The
+     * cleanup that follows the request could then no longer tell that the value
+     * belonged to that property.
+     *
+     * @param IcingaObject    $object
+     * @param CustomVariables $vars   The variables of the object, before the request applies
+     *
+     * @return void
+     */
+    protected function restoreStoredLinks(IcingaObject $object, CustomVariables $vars): void
+    {
+        $type = $object->getShortTableName();
+        $dbAdapter = $this->db->getDbAdapter();
+        $query = $dbAdapter->select()
+            ->from('icinga_' . $type . '_var', ['varname', 'property_uuid'])
+            ->where($type . '_id = ?', (int) $object->get('id'))
+            ->where('property_uuid IS NOT NULL');
+
+        foreach ($dbAdapter->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+            $row = DbUtil::normalizeRow($row);
+            $var = $vars->get($row['varname']);
+            if ($var !== null && $var->getUuid() === null && ! $var->hasBeenModified()) {
+                $var->setUuid(Uuid::fromBytes($row['property_uuid']))->setUnmodified();
+            }
+        }
+    }
+
+    /**
      * Get the properties attached directly to the object, keyed by key_name
      *
      * Tells "replacing an attached property" apart from "attaching a new one"
@@ -401,44 +461,26 @@ class CustomVariableValueApplier
     }
 
     /**
-     * Get the custom properties linked to the given object, including
-     * properties inherited from its ancestors
+     * Get the custom properties the given object reaches, keyed by name
+     *
+     * Includes the properties of its templates and, for a host or service, of
+     * its check command and the commands that command imports.
      *
      * @param IcingaObject $object
      *
-     * @return array
+     * @return array<string, array{uuid: string, value_type: string, source: CustomPropertySourceKind}>
      */
     private function getObjectCustomProperties(IcingaObject $object): array
     {
-        if ($object->get('uuid') === null) {
-            return [];
-        }
-
-        $type = $object->getShortTableName();
-        $db = $object->getConnection();
-        $ids = $object->listAncestorIds();
-        $ids[] = $object->get('id');
-        $query = $db->getDbAdapter()
-            ->select()
-            ->from(
-                ['dp' => 'director_property'],
-                [
-                    'key_name' => 'dp.key_name',
-                    'uuid' => 'dp.uuid',
-                    'value_type' => 'dp.value_type',
-                    'label' => 'dp.label'
-                ]
-            )
-            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
-            ->join(['io' => "icinga_$type"], 'io.uuid = iop.' . $type . '_uuid', [])
-            ->where('io.id IN (?)', $ids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-            ->order('key_name');
-
         $result = [];
-        foreach ($db->getDbAdapter()->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
-            $row = DbUtil::normalizeRow($row);
-            $result[$row['key_name']] = $row;
+        foreach ((new CustomPropertySources($this->db))->getSources($object) as $source) {
+            foreach ($source->attachments as $name => $attachment) {
+                $result[$name] ??= [
+                    'uuid'       => $attachment['uuid'],
+                    'value_type' => $attachment['value_type'],
+                    'source'     => $source->kind,
+                ];
+            }
         }
 
         return $result;
