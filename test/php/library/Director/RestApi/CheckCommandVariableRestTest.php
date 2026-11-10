@@ -6,6 +6,9 @@
 namespace Tests\Icinga\Module\Director\RestApi;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaUser;
@@ -18,6 +21,7 @@ use Icinga\Web\Request;
 use Icinga\Web\Response;
 use Icinga\Web\UrlParams;
 use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 use ReflectionMethod;
 use Tests\Icinga\Module\Director\Lib\CustomVariable\CommandVariableFixture;
 
@@ -45,6 +49,44 @@ class CheckCommandVariableRestTest extends BaseTestCase
         $this->writeObject($host, 'POST', [], ['warning' => '80%']);
 
         $this->assertSame($warning->get('uuid'), $this->fetchFixtureLink($host, 'warning'));
+    }
+
+    public function testThePostOfAVariableTheSameRequestMakesUnreachableLosesIt(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $warning = $this->createFixtureProperty('warning');
+        $this->createFixtureCommand('check-disk', 'object', [], [$warning]);
+        $this->createFixtureCommand('check-ping', 'object');
+        $host = $this->createFixtureHost('web01', 'object', [], 'check-disk');
+        $this->storeFixtureValue($host, 'warning', '80%', $warning);
+
+        $this->writeObject($host, 'POST', ['check_command' => $this->fx('check-ping')], ['warning' => 'again']);
+
+        $this->assertFalse($this->fetchFixtureLink($host, 'warning'));
+    }
+
+    public function testThePutOfAVariableTheSameRequestMakesUnreachableStoresItPlain(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $warning = $this->createFixtureProperty('warning');
+        $this->createFixtureCommand('check-disk', 'object', [], [$warning]);
+        $this->createFixtureCommand('check-ping', 'object');
+        $host = $this->createFixtureHost('web01', 'object', [], 'check-disk');
+        $this->storeFixtureValue($host, 'warning', '80%', $warning);
+
+        $this->writeObject($host, 'PUT', ['check_command' => $this->fx('check-ping')], ['warning' => 'again']);
+
+        $this->assertNull($this->fetchFixtureLink($host, 'warning'));
+        $this->assertSame(
+            'again',
+            IcingaHost::load($this->fx('web01'), $this->getDb())->get('vars.' . $this->fx('warning'))
+        );
     }
 
     public function testTheVariablesEndpointStoresACheckCommandVariableOnAHost(): void
@@ -158,8 +200,13 @@ class CheckCommandVariableRestTest extends BaseTestCase
      */
     private function writeObject(IcingaObject $object, string $method, array $data, array $vars): void
     {
-        $object = $object::loadWithAutoIncId((int) $object->get('id'), $this->getDb());
         $db = $this->getDb();
+        // the REST controller loads through the object store, which rebuilds the object without value links
+        $object = (new DbObjectStore($db, new Branch()))->load(
+            $object->getTableName(),
+            Uuid::fromBytes(DbUtil::binaryResult($object->get('uuid')))
+        );
+        assert($object instanceof IcingaObject);
         $handler = new IcingaObjectHandler(new Request(), new Response(), $db);
         $request = new IcingaObjectWriteRequest(
             $object,

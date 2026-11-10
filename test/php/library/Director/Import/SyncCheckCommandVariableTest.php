@@ -92,6 +92,46 @@ class SyncCheckCommandVariableTest extends SyncTest
         }
     }
 
+    public function testSyncRelinksTheValuesBelowATemplateWhoseCheckCommandChanged(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $warning = $this->createFixtureProperty('warning');
+        $this->createFixtureCommand('check-disk', 'object', [], [$warning]);
+        $template = IcingaHost::create(['object_name' => 'SYNCTEST_linux', 'object_type' => 'template']);
+        $template->store($this->getDb());
+        $host = IcingaHost::create(['object_name' => 'SYNCTEST_web01', 'object_type' => 'object']);
+        $host->setImports(['SYNCTEST_linux']);
+        $host->store($this->getDb());
+        $this->storeFixtureValue($host, 'warning', '80%');
+
+        $this->setUpProperty([
+            'source_expression' => '${host}',
+            'destination_field' => 'object_name',
+            'priority'          => 3,
+        ]);
+        $this->setUpProperty([
+            'source_expression' => 'template',
+            'destination_field' => 'object_type',
+            'priority'          => 2,
+        ]);
+        $this->setUpProperty([
+            'source_expression' => '${command}',
+            'destination_field' => 'check_command',
+            'priority'          => 1,
+        ]);
+        $this->runImport([['host' => 'SYNCTEST_linux', 'command' => $this->fx('check-disk')]]);
+        $this->sync->apply();
+
+        $this->assertSame($warning->get('uuid'), $this->fetchFixtureLink($host, 'warning'));
+        $this->assertSame(
+            '80%',
+            IcingaHost::load('SYNCTEST_web01', $this->getDb())->get('vars.' . $this->fx('warning'))
+        );
+    }
+
     public function tearDown(): void
     {
         if ($this->hasDb()) {

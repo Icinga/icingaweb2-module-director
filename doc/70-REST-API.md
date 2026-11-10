@@ -276,6 +276,15 @@ a `POST` or `PUT` on the object itself, for example on `director/host`, also
 for the variables of the check command of a host or service. A value of the
 wrong shape is rejected.
 
+Changing the imports or the check command of an object through its own
+endpoint, for example `director/host`, can remove values that lost their
+variable, without asking, see [Removing values that lost their
+source](12-Handling-custom-variables.md#Removing-values-that-lost-their-source). The
+cleanup runs after the request's own `vars` are stored. A `POST` that sends a
+value for a variable that the same request makes unreachable therefore loses
+that value. A `PUT` replaces all variables, so it stores such a value without
+a link to the variable.
+
 On a **template**, `PUT` replaces more than values: it detaches every
 variable currently attached directly to that template, then reattaches only
 the ones present in the request body, attaching a not-yet-used one for the

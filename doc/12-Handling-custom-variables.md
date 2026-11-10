@@ -360,17 +360,59 @@ values to their property and check their type the same way, see
 [Custom Variables](70-REST-API.md#Custom-Variables) in the REST API
 documentation.
 
+<a id="Removing-values-that-lost-their-source"></a>### Removing values that lost their source
+
 Removing an imported template can also remove a value that only got there
 because of it. If an object had overridden a value it inherited from a
 template, and that template is no longer imported (directly or through
-another template), the leftover value is removed too, unless some other
-still-imported template provides the same property. In the UI, removing a
-template that would take a value down with it shows a warning naming the
-affected variables and asks for confirmation before saving; the REST API
-applies the same cleanup without asking. Restoring a configuration basket
-that drops a property attachment applies the same cleanup as well, see
+another template), the leftover value is removed too, unless the object
+still reaches the same property. It reaches a property through itself,
+another still-imported template, its effective check command or a command
+that check command imports. The same rule applies to the objects that import
+the changed object, each with its own templates and check command.
+
+Changing the check command works the same way. When a host or service, or a
+template above it, sets, switches or clears its check command, or an import
+change gives it another inherited check command, a value that only the
+previous check command provided is removed. This also holds when the previous
+check command came from another import, for example when a template that a
+host imports last sets a check command and replaces the one of an earlier
+import. A host or service with its own check command that still provides the
+property keeps its value.
+
+Commands follow the same rule for every host and service. Detaching a
+variable from a command or command template on its `Custom Variables` tab, or
+removing an import from a command, removes the host and service values linked
+to that variable that nothing else provides any longer. This includes hosts
+and services that do not use the command. Values that a template, the object
+itself or another command template still provides stay.
+
+Every removal leaves a `modify` entry in the activity log of the object that
+held the value. After such a change, Director also checks the remaining
+values below the changed object. A value whose name matches a variable that
+its object now reaches is linked to it, and a value linked to a variable that
+its object no longer reaches is unlinked. The values themselves stay as they
+are.
+
+In the UI, a change that would remove values shows a warning naming the
+affected variables and asks for confirmation before saving. There is one
+warning for removed templates and one for a changed check command, and one
+`Confirm` field for both. Answering `No` keeps the imports and the check
+command as they are stored and saves all other changes. The warning checks
+every object below with its own templates and check command, so it names
+exactly the values that saving removes. Detaching a variable from a command
+on its `Custom Variables` tab removes values without a warning.
+
+The REST API applies the same cleanup without asking, after it stored the
+variables of the request. A `POST` that sends a value for a variable that
+the same request makes unreachable therefore loses that value, while a `PUT`
+replaces all variables and stores such a value without a link to the
+property. Restoring a configuration basket that drops a property attachment
+applies the same cleanup as well, see
 [Restoring Custom Variable Schema Changes](30-Configuration-Baskets.md#Restoring-Custom-Variables)
-for that path.
+for that path. Sync only updates the links of the values below the
+templates and commands it changes and never removes a value, since the next
+run would bring a synced value back anyway.
 
 <a id="Required-custom-variables"></a>### Marking a custom variable as required
 

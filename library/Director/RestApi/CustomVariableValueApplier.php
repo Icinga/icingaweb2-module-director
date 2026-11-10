@@ -80,6 +80,10 @@ class CustomVariableValueApplier
         $preservedDirectAttachments = [];
 
         try {
+            if (! $wipeValuesInDb && $object->get('id')) {
+                $this->restoreStoredLinks($object, $objectVars);
+            }
+
             if ($wipeValuesInDb) {
                 $objectWhere = $dbAdapter->quoteInto("{$type}_id = ?", $object->get('id'));
                 $dbAdapter->delete('icinga_' . $type . '_var', $objectWhere);
@@ -382,6 +386,38 @@ class CustomVariableValueApplier
         if ($var !== null) {
             $var->setModified();
             $objectVars->registerVarUuid($key, Uuid::fromBytes($attachment['uuid']));
+        }
+    }
+
+    /**
+     * Give the unmodified variables of a stored object the links they have in the database
+     *
+     * The object store rebuilds an object from its plain properties, which carry
+     * no links. Without them, a value that this request updates would be stored
+     * without its link, also when the request removes the value's property. The
+     * cleanup that follows the request could then no longer tell that the value
+     * belonged to that property.
+     *
+     * @param IcingaObject    $object
+     * @param CustomVariables $vars   The variables of the object, before the request applies
+     *
+     * @return void
+     */
+    protected function restoreStoredLinks(IcingaObject $object, CustomVariables $vars): void
+    {
+        $type = $object->getShortTableName();
+        $dbAdapter = $this->db->getDbAdapter();
+        $query = $dbAdapter->select()
+            ->from('icinga_' . $type . '_var', ['varname', 'property_uuid'])
+            ->where($type . '_id = ?', (int) $object->get('id'))
+            ->where('property_uuid IS NOT NULL');
+
+        foreach ($dbAdapter->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+            $row = DbUtil::normalizeRow($row);
+            $var = $vars->get($row['varname']);
+            if ($var !== null && $var->getUuid() === null && ! $var->hasBeenModified()) {
+                $var->setUuid(Uuid::fromBytes($row['property_uuid']))->setUnmodified();
+            }
         }
     }
 
