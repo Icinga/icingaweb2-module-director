@@ -341,6 +341,25 @@ Variable` action of its own.
   child template or the object itself can add further entries without
   losing the ones defined on parent templates.
 
+<a id="Check-command-custom-variables"></a>### Variables of the check command
+
+A host or service reaches the custom variables attached to its effective
+check command and to every command that check command imports, directly or
+indirectly. The effective check command is the one the rendered configuration
+uses. The object's own check command wins. Without one, the check command
+comes from the imports, and the template imported last that has one wins.
+This applies to host and service templates, hosts, services, apply rules and
+the services of service sets.
+
+* Icinga DB Web shows the label and the category of a variable of the check
+  command and masks a `sensitive` one, also inside a dictionary. A property
+  that the host or one of its templates attaches takes precedence.
+
+The REST API, sync and `icingacli director hosts refreshCustomVars` link such
+values to their property and check their type the same way, see
+[Custom Variables](70-REST-API.md#Custom-Variables) in the REST API
+documentation.
+
 Removing an imported template can also remove a value that only got there
 because of it. If an object had overridden a value it inherited from a
 template, and that template is no longer imported (directly or through

@@ -6,6 +6,8 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\CustomVariable\CustomPropertySourceKind;
+use Icinga\Module\Director\CustomVariable\CustomPropertySources;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueValidator;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
@@ -222,6 +224,25 @@ class CustomVariableValueApplier
                 CustomVariableValueValidator::assertDatalistValueAllowed($key, $value, $propertyUuid, $this->db);
             }
 
+            // Replacing the variables of a host or service template takes over a variable that only its
+            // check command provides, the same way adding it on the template's Custom Variables tab does.
+            // The commands that a command imports are its templates, not a check command.
+            if (
+                $customProperties[$key]['source'] === CustomPropertySourceKind::Command
+                && $request->method === 'PUT'
+                && $request->actionName === 'variables'
+                && $object->isTemplate()
+                && CustomPropertySources::followsCheckCommand($object->getShortTableName())
+            ) {
+                $type = $object->getShortTableName();
+                $dbAdapter = $this->db->getDbAdapter();
+                $dbAdapter->insert('icinga_' . $type . '_property', [
+                    'property_uuid' => DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter),
+                    $type . '_uuid' => DbUtil::quoteBinaryCompat($object->get('uuid'), $dbAdapter),
+                    'required'      => 'n',
+                ]);
+            }
+
             $objectVars->registerVarUuid($key, $propertyUuid);
 
             return;
@@ -245,7 +266,10 @@ class CustomVariableValueApplier
 
         if (! $object->definesCustomProperties()) {
             throw new NotFoundError(sprintf(
-                'The custom variable %s should be first added to one of the imported templates for this object',
+                CustomPropertySources::followsCheckCommand($object->getShortTableName())
+                    ? 'The custom variable %s should be first added to one of the imported templates or to the'
+                        . ' check command for this object'
+                    : 'The custom variable %s should be first added to one of the imported templates for this object',
                 $key
             ));
         }
@@ -401,44 +425,26 @@ class CustomVariableValueApplier
     }
 
     /**
-     * Get the custom properties linked to the given object, including
-     * properties inherited from its ancestors
+     * Get the custom properties the given object reaches, keyed by name
+     *
+     * Includes the properties of its templates and, for a host or service, of
+     * its check command and the commands that command imports.
      *
      * @param IcingaObject $object
      *
-     * @return array
+     * @return array<string, array{uuid: string, value_type: string, source: CustomPropertySourceKind}>
      */
     private function getObjectCustomProperties(IcingaObject $object): array
     {
-        if ($object->get('uuid') === null) {
-            return [];
-        }
-
-        $type = $object->getShortTableName();
-        $db = $object->getConnection();
-        $ids = $object->listAncestorIds();
-        $ids[] = $object->get('id');
-        $query = $db->getDbAdapter()
-            ->select()
-            ->from(
-                ['dp' => 'director_property'],
-                [
-                    'key_name' => 'dp.key_name',
-                    'uuid' => 'dp.uuid',
-                    'value_type' => 'dp.value_type',
-                    'label' => 'dp.label'
-                ]
-            )
-            ->join(['iop' => "icinga_$type" . '_property'], 'dp.uuid = iop.property_uuid', [])
-            ->join(['io' => "icinga_$type"], 'io.uuid = iop.' . $type . '_uuid', [])
-            ->where('io.id IN (?)', $ids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-            ->order('key_name');
-
         $result = [];
-        foreach ($db->getDbAdapter()->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
-            $row = DbUtil::normalizeRow($row);
-            $result[$row['key_name']] = $row;
+        foreach ((new CustomPropertySources($this->db))->getSources($object) as $source) {
+            foreach ($source->attachments as $name => $attachment) {
+                $result[$name] ??= [
+                    'uuid'       => $attachment['uuid'],
+                    'value_type' => $attachment['value_type'],
+                    'source'     => $source->kind,
+                ];
+            }
         }
 
         return $result;
