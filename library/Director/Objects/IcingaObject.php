@@ -1598,19 +1598,43 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * Get custom properties linked to this object's templates, keyed by name
      *
      * Used to spot which vars are dynamic-dictionary type, so their entries
-     * get merged across templates instead of just being overwritten
+     * get merged across templates instead of just being overwritten.
      *
-     * @return array
+     * An active prefetch cache reuses metadata for each ordered template list
+     * until it is forgotten. Otherwise each call reads the current metadata.
+     *
+     * @return array<array-key, stdClass>
      */
     public function fetchAllLinkedCustomProperties(): array
     {
-        $type = $this->getShortTableName();
         $templates = IcingaTemplateRepository::instanceByObject($this)
             ->getTemplatesIndexedByNameFor($this, true);
         if (empty($templates)) {
             return [];
         }
 
+        $templateNames = array_keys($templates);
+        if (PrefetchCache::shouldBeUsed()) {
+            return PrefetchCache::instance()->linkedCustomProperties(
+                $this->getShortTableName(),
+                $templateNames,
+                fn (): array => $this->fetchLinkedCustomProperties($templateNames)
+            );
+        }
+
+        return $this->fetchLinkedCustomProperties($templateNames);
+    }
+
+    /**
+     * Get current linked property metadata without authorization filtering
+     *
+     * @param list<int|string> $templateNames Ancestor template names
+     *
+     * @return array<array-key, stdClass>
+     */
+    protected function fetchLinkedCustomProperties(array $templateNames): array
+    {
+        $type = $this->getShortTableName();
         $query = $this->db->select()->from(
             ['dp' => 'director_property'],
             ['dp.key_name', 'dp.uuid', 'dp.value_type']
@@ -1623,7 +1647,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             "iop.{$type}_uuid = io.uuid",
             []
         )
-         ->where('io.object_name IN (?)', array_keys($templates));
+         ->where('io.object_name IN (?)', $templateNames);
 
         $customProperties = [];
 
