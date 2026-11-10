@@ -321,9 +321,10 @@ Only a **template** or a **command** can attach a configured property with
 `Add Custom Variable`. Commands are the exception because many of them,
 like the external ones coming from the ITL, have no template to import. A
 host, service, user or notification that is not a template only lets you
-fill in or override values for properties already attached there or
-inherited from one of its imported templates; it has no `Add Custom
-Variable` action of its own.
+fill in or override values for properties already attached there, inherited
+from one of its imported templates, or provided by its check command (see
+[Variables of the check command](#Check-command-custom-variables)). It has no
+`Add Custom Variable` action of its own.
 
 > The `Required` flag is only offered on templates. A command never has to
 > fill in a variable it attached itself, but a command that imports a
@@ -339,7 +340,28 @@ Variable` action of its own.
 * `dynamic-dictionary` values are **merged** across the inheritance
   chain rather than overwritten. The rendered config uses `+=`, so a
   child template or the object itself can add further entries without
-  losing the ones defined on parent templates.
+  losing the ones defined on parent templates. A `dynamic-dictionary` that
+  only the check command provides is not merged. The object's own value
+  replaces the ones of its templates (`=`), although the tab still shows the
+  inherited entries next to the own ones.
+
+The `Custom Variables` tab shows the variables in boxes by where they come
+from. The object's own box comes first. Templates and commands always show
+it, also when it is still empty, and variables added with `Add Custom
+Variable` appear there. One box per imported template follows, in import
+order. On a command, every imported command gets its own box. The box of the
+check command comes last. Every box can be folded, and only the box of the
+check command starts folded.
+
+`Add Custom Variable` also offers variables that an imported template or the
+check command already provides. Adding one moves it from its box into the
+object's own box, and saving attaches it to the template or command itself.
+On a template, the `Required` toggle applies to that attachment as usual. On
+a command, the attachment is never required, and the requirement of a
+command template no longer applies to a variable that the command attaches
+itself. Removing the attachment again brings the variable back to the box it
+came from. A value that the object set itself stays, and the inherited value
+shows as the placeholder of the field.
 
 <a id="Check-command-custom-variables"></a>### Variables of the check command
 
@@ -351,6 +373,19 @@ comes from the imports, and the template imported last that has one wins.
 This applies to host and service templates, hosts, services, apply rules and
 the services of service sets.
 
+* A variable reachable in several ways is listed once. The object's own
+  attachment wins, then the template that gives the current value, then the
+  template imported last. The check command only lists the variables that
+  neither the object nor one of its templates attaches.
+* A variable of the check command can be filled in on the host or service,
+  but not removed or made required there. Its value renders as
+  `vars.<name>`.
+* A `Required` flag on a command or command template does not apply to the
+  hosts and services that use the command.
+* The `Modify` forms of a service on a host, for services inherited from a
+  host template, applied services and the services of a service set, list
+  the variables of the check command too. The value you save there is
+  stored on that host only, as a service variable override.
 * Icinga DB Web shows the label and the category of a variable of the check
   command and masks a `sensitive` one, also inside a dictionary. A property
   that the host or one of its templates attaches takes precedence.

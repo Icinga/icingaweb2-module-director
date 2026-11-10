@@ -56,6 +56,9 @@ class CustomVariablesForm extends CompatForm
     /** @var bool Whether the current principal has director/admin */
     private bool $isAdmin = false;
 
+    /** @var array<int, array{key: string, label: string, open: bool, always: bool}> Boxes the rows show in */
+    protected array $groups = [];
+
     public function __construct(
         public readonly IcingaObject $object,
         protected array $objectProperties = []
@@ -102,6 +105,20 @@ class CustomVariablesForm extends CompatForm
     }
 
     /**
+     * Set the boxes the rows show in, see {@see Dictionary::setGroups()}
+     *
+     * @param array<int, array{key: string, label: string, open: bool, always: bool}> $groups
+     *
+     * @return $this
+     */
+    public function setGroups(array $groups): static
+    {
+        $this->groups = $groups;
+
+        return $this;
+    }
+
+    /**
      * Set whether the current principal has director/admin
      *
      * @param bool $isAdmin
@@ -134,7 +151,8 @@ class CustomVariablesForm extends CompatForm
             'properties',
             $properties,
             ['class' => 'no-border']
-        ))->setAllowItemRemoval($this->object->definesCustomProperties())
+        ))->setGroups($this->groups)
+            ->setAllowItemRemoval($this->object->definesCustomProperties())
             // Nothing enforces it for commands yet, so only templates get the toggle
             ->setAllowRequiredToggle($this->object->isTemplate())
             // An external object is never deployed, so a value typed here would go nowhere
