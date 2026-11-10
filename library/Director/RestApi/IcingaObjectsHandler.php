@@ -82,11 +82,12 @@ class IcingaObjectsHandler extends RequestHandler
         $cnt = 0;
         $objects = [];
 
+        // Initialize first because it clears the related object caches.
+        PrefetchCache::initialize($this->db);
+        Benchmark::measure('Pre-fetching related objects');
         $dummy = IcingaObject::createByType($type, [], $connection);
         $dummy->prefetchAllRelatedTypes();
 
-        Benchmark::measure('Pre-fetching related objects');
-        PrefetchCache::initialize($this->db);
         Benchmark::measure('Ready to query');
         $stmt = $db->query($query);
         $this->response->sendHeaders();
