@@ -265,9 +265,9 @@ class DaemonDb
         $this->pendingDisconnect = new Deferred();
         $pendingComponents = new SplObjectStorage();
         foreach ($this->registeredComponents as $component) {
-            $pendingComponents->attach($component);
+            $pendingComponents->offsetSet($component);
             $resolve = function () use ($pendingComponents, $component) {
-                $pendingComponents->detach($component);
+                $pendingComponents->offsetUnset($component);
                 if ($pendingComponents->count() === 0) {
                     $this->pendingDisconnect->resolve(null);
                 }
