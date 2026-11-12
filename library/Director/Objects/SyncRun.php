@@ -32,7 +32,7 @@ class SyncRun extends DbObject
     {
         return static::create(
             array(
-                'start_time' => date('Y-m-d H:i:s'),
+                'start_time' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.u'),
                 'rule_id'    => $rule->id,
                 'rule_name'  => $rule->rule_name,
             ),
