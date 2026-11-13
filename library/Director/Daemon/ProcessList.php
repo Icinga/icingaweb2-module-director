@@ -41,7 +41,7 @@ class ProcessList
 
     public function attach(Process $process)
     {
-        $this->processes->attach($process);
+        $this->processes->offsetSet($process);
         $this->emit('start', [$process]);
         $process->on('exit', function () use ($process) {
             $this->detach($process);
@@ -53,7 +53,7 @@ class ProcessList
 
     public function detach(Process $process)
     {
-        $this->processes->detach($process);
+        $this->processes->offsetUnset($process);
 
         return $this;
     }
@@ -96,7 +96,7 @@ class ProcessList
                 }
             }
             foreach ($stopped as $process) {
-                $this->processes->detach($process);
+                $this->processes->offsetUnset($process);
             }
             if ($this->processes->count() === 0) {
                 $this->loop->cancelTimer($timer);
