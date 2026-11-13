@@ -8,10 +8,12 @@ namespace Icinga\Module\Director\Db\Cache;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use Icinga\Module\Director\Resolver\TemplateTree;
 use LogicException;
+use stdClass;
 
 /**
  * Central prefetch cache
@@ -35,6 +37,9 @@ class PrefetchCache
     protected $renderedVars = array();
 
     protected $templateTrees = array();
+
+    /** @var array<string, array<array-key, stdClass>> */
+    protected array $linkedCustomProperties = [];
 
     protected $hostServiceBlacklist;
 
@@ -82,6 +87,46 @@ class PrefetchCache
     public function groups(IcingaObject $object)
     {
         return $this->groupsCache($object)->getGroupsForObject($object);
+    }
+
+    /**
+     * Get linked property metadata for an ordered template list
+     *
+     * Successful results, including empty arrays, are reused for this cache's
+     * lifetime. Loader failures propagate without being cached. Returned rows
+     * are cloned so callers cannot change the cached metadata.
+     *
+     * Loader rows contain key_name, uuid, and value_type. UUIDs may be binary
+     * strings or stream resources.
+     *
+     * @param string $type Short object table name
+     * @param list<int|string> $templateNames Ordered ancestor template names
+     * @param callable(): array<array-key, stdClass> $load Metadata loader
+     *
+     * @return array<array-key, stdClass> Metadata with UUIDs as binary strings
+     *
+     * @throws \Throwable If the metadata loader throws
+     */
+    public function linkedCustomProperties(string $type, array $templateNames, callable $load): array
+    {
+        $key = serialize([$type, $templateNames]);
+        if (! array_key_exists($key, $this->linkedCustomProperties)) {
+            $properties = [];
+            foreach ($load() as $name => $property) {
+                $property = clone $property;
+                // PostgreSQL UUID streams cannot share their read position.
+                $property->uuid = DbUtil::binaryResult($property->uuid);
+                $properties[$name] = $property;
+            }
+            $this->linkedCustomProperties[$key] = $properties;
+        }
+
+        $properties = [];
+        foreach ($this->linkedCustomProperties[$key] as $name => $property) {
+            $properties[$name] = clone $property;
+        }
+
+        return $properties;
     }
 
     /* Hint: not implemented, this happens in DbObject right now
