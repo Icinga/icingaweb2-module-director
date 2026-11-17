@@ -458,6 +458,18 @@ class DictionaryItem extends FieldsetElement
         ]);
     }
 
+    protected function registerAttributeCallbacks(Attributes $attributes): void
+    {
+        parent::registerAttributeCallbacks($attributes);
+
+        // A row that failed validation renders expanded without touching the collapse
+        // state the user stored. Icinga Web before 2.12 ignores these and keeps it collapsed.
+        $failed = fn() => $this->hasBeenValidated() && ! $this->isValid() ? true : null;
+        $attributes
+            ->registerAttributeCallback('data-no-persistence', $failed)
+            ->registerAttributeCallback('data-state-collapses', $failed);
+    }
+
     /**
      * Whether this item's own value is inherited from an ancestor
      *

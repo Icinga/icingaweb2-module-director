@@ -326,6 +326,7 @@ class BasketSnapshot extends DbObject
             foreach ($this->restoreOrder as $typeName) {
                 $this->restoreType($all, $typeName, $fieldResolver, $connection, $propertyResolver);
             }
+            $propertyResolver->removePendingStaleValues();
             // Runs last on purpose, a restored host or service still carries its
             // own old vars, doing this any earlier just gets overwritten by that.
             $propertyResolver->applyPendingValueMigrations();

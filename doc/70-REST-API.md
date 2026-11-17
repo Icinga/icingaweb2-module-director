@@ -253,8 +253,9 @@ values. Strings, numbers, booleans, arrays and nested dictionaries are
 all accepted, matching the types described in
 [Working with custom variables](12-Handling-custom-variables.md). The
 custom variable must already be configured under `Custom Variables`
-**and** already be attached to (or inherited from) the object you are
-updating. What happens when a variable isn't attached yet depends on the
+**and** already be attached to the object you are updating, inherited from
+one of its templates or, for a host or service, provided by its check
+command. What happens when a variable isn't attached yet depends on the
 method and the object type. See [Attaching a variable to a template for
 the first time](#Custom-Variables-attach-template) and
 [Variable not configured](#Custom-Variables-not-configured) below.
@@ -269,13 +270,31 @@ body.
   the ones in the body. Values inherited from templates are not affected either
   way, since they aren't stored on the object itself.
 
+Every value of a custom variable that the object reaches is checked against
+the type of the variable and linked to it. This also applies to the `vars` of
+a `POST` or `PUT` on the object itself, for example on `director/host`, also
+for the variables of the check command of a host or service. A value of the
+wrong shape is rejected.
+
+Changing the imports or the check command of an object through its own
+endpoint, for example `director/host`, can remove values that lost their
+variable, without asking, see [Removing values that lost their
+source](12-Handling-custom-variables.md#Removing-values-that-lost-their-source). The
+cleanup runs after the request's own `vars` are stored. A `POST` that sends a
+value for a variable that the same request makes unreachable therefore loses
+that value. A `PUT` replaces all variables, so it stores such a value without
+a link to the variable.
+
 On a **template**, `PUT` replaces more than values: it detaches every
 variable currently attached directly to that template, then reattaches only
 the ones present in the request body, attaching a not-yet-used one for the
 first time if needed (see
 [Attaching a variable to a template for the first time](#Custom-Variables-attach-template)
 below). A directly attached variable left out of the body is detached along
-with it, not just cleared of its value.
+with it, not just cleared of its value. A variable that only the check command
+of a host or service template provides is attached to the template as well,
+the same way adding it on the `Custom Variables` tab of the template does. A
+second `PUT` keeps that single attachment. A `POST` only stores the value.
 
 This endpoint only ever reads and writes values, it has no way to set or
 query the `required` flag itself. To keep a values-only `PUT` from silently
@@ -291,7 +310,8 @@ way a template can.
 
 On any other object (host, service, user, notification), `PUT` only
 replaces values: it can never attach a variable that isn't already
-available to the object through one of its imported templates; see
+available to the object through one of its imported templates or, for a host
+or service, its check command; see
 [Attaching a variable to a template for the first
 time](#Custom-Variables-attach-template) below for how that's restricted.
 
@@ -483,8 +503,8 @@ Content-Type: application/json
 
 The same restriction applies to hosts, services, users and notifications
 that are not templates, regardless of method. A variable must first be
-attached to one of the object's imported templates before it can be set on
-the object itself.
+attached to one of the object's imported templates, or for a host or service
+to its check command, before it can be set on the object itself.
 
 ```
 HTTP/1.1 404 Not Found
@@ -493,9 +513,13 @@ Content-Type: application/json
 
 ```json
 {
-    "error": "The custom variable datacenter should be first added to one of the imported templates for this object"
+    "error": "The custom variable datacenter should be first added to one of the imported templates or to the check command for this object"
 }
 ```
+
+Users and notifications have no check command, their error reads "The custom
+variable datacenter should be first added to one of the imported templates
+for this object".
 
 Not every template type supports attachment at all. A service set is a
 template but can never have a custom variable attached to it, so a `PUT`
@@ -525,9 +549,12 @@ The message depends on how the variable is unknown.
   * `POST` to a command gives "The custom variable `<custom var name>`
     should be first added to the command with a PUT request or on its
     Custom Variables tab".
-  * `POST` or `PUT` to a host, service, user or notification that is not
-    a template gives "The custom variable `<custom var name>` should be
-    first added to one of the imported templates for this object".
+  * `POST` or `PUT` to a host or service that is not a template gives "The
+    custom variable `<custom var name>` should be first added to one of the
+    imported templates or to the check command for this object".
+  * `POST` or `PUT` to a user or notification that is not a template gives
+    "The custom variable `<custom var name>` should be first added to one of
+    the imported templates for this object".
 * Only `PUT` to a **template** or a **command** distinguishes the case
   where the variable has never been configured under `Custom Variables`
   at all, meaning there is no matching top-level entry in

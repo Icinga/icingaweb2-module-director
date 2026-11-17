@@ -95,6 +95,17 @@ through this endpoint, check it against the [updated
 rules](70-REST-API.md#Custom-Variables-not-configured) before upgrading,
 otherwise some of those writes may start failing.
 
+Custom Variables attached to a command or to a command template it imports
+count for the hosts and services that use the command as their check
+command. A `POST` or `PUT` on `director/host` or `director/service` with
+`vars` checks such a value against the type of its Custom Variable, rejects a
+value of the wrong shape and links the value to the Custom Variable. Earlier
+1.12 releases stored it as a plain variable without a check. The `variables`
+endpoint accepts these variables too. A `PUT` on a host or service template
+attaches such a variable to the template, see [Custom
+Variables](70-REST-API.md#Custom-Variables). Check scripts that send values of
+the wrong shape for these variables before upgrading.
+
 If you use `icingacli director migrate datafields` to move legacy Data
 Fields onto the new Custom Property system, note that a Data List field
 with the old `Suggest, extend list` behavior now migrates to a plain

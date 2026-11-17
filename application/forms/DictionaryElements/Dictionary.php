@@ -32,6 +32,9 @@ class Dictionary extends FieldsetElement
     /** @var bool Whether dictionary is a child dictionary */
     private bool $isChild = false;
 
+    /** @var array<int, array{key: string, label: string, open: bool, always: bool}> Boxes the items show in */
+    protected array $groups = [];
+
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->items = $items;
@@ -77,6 +80,24 @@ class Dictionary extends FieldsetElement
     public function setShowValues(bool $show = true): static
     {
         $this->showValues = $show;
+
+        return $this;
+    }
+
+    /**
+     * Set the boxes the items show in, in display order
+     *
+     * Each item names its box with its `group` key. A box without items only
+     * shows when it is marked `always`. New items are added to the box with
+     * the key `own`.
+     *
+     * @param array<int, array{key: string, label: string, open: bool, always: bool}> $groups
+     *
+     * @return $this
+     */
+    public function setGroups(array $groups): static
+    {
+        $this->groups = $groups;
 
         return $this;
     }
@@ -156,6 +177,11 @@ class Dictionary extends FieldsetElement
         $this->addElement('hidden', 'items_removed', ['value' => json_encode(array_keys($removedItems))]);
         $this->addElement('hidden', 'items_added', ['value' => implode(', ', $addedItems)]);
         $count = 0;
+        $groups = [];
+        foreach ($this->groups as $group) {
+            $groups[$group['key']] = new DictionaryGroup($group['label'], $group['open']);
+        }
+
         foreach ($this->items as $item) {
             $item['uuid'] = DbUtil::binaryResult($item['uuid']);
             if (isset($item['parent_uuid'])) {
@@ -175,7 +201,15 @@ class Dictionary extends FieldsetElement
                 $element->setRemoveButton($this->getElement('remove_' . $count));
             }
 
-            $this->addElement($element);
+            $group = $groups[$item['group'] ?? 'own'] ?? null;
+            if ($group === null) {
+                $this->addElement($element);
+            } else {
+                $this->registerElement($element);
+                $this->decorate($element);
+                $group->addItem($element, $count);
+            }
+
             $count++;
         }
 
@@ -187,7 +221,25 @@ class Dictionary extends FieldsetElement
 
         $newVarSlot = Html::tag('div', ['id' => 'new-var-slot-' . $count]);
 
-        if ($this->allowItemRemoval) {
+        foreach ($this->groups as $group) {
+            $groupElement = $groups[$group['key']];
+            $isOwn = $group['key'] === 'own';
+            if ($isOwn && $this->allowItemRemoval) {
+                $groupElement->addHtml($newVarSlot);
+            }
+
+            if (! $groupElement->hasItems() && ! $group['always']) {
+                continue;
+            }
+
+            if ($isOwn) {
+                $groupElement->addAttributes(['class' => 'own-group']);
+            }
+
+            $this->addHtml($groupElement);
+        }
+
+        if ($this->allowItemRemoval && ! isset($groups['own'])) {
             $this->addHtml($newVarSlot);
         }
 

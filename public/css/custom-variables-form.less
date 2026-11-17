@@ -92,8 +92,50 @@
   }
 }
 
+// a box of rows that come from the same template or command
+.custom-variables-form .custom-variable-group {
+  > summary {
+    cursor: pointer;
+    list-style: none;
+    color: @text-color-light;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::before {
+      // icon: right
+      font-family: 'ifont';
+      content: '\e820';
+      margin-right: 0.5em;
+    }
+  }
+
+  &[open] > summary::before {
+    // icon: down
+    content: '\e81d';
+  }
+
+  // a template or command box left without rows once its last row moved to the own box
+  &:not(.own-group):not(:has(.dictionary-item)) {
+    display: none;
+  }
+}
+
 // Layout
 .custom-variables-form {
+  .custom-variable-group {
+    margin-bottom: 1em;
+
+    > summary {
+      padding: 0.5em 0;
+    }
+
+    > .custom-var-row {
+      margin-left: 1em;
+    }
+  }
+
   .buttons {
     display: flex;
     justify-content: space-between;

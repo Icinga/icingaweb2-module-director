@@ -10,7 +10,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
-use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
+use Icinga\Module\Director\CustomVariable\PropertySourceChange;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
@@ -269,6 +269,7 @@ class IcingaObjectHandler extends RequestHandler
         $object = $request->object;
         $data = $request->data;
         $type = $request->type;
+        $sourceChange = null;
 
         if ($request->actionName !== 'variables') {
             if ($object) {
@@ -282,19 +283,10 @@ class IcingaObjectHandler extends RequestHandler
                     $object->replaceWith(IcingaObject::createByType($type, $data, $db));
                 }
 
-                // dropping an import can leave a locally saved value with
-                // nothing backing it, so note which imports went away before
-                // saving below overwrites that history. skip this for object
-                // types that don't support both, checking imports blows up
-                // on some and the cleanup query breaks on others.
-                if ($object->supportsImports() && $object->supportsCustomVars()) {
-                    $removedImportNames = array_diff(
-                        $object->imports()->listOriginalImportNames(),
-                        $object->getImports()
-                    );
-                } else {
-                    $removedImportNames = [];
-                }
+                // dropping an import or changing the check command can leave a
+                // saved value with nothing backing it, so note where the values
+                // came from before saving below overwrites that
+                $sourceChange = PropertySourceChange::capture($object);
 
                 // Avoid cyclic imports for hosts and commands. The tree we check
                 // against is still built from persisted data, so a cycle only
@@ -329,10 +321,6 @@ class IcingaObjectHandler extends RequestHandler
                 } else {
                     $this->persistChanges($object);
                 }
-
-                if (! empty($removedImportNames)) {
-                    PropertyDetachmentCleaner::removeValuesLostToRemovedImports($object, $removedImportNames, $db);
-                }
             } elseif ($request->allowsOverrides && $type === 'service') {
                 if ($request->method === 'PUT') {
                     throw new InvalidArgumentException('Overrides are not (yet) available for HTTP PUT');
@@ -353,6 +341,8 @@ class IcingaObjectHandler extends RequestHandler
 
         $isVariablesPut = $request->actionName === 'variables' && $request->method === 'PUT';
         if (empty($request->overRiddenCustomVars) && ! $isVariablesPut && ! $request->replaceAll) {
+            $sourceChange?->apply();
+
             return $object;
         }
 
@@ -372,6 +362,10 @@ class IcingaObjectHandler extends RequestHandler
             $request->method,
             $request->replaceAll
         ));
+
+        // after the request's own values, so a value it sends for a property
+        // it also makes unreachable goes the same way as a stored one
+        $sourceChange?->apply();
 
         // persistChanges() only checks the object's own columns, so it may have
         // already set 304 even though the applier above really changed a value.

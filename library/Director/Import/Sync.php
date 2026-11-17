@@ -9,7 +9,9 @@ use Exception;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Application\MemoryLimit;
+use Icinga\Module\Director\CustomVariable\CustomPropertySources;
 use Icinga\Module\Director\CustomVariable\ObjectCustomVariablePropertyLinker;
+use Icinga\Module\Director\CustomVariable\PropertySourceChange;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
@@ -876,6 +878,21 @@ class Sync
             // Do that here, once for the whole run, before anything is stored.
             ObjectCustomVariablePropertyLinker::linkSyncedObjects($objects, $db);
 
+            // A template or command whose imports or check command change can change what the
+            // objects below it reach, note where their values came from before storing anything.
+            // A branch store does not write to the tables of the values, so their links stay.
+            $storedSources = new CustomPropertySources($db);
+            $sourceChanges = [];
+            foreach ($this->store ? [] : $objects as $object) {
+                if (
+                    ($object->isTemplate() || $object->getShortTableName() === 'command')
+                    && ! ($object->shouldBeRemoved() && ! $updateOnly)
+                    && ($sourceChange = PropertySourceChange::capture($object, $storedSources))
+                ) {
+                    $sourceChanges[] = $sourceChange;
+                }
+            }
+
             $formerActivityChecksum = hex2bin(
                 $db->getLastActivityChecksum()
             );
@@ -916,6 +933,15 @@ class Sync
                         }
                         $created++;
                     }
+                }
+            }
+
+            // Sync never removes values, they come back with the next run anyway. Only the links of
+            // the values below the changed templates and commands follow what their holders reach now.
+            if (! empty($sourceChanges)) {
+                $sources = new CustomPropertySources($db);
+                foreach ($sourceChanges as $sourceChange) {
+                    $sourceChange->apply(false, $sources);
                 }
             }
 

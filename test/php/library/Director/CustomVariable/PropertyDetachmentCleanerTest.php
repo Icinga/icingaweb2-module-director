@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
+use Icinga\Module\Director\CustomVariable\PropertySourceChange;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaDependency;
@@ -62,9 +63,9 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         ));
 
         $leaf->setImports([self::TEMPLATE_TWO_NAME]);
+        $change = PropertySourceChange::capture($leaf);
         $leaf->store($db);
-
-        PropertyDetachmentCleaner::removeValuesLostToRemovedImports($leaf, [self::TEMPLATE_ONE_NAME], $db);
+        $change->apply();
 
         $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
         $this->assertEquals(
@@ -106,9 +107,9 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         ));
 
         $leaf->setImports([self::SERVICE_TEMPLATE_TWO_NAME]);
+        $change = PropertySourceChange::capture($leaf);
         $leaf->store($db);
-
-        PropertyDetachmentCleaner::removeValuesLostToRemovedImports($leaf, [self::SERVICE_TEMPLATE_ONE_NAME], $db);
+        $change->apply();
 
         $leaf = $this->loadServiceTemplate(self::SERVICE_LEAF_NAME, $db);
         $this->assertEquals(
@@ -143,9 +144,9 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         ));
 
         $leaf->setImports([]);
+        $change = PropertySourceChange::capture($leaf);
         $leaf->store($db);
-
-        PropertyDetachmentCleaner::removeValuesLostToRemovedImports($leaf, [self::TEMPLATE_ONE_NAME], $db);
+        $change->apply();
 
         $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
         $this->assertNull(
@@ -200,9 +201,9 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
 
         $mid = IcingaHost::load(self::MID_TEMPLATE_NAME, $db);
         $mid->setImports([]);
+        $change = PropertySourceChange::capture($mid);
         $mid->store($db);
-
-        PropertyDetachmentCleaner::removeValuesLostToRemovedImports($mid, [self::TEMPLATE_ONE_NAME], $db);
+        $change->apply();
 
         $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
         $this->assertNull(
@@ -242,7 +243,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
 
         $mid = IcingaHost::load(self::MID_TEMPLATE_NAME, $db);
 
-        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($mid, []);
+        $atRisk = PropertySourceChange::previewLoss($mid, [])['imports'];
 
         $this->assertEquals(
             [self::REGION_KEY],
@@ -284,7 +285,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
 
         $mid = IcingaHost::load(self::MID_TEMPLATE_NAME, $db);
 
-        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($mid, []);
+        $atRisk = PropertySourceChange::previewLoss($mid, [])['imports'];
 
         $this->assertEquals(
             [],
@@ -294,13 +295,11 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
     }
 
     /**
-     * A descendant importing the exact same template both through the
-     * middle template and directly on its own is a rare setup, and the
-     * preview isn't precise enough to see the direct import still saves
-     * it. Over-warning here is fine, this locks that tradeoff in on
-     * purpose so nobody "fixes" it into a false negative later.
+     * The preview runs the cleanup's own check for every holder, so a
+     * descendant that also imports the dropped template directly is not
+     * flagged, the cleanup keeps its value too.
      */
-    public function testPreviewOverWarnsWhenDescendantAlsoImportsTheDroppedTemplateDirectly(): void
+    public function testPreviewSkipsADescendantThatAlsoImportsTheDroppedTemplateDirectly(): void
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -331,12 +330,12 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
 
         $mid = IcingaHost::load(self::MID_TEMPLATE_NAME, $db);
 
-        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($mid, []);
+        $atRisk = PropertySourceChange::previewLoss($mid, [])['imports'];
 
         $this->assertEquals(
-            [self::REGION_KEY],
+            [],
             $atRisk,
-            'a value safe through a direct duplicate import still gets flagged, known and accepted tradeoff'
+            'a value that stays reachable through a direct import of the dropped template must not be flagged'
         );
     }
 
@@ -365,7 +364,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         ));
         $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
 
-        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($leaf, []);
+        $atRisk = PropertySourceChange::previewLoss($leaf, [])['imports'];
 
         $this->assertEquals(
             [self::REGION_KEY],
@@ -401,10 +400,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         ));
         $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
 
-        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved(
-            $leaf,
-            [self::TEMPLATE_TWO_NAME]
-        );
+        $atRisk = PropertySourceChange::previewLoss($leaf, [self::TEMPLATE_TWO_NAME])['imports'];
 
         $this->assertEquals(
             [],
@@ -428,7 +424,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
             'object_type' => 'object',
         ]);
 
-        $atRisk = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($host, []);
+        $atRisk = PropertySourceChange::previewLoss($host, [])['imports'];
 
         $this->assertEquals([], $atRisk);
     }
@@ -647,13 +643,13 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         try {
             $this->assertSame(
                 [],
-                PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved($child, [])
+                PropertySourceChange::previewLoss($child, [])['imports']
             );
 
             $child->setImports([]);
+            $change = PropertySourceChange::capture($child);
             $child->store();
-
-            PropertyDetachmentCleaner::removeValuesLostToRemovedImports($child, [$parentName], $db);
+            $change?->apply();
             $this->assertSame([], $class::load($childName, $db)->getImports());
         } finally {
             $child->delete();

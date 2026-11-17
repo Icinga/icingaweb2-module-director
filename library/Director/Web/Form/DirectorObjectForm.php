@@ -9,7 +9,8 @@ use Exception;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Auth\Permission;
-use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
+use Icinga\Module\Director\CustomVariable\CustomPropertySources;
+use Icinga\Module\Director\CustomVariable\PropertySourceChange;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -65,13 +66,13 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected $resolvedImports;
 
-    /** @var string[]|null Cached list of values that would lose their backing property */
+    /** @var ?array{imports: string[], command: string[]} Cached names of values that would lose their property */
     private $atRiskValueNames;
 
-    /** @var string|null Import list the above cache was computed for */
+    /** @var string|null Pending imports and check command the above cache was computed for */
     private $atRiskValueNamesImportsKey;
 
-    private $importRemovalWarningRendered = false;
+    protected bool $sourceChangeWarningRendered = false;
 
     protected $listUrl;
 
@@ -449,6 +450,13 @@ abstract class DirectorObjectForm extends DirectorForm
                         if ($object instanceof IcingaObject && $this->isPendingImportRemovalConfirmation()) {
                             $value = $object->imports()->listOriginalImportNames();
                         }
+                    } elseif (
+                        $key === 'check_command'
+                        && $object instanceof IcingaObject
+                        && $this->isPendingImportRemovalConfirmation()
+                    ) {
+                        // the same answer keeps the stored check command
+                        $value = $this->storedCheckCommandName();
                     }
                     $object->set($key, $value);
                     if ($object instanceof IcingaObject) {
@@ -565,13 +573,15 @@ abstract class DirectorObjectForm extends DirectorForm
      */
     protected function groupMainProperties($importsFirst = false)
     {
-        // these two only show up when removing an import would drop a saved
-        // value, keep them right under imports so the user notices them
+        // these only show up when removing an import or changing the check
+        // command would drop a saved value, keep them right under imports so
+        // the user notices them
         if ($importsFirst) {
             $elements = [
                 'imports',
                 'confirm_remove_imports',
                 'import_removal_warning',
+                'check_command_change_warning',
                 'object_type',
                 'object_name',
             ];
@@ -582,6 +592,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 'imports',
                 'confirm_remove_imports',
                 'import_removal_warning',
+                'check_command_change_warning',
             ];
         }
         $elements = array_merge($elements, [
@@ -720,21 +731,14 @@ abstract class DirectorObjectForm extends DirectorForm
                 $this->translate($this->getObjectShortClassName())
             );
 
-            // dropping an import can leave a locally saved value with
-            // nothing backing it, so note which imports went away before
-            // saving below overwrites that history
-            $removedImportNames = $this->removedImportNames();
+            // dropping an import or changing the check command can leave a
+            // saved value with nothing backing it, so note where the values
+            // came from before saving below overwrites that
+            $sourceChange = $object instanceof IcingaObject ? PropertySourceChange::capture($object) : null;
 
-            $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
+            $this->getDb()->runFailSafeTransaction(function () use ($sourceChange, $object): void {
                 $this->getDbObjectStore()->store($object);
-
-                if (! empty($removedImportNames)) {
-                    PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
-                        $object,
-                        $removedImportNames,
-                        $this->getDb()
-                    );
-                }
+                $sourceChange?->apply();
             });
         } else {
             if ($this->isApiRequest()) {
@@ -1400,32 +1404,47 @@ abstract class DirectorObjectForm extends DirectorForm
             ]
         ));
 
-        $this->addImportRemovalWarning();
+        $this->addSourceChangeWarning();
 
         return $this;
     }
 
     /**
-     * Warn and ask for confirmation when removing an import would also
-     * remove a saved value that only existed because of it
+     * Warn and ask for confirmation when removing an import or changing the
+     * check command would also remove a saved value that only existed because
+     * of it
+     *
+     * @param bool $addToMainProperties Whether to add the elements to the main properties group, which exists
+     *   already when this runs after the check command element
+     *
+     * @return void
      */
-    protected function addImportRemovalWarning()
+    protected function addSourceChangeWarning(bool $addToMainProperties = false): void
     {
-        if ($this->importRemovalWarningRendered) {
+        if ($this->sourceChangeWarningRendered) {
             return;
         }
 
         $atRiskValueNames = $this->valueNamesAtRiskFromCurrentImports();
-        if (empty($atRiskValueNames)) {
+        if (empty($atRiskValueNames['imports']) && empty($atRiskValueNames['command'])) {
             return;
         }
 
-        $this->importRemovalWarningRendered = true;
+        $this->sourceChangeWarningRendered = true;
+
+        if (empty($atRiskValueNames['command'])) {
+            $label = $this->translate('Confirm import removal');
+        } elseif (empty($atRiskValueNames['imports'])) {
+            $label = $this->translate('Confirm check command change');
+        } else {
+            $label = $this->translate('Confirm import removal and check command change');
+        }
 
         $confirmKey = 'confirm_remove_imports';
+        $elementNames = [$confirmKey];
         if (! $this->getElement($confirmKey)) {
             $this->addElement('YesNo', $confirmKey, [
-                'label'    => $this->translate('Confirm import removal'),
+                'label'    => $label,
                 'required' => true,
             ]);
             $confirmElement = $this->getElement($confirmKey);
@@ -1443,40 +1462,72 @@ abstract class DirectorObjectForm extends DirectorForm
             }
         }
 
-        if (! $this->isPendingImportRemovalConfirmation()) {
-            return;
+        if ($this->isPendingImportRemovalConfirmation()) {
+            if (! empty($atRiskValueNames['imports'])) {
+                if ($this->object->getShortTableName() === 'command') {
+                    $message = $this->translate(
+                        'Removing a command template can also remove custom variables that only exist because'
+                        . ' of it, on this command, on commands that import it, or on hosts and services. This'
+                        . ' affects: %s. Are you sure you want to continue?'
+                    );
+                } else {
+                    $message = $this->translate(
+                        'Removing a template can also remove custom variables that only exist because'
+                        . ' of that template, on this object or on one that uses it as a template. This'
+                        . ' affects: %s. Are you sure you want to continue?'
+                    );
+                }
+
+                $this->addHtml(new Callout(
+                    CalloutType::Warning,
+                    Text::create(sprintf($message, implode(', ', $atRiskValueNames['imports'])))
+                ), ['name' => 'import_removal_warning']);
+                $elementNames[] = 'import_removal_warning';
+            }
+
+            if (! empty($atRiskValueNames['command'])) {
+                $this->addHtml(new Callout(
+                    CalloutType::Warning,
+                    Text::create(sprintf(
+                        $this->translate(
+                            'Changing the check command can also remove custom variables that only exist because'
+                            . ' of the previous check command, on this object or on one that uses it as a'
+                            . ' template. This affects: %s. Are you sure you want to continue?'
+                        ),
+                        implode(', ', $atRiskValueNames['command'])
+                    ))
+                ), ['name' => 'check_command_change_warning']);
+                $elementNames[] = 'check_command_change_warning';
+            }
         }
 
-        $this->addHtml(new Callout(
-            CalloutType::Warning,
-            Text::create(sprintf(
-                $this->translate(
-                    'Removing a template can also remove custom variables that only exist because'
-                    . ' of that template, on this object or on one that uses it as a template. This'
-                    . ' affects: %s. Are you sure you want to continue?'
-                ),
-                implode(', ', $atRiskValueNames)
-            ))
-        ), ['name' => 'import_removal_warning']);
+        if ($addToMainProperties && ($group = $this->getDisplayGroup('object_definition'))) {
+            foreach ($elementNames as $name) {
+                $group->addElement($this->getElement($name));
+            }
+        }
     }
 
     /**
-     * Own values that would lose their backing if the selected imports
-     * get saved as they are
+     * Names of saved values that would lose their property if the selected
+     * imports and check command get saved as they are
      *
-     * Reads imports straight from the post, not from the object, since
-     * this runs before the submission gets applied to the object.
+     * Reads imports and the check command straight from the post, not from
+     * the object, since this runs before the submission gets applied to the
+     * object.
      *
-     * @return string[]
+     * @return array{imports: string[], command: string[]} Values a lost template and a lost check command remove
      */
     protected function valueNamesAtRiskFromCurrentImports(): array
     {
         if (! $this->object instanceof IcingaObject) {
-            return [];
+            return ['imports' => [], 'command' => []];
         }
 
         $pendingImportNames = $this->pendingImportNames();
-        $importsKey = implode("\0", $pendingImportNames);
+        [$checkCommandChanges, $pendingCheckCommand] = $this->pendingCheckCommand();
+        $importsKey = implode("\0", $pendingImportNames)
+            . "\1" . ($checkCommandChanges ? (string) $pendingCheckCommand : "\2");
 
         if ($this->atRiskValueNames !== null && $this->atRiskValueNamesImportsKey === $importsKey) {
             return $this->atRiskValueNames;
@@ -1484,15 +1535,65 @@ abstract class DirectorObjectForm extends DirectorForm
 
         $this->atRiskValueNamesImportsKey = $importsKey;
 
-        return $this->atRiskValueNames = PropertyDetachmentCleaner::previewCustomVarsLostIfImportsRemoved(
+        return $this->atRiskValueNames = PropertySourceChange::previewLoss(
             $this->object,
-            $pendingImportNames
+            $pendingImportNames,
+            $checkCommandChanges,
+            $pendingCheckCommand
         );
+    }
+
+    /**
+     * Whether this submission changes the own check command, and to which one
+     *
+     * Call this only when the form's object is an {@see IcingaObject}.
+     *
+     * @return array{0: bool, 1: ?string} Whether the check command changes, and its pending name or null for none
+     */
+    protected function pendingCheckCommand(): array
+    {
+        if (
+            ! $this->hasBeenSent()
+            || ! CustomPropertySources::followsCheckCommand($this->object->getShortTableName())
+        ) {
+            return [false, null];
+        }
+
+        $post = $this->getRequest()->getPost();
+        if (! array_key_exists('check_command', $post)) {
+            return [false, null];
+        }
+
+        $pending = (string) $post['check_command'] === '' ? null : (string) $post['check_command'];
+
+        return [$pending !== $this->storedCheckCommandName(), $pending];
+    }
+
+    /**
+     * Name of the own check command as stored, null for none or for a new object
+     *
+     * Call this only when the form's object is an {@see IcingaObject}.
+     *
+     * @return ?string
+     */
+    protected function storedCheckCommandName(): ?string
+    {
+        if (! $this->object->hasBeenLoadedFromDb()) {
+            return null;
+        }
+
+        $id = $this->object->getOriginalProperty('check_command_id');
+
+        return $id === null ? null : $this->object->getRelatedObjectName('check_command', $id);
     }
 
     /**
      * The imports this object would end up with if this submission gets
      * saved as it is, or its current imports outside of a submission
+     *
+     * The imports field never holds the members of a Template Choice, they
+     * come with their own fields and are added in the order that
+     * {@see assertResolvedImports()} stores them.
      *
      * @return string[]
      */
@@ -1506,6 +1607,8 @@ abstract class DirectorObjectForm extends DirectorForm
                     $imports = [$imports];
                 }
 
+                $imports = array_merge($imports, $this->postedChoiceNames($post, $imports));
+
                 return array_values(array_filter($imports, 'strlen'));
             }
         }
@@ -1514,26 +1617,54 @@ abstract class DirectorObjectForm extends DirectorForm
     }
 
     /**
-     * Import names this object had before this request but not anymore
+     * The templates chosen in the Template Choice fields of this submission
+     *
+     * The warning can run before the choice fields are added to the form, so
+     * this reads the post of the Template Choices of the object's type then.
+     * Like {@see addChoices()}, it skips a choice whose required template is
+     * not among the given imports, since the form drops its field.
+     *
+     * @param array<string, mixed> $post
+     * @param string[]             $imports The imports of this submission, without the chosen templates
      *
      * @return string[]
      */
-    protected function removedImportNames(): array
+    protected function postedChoiceNames(array $post, array $imports): array
     {
-        if (
-            ! $this->object instanceof IcingaObject
-            || ! $this->object->supportsImports()
-            || ! $this->object->hasBeenLoadedFromDb()
-        ) {
+        if (! empty($this->choiceElements)) {
+            return $this->extractChoicesFromPost($post);
+        }
+
+        if (! $this->object->supportsChoices()) {
             return [];
         }
 
-        return array_diff($this->object->imports()->listOriginalImportNames(), $this->object->getImports());
+        $type = $this->object->getShortTableName();
+        $dba = $this->getDb()->getDbAdapter();
+        $importedIds = empty($imports) ? [] : $dba->fetchCol(
+            $dba->select()->from("icinga_$type", 'id')
+                ->where('object_name IN (?)', $imports)
+                ->where('object_type = ?', 'template')
+        );
+
+        $names = [];
+        foreach (IcingaObject::loadAllByType('TemplateChoice' . ucfirst($type), $this->getDb()) as $choice) {
+            $required = $choice->get('required_template_id');
+            if ($required !== null && ! in_array($required, $importedIds, false)) {
+                continue;
+            }
+
+            foreach ((array) ($post['choice' . $choice->get('id')] ?? []) as $name) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
     }
 
     /**
-     * Whether a value is about to be lost to a removed import and the
-     * user hasn't confirmed that yet
+     * Whether a value is about to be lost to a removed import or a changed
+     * check command and the user hasn't confirmed that yet
      */
     protected function isPendingImportRemovalConfirmation(): bool
     {
@@ -1541,7 +1672,9 @@ abstract class DirectorObjectForm extends DirectorForm
             return false;
         }
 
-        return ! empty($this->valueNamesAtRiskFromCurrentImports());
+        $atRiskValueNames = $this->valueNamesAtRiskFromCurrentImports();
+
+        return ! empty($atRiskValueNames['imports']) || ! empty($atRiskValueNames['command']);
     }
 
     protected function addDisabledElement()
@@ -1604,6 +1737,9 @@ abstract class DirectorObjectForm extends DirectorForm
         $this->getDisplayGroup('object_definition')
             // ->addElement($this->getElement('check_command_id'))
             ->addElement($this->getElement('check_command'));
+
+        // a template without anything to import has no imports element to warn with
+        $this->addSourceChangeWarning(true);
 
         return $this;
     }

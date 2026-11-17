@@ -6,7 +6,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbConnection;
-use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Session;
@@ -88,32 +87,23 @@ class ObjectCustomvarForm extends CompatForm
     }
 
     /**
-     * Get custom variables linked to the object
+     * Get the custom variables that can be added to the object
      *
-     * @return array
+     * Lists every top level variable except the ones the object attaches
+     * itself. A variable that an imported template or the check command
+     * provides can be added, the object then attaches it itself.
+     *
+     * @return array<string, string> Variable names by uuid string
      */
     protected function getCustomVars(): array
     {
-        $parents = $this->object->listAncestorIds();
         $type = $this->object->getShortTableName();
-
-        $uuids = [];
         $db = $this->db->getDbAdapter();
-        $class = DbObjectTypeRegistry::classByType($type);
-        foreach ($parents as $parent) {
-            $uuids[] = $class::load($parent, $this->object->getConnection())->get('uuid');
-        }
-
-        $uuids[] = $this->object->get('uuid');
 
         $query = $db
             ->select()
-            ->from(['dp' => 'director_property'], ['uuid' => 'dp.uuid'])
-            ->join(['iop' => 'icinga_' . $type . '_property'], 'dp.uuid = iop.property_uuid', [])
-            ->where(
-                'dp.parent_uuid IS NULL AND iop.' . $type . '_uuid IN (?)',
-                Dbutil::quoteBinaryCompat($uuids, $db)
-            );
+            ->from(['iop' => 'icinga_' . $type . '_property'], ['uuid' => 'iop.property_uuid'])
+            ->where('iop.' . $type . '_uuid = ?', DbUtil::quoteBinaryCompat($this->object->get('uuid'), $db));
 
         $properties = $db->fetchAll(
             $db->select()->from(

@@ -10,7 +10,6 @@ use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\CustomVariable\PropertyRenameOrder;
 use Icinga\Module\Director\CustomVariable\PropertySchemaDiff;
 use Icinga\Module\Director\CustomVariable\PropertyValueMigration;
-use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
@@ -33,7 +32,7 @@ class BasketSnapshotCustomVariableResolver
     /** @var BasketSnapshot */
     protected $snapshot;
 
-    /** @var DbConnection */
+    /** @var Db */
     protected $targetDb;
 
     /** @var array|null */
@@ -59,6 +58,9 @@ class BasketSnapshotCustomVariableResolver
 
     /** @var PropertyValueMigration[] one plan per root, run after every object is restored */
     protected $pendingValueMigrations = [];
+
+    /** @var array<int, array{0: IcingaObject, 1: string[]}> Restored objects and the quoted uuids they lost */
+    protected array $pendingDetachments = [];
 
     /**
      * @param BasketSnapshot|BasketSnapshot[] $objects  One or more snapshot objects to resolve
@@ -254,10 +256,6 @@ class BasketSnapshotCustomVariableResolver
             );
             $quotedExistingCustomPropertyUuids = DbUtil::quoteBinaryCompat($existingCustomPropertyUuids, $db);
 
-            // a value left over from one of these can still belong to a host that
-            // never got restored, dropping the attachment alone would strand it
-            PropertyDetachmentCleaner::removeStaleValues($new, $quotedExistingCustomPropertyUuids, $this->targetDb);
-
             $db->delete(
                 $table,
                 $db->quoteInto(
@@ -265,7 +263,32 @@ class BasketSnapshotCustomVariableResolver
                     $quotedExistingCustomPropertyUuids
                 )
             );
+
+            // a value left over from one of these can still belong to a host that
+            // never got restored, dropping the attachment alone would strand it.
+            // The cleanup checks what is still attached, so it waits for the whole restore.
+            $this->pendingDetachments[] = [$new, $quotedExistingCustomPropertyUuids];
         }
+    }
+
+    /**
+     * Remove the values of the properties that restored objects no longer attach, unless something still provides them
+     *
+     * Must run after every object in this basket has been restored. A property
+     * that the basket moves from one object to another, for example from a
+     * command to the host template that uses it, is attached again by a later
+     * type. Cleaning up any earlier would remove the values that the new
+     * attachment provides.
+     *
+     * @return void
+     */
+    public function removePendingStaleValues(): void
+    {
+        foreach ($this->pendingDetachments as [$object, $quotedPropertyUuids]) {
+            PropertyDetachmentCleaner::removeStaleValues($object, $quotedPropertyUuids, $this->targetDb);
+        }
+
+        $this->pendingDetachments = [];
     }
 
     /**
