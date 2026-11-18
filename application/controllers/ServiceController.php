@@ -304,19 +304,23 @@ class ServiceController extends ObjectController
         if ($this->set === null) {
             return;
         }
-        $setName = $this->set->getObjectName();
+        $setParams = ['uuid' => $this->set->getUniqueId()->toString()];
         $tabs = new Tabs();
         $tabs->add('set', [
             'url' => 'director/serviceset',
-            'urlParams' => ['name' => $setName],
+            'urlParams' => $setParams,
             'label' => $this->translate('ServiceSet'),
         ])->add('services', [
             'url' => 'director/serviceset/services',
-            'urlParams' => ['name' => $setName],
+            'urlParams' => $setParams,
             'label' => $this->translate('Services'),
         ]);
 
-        $this->addParamToTabs('serviceset', $setName);
+        if ($this->set->get('id') === null) {
+            $this->addParamToTabs('set', $this->set->getObjectName());
+        } else {
+            $this->addParamToTabs('set_id', $this->set->get('id'));
+        }
         $this->controls()->prependTabs($tabs);
     }
 }
