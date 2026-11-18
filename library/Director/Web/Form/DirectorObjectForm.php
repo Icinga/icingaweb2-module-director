@@ -21,11 +21,14 @@ use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\TemplateTree;
+use Icinga\Module\Director\Restriction\HostFilterRestriction;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
+use Icinga\Security\SecurityException;
 use ipl\Html\Text;
 use ipl\Web\Common\CalloutType;
 use ipl\Web\Widget\Callout;
@@ -720,6 +723,8 @@ abstract class DirectorObjectForm extends DirectorForm
                 $this->translate($this->getObjectShortClassName())
             );
 
+            $this->assertHostFilterAllows($object);
+
             // dropping an import can leave a locally saved value with
             // nothing backing it, so note which imports went away before
             // saving below overwrites that history
@@ -746,6 +751,31 @@ abstract class DirectorObjectForm extends DirectorForm
         $this->setObjectSuccessUrl();
         $this->beforeSuccessfulRedirect();
         $this->redirectOnSuccess($msg);
+    }
+
+    /**
+     * Assert that the given object still matches director/filter/hosts, if it is a host
+     *
+     * Hint: a new host has no applied groups yet, only its own groups and vars count
+     *
+     * @param DbObject $object Not stored yet
+     *
+     * @return void
+     *
+     * @throws SecurityException
+     */
+    protected function assertHostFilterAllows(DbObject $object)
+    {
+        if (! $object instanceof IcingaHost) {
+            return;
+        }
+
+        $restriction = new HostFilterRestriction($this->getDb(), $this->getAuth());
+        if (! $restriction->allowsHost($object)) {
+            throw new SecurityException(
+                'Unable to store a host with the given properties because of insufficient permissions'
+            );
+        }
     }
 
     protected function setObjectSuccessUrl()

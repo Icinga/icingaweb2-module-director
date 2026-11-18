@@ -9,6 +9,7 @@ use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
+use Icinga\Module\Director\Restriction\HostFilterRestriction;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Restriction\ObjectRestriction;
 
@@ -51,8 +52,8 @@ trait ObjectRestrictions
             return [new FilterByNameRestriction($db, $auth, $objectType)];
         }
 
-        // If the object is host or host group load HostgroupRestriction
-        return [new HostgroupRestriction($db, $auth)];
+        // If the object is host or host group load HostgroupRestriction and HostFilterRestriction
+        return [new HostgroupRestriction($db, $auth), new HostFilterRestriction($db, $auth)];
     }
 
     public function allowsObject(IcingaObject $object)

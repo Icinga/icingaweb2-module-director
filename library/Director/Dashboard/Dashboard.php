@@ -12,6 +12,7 @@ use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlString;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Restriction\HostFilterRestriction;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
@@ -282,6 +283,10 @@ abstract class Dashboard extends HtmlDocument
             case 'hostgroup':
                 $r = new HostgroupRestriction($this->getDb(), $this->getAuth());
                 $r->applyToQuery($query);
+                if ($type === 'host') {
+                    $r = new HostFilterRestriction($this->getDb(), $this->getAuth());
+                    $r->applyToQuery($query);
+                }
                 break;
         }
 
