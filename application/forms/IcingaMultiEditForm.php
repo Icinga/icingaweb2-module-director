@@ -167,6 +167,13 @@ class IcingaMultiEditForm extends DirectorObjectForm
 
     protected function storeModifiedObjects()
     {
+        // Check all of them first, nothing must be stored if one of them isn't allowed
+        foreach ($this->objects as $object) {
+            if ($object->hasBeenModified()) {
+                $this->assertHostFilterAllows($object);
+            }
+        }
+
         $modified = 0;
         $store = $this->getDbObjectStore();
         foreach ($this->objects as $object) {
