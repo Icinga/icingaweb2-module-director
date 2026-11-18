@@ -73,3 +73,20 @@ There used to be a bug in older Icinga Web 2 versions that broke automagic cache
 invalidation. So when updating a module you might be forced to do SHIFT-Reload or
 similar in your browser. Please note that proxies in the way between you and
 Icinga Web 2 might currently lead to similar issues.
+
+Config-Redeploy doesn't roll back the configuration in Director
+---------------------------------------------------------------
+
+This is just how this option is inteded to work. The redeploy doesn't roll back
+any changes you made in the Director database but it will deploy a previous
+Icinga 2 configuration that used to work.
+
+This should buy you enough time to fix the errors in your Director configuration
+without leaving you with a broken Icinga 2 configuration.
+
+If you want to restore your Director configuration to a previous version use 
+a backup (e.g. MySQL Dump) for restoring.
+
+It might be a good idea to make MySQL Dumps more often for the Director
+database than for other databases. They are small and fast and you can
+use them to restore a specific point in time.
