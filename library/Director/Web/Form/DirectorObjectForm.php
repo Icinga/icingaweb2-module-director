@@ -1311,19 +1311,23 @@ abstract class DirectorObjectForm extends DirectorForm
         }
         $enum = $this->enumAllowedTemplates();
         if (empty($enum)) {
-            if ($required) {
-                if ($this->hasBeenSent()) {
-                    $this->addError($this->translate('No template has been chosen'));
-                } else {
-                    if ($this->hasPermission(Permission::ADMIN)) {
-                        $html = $this->translate('Please define a related template first');
-                    } else {
-                        $html = $this->translate('No related template has been provided yet');
-                    }
-                    $this->addHtml('<p class="warning">' . $html . '</p>');
-                }
+            if (! $required) {
+                return $this;
             }
-            return $this;
+
+            // Keep a required Imports element on the form even when no
+            // templates are available. Otherwise a submitted form gets an
+            // unrelated top-level error without showing which field is
+            // missing. The element's own required validator gives the user
+            // a visible, contextual validation error.
+            if (! $this->hasBeenSent()) {
+                if ($this->hasPermission(Permission::ADMIN)) {
+                    $html = $this->translate('Please define a related template first');
+                } else {
+                    $html = $this->translate('No related template has been provided yet');
+                }
+                $this->addHtml('<p class="warning">' . $html . '</p>');
+            }
         }
 
         $db = $this->getDb()->getDbAdapter();
