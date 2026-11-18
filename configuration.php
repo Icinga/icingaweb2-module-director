@@ -83,6 +83,9 @@ if ($icingadbExists) {
 $this->provideRestriction(Restriction::FILTER_HOSTGROUPS, $this->translate(
     'Limit access to the given comma-separated list of hostgroups'
 ));
+$this->provideRestriction(Restriction::FILTER_HOSTS, $this->translate(
+    'Limit access to hosts matching this filter, like host.vars.team=Team_A|hostgroup.name=linux'
+));
 $this->provideRestriction(Restriction::NOTIFICATION_APPLY_FILTER_BY_NAME, $this->translate(
     'Filter available notification apply rules'
 ));
