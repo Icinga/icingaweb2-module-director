@@ -167,7 +167,8 @@ $section->add(N_('Notifications'))
 $section->add(N_('Automation'))
     ->setUrl('director/importsources')
     ->setPermission(Permission::ADMIN)
-    ->setPriority(901);
+    ->setPriority(901)
+    ->setRenderer('ImportPendingNavigationItemRenderer');
 $section->add(N_('Activity log'))
     ->setUrl('director/config/activities')
     ->setPriority(902)
