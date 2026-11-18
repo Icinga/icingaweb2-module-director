@@ -7,10 +7,12 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use gipfl\IcingaWeb2\Link;
 use Ramsey\Uuid\Uuid;
+use Zend_Db_Select as ZfSelect;
 
 class ObjectsTableService extends ObjectsTable
 {
@@ -207,6 +209,31 @@ class ObjectsTableService extends ObjectsTable
             'director/service/edit',
             $params
         );
+    }
+
+    /**
+     * Inherited services belong to the displayed host, not to the template
+     * defining them. Check access to the displayed host before looking up its
+     * parents. Skipping the parent restriction without this check would leak
+     * inherited services on hosts outside the user's allowed hostgroups.
+     */
+    protected function applyRestrictions(ZfSelect $query)
+    {
+        if ($this->inheritedBy === null) {
+            return parent::applyRestrictions($query);
+        }
+
+        foreach ($this->getRestrictions() as $restriction) {
+            if ($restriction instanceof HostgroupRestriction) {
+                if (! $restriction->allowsHost($this->inheritedBy)) {
+                    $query->where('(1 = 0)');
+                }
+            } else {
+                $restriction->applyToQuery($query);
+            }
+        }
+
+        return $query;
     }
 
     public function prepareQuery()
