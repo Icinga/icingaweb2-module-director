@@ -11,6 +11,7 @@ use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
+use Icinga\Module\Director\Restriction\HostFilterRestriction;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Restriction\ObjectRestriction;
 use gipfl\IcingaWeb2\Link;
@@ -235,7 +236,7 @@ class ObjectsTable extends ZfQueryBasedTable
         if ($dummyObject->isApplyRule()) {
             return [new FilterByNameRestriction($db, $this->auth, $type)];
         } else {
-            return [new HostgroupRestriction($db, $this->auth)];
+            return [new HostgroupRestriction($db, $this->auth), new HostFilterRestriction($db, $this->auth)];
         }
     }
 
