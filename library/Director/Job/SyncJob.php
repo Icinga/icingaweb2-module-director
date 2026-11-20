@@ -41,7 +41,9 @@ class SyncJob extends JobHook
             'apply_changes' => $this->getSetting('apply_changes') === 'y'
         ];
         $id = $this->getSetting('rule_id');
-        if ($id !== '__ALL__') {
+        if ($id === '__ALL__') {
+            $settings['rule_id'] = $id;
+        } else {
             $settings['rule'] = SyncRule::loadWithAutoIncId((int) $id, $this->db())
                 ->get('rule_name');
         }

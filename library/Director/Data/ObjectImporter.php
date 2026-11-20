@@ -119,13 +119,13 @@ class ObjectImporter
                 unset($settings->source);
             }
             $rule = $settings->rule ?? null;
-            if ($rule) {
+            if ($rule || ($settings->rule_id ?? null) === '__ALL__') {
                 if (! isset($settings->rule_id)) {
                     $settings->rule_id = SyncRule::load($rule, $this->db)->get('id');
                     unset($settings->rule);
                 }
 
-                $settings->apply_changes = DbDataFormatter::normalizeBoolean($settings->apply_changes);
+                $settings->apply_changes = DbDataFormatter::normalizeBoolean($settings->apply_changes ?? null);
             }
         }
 
