@@ -43,9 +43,8 @@ class ImportJob extends JobHook
                     $id,
                     $this->db()
                 )->get('source_name');
+                unset($settings['source_id']);
             }
-
-            unset($settings['source_id']);
         }
 
         return $settings;
