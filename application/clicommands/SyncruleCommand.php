@@ -186,7 +186,7 @@ class SyncruleCommand extends Command
             return SyncRule::loadWithAutoIncId($id, $this->db());
         }
 
-        return SyncRule::loadWithAutoIncId($name, $this->db());
+        return SyncRule::load($name, $this->db());
     }
 
     /**
