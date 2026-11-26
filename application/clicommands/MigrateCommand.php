@@ -204,6 +204,14 @@ class MigrateCommand extends Command
         echo "Summary:\n";
         printf("Total number of datafields migrated: %d\n", $totalMigrated);
         printf("Total number of datafields skipped: %d\n", $totalSkipped);
+
+        // Fields migrated by an earlier run are never touched here, not even with --delete
+        $leftForCleanup = ! empty($existingCustomProperties)
+            || ($totalMigrated > 0 && ! $dryRun && ! $delete);
+
+        if ($leftForCleanup) {
+            echo "Run 'icingacli director migrate cleanupDatafields' to remove the migrated datafields\n";
+        }
     }
 
     /**

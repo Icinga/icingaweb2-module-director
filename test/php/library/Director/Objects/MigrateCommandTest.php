@@ -1076,6 +1076,57 @@ class MigrateCommandTest extends BaseTestCase
         );
     }
 
+    public function testDatafieldsPointsAtCleanupAfterAPlainMigration(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $dryRun = (new TestableMigrateCommand($db, ['--dry-run']))->runDatafields();
+        $this->assertStringNotContainsString('migrate cleanupDatafields', $dryRun);
+
+        $output = (new TestableMigrateCommand($db))->runDatafields();
+        $this->assertStringContainsString('migrate cleanupDatafields', $output);
+    }
+
+    public function testDatafieldsDoesNotPointAtCleanupWithDeleteOrWhenNothingMigrated(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $withDelete = (new TestableMigrateCommand($db, ['--delete']))->runDatafields();
+        $this->assertStringNotContainsString('migrate cleanupDatafields', $withDelete);
+
+        // Everything is migrated and deleted by now, so a rerun has nothing to do
+        $again = (new TestableMigrateCommand($db))->runDatafields();
+        $this->assertStringNotContainsString('migrate cleanupDatafields', $again);
+    }
+
+    public function testDatafieldsPointsAtCleanupWhenFieldsWereMigratedEarlier(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        // Nothing new to migrate, but the leftovers from the earlier run are still there
+        $dryRun = (new TestableMigrateCommand($db, ['--dry-run', '--delete']))->runDatafields();
+        $this->assertStringContainsString('migrate cleanupDatafields', $dryRun);
+
+        $withDelete = (new TestableMigrateCommand($db, ['--delete']))->runDatafields();
+        $this->assertStringContainsString('Total number of datafields migrated: 0', $withDelete);
+        $this->assertStringContainsString('migrate cleanupDatafields', $withDelete);
+    }
+
     public function testCleanupDeletesDatafieldsMigratedEarlier(): void
     {
         if ($this->skipForMissingDb()) {
