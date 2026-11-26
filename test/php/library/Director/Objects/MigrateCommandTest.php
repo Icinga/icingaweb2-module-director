@@ -58,6 +58,8 @@ class MigrateCommandTest extends BaseTestCase
 
     private const LIST_NAME = self::PREFIX . 'migrate_list';
 
+    private const OTHER_LIST_NAME = self::PREFIX . 'other_list';
+
     private const CAT_NAME  = self::PREFIX . 'migrate_category';
 
     private const HOST_NAME = self::PREFIX . 'binding_host';
@@ -1074,6 +1076,430 @@ class MigrateCommandTest extends BaseTestCase
         );
     }
 
+    public function testCleanupDeletesDatafieldsMigratedEarlier(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        foreach (self::MIGRATABLE as $varname) {
+            $this->assertFalse($this->datafieldExists($db, $varname), "Cleanup must remove datafield '$varname'");
+            $this->assertTrue($this->propertyExists($db, $varname), "Cleanup must keep property '$varname'");
+        }
+
+        $this->assertStringContainsString(
+            'Total number of datafields deleted: ' . count(self::MIGRATABLE),
+            $output
+        );
+        $this->assertStringContainsString('Total number of datafields kept: 0', $output);
+    }
+
+    public function testCleanupKeepsDatafieldsThatCanNotBeMigrated(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertTrue($this->datafieldExists($db, self::VAR_SQL_QUERY), 'Unsupported type must stay');
+        $this->assertTrue($this->datafieldExists($db, self::VAR_DUP), 'Duplicate names must stay');
+    }
+
+    public function testCleanupDryRunWritesNothing(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        $output = (new TestableMigrateCommand($db, ['--dry-run', '--verbose']))->runCleanupDatafields();
+
+        $this->assertStringContainsString('that would be deleted: ' . count(self::MIGRATABLE), $output);
+        $this->assertStringContainsString("[*] Would delete datafield '" . self::VAR_ENV . "'", $output);
+        $this->assertStringNotContainsString('[+] Deleted', $output);
+
+        foreach (self::MIGRATABLE as $varname) {
+            $this->assertTrue($this->datafieldExists($db, $varname), "Dry run must keep datafield '$varname'");
+        }
+    }
+
+    public function testCleanupVerboseListsDeletedDatafields(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        $output = (new TestableMigrateCommand($db, ['--verbose']))->runCleanupDatafields();
+
+        $this->assertStringContainsString("[+] Deleted datafield '" . self::VAR_ENV . "'", $output);
+    }
+
+    public function testCleanupListsNothingWithoutVerbose(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringNotContainsString('[+] Deleted', $output);
+    }
+
+    public function testCleanupRemovesTheLegacyBindingsOfDeletedDatafields(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db, true);
+        $dba = $db->getDbAdapter();
+        $before = $this->hostFieldCount($db);
+
+        (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $after = $this->hostFieldCount($db);
+        $this->assertSame(2, $before);
+        $this->assertSame(0, $after, 'The legacy bindings must go together with their datafields');
+        $this->assertSame(2, $this->hostPropertyCount($db), 'The new bindings must stay');
+    }
+
+    public function testCleanupKeepsDatafieldWhenABindingWasNotCarriedOver(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db, true);
+
+        // Drop the new binding of one field, as if it never got migrated
+        $dba = $db->getDbAdapter();
+        $dba->delete(
+            'icinga_host_property',
+            'property_uuid IN (SELECT uuid FROM director_property WHERE key_name = '
+            . $dba->quote(self::VAR_CHECK_INTERVAL) . ')'
+        );
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringContainsString(
+            "Keeping datafield '" . self::VAR_CHECK_INTERVAL . "', its host binding on '" . self::HOST_NAME
+            . "' was not carried over to the property",
+            $output
+        );
+        $this->assertTrue($this->datafieldExists($db, self::VAR_CHECK_INTERVAL));
+        $this->assertFalse($this->datafieldExists($db, self::VAR_ENV), 'Datafields that are fine must still go');
+    }
+
+    public function testCleanupDeletesDatafieldWhenOnlyTheRequiredFlagDiffers(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db, true);
+
+        // The legacy binding of the check interval is optional, make the new one mandatory
+        $dba = $db->getDbAdapter();
+        $propertyFilter = 'property_uuid IN (SELECT uuid FROM director_property WHERE key_name = '
+            . $dba->quote(self::VAR_CHECK_INTERVAL) . ')';
+        $dba->update('icinga_host_property', ['required' => 'y'], $propertyFilter);
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringNotContainsString('Keeping', $output);
+        $this->assertStringContainsString(
+            "[i] Datafield '" . self::VAR_CHECK_INTERVAL . "' is optional on host '" . self::HOST_NAME
+            . "' but its property is required, the property's setting is kept",
+            $output
+        );
+        $this->assertStringNotContainsString(
+            "[i] Datafield '" . self::VAR_ENV . "'",
+            $output,
+            'Only bindings with a changed flag are reported'
+        );
+        $this->assertFalse($this->datafieldExists($db, self::VAR_CHECK_INTERVAL));
+        $this->assertSame(
+            'y',
+            $dba->fetchOne($dba->select()->from('icinga_host_property', ['required'])->where($propertyFilter)),
+            'The newer flag on the property must stay as it is'
+        );
+    }
+
+    public function testCleanupDryRunNoticesARequiredFieldTurningOptional(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db, true);
+
+        // The legacy binding of env is mandatory, someone made the new one optional later
+        $dba = $db->getDbAdapter();
+        $dba->update(
+            'icinga_host_property',
+            ['required' => 'n'],
+            'property_uuid IN (SELECT uuid FROM director_property WHERE key_name = '
+            . $dba->quote(self::VAR_ENV) . ')'
+        );
+
+        $output = (new TestableMigrateCommand($db, ['--dry-run']))->runCleanupDatafields();
+
+        $this->assertStringContainsString(
+            "[i] Datafield '" . self::VAR_ENV . "' is required on host '" . self::HOST_NAME
+            . "' but its property is optional, the property's setting is kept",
+            $output
+        );
+        $this->assertTrue($this->datafieldExists($db, self::VAR_ENV), 'A dry run must not delete anything');
+    }
+
+    public function testCleanupKeepsDatafieldWhenThePropertyHasADifferentType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        // A hand made property that only shares the name
+        $dba = $db->getDbAdapter();
+        $dba->update(
+            'director_property',
+            ['value_type' => 'string'],
+            $dba->quoteInto('key_name = ?', self::VAR_CHECK_INTERVAL)
+        );
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringContainsString(
+            "Keeping datafield '" . self::VAR_CHECK_INTERVAL . "', its property is a 'string'"
+            . " but the datafield would migrate as 'number'",
+            $output
+        );
+        $this->assertTrue($this->datafieldExists($db, self::VAR_CHECK_INTERVAL));
+    }
+
+    public function testCleanupMatchesNamesRegardlessOfCase(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        $dba = $db->getDbAdapter();
+        $dba->update(
+            'director_property',
+            ['key_name' => strtoupper(self::VAR_ENV)],
+            $dba->quoteInto('key_name = ?', self::VAR_ENV)
+        );
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringNotContainsString('Keeping', $output);
+        $this->assertFalse($this->datafieldExists($db, self::VAR_ENV));
+    }
+
+    public function testCleanupKeepsDatafieldLinkedToADifferentDatalist(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        $other = DirectorDatalist::create(['list_name' => self::OTHER_LIST_NAME, 'owner' => 'test'], $db);
+        $other->store();
+        $dba = $db->getDbAdapter();
+        $dba->update(
+            'director_property_datalist',
+            ['list_uuid' => DbUtil::quoteBinaryCompat($other->get('uuid'), $dba)],
+            'property_uuid = ' . $this->quotedPropertyUuid($db, self::VAR_ENV_CHOICES)
+        );
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringContainsString(
+            "Keeping datafield '" . self::VAR_ENV_CHOICES . "', its property is linked to a different datalist",
+            $output
+        );
+        $this->assertTrue($this->datafieldExists($db, self::VAR_ENV_CHOICES));
+        $this->assertFalse($this->datafieldExists($db, self::VAR_ENV_SUGGEST));
+    }
+
+    public function testCleanupKeepsDatafieldWhenTheItemTypeDiffers(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        $dba = $db->getDbAdapter();
+        $dba->update(
+            'director_property',
+            ['value_type' => 'number'],
+            'parent_uuid = ' . $this->quotedPropertyUuid($db, self::VAR_HTTP_VHOSTS)
+        );
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringContainsString(
+            "Keeping datafield '" . self::VAR_HTTP_VHOSTS . "', its property holds a different kind of items",
+            $output
+        );
+        $this->assertTrue($this->datafieldExists($db, self::VAR_HTTP_VHOSTS));
+    }
+
+    public function testCleanupLeavesAFilteredDatafieldThatWasNeverMigrated(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+        $this->createHostFieldBinding($db);
+
+        // No lossy option, so the filtered field is held back and gets no property
+        (new TestableMigrateCommand($db))->runDatafields();
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertTrue($this->datafieldExists($db, self::VAR_ENV), 'A field that was never migrated must stay');
+        $this->assertFalse($this->propertyExists($db, self::VAR_ENV));
+        $this->assertStringNotContainsString("'" . self::VAR_ENV . "'", $output);
+        $this->assertFalse($this->datafieldExists($db, self::VAR_CHECK_INTERVAL));
+    }
+
+    public function testCleanupWarnsThatAVarFilterIsLost(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db, true);
+
+        $dryRun = (new TestableMigrateCommand($db, ['--dry-run']))->runCleanupDatafields();
+        $this->assertStringContainsString(
+            "[!] Datafield '" . self::VAR_ENV . "' has a var_filter on its icinga_host binding",
+            $dryRun
+        );
+        $this->assertTrue($this->datafieldExists($db, self::VAR_ENV));
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+        $this->assertStringContainsString(
+            "[!] Datafield '" . self::VAR_ENV . "' has a var_filter on its icinga_host binding",
+            $output
+        );
+        $this->assertStringNotContainsString(
+            "Datafield '" . self::VAR_CHECK_INTERVAL . "' has a var_filter",
+            $output,
+            'Only bindings with a filter are reported'
+        );
+        $this->assertFalse($this->datafieldExists($db, self::VAR_ENV), 'The warning must not block the delete');
+    }
+
+    public function testCleanupWithNothingToDoPrintsZeros(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringContainsString('Total number of datafields deleted: 0', $output);
+        $this->assertStringContainsString('Total number of datafields kept: 0', $output);
+        $this->assertTrue($this->datafieldExists($db, self::VAR_ENV));
+    }
+
+    public function testCleanupTwiceMakesTheSecondRunANoOp(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db);
+
+        (new TestableMigrateCommand($db))->runCleanupDatafields();
+        $output = (new TestableMigrateCommand($db))->runCleanupDatafields();
+
+        $this->assertStringContainsString('Total number of datafields deleted: 0', $output);
+        $this->assertStringContainsString('Total number of datafields kept: 0', $output);
+    }
+
+    public function testCleanupRollsBackWhenTheDeleteFailsHalfway(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->migrateEarlier($db, true);
+        $dba = $db->getDbAdapter();
+
+        // A table pointing at one datafield makes the final delete fail, after the bindings are gone
+        $idType = $db->isPgsql() ? 'integer' : 'INT(10) UNSIGNED';
+        $dba->query(
+            "CREATE TABLE director_cleanup_blocker (datafield_id $idType NOT NULL"
+            . ' REFERENCES director_datafield (id))'
+        );
+
+        try {
+            $dba->insert('director_cleanup_blocker', [
+                'datafield_id' => $dba->fetchOne(
+                    $dba->select()->from('director_datafield', ['id'])
+                        ->where('varname = ?', self::VAR_CHECK_INTERVAL)
+                ),
+            ]);
+
+            try {
+                (new TestableMigrateCommand($db))->runCleanupDatafields();
+                $this->fail('Expected the delete to fail on the blocking row');
+            } catch (\Throwable $e) {
+                $this->assertInstanceOf(\Zend_Db_Exception::class, $e);
+            }
+
+            $this->assertFalse($dba->getConnection()->inTransaction(), 'The transaction must be rolled back');
+            foreach (self::MIGRATABLE as $varname) {
+                $this->assertTrue($this->datafieldExists($db, $varname), "Datafield '$varname' must survive");
+            }
+
+            $count = $this->hostFieldCount($db);
+            $this->assertSame(2, $count, 'Bindings deleted before the failure must be restored');
+        } finally {
+            $dba->query('DROP TABLE director_cleanup_blocker');
+        }
+    }
+
     protected function tearDown(): void
     {
         if ($this->hasDb()) {
@@ -1262,6 +1688,80 @@ class MigrateCommandTest extends BaseTestCase
         return $host;
     }
 
+    /**
+     * Migrate the fixtures without deleting anything, like a run from before the cleanup existed
+     */
+    private function migrateEarlier(Db $db, bool $withBindings = false): void
+    {
+        $this->createAllFixtures($db);
+        if ($withBindings) {
+            $this->createHostFieldBinding($db);
+        }
+
+        (new TestableMigrateCommand($db, ['--allow-lossy-filters']))->runDatafields();
+    }
+
+    private function datafieldExists(Db $db, string $varname): bool
+    {
+        $dba = $db->getDbAdapter();
+
+        return (int) $dba->fetchOne(
+            $dba->select()->from('director_datafield', ['cnt' => 'COUNT(*)'])->where('varname = ?', $varname)
+        ) > 0;
+    }
+
+    private function propertyExists(Db $db, string $varname): bool
+    {
+        $dba = $db->getDbAdapter();
+
+        return (int) $dba->fetchOne(
+            $dba->select()->from('director_property', ['cnt' => 'COUNT(*)'])->where('key_name = ?', $varname)
+        ) > 0;
+    }
+
+    /**
+     * Count the legacy bindings of the test host, other tests leave bindings of their own behind
+     */
+    private function hostFieldCount(Db $db): int
+    {
+        $dba = $db->getDbAdapter();
+
+        return (int) $dba->fetchOne(
+            $dba->select()->from(['hf' => 'icinga_host_field'], ['cnt' => 'COUNT(*)'])
+                ->join(['h' => 'icinga_host'], 'h.id = hf.host_id', [])
+                ->where('h.object_name = ?', self::HOST_NAME)
+        );
+    }
+
+    /**
+     * Count the new bindings of the test host
+     */
+    private function hostPropertyCount(Db $db): int
+    {
+        $dba = $db->getDbAdapter();
+
+        return (int) $dba->fetchOne(
+            $dba->select()->from(['hp' => 'icinga_host_property'], ['cnt' => 'COUNT(*)'])
+                ->join(['h' => 'icinga_host'], 'h.uuid = hp.host_uuid', [])
+                ->where('h.object_name = ?', self::HOST_NAME)
+        );
+    }
+
+    /**
+     * The uuid of a top level property, quoted so it works on MySQL and PostgreSQL
+     */
+    private function quotedPropertyUuid(Db $db, string $varname)
+    {
+        $dba = $db->getDbAdapter();
+        $uuid = $dba->fetchOne(
+            $dba->select()->from('director_property', ['uuid'])
+                ->where('key_name = ?', $varname)
+                ->where('parent_uuid IS NULL')
+        );
+
+        return DbUtil::quoteBinaryCompat(DbUtil::binaryResult($uuid), $dba);
+    }
+
     private function deleteTestDatafields(Db $db): void
     {
         $dba = $db->getDbAdapter();
@@ -1311,8 +1811,10 @@ class MigrateCommandTest extends BaseTestCase
 
     private function deleteTestDatalist(Db $db): void
     {
-        if (DirectorDatalist::exists(self::LIST_NAME, $db)) {
-            DirectorDatalist::load(self::LIST_NAME, $db)->delete();
+        foreach ([self::LIST_NAME, self::OTHER_LIST_NAME] as $listName) {
+            if (DirectorDatalist::exists($listName, $db)) {
+                DirectorDatalist::load($listName, $db)->delete();
+            }
         }
     }
 }

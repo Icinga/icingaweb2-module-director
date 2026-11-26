@@ -34,4 +34,18 @@ class TestableMigrateCommand extends MigrateCommand
 
         return (string) ob_get_clean();
     }
+
+    public function runCleanupDatafields(): string
+    {
+        ob_start();
+
+        // Close the buffer even when the action throws, so a failing run does not leak it
+        try {
+            $this->cleanupDatafieldsAction();
+
+            return (string) ob_get_contents();
+        } finally {
+            ob_end_clean();
+        }
+    }
 }
