@@ -617,13 +617,14 @@ class CustomVariablesForm extends CompatForm
                 }
             } else {
                 // A tampered request can trick the form into skipping its own validator,
-                // so check strict datalist values again here, like the REST API does. Only
-                // do it when the value actually changed, an old value that's no longer
-                // valid shouldn't block someone from editing an unrelated field.
-                if ($property['value_type'] === 'datalist-strict' && $value !== ($property['value'] ?? null)) {
-                    CustomVariableValueValidator::assertDatalistValueAllowed(
+                // so check strict datalist and director-object values again here, like the
+                // REST API does. Only do it when the value actually changed, an old value
+                // that's no longer valid shouldn't block someone from editing an unrelated field.
+                if ($value !== ($property['value'] ?? null)) {
+                    CustomVariableValueValidator::assertValueAllowed(
                         $key,
                         $value,
+                        $property['value_type'],
                         $propertyUuid,
                         $this->object->getConnection()
                     );

@@ -351,6 +351,10 @@ blocked by a role restriction is rejected the same way as a value that
 isn't in the list at all, so make sure any automation user has the right
 role before it writes such a property.
 
+A `director-object` property only accepts names of existing objects of its
+object type, scalar or array depending on its item type. Templates are not
+accepted.
+
 #### Setting a dictionary variable (`fixed-dictionary`)
 
     POST director/host/variables?name=apitest

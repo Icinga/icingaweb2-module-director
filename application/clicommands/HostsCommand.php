@@ -6,6 +6,7 @@
 namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\ObjectsCommand;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -81,6 +82,9 @@ class HostsCommand extends ObjectsCommand
             'sensitive',
             'number',
             'bool',
+            'datalist-strict',
+            'datalist-non-strict',
+            DirectorObjectReference::VALUE_TYPE,
             'fixed-array',
             'dynamic-array',
             'fixed-dictionary',

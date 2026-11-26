@@ -5,6 +5,7 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -34,6 +35,14 @@ class MigrateCommandTest extends BaseTestCase
     private const VAR_ENV_CHOICES_DEFAULT_BEHAVIOR = self::PREFIX . 'env_choices_default_behavior';
 
     private const VAR_ENV_CHOICES_NO_DATA_TYPE = self::PREFIX . 'env_choices_no_data_type';
+
+    // DirectorObject datafields, a list of users and a single host
+    private const VAR_NOTIFY_USERS = self::PREFIX . 'notify_users';
+
+    private const VAR_UPSTREAM_HOST = self::PREFIX . 'upstream_host';
+
+    // DirectorObject datafield without an object type, nothing it could reference
+    private const VAR_OBJECT_NO_TYPE = self::PREFIX . 'object_no_type';
 
     // Non-migratable datafield varnames
     private const VAR_SQL_QUERY    = self::PREFIX . 'sql_query_field';
@@ -72,6 +81,8 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_ENV_CHOICES_DEFAULT_BEHAVIOR,
         self::VAR_ENV_CHOICES_NO_DATA_TYPE,
         self::VAR_CATEGORIZED,
+        self::VAR_NOTIFY_USERS,
+        self::VAR_UPSTREAM_HOST,
     ];
 
     private const ALL_TEST_VARS = [
@@ -92,6 +103,9 @@ class MigrateCommandTest extends BaseTestCase
         self::VAR_CASE_EXISTING,
         self::PREFIX . 'tls_cert_path',
         self::PREFIX . 'tls_key_path',
+        self::VAR_NOTIFY_USERS,
+        self::VAR_UPSTREAM_HOST,
+        self::VAR_OBJECT_NO_TYPE,
     ];
 
     public function testDryRunPrintsWhatWouldMigrateWithoutWriting(): void
@@ -302,6 +316,65 @@ class MigrateCommandTest extends BaseTestCase
             $linkedListName,
             'migrating a legacy datalist-strict datafield must link the new property to its datalist'
         );
+    }
+
+    public function testDirectorObjectArrayMigratesWithObjectTypeAndArrayItemType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        [$valueType, $objectType, $itemType] = $this->fetchObjectPropertyInfo($db, self::VAR_NOTIFY_USERS);
+
+        $this->assertSame(DirectorObjectReference::VALUE_TYPE, $valueType);
+        $this->assertSame('user', $objectType, 'the object type must carry over to the new property');
+        $this->assertSame('dynamic-array', $itemType, 'a DirectorObject field of data_type array must hold a list');
+    }
+
+    public function testDirectorObjectStringMigratesWithStringItemType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        [$valueType, $objectType, $itemType] = $this->fetchObjectPropertyInfo($db, self::VAR_UPSTREAM_HOST);
+
+        $this->assertSame(DirectorObjectReference::VALUE_TYPE, $valueType);
+        $this->assertSame('host', $objectType);
+        $this->assertSame('string', $itemType);
+    }
+
+    public function testDirectorObjectWithoutObjectTypeIsSkipped(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->createAllFixtures($db);
+
+        $cmd = new TestableMigrateCommand($db);
+        $cmd->runDatafields();
+
+        $dba = $db->getDbAdapter();
+        $count = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['cnt' => 'COUNT(*)'])
+                ->where('key_name = ?', self::VAR_OBJECT_NO_TYPE)
+        );
+        $this->assertEquals(0, (int) $count, 'a DirectorObject field without an object type must be left alone');
     }
 
     public function testDeleteOptionRemovesMigratedDatafields(): void
@@ -1229,6 +1302,60 @@ class MigrateCommandTest extends BaseTestCase
             'caption'  => 'Time Field',
             'datatype' => 'Icinga\Module\Director\DataType\DataTypeTime',
         ], $db)->store();
+
+        // 11. notify_users — DirectorObject, a list of users
+        $field = DirectorDatafield::create([
+            'varname'  => self::VAR_NOTIFY_USERS,
+            'caption'  => 'Notify Users',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeDirectorObject',
+        ], $db);
+        $field->set('icinga_object_type', 'user');
+        $field->set('data_type', 'array');
+        $field->store();
+
+        // 12. upstream_host — DirectorObject, a single host
+        $field = DirectorDatafield::create([
+            'varname'  => self::VAR_UPSTREAM_HOST,
+            'caption'  => 'Upstream Host',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeDirectorObject',
+        ], $db);
+        $field->set('icinga_object_type', 'host');
+        $field->set('data_type', 'string');
+        $field->store();
+
+        // 13. object_no_type — DirectorObject without an object type
+        DirectorDatafield::create([
+            'varname'  => self::VAR_OBJECT_NO_TYPE,
+            'caption'  => 'Object Without Type',
+            'datatype' => 'Icinga\Module\Director\DataType\DataTypeDirectorObject',
+        ], $db)->store();
+    }
+
+    /**
+     * Fetch value type, referenced object type and item type of the migrated property
+     *
+     * @return array{0: ?string, 1: ?string, 2: ?string}
+     */
+    private function fetchObjectPropertyInfo(Db $db, string $varname): array
+    {
+        $dba = $db->getDbAdapter();
+        $property = $dba->fetchRow(
+            $dba->select()->from('director_property', ['uuid', 'value_type'])->where('key_name = ?', $varname)
+        );
+        $this->assertNotFalse($property, "property '$varname' must be created");
+
+        $uuid = DbUtil::binaryResult($property->uuid);
+        $itemType = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['value_type'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($uuid, $dba))
+        );
+
+        return [
+            $property->value_type,
+            DirectorObjectReference::fetchObjectType($dba, $uuid),
+            $itemType === false ? null : $itemType
+        ];
     }
 
     private function createHostFieldBinding(Db $db): IcingaHost

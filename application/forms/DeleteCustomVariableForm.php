@@ -7,6 +7,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Web\Widget\CustomVarObjectList;
@@ -219,6 +220,7 @@ class DeleteCustomVariableForm extends CompatForm
             &$keptValues
         ) {
             $db->delete('director_property_datalist', Filter::where('property_uuid', $quotedAllUuids));
+            $db->delete(DirectorObjectReference::TABLE, Filter::where('property_uuid', $quotedAllUuids));
 
             $keptValues = max(
                 $cleaner->removeObjectCustomVars($prop, $this->parent),

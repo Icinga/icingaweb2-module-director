@@ -32,7 +32,8 @@ CREATE TYPE enum_property_value_type AS ENUM(
   'fixed-dictionary',
   'dynamic-dictionary',
   'datalist-strict',
-  'datalist-non-strict'
+  'datalist-non-strict',
+  'director-object'
 );
 
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
@@ -380,6 +381,17 @@ CREATE TABLE director_property_datalist (
       ON DELETE CASCADE
       ON UPDATE CASCADE,
   CONSTRAINT director_property_list_property
+    FOREIGN KEY (property_uuid)
+      REFERENCES director_property (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
+CREATE TABLE director_property_object (
+  property_uuid bytea CHECK(LENGTH(property_uuid) = 16) NOT NULL,
+  object_type character varying(32) NOT NULL,
+  PRIMARY KEY (property_uuid),
+  CONSTRAINT director_property_object_property
     FOREIGN KEY (property_uuid)
       REFERENCES director_property (uuid)
       ON DELETE CASCADE
@@ -3024,4 +3036,4 @@ CREATE INDEX usergroup_user_resolved_usergroup ON icinga_usergroup_user_resolved
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (193, NOW());
+  VALUES (196, NOW());

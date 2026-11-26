@@ -11,6 +11,7 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
@@ -447,6 +448,7 @@ class CustomVarRenderer extends CustomVarRendererHook
                 'bool',
                 'datalist-strict',
                 'datalist-non-strict',
+                DirectorObjectReference::VALUE_TYPE,
                 'dynamic-array',
                 'fixed-dictionary',
                 'dynamic-dictionary'
@@ -572,6 +574,63 @@ class CustomVarRenderer extends CustomVarRendererHook
         }
 
         $this->loadDatalistEntries($dbAdapter, $allProperties);
+        $this->loadDirectorObjectEntries($dbAdapter, $allProperties);
+    }
+
+    /**
+     * Load display names for every director-object property in $properties
+     *
+     * Goes into the same caption map as a datalist, keyed the same way, so a referenced
+     * object shows up with its display name. Only objects whose display name differs
+     * from their name need an entry, the plain value is shown for all others anyway.
+     *
+     * @param Zend_Db_Adapter_Abstract|Adapter $dbAdapter
+     * @param array $properties Uuid (raw binary) => ['key_name' => ..., 'value_type' => ..., 'scope' => ?string]
+     *
+     * @return void
+     */
+    private function loadDirectorObjectEntries($dbAdapter, array $properties): void
+    {
+        $objectProperties = array_filter(
+            $properties,
+            fn (array $property) => $property['value_type'] === DirectorObjectReference::VALUE_TYPE
+        );
+
+        if (empty($objectProperties)) {
+            return;
+        }
+
+        $query = $dbAdapter->select()
+            ->from(DirectorObjectReference::TABLE, ['property_uuid', 'object_type'])
+            ->where(
+                'property_uuid IN (?)',
+                DbUtil::quoteBinaryCompat(array_keys($objectProperties), $dbAdapter)
+            );
+
+        $objectsByType = [];
+        foreach ($dbAdapter->fetchAll($query, [], PDO::FETCH_ASSOC) as $row) {
+            $row = DbUtil::normalizeRow($row);
+            $property = $objectProperties[$row['property_uuid']] ?? null;
+            if ($property === null || ! DirectorObjectReference::isValidObjectType($row['object_type'])) {
+                continue;
+            }
+
+            $objectType = $row['object_type'];
+            if (! isset($objectsByType[$objectType])) {
+                $objectsByType[$objectType] = array_filter(
+                    DirectorObjectReference::enumObjects($dbAdapter, $objectType),
+                    fn ($displayName, $name) => $displayName !== (string) $name,
+                    ARRAY_FILTER_USE_BOTH
+                );
+            }
+
+            if (empty($objectsByType[$objectType])) {
+                continue;
+            }
+
+            $scope = $this->scopeKey($property['scope'], $property['key_name']);
+            $this->datalistMaps[$scope] = $objectsByType[$objectType] + ($this->datalistMaps[$scope] ?? []);
+        }
     }
 
     /**

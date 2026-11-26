@@ -139,6 +139,7 @@ class BasketDiff
         $customVariables = $object->customVariables ?? null;
         $items = $object->items ?? null;
         $datalist = $object->datalist ?? null;
+        $objectType = $object->object_type ?? null;
         $reExport = $this->exporter->export(
             $this->importer->import(BasketSnapshot::getClassForType($type), $object)
         );
@@ -167,6 +168,12 @@ class BasketDiff
             unset($reExport->datalist);
         } else {
             $reExport->datalist = $datalist;
+        }
+
+        if ($objectType === null) {
+            unset($reExport->object_type);
+        } else {
+            $reExport->object_type = $objectType;
         }
 
         CompareBasketObject::normalize($reExport);

@@ -10,6 +10,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\Exception\NestingError;
@@ -734,7 +735,8 @@ class IcingaServiceForm extends DirectorObjectForm
             ->where('dp.parent_uuid IS NULL')
             ->where(
                 "dp.value_type IN ('dynamic-array', 'dynamic-dictionary')"
-                . " OR (dp.value_type IN ('datalist-strict', 'datalist-non-strict') AND item.uuid IS NOT NULL)"
+                . " OR (dp.value_type IN ('datalist-strict', 'datalist-non-strict', '"
+                . DirectorObjectReference::VALUE_TYPE . "') AND item.uuid IS NOT NULL)"
             );
 
         $vars = $this->db->getDbAdapter()->fetchAll($query);

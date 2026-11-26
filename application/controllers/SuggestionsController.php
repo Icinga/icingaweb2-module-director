@@ -7,6 +7,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Application\Config;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatalistEntry;
 use ipl\Stdlib\Filter as iplFilter;
@@ -17,7 +18,7 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * Serves autocomplete suggestions for datalist entries used as property values
+ * Serves autocomplete suggestions for datalist entries and Director objects used as property values
  */
 class SuggestionsController extends CompatController
 {
@@ -78,6 +79,47 @@ class SuggestionsController extends CompatController
                 yield [
                     'search' => $row['entry_name'],
                     'label'  => $row['entry_value'],
+                    'class'  => 'list-entry'
+                ];
+            }
+        })());
+
+        $this->getDocument()->addHtml($suggestions->forRequest($this->getServerRequest()));
+    }
+
+    /**
+     * List the Director objects the director-object property given by uuid can reference, for autocomplete
+     *
+     * exclude is a comma separated list of object names to leave out, so an
+     * already picked object doesn't show up again in the suggestions
+     */
+    public function directorObjectAction(): void
+    {
+        $uuid = Uuid::fromString($this->params->shiftRequired('uuid'));
+        $this->db = Db::fromResourceName(
+            Config::module('director')->get('db', 'resource')
+        );
+
+        $excludeTerms = [];
+        if ($this->params->has('exclude')) {
+            $excludeTerms = explode(',', $this->params->get('exclude'));
+        }
+
+        $suggestions = new SearchSuggestions((function () use ($uuid, $excludeTerms, &$suggestions) {
+            $excludes = array_flip(array_merge($excludeTerms, $suggestions->getExcludeTerms()));
+            $objects = DirectorObjectReference::enumObjectsForProperty(
+                $this->db->getDbAdapter(),
+                $uuid->getBytes()
+            );
+
+            foreach ($objects as $name => $displayName) {
+                if (isset($excludes[$name])) {
+                    continue;
+                }
+
+                yield [
+                    'search' => $name,
+                    'label'  => $displayName,
                     'class'  => 'list-entry'
                 ];
             }

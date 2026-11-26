@@ -5,6 +5,7 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\Db\DbUtil;
@@ -46,7 +47,7 @@ class IcingaServiceApplyForTest extends BaseTestCase
         $form = new IcingaServiceForm();
         $form->setDb($db);
 
-        foreach (['datalist-strict', 'datalist-non-strict'] as $valueType) {
+        foreach (['datalist-strict', 'datalist-non-strict', DirectorObjectReference::VALUE_TYPE] as $valueType) {
             foreach (['dynamic-array', 'string'] as $itemType) {
                 $suffix = str_replace('-', '_', $valueType . '_' . $itemType);
                 $property = $this->makeAndLinkProperty($suffix, $valueType, $host, $db);

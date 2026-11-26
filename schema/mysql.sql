@@ -267,7 +267,8 @@ CREATE TABLE director_property (
     'fixed-dictionary',
     'dynamic-dictionary',
     'datalist-strict',
-    'datalist-non-strict'
+    'datalist-non-strict',
+    'director-object'
   ) COLLATE utf8mb4_unicode_ci NOT NULL,
   category_id INT(10) UNSIGNED DEFAULT NULL,
   description text DEFAULT NULL,
@@ -303,6 +304,17 @@ CREATE TABLE director_property_datalist (
          REFERENCES director_property (uuid)
          ON DELETE CASCADE
          ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
+
+CREATE TABLE director_property_object (
+  property_uuid varbinary(16) NOT NULL,
+  object_type varchar(32) NOT NULL,
+  PRIMARY KEY (property_uuid),
+  CONSTRAINT director_property_object_property
+    FOREIGN KEY property (property_uuid)
+    REFERENCES director_property (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
 CREATE TABLE icinga_zone (
@@ -2648,4 +2660,4 @@ CREATE TABLE icinga_user_property (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (195, NOW());
+  VALUES (196, NOW());
