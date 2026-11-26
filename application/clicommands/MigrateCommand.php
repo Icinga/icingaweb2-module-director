@@ -34,6 +34,11 @@ class MigrateCommand extends Command
     private const SUPPORTED_DATATYPES = ['Array', 'Boolean', 'Number', 'String', 'Datalist'];
 
     /**
+     * Object types that can carry a datafield binding
+     */
+    private const OBJECT_TYPES = ['host', 'service', 'notification', 'command', 'user'];
+
+    /**
      * Show what would be migrated, without making any changes
      *
      * USAGE
@@ -657,27 +662,46 @@ class MigrateCommand extends Command
             return false;
         }
 
-        $dbAdapter = $this->db()->getDbAdapter();
-        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
-        foreach ($objectTypes as $type) {
-            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], [])
-                ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['var_filter'])
-                ->where('iof.datafield_id = ?', $datafieldId);
-
-            foreach ($dbAdapter->fetchCol($query) as $varFilter) {
-                if (! empty($varFilter)) {
-                    if ($reportProgress) {
-                        echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
-                            . "var_filter is not supported by the new property system, so it will not be"
-                            . " migrated or deleted\n";
-                    }
-
-                    return true;
+        foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+            if (! empty($binding['var_filter'])) {
+                if ($reportProgress) {
+                    $type = $binding['type'];
+                    echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
+                        . "var_filter is not supported by the new property system, so it will not be"
+                        . " migrated or deleted\n";
                 }
+
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Get every object binding a datafield still has in the legacy tables
+     *
+     * @param int $datafieldId
+     *
+     * @return array Rows with the keys type, uuid, is_required and var_filter
+     */
+    private function fetchLegacyBindings(int $datafieldId): array
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $bindings = [];
+        foreach (self::OBJECT_TYPES as $type) {
+            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid'])
+                ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['is_required', 'var_filter'])
+                ->where('iof.datafield_id = ?', $datafieldId);
+
+            foreach ($dbAdapter->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+                $row = DbUtil::normalizeRow($row);
+                $row['type'] = $type;
+                $bindings[] = $row;
+            }
+        }
+
+        return $bindings;
     }
 
     /**
@@ -705,8 +729,7 @@ class MigrateCommand extends Command
         $db = $this->db();
         $dbAdapter = $db->getDbAdapter();
         $propertyUuidExpr = $dryRun ? null : DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter);
-        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
-        foreach ($objectTypes as $type) {
+        foreach (self::OBJECT_TYPES as $type) {
             $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid'])
                 ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['is_required', 'var_filter'])
                 ->where('iof.datafield_id = ?', $datafieldId);
@@ -756,9 +779,8 @@ class MigrateCommand extends Command
         }
 
         $db = $this->db();
-        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
         $datafieldIds = array_keys($migratedDataFields);
-        foreach ($objectTypes as $type) {
+        foreach (self::OBJECT_TYPES as $type) {
             $db->delete(
                 "icinga_{$type}_field",
                 Filter::where('datafield_id', $datafieldIds)
