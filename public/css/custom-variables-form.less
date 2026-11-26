@@ -92,6 +92,61 @@
   }
 }
 
+.custom-variables-form .nested-dictionary-item > legend {
+  display: flex;
+  align-items: center;
+
+  // the module positions remove buttons on their own, not this one
+  .remove-button,
+  .remove-button.remove-button.remove-button {
+    position: static;
+    margin: 0 0 0 auto;
+  }
+}
+
+// one section per category, looks like the category sections of the object form
+.custom-var-category {
+  border: none;
+  margin: 0 0 1em 0;
+  padding: 0;
+
+  > legend {
+    display: block;
+    width: 100%;
+    margin: 0 0 0.5em 0;
+    padding-left: 0.25em;
+    font-size: 1em;
+    font-weight: bold;
+    line-height: 2em;
+    border-bottom: 1px solid @gray-light;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      border-color: @text-color;
+    }
+
+    &::before {
+      // icon: down
+      font-family: 'ifont';
+      content: '\e81d';
+      margin-right: 0.25em;
+    }
+  }
+
+  // Icinga collapses a section down to the height of its legend, margins included.
+  // So the legend keeps its margin, and nothing below it may peek through.
+  &.collapsed {
+    > legend::before {
+      content: '\e820';
+    }
+
+    > :not(legend) {
+      visibility: hidden;
+    }
+  }
+}
+
 // Layout
 .custom-variables-form {
   .buttons {
@@ -195,6 +250,152 @@
 
     .nested-dictionary-item.collapsed {
       padding: 0;
+    }
+  }
+
+  // A flat item is just a row with label and input, no box around it.
+  //
+  // Icinga lines up nested inputs on the right with a pair of margins: a control
+  // group has a right margin of -1em, each element in it one of 1em. Only the
+  // vertical spacing is changed here, so that pair stays intact.
+  .control-group:has(> .dictionary-item.flat) {
+    margin-top: 0;
+    margin-bottom: 0.5em;
+    padding-right: 0;
+  }
+
+  .dictionary-item.flat {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0;
+    border: none;
+
+    // the spacing between rows comes from the row itself, see above and below
+    .control-group {
+      flex-wrap: nowrap;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    // the module adds room for a remove button to every group holding a fieldset,
+    // a flat item has its remove button below its input
+    .control-group:has(> fieldset) {
+      padding-right: 0;
+    }
+
+    // label column like the Data Field form, left aligned
+    .control-label-group {
+      width: 30%;
+      min-width: 12em;
+      text-align: left;
+    }
+
+    // an array input brings its own fieldset, it must not shrink the row
+    .array-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding: 0;
+      border: none;
+    }
+
+    // a datalist with suggestions brings a plain fieldset around its row
+    > fieldset {
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    // the entries of a dynamic dictionary take the place of the input
+    // a little more room below a dictionary, it ends with a button
+    > .flat-dictionary {
+      margin-bottom: 1em;
+
+      > .control-group {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+        padding-right: 0;
+      }
+
+      .nested-dictionary {
+        padding: 0;
+
+        > .empty-state-bar {
+          margin: 0;
+        }
+
+        > .control-group.form-controls:last-of-type {
+          margin: 0.5em -1em 0 0;
+        }
+      }
+
+      // The fields of an entry sit in a few nested fieldsets. Without any spacing of
+      // their own, every field starts and ends at the same place. The label column
+      // is narrower, an entry is only as wide as the input column.
+      // The border sits on the group around an entry, a fieldset border would cut
+      // through the legend. Icinga lets a group reach 1em further to the right and
+      // pulls its content back by that, the border must end where the inputs do.
+      .control-group:has(> .nested-dictionary-item) {
+        margin-right: 0;
+
+        > .nested-dictionary-item {
+          margin-right: 0;
+        }
+      }
+
+      .nested-dictionary-item {
+        > legend {
+          margin-bottom: 0.5em;
+        }
+
+        .control-group:has(> fieldset) {
+          margin-top: 0;
+          margin-bottom: 0;
+          padding-right: 0;
+        }
+
+        fieldset.dictionary,
+        fieldset.dictionary-item,
+        fieldset.array-input {
+          flex: 1 1 auto;
+          min-width: 0;
+          margin-top: 0;
+          margin-bottom: 0;
+          padding: 0;
+          border: none;
+        }
+
+        // one row per field, the same spacing as between the variables
+        > .control-group,
+        > .control-group > fieldset.dictionary > .control-group {
+          margin-top: 0;
+          margin-bottom: 0.5em;
+        }
+
+        .control-label-group {
+          width: 35%;
+          min-width: 0;
+        }
+
+        // collapsed, an entry keeps its padding and its remove button stays where
+        // it is when expanded
+        &.collapsed {
+          padding-left: 0.5em;
+          padding-right: 0.5em;
+        }
+
+        > legend .remove-button {
+          margin: 0 0 0 auto;
+        }
+
+      }
+    }
+
+    .flat-remove {
+      display: flex;
+      justify-content: flex-end;
     }
   }
 }

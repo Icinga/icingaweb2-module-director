@@ -65,17 +65,18 @@ class NestedDictionaryItem extends FieldsetElement
             $label = $this->translate('New Item');
         }
 
-        $this->setLabel($label);
+        // The remove button goes into the legend, like it does for a custom variable. A
+        // collapsed entry only shows its legend, and positioned anywhere else the button
+        // covers the fields of an expanded one.
+        $legendContent = [Text::create($label)];
         if ($this->removeButton !== null) {
-            $this->addHtml(new HtmlElement(
-                'div',
-                null,
-                $this->removeButton->setLabel(new Icon('trash'))
-                    ->setAttribute('formnovalidate', true)
-                    ->setAttribute('class', ['remove-button'])
-                    ->add(Text::create(' ' . $this->translate('Remove Item')))
-            ));
+            $legendContent[] = $this->removeButton->setLabel(new Icon('trash'))
+                ->setAttribute('formnovalidate', true)
+                ->setAttribute('class', ['remove-button'])
+                ->add(Text::create(' ' . $this->translate('Remove Item')));
         }
+
+        $this->prependHtml(new HtmlElement('legend', null, ...$legendContent));
 
         $this->addElement(
             (new Dictionary('var', $this->items, ['class' => 'no-border']))

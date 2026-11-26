@@ -134,7 +134,9 @@ class CustomVariablesForm extends CompatForm
             'properties',
             $properties,
             ['class' => 'no-border']
-        ))->setAllowItemRemoval($this->object->definesCustomProperties())
+        ))->setGroupByCategory()
+            ->setFlatItems()
+            ->setAllowItemRemoval($this->object->definesCustomProperties())
             // Nothing enforces it for commands yet, so only templates get the toggle
             ->setAllowRequiredToggle($this->object->isTemplate())
             // An external object is never deployed, so a value typed here would go nowhere
@@ -357,7 +359,8 @@ class CustomVariablesForm extends CompatForm
         $propertyData['uuid'] = DbUtil::binaryResult($propertyData['uuid']);
         $newItem = (new DictionaryItem((string) $index, $propertyData))
             ->setAllowRequiredToggle($this->object->isTemplate())
-            ->setShowValue(! $this->object->isExternal());
+            ->setShowValue(! $this->object->isExternal())
+            ->setFlat();
 
         $this->decorate($newItem);
         if ($removeButton !== null) {

@@ -23,6 +23,7 @@ use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
+use Icinga\Module\Director\Forms\DictionaryElements\Dictionary;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
@@ -981,27 +982,6 @@ abstract class ObjectController extends ActionController
     }
 
     /**
-     * Get the expression for ordering the custom properties by value type.
-     *
-     * @param DbConnection $db
-     * @param array        $types
-     *
-     * @return string
-     */
-    private function valueTypeOrderExpr(DbConnection $db, array $types): string
-    {
-        if ($db->isPgsql()) {
-            $cases = [];
-            foreach ($types as $i => $type) {
-                $cases[] = "WHEN '$type' THEN " . ($i + 1);
-            }
-            return 'CASE dp.value_type ' . implode(' ', $cases) . ' ELSE ' . (count($types) + 1) . ' END';
-        }
-
-        return "FIELD(dp.value_type, '" . implode("', '", $types) . "')";
-    }
-
-    /**
      * Get custom properties for the object, including session-added ones.
      *
      * @param IcingaObject $object
@@ -1083,6 +1063,11 @@ abstract class ObjectController extends ActionController
                         'label'      => 'dp.label'
                     ]
                 )
+                ->joinLeft(
+                    ['dfc' => 'director_datafield_category'],
+                    'dfc.id = dp.category_id',
+                    ['category' => 'dfc.category_name']
+                )
                 ->where('dp.uuid IN (?)', DbUtil::quoteBinaryCompat($uuidBytes, $db->getDbAdapter()))
                 ->where('dp.parent_uuid IS NULL');
 
@@ -1156,20 +1141,13 @@ abstract class ObjectController extends ActionController
                 'cdp.parent_uuid = dp.uuid',
                 []
             )
+            ->joinLeft(
+                ['dfc' => 'director_datafield_category'],
+                'dfc.id = dp.category_id',
+                ['category' => 'dfc.category_name']
+            )
             ->where('iop.' . $type . '_uuid IN (?)', $uuids)
-            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label'])
-            ->order($this->valueTypeOrderExpr($db, [
-                'string',
-                'number',
-                'bool',
-                'datalist-strict',
-                'datalist-non-strict',
-                'dynamic-array',
-                'fixed-dictionary',
-                'dynamic-dictionary'
-            ]))
-            ->order('children')
-            ->order('key_name');
+            ->group(['dp.uuid', 'dp.key_name', 'dp.value_type', 'dp.label', 'dfc.category_name']);
 
         $result = [];
         foreach ($db->getDbAdapter()->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
@@ -1177,7 +1155,7 @@ abstract class ObjectController extends ActionController
             $result[] = $row;
         }
 
-        return $result;
+        return Dictionary::sortByCategory($result);
     }
 
     /**

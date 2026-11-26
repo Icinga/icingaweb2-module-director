@@ -286,9 +286,11 @@ Go to `Custom Variables` in the Icinga Director menu and choose
   hint text
 * `Property Description`: optional, for documentation purposes; not
   currently displayed anywhere in Icinga Web 2
-* `Category`: optional, groups properties when custom variables are
-  displayed on a host or service's detail page; the object edit form
-  doesn't group by category yet
+* `Category`: optional, groups properties on a host or service's detail
+  page and in the `Custom Variables` tab of an object. The tab shows one
+  collapsible section per category, sorted by name, properties without a
+  category are listed under `Custom Variables`. Within a section, the
+  properties are sorted by their label
 * `Property Type`: one of the types listed above
 * `List name`: only for `datalist-strict` / `datalist-non-strict`,
   selects which Director datalist supplies the allowed values

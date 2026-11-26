@@ -6,8 +6,11 @@
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use Icinga\Module\Director\Db\DbUtil;
+use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Web\Widget\EmptyStateBar;
 
 class Dictionary extends FieldsetElement
@@ -31,6 +34,12 @@ class Dictionary extends FieldsetElement
 
     /** @var bool Whether dictionary is a child dictionary */
     private bool $isChild = false;
+
+    /** @var bool Whether items are shown in a collapsible section per category */
+    private bool $groupByCategory = false;
+
+    /** @var bool Whether items are shown as a single row with their label and input */
+    private bool $flatItems = false;
 
     public function __construct(string $name, array $items, $attributes = null)
     {
@@ -91,6 +100,41 @@ class Dictionary extends FieldsetElement
     public function setIsChild(bool $isChild = true): static
     {
         $this->isChild = $isChild;
+
+        return $this;
+    }
+
+    /**
+     * Set whether items are shown in a collapsible section per category
+     *
+     * Items without a category go to a section called "Custom Variables". The items
+     * have to be sorted with {@see sortByCategory()} already, a new section starts
+     * whenever the category changes. Items added in this session are left out and
+     * shown below all sections, until they have been saved.
+     *
+     * @param bool $groupByCategory
+     *
+     * @return $this
+     */
+    public function setGroupByCategory(bool $groupByCategory = true): static
+    {
+        $this->groupByCategory = $groupByCategory;
+
+        return $this;
+    }
+
+    /**
+     * Set whether items are shown as a single row with their label and input
+     *
+     * @see DictionaryItem::setFlat()
+     *
+     * @param bool $flatItems
+     *
+     * @return $this
+     */
+    public function setFlatItems(bool $flatItems = true): static
+    {
+        $this->flatItems = $flatItems;
 
         return $this;
     }
@@ -156,6 +200,8 @@ class Dictionary extends FieldsetElement
         $this->addElement('hidden', 'items_removed', ['value' => json_encode(array_keys($removedItems))]);
         $this->addElement('hidden', 'items_added', ['value' => implode(', ', $addedItems)]);
         $count = 0;
+        $section = null;
+        $sectionName = null;
         foreach ($this->items as $item) {
             $item['uuid'] = DbUtil::binaryResult($item['uuid']);
             if (isset($item['parent_uuid'])) {
@@ -164,7 +210,8 @@ class Dictionary extends FieldsetElement
 
             $element = (new DictionaryItem((string) $count, $item))
                 ->setAllowRequiredToggle($this->allowRequiredToggle)
-                ->setShowValue($this->showValues);
+                ->setShowValue($this->showValues)
+                ->setFlat($this->flatItems);
 
             // Only allow removal of items if the dictionary allows it and the item allows it
             if (
@@ -175,7 +222,21 @@ class Dictionary extends FieldsetElement
                 $element->setRemoveButton($this->getElement('remove_' . $count));
             }
 
-            $this->addElement($element);
+            if ($this->groupByCategory && ! $this->isChild && ! isset($item['new'])) {
+                $category = self::categoryOf($item);
+                if ($section === null || $category !== $sectionName) {
+                    $sectionName = $category;
+                    $section = $this->createCategorySection($category);
+                    $this->addHtml($section);
+                }
+
+                $this->registerElement($element);
+                $this->decorate($element);
+                $section->addHtml($element);
+            } else {
+                $this->addElement($element);
+            }
+
             $count++;
         }
 
@@ -202,6 +263,70 @@ class Dictionary extends FieldsetElement
                 $this->addHtml(new EmptyStateBar($message));
             }
         }
+    }
+
+    /**
+     * Sort items the way they are grouped by {@see setGroupByCategory()}
+     *
+     * By category name first, items without a category count as "Custom Variables".
+     * Within a category by label, or by key name for an item without a label.
+     *
+     * @param array $items
+     *
+     * @return array The sorted items, as a list
+     */
+    public static function sortByCategory(array $items): array
+    {
+        $label = fn (array $item) => (string) ($item['label'] ?? '') !== ''
+            ? (string) $item['label']
+            : (string) $item['key_name'];
+
+        usort($items, function (array $a, array $b) use ($label) {
+            return strnatcasecmp(self::categoryOf($a), self::categoryOf($b))
+                ?: strnatcasecmp($label($a), $label($b))
+                ?: strcmp((string) $a['key_name'], (string) $b['key_name']);
+        });
+
+        return $items;
+    }
+
+    /**
+     * Get the name of the section the given item is shown in
+     *
+     * @param array $item
+     *
+     * @return string
+     */
+    private static function categoryOf(array $item): string
+    {
+        $category = (string) ($item['category'] ?? '');
+
+        return $category !== '' ? $category : mt('director', 'Custom Variables');
+    }
+
+    /**
+     * Create the collapsible section holding the items of the given category
+     *
+     * Expanded by default. The id only depends on the category, so a section that
+     * has been collapsed stays collapsed on other objects as well.
+     *
+     * @param string $category
+     *
+     * @return HtmlElement
+     */
+    private function createCategorySection(string $category): HtmlElement
+    {
+        return new HtmlElement(
+            'fieldset',
+            Attributes::create([
+                'id'                    => 'custom-var-category-' . substr(sha1($category), 0, 12),
+                'class'                 => ['custom-var-category', 'collapsible'],
+                'data-toggle-element'   => 'legend',
+                'data-visible-height'   => 0,
+                'data-state-collapses'  => true
+            ]),
+            new HtmlElement('legend', null, Text::create($category))
+        );
     }
 
     /**
