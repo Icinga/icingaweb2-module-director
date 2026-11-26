@@ -49,6 +49,9 @@ class DictionaryItem extends FieldsetElement
     /** @var bool Whether the item offers an input for its value */
     private bool $showValue = true;
 
+    /** @var bool Whether a top level item is shown as a single row with its label and input */
+    private bool $flat = false;
+
     public function __construct(string $name, array $items, $attributes = null)
     {
         $this->fields = $items;
@@ -152,6 +155,18 @@ class DictionaryItem extends FieldsetElement
 
         $typeLabel = $this->getTypeLabel($type, $itemType);
 
+        // A flat item is a single row with its label and input, like a Data Field used
+        // to be. For a dynamic dictionary, the input is its list of entries. A fixed
+        // dictionary or fixed array keeps its collapsible box for its fields.
+        $isFlat = $this->flat
+            && $isTopLevel
+            && $this->showValue
+            && ! in_array($type, ['fixed-array', 'fixed-dictionary'], true);
+
+        if ($isFlat) {
+            $this->addAttributes(['class' => 'flat']);
+        }
+
         if ($this->removeButton !== null) {
             $this->addAttributes(['class' => ['removable']]);
             if ($this->allowRequiredToggle) {
@@ -167,7 +182,7 @@ class DictionaryItem extends FieldsetElement
             }
         }
 
-        if ($isTopLevel) {
+        if ($isTopLevel && ! $isFlat) {
             // The remove button goes inside the legend itself, not next to it. A
             // collapsed item is clipped down to the legend's own height, so anything
             // outside the legend (like a separately positioned remove button) gets
@@ -185,7 +200,7 @@ class DictionaryItem extends FieldsetElement
             ]);
         }
 
-        if ($isTopLevel && ! $isContainer) {
+        if ($isTopLevel && ! $isContainer && ! $isFlat) {
             $this->addElement('text', 'key_name_display', [
                 'label' => $this->translate('Key Name'),
                 'value' => $name,
@@ -214,9 +229,13 @@ class DictionaryItem extends FieldsetElement
             $placeholder = $inherited . ' (' . sprintf($this->translate('Inherited from %s'), $inheritedFrom) . ')';
         }
 
-        $valueLabel = $isTopLevel
-            ? $this->translate('Value') . ' (' . $typeLabel . ')'
-            : $label . ' (' . $typeLabel . ')';
+        // The input already shows what it takes, so the type is only named in the
+        // heading of a collapsible item
+        if ($isTopLevel && ! $isFlat) {
+            $valueLabel = $this->translate('Value') . ' (' . $typeLabel . ')';
+        } else {
+            $valueLabel = $label;
+        }
 
         if ($type === 'number') {
             $this->addElement(
@@ -359,12 +378,31 @@ class DictionaryItem extends FieldsetElement
                 (new Dictionary($valElementName, $children, ['class' => 'no-border']))->setIsChild()
             );
         } elseif ($type === 'dynamic-dictionary') {
-            $this->addElement((new NestedDictionary(
+            $nestedDictionary = (new NestedDictionary(
                 $valElementName,
                 $children,
                 ['inherited_from' => $inheritedFrom, 'value' => $inherited],
                 $this->fields['value'] ?? []
-            ))->setUuid(Uuid::fromBytes($this->fields['uuid'])));
+            ))->setUuid(Uuid::fromBytes($this->fields['uuid']));
+
+            if ($isFlat) {
+                // A fieldset shows its label as a legend above its content, so the row
+                // with the name on the left and the entries on the right is built here
+                $this->registerElement($nestedDictionary);
+                $this->decorate($nestedDictionary);
+                $this->addHtml(new HtmlElement(
+                    'div',
+                    Attributes::create(['class' => ['control-group', 'flat-dictionary']]),
+                    new HtmlElement(
+                        'div',
+                        Attributes::create(['class' => 'control-label-group']),
+                        new HtmlElement('label', null, Text::create($label))
+                    ),
+                    $nestedDictionary
+                ));
+            } else {
+                $this->addElement($nestedDictionary);
+            }
         } else {
             $this->addElement(
                 'text',
@@ -388,6 +426,14 @@ class DictionaryItem extends FieldsetElement
             if (! $isInherited) {
                 $this->markValueRequired($valueElement);
             }
+        }
+
+        if ($isFlat && $this->removeButton !== null) {
+            $this->addHtml(new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'flat-remove']),
+                $this->removeButton
+            ));
         }
     }
 
@@ -747,6 +793,23 @@ class DictionaryItem extends FieldsetElement
     public function setRemoveButton(?FormElement $removeButton): static
     {
         $this->removeButton = $removeButton;
+
+        return $this;
+    }
+
+    /**
+     * Set whether a top level item is shown as a single row with its label and input
+     *
+     * A dynamic dictionary shows its entries in place of the input. A fixed dictionary
+     * or fixed array always gets a collapsible box for its fields.
+     *
+     * @param bool $flat
+     *
+     * @return $this
+     */
+    public function setFlat(bool $flat = true): static
+    {
+        $this->flat = $flat;
 
         return $this;
     }
