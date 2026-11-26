@@ -39,6 +39,23 @@ class MigrateCommand extends Command
     private const OBJECT_TYPES = ['host', 'service', 'notification', 'command', 'user'];
 
     /**
+     * Legacy bindings already looked up in this run, by datafield id
+     *
+     * The cleanup checks the same datafields a few times, this saves going back to the database
+     * each time. Cleared once datafields get deleted.
+     *
+     * @var array
+     */
+    private array $legacyBindings = [];
+
+    /**
+     * Property bindings already looked up in this run, by property name
+     *
+     * @var array
+     */
+    private array $propertyBindings = [];
+
+    /**
      * Show what would be migrated, without making any changes
      *
      * USAGE
@@ -187,6 +204,59 @@ class MigrateCommand extends Command
         echo "Summary:\n";
         printf("Total number of datafields migrated: %d\n", $totalMigrated);
         printf("Total number of datafields skipped: %d\n", $totalSkipped);
+    }
+
+    /**
+     * Delete datafields that an earlier run already migrated
+     *
+     * A datafield is only deleted when a property with the same name exists and matches it
+     * in full, anything else is kept and listed with the reason.
+     *
+     * USAGE
+     *
+     * icingacli director migrate cleanupDatafields --dry-run --verbose
+     *
+     * OPTIONS
+     *
+     *  --dry-run  Preview what would be deleted without writing to the database
+     *
+     *  --verbose  List every datafield that is deleted
+     *
+     * @return void
+     */
+    public function cleanupDatafieldsAction()
+    {
+        $dryRun = $this->params->shift('dry-run') ?? false;
+        [$migratedDataFields, $conflicts] = $this->findAlreadyMigratedDatafields();
+
+        echo "Cleaning up migrated Data fields\n";
+
+        foreach ($conflicts as $varName => $reason) {
+            echo "[-] Keeping datafield '$varName', $reason\n";
+        }
+
+        $this->warnAboutDroppedFilters($migratedDataFields);
+        $this->noticeChangedRequiredFlags($migratedDataFields);
+
+        if (! $dryRun && ! empty($migratedDataFields)) {
+            $this->db()->runFailSafeTransaction(function () use ($migratedDataFields) {
+                $this->deleteMigratedDataFields($migratedDataFields);
+            });
+        }
+
+        if ($this->isVerbose) {
+            foreach ($migratedDataFields as $varName) {
+                echo ($dryRun ? '[*] Would delete' : '[+] Deleted') . " datafield '$varName'\n";
+            }
+        }
+
+        echo "Summary:\n";
+        printf(
+            "Total number of datafields %s: %d\n",
+            $dryRun ? 'that would be deleted' : 'deleted',
+            count($migratedDataFields)
+        );
+        printf("Total number of datafields kept: %d\n", count($conflicts));
     }
 
     /**
@@ -687,6 +757,10 @@ class MigrateCommand extends Command
      */
     private function fetchLegacyBindings(int $datafieldId): array
     {
+        if (isset($this->legacyBindings[$datafieldId])) {
+            return $this->legacyBindings[$datafieldId];
+        }
+
         $dbAdapter = $this->db()->getDbAdapter();
         $bindings = [];
         foreach (self::OBJECT_TYPES as $type) {
@@ -701,7 +775,64 @@ class MigrateCommand extends Command
             }
         }
 
+        $this->legacyBindings[$datafieldId] = $bindings;
+
         return $bindings;
+    }
+
+    /**
+     * Warn about filters that are lost once the datafields are deleted
+     *
+     * The new properties can't hold a filter, so it only lived on the old binding.
+     *
+     * @param array $migratedDataFields Datafields about to be deleted, as ['id' => 'datafield_name']
+     *
+     * @return void
+     */
+    private function warnAboutDroppedFilters(array $migratedDataFields): void
+    {
+        foreach ($migratedDataFields as $datafieldId => $varName) {
+            foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+                if (! empty($binding['var_filter'])) {
+                    echo "[!] Datafield '$varName' has a var_filter on its icinga_{$binding['type']} binding,"
+                        . " it is not part of the migrated property and is lost once the datafield is deleted\n";
+                }
+            }
+        }
+    }
+
+    /**
+     * Tell when a binding's required flag differs from the one on the property
+     *
+     * The cleanup keeps the property's flag, so a required field may turn optional. Say so,
+     * also on a dry run, instead of changing it quietly.
+     *
+     * @param array $migratedDataFields Datafields about to be deleted, as ['id' => 'datafield_name']
+     *
+     * @return void
+     */
+    private function noticeChangedRequiredFlags(array $migratedDataFields): void
+    {
+        foreach ($migratedDataFields as $datafieldId => $varName) {
+            $propertyBindings = $this->fetchPropertyBindings($varName);
+            foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+                $type = $binding['type'];
+                $propertyFlag = $propertyBindings[$type][Uuid::fromBytes($binding['uuid'])->toString()] ?? null;
+                if ($propertyFlag === null || $propertyFlag === $binding['is_required']) {
+                    continue;
+                }
+
+                printf(
+                    "[i] Datafield '%s' is %s on %s '%s' but its property is %s,"
+                    . " the property's setting is kept\n",
+                    $varName,
+                    $binding['is_required'] === 'y' ? 'required' : 'optional',
+                    $type,
+                    $binding['object_name'],
+                    $propertyFlag === 'y' ? 'required' : 'optional'
+                );
+            }
+        }
     }
 
     /**
@@ -777,6 +908,10 @@ class MigrateCommand extends Command
         if (empty($migratedDataFields)) {
             return;
         }
+
+        // Bindings looked up earlier are about to go, don't hand them out anymore
+        $this->legacyBindings = [];
+        $this->propertyBindings = [];
 
         $db = $this->db();
         $datafieldIds = array_keys($migratedDataFields);
@@ -938,6 +1073,10 @@ class MigrateCommand extends Command
      */
     private function fetchPropertyBindings(string $keyName): array
     {
+        if (isset($this->propertyBindings[$keyName])) {
+            return $this->propertyBindings[$keyName];
+        }
+
         $dbAdapter = $this->db()->getDbAdapter();
         $bindings = [];
         foreach (self::OBJECT_TYPES as $type) {
@@ -952,6 +1091,8 @@ class MigrateCommand extends Command
                 $bindings[$type][Uuid::fromBytes($row["{$type}_uuid"])->toString()] = $row['required'];
             }
         }
+
+        $this->propertyBindings[$keyName] = $bindings;
 
         return $bindings;
     }
