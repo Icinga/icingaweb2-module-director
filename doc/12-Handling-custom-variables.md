@@ -396,6 +396,24 @@ icingacli director migrate datafields --verbose
 icingacli director migrate datafields --verbose --delete   # also removes the migrated fields
 ```
 
+`--delete` only removes the fields that the same run migrated. If you migrated
+without it earlier, remove the leftover Data fields with:
+
+```bash
+icingacli director migrate cleanupDatafields --dry-run --verbose
+icingacli director migrate cleanupDatafields --verbose
+```
+
+Only a Data field whose custom variable already exists and matches it (same type,
+same datalist, every template assignment carried over) is removed. Anything else
+is kept and reported with the reason. If a template assignment is missing, add
+the custom variable to that template, or remove the Data field from it, then run
+the cleanup again. A changed "required" flag doesn't block the cleanup, the one
+on the custom variable is kept and a notice is printed. A `var_filter` on a
+removed field's assignment is lost with it, the command prints a warning for
+each one. Baskets created earlier still contain the removed Data fields, so take
+a new snapshot afterwards if you rely on them.
+
 Only fields matching **all** of the following are migrated; everything
 else is skipped and reported:
 
@@ -437,7 +455,8 @@ command, user and notification templates that used the original field.
 
 > Renaming or removing a property, migrated or not, automatically renames or removes its stored
 > values by variable name. The one exception is a variable name still claimed by a Data field that
-> hasn't been migrated (or was migrated without `--delete`): its values are deliberately left in
+> hasn't been migrated (or was migrated without `--delete` and not yet cleaned up with
+> `cleanupDatafields`): its values are deliberately left in
 > place rather than renamed or deleted out from under that field, so migrate any colliding Data
 > field first if you want a clean rename or removal.
 >
