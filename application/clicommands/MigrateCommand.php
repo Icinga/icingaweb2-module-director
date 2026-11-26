@@ -683,14 +683,14 @@ class MigrateCommand extends Command
      *
      * @param int $datafieldId
      *
-     * @return array Rows with the keys type, uuid, is_required and var_filter
+     * @return array Rows with the keys type, uuid, object_name, is_required and var_filter
      */
     private function fetchLegacyBindings(int $datafieldId): array
     {
         $dbAdapter = $this->db()->getDbAdapter();
         $bindings = [];
         foreach (self::OBJECT_TYPES as $type) {
-            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid'])
+            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid', 'object_name'])
                 ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['is_required', 'var_filter'])
                 ->where('iof.datafield_id = ?', $datafieldId);
 
@@ -791,5 +791,168 @@ class MigrateCommand extends Command
             'director_datafield',
             Filter::where('id', $datafieldIds)
         );
+    }
+
+    /**
+     * Find the datafields an earlier run already migrated
+     *
+     * A datafield only counts when a property with its name exists and matches it in full.
+     * Everything else with a clashing name is kept and comes back with the reason.
+     *
+     * @return array{0: array, 1: array} The datafields to delete as ['id' => 'name'] and the
+     *         datafields kept as ['name' => 'reason']
+     */
+    private function findAlreadyMigratedDatafields(): array
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $propertyRows = $dbAdapter->fetchAll(
+            $dbAdapter->select()
+                ->from('director_property', ['key_name', 'value_type'])
+                ->where('parent_uuid IS NULL'),
+            fetchMode: PDO::FETCH_ASSOC
+        );
+
+        // Names are case-insensitive in the new schema, so match them the same way here
+        $propertiesByLowerName = [];
+        foreach ($propertyRows as $propertyRow) {
+            $propertiesByLowerName[mb_strtolower($propertyRow['key_name'], 'UTF-8')] = $propertyRow;
+        }
+
+        $migratedDataFields = [];
+        $conflicts = [];
+        foreach ($this->getDataFieldsMigrationQuery() as $row) {
+            $property = $propertiesByLowerName[mb_strtolower($row->varname, 'UTF-8')] ?? null;
+            if ($property === null) {
+                continue;
+            }
+
+            $mismatch = $this->findMismatch($row, $property);
+            if ($mismatch === null) {
+                $migratedDataFields[$row->id] = $row->varname;
+            } else {
+                $conflicts[$row->varname] = $mismatch;
+            }
+        }
+
+        return [$migratedDataFields, $conflicts];
+    }
+
+    /**
+     * Compare a datafield with the property that has its name
+     *
+     * @param object $row      A datafield row from the migration query
+     * @param array  $property The existing property with the same name
+     *
+     * @return ?string Why they differ, or null when the property is a faithful migration
+     */
+    private function findMismatch(object $row, array $property): ?string
+    {
+        $expected = $this->buildCustomProperty($row);
+        if ($expected['value_type'] !== $property['value_type']) {
+            return "its property is a '{$property['value_type']}' but the datafield would migrate"
+                . " as '{$expected['value_type']}'";
+        }
+
+        if (isset($expected['item_type']) && $this->fetchItemType($row->varname) !== $expected['item_type']) {
+            return 'its property holds a different kind of items';
+        }
+
+        if (isset($expected['datalist_uuid'])) {
+            $linkedList = $this->fetchLinkedListUuid($row->varname);
+            if ($linkedList !== DbUtil::binaryResult($expected['datalist_uuid'])) {
+                return 'its property is linked to a different datalist';
+            }
+        }
+
+        return $this->findMissingBinding($row->id, $row->varname);
+    }
+
+    /**
+     * Get the item type of a property, if it has one
+     *
+     * @param string $keyName
+     *
+     * @return ?string
+     */
+    private function fetchItemType(string $keyName): ?string
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $query = $dbAdapter->select()->from(['child' => 'director_property'], ['value_type'])
+            ->join(['parent' => 'director_property'], 'parent.uuid = child.parent_uuid', [])
+            ->where('parent.key_name = ?', $keyName)
+            ->where('parent.parent_uuid IS NULL');
+        $itemType = $dbAdapter->fetchOne($query);
+
+        return $itemType === false ? null : $itemType;
+    }
+
+    /**
+     * Get the uuid of the datalist a property is linked to, if any
+     *
+     * @param string $keyName
+     *
+     * @return ?string
+     */
+    private function fetchLinkedListUuid(string $keyName): ?string
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $query = $dbAdapter->select()->from(['pd' => 'director_property_datalist'], ['list_uuid'])
+            ->join(['dp' => 'director_property'], 'dp.uuid = pd.property_uuid', [])
+            ->where('dp.key_name = ?', $keyName)
+            ->where('dp.parent_uuid IS NULL');
+        $listUuid = DbUtil::binaryResult($dbAdapter->fetchOne($query));
+
+        return $listUuid === false ? null : $listUuid;
+    }
+
+    /**
+     * Check every legacy binding of a datafield was carried over to the property
+     *
+     * The required flag isn't compared. The migration copies it as is, so a different one
+     * means someone changed it on the property later, and that newer choice wins.
+     *
+     * @param int    $datafieldId
+     * @param string $varName
+     *
+     * @return ?string Why a binding is missing, or null when all of them are there
+     */
+    private function findMissingBinding(int $datafieldId, string $varName): ?string
+    {
+        $carriedOver = $this->fetchPropertyBindings($varName);
+        foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+            if (! isset($carriedOver[$binding['type']][Uuid::fromBytes($binding['uuid'])->toString()])) {
+                return "its {$binding['type']} binding on '{$binding['object_name']}' was not carried over"
+                    . ' to the property';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the required flag of every object binding a property has
+     *
+     * @param string $keyName
+     *
+     * @return array As ['type' => ['object uuid' => 'y' or 'n']]
+     */
+    private function fetchPropertyBindings(string $keyName): array
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $bindings = [];
+        foreach (self::OBJECT_TYPES as $type) {
+            $query = $dbAdapter->select()
+                ->from(['ip' => "icinga_{$type}_property"], ["{$type}_uuid", 'required'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = ip.property_uuid', [])
+                ->where('dp.key_name = ?', $keyName)
+                ->where('dp.parent_uuid IS NULL');
+
+            foreach ($dbAdapter->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+                $row = DbUtil::normalizeRow($row);
+                $bindings[$type][Uuid::fromBytes($row["{$type}_uuid"])->toString()] = $row['required'];
+            }
+        }
+
+        return $bindings;
     }
 }
