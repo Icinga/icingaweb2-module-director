@@ -235,7 +235,6 @@ class MigrateCommand extends Command
         $customProperties = [];
         $existingCustomProperties = [];
         $migrationQuery = $this->getDataFieldsMigrationQuery();
-        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
         foreach ($migrationQuery as $row) {
             if (isset($existingKeyNamesByLower[mb_strtolower($row->varname, 'UTF-8')])) {
                 $existingCustomProperties[] = $row->varname;
@@ -243,55 +242,69 @@ class MigrateCommand extends Command
                 continue;
             }
 
-            $customProperty = [
-                'datafield_id' => $row->id,
-                'uuid' => Uuid::uuid4()->getBytes(),
-                'key_name' => $row->varname,
-                'label' => $row->caption,
-                'description' => $row->description,
-                'category_id' => $row->category_id
-            ];
-            $dataType = strtolower(substr($row->datatype, $typeOffset));
-
-            if ($dataType === 'array') {
-                $customProperty['value_type'] = 'dynamic-array';
-                $customProperty['item_type'] = 'string';
-            } elseif ($dataType === 'boolean' || $dataType === 'number') {
-                $customProperty['value_type'] = $dataType === 'boolean' ? 'bool' : $dataType;
-            } elseif ($dataType === 'string') {
-                $settings = DirectorDatafield::load($row->id, $db)->getSettings();
-                $customProperty['value_type'] = ($settings['visibility'] ?? null) === 'hidden'
-                    ? 'sensitive'
-                    : 'string';
-            } elseif ($dataType === 'datalist') {
-                $datalist = DirectorDatafield::load($row->id, $db);
-                $settings = $datalist->getSettings();
-                $behaviour = $settings['behavior'] ?? 'strict';
-                if ($behaviour === 'strict' || $behaviour === 'suggest_strict') {
-                    $customProperty['value_type'] = 'datalist-strict';
-                } else {
-                    $customProperty['value_type'] = 'datalist-non-strict';
-                }
-
-                // older datalists were saved without this setting, and it defaulted to string
-                $customProperty['item_type'] = ($settings['data_type'] ?? 'string') === 'array'
-                    ? 'dynamic-array'
-                    : 'string';
-
-                if (isset($settings['datalist_id'])) {
-                    $customProperty['datalist_uuid'] = DirectorDatalist::loadWithAutoIncId(
-                        $settings['datalist_id'],
-                        $db
-                    )->get('uuid');
-                }
-            } else {
-                $customProperty['value_type'] = "unsupported-$dataType";
-            }
-
-            $customProperties[$row->varname] = $customProperty;
+            $customProperties[$row->varname] = $this->buildCustomProperty($row);
         }
 
         return [$customProperties, $existingCustomProperties];
+    }
+
+    /**
+     * Work out the custom property a datafield turns into
+     *
+     * @param object $row A datafield row from the migration query
+     *
+     * @return array
+     */
+    private function buildCustomProperty(object $row): array
+    {
+        $db = $this->db();
+        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
+        $customProperty = [
+            'datafield_id' => $row->id,
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => $row->varname,
+            'label' => $row->caption,
+            'description' => $row->description,
+            'category_id' => $row->category_id
+        ];
+        $dataType = strtolower(substr($row->datatype, $typeOffset));
+
+        if ($dataType === 'array') {
+            $customProperty['value_type'] = 'dynamic-array';
+            $customProperty['item_type'] = 'string';
+        } elseif ($dataType === 'boolean' || $dataType === 'number') {
+            $customProperty['value_type'] = $dataType === 'boolean' ? 'bool' : $dataType;
+        } elseif ($dataType === 'string') {
+            $settings = DirectorDatafield::load($row->id, $db)->getSettings();
+            $customProperty['value_type'] = ($settings['visibility'] ?? null) === 'hidden'
+                ? 'sensitive'
+                : 'string';
+        } elseif ($dataType === 'datalist') {
+            $datalist = DirectorDatafield::load($row->id, $db);
+            $settings = $datalist->getSettings();
+            $behaviour = $settings['behavior'] ?? 'strict';
+            if ($behaviour === 'strict' || $behaviour === 'suggest_strict') {
+                $customProperty['value_type'] = 'datalist-strict';
+            } else {
+                $customProperty['value_type'] = 'datalist-non-strict';
+            }
+
+            // older datalists were saved without this setting, and it defaulted to string
+            $customProperty['item_type'] = ($settings['data_type'] ?? 'string') === 'array'
+                ? 'dynamic-array'
+                : 'string';
+
+            if (isset($settings['datalist_id'])) {
+                $customProperty['datalist_uuid'] = DirectorDatalist::loadWithAutoIncId(
+                    $settings['datalist_id'],
+                    $db
+                )->get('uuid');
+            }
+        } else {
+            $customProperty['value_type'] = "unsupported-$dataType";
+        }
+
+        return $customProperty;
     }
 
     /**
