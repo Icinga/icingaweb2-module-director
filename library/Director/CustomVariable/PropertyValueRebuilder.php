@@ -293,7 +293,7 @@ class PropertyValueRebuilder
             'string', 'sensitive' => is_string($value),
             'number' => is_int($value) || is_float($value),
             'bool' => is_bool($value),
-            'datalist-strict', 'datalist-non-strict' => is_string($value)
+            'datalist-strict', 'datalist-non-strict', DirectorObjectReference::VALUE_TYPE => is_string($value)
                 || (is_array($value) && array_is_list($value)),
             'dynamic-array', 'fixed-array' => is_array($value) && array_is_list($value),
             'fixed-dictionary' => $this->isDictionaryShaped($value)

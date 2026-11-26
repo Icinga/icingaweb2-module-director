@@ -9,6 +9,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterException;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Notification;
@@ -327,6 +328,7 @@ class CustomVariableForm extends CompatForm
             'dynamic-array' => 'Dynamic Array',
             'datalist-strict' => 'Data List Strict',
             'datalist-non-strict' => 'Data List Non Strict',
+            DirectorObjectReference::VALUE_TYPE => 'Director Object',
         ];
 
         // Fixed-array, fixed-dictionary and dynamic-dictionary may only be used as a
@@ -447,6 +449,50 @@ class CustomVariableForm extends CompatForm
                     'disabled' => true,
                 ]);
             }
+        } elseif ($type === DirectorObjectReference::VALUE_TYPE) {
+            $this->addElement(
+                'select',
+                'object_type',
+                [
+                    'label'             => $this->translate('Object Type *'),
+                    'description'       => $this->translate(
+                        'The type of the Director objects this custom variable references'
+                    ),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => '',
+                    'required'          => true,
+                    'options'           => ['' => $this->translate('- please choose -')]
+                        + DirectorObjectReference::enumObjectTypes(),
+                    'disabled'          => $used,
+                    'title'             => $used ? $this->translate(
+                        'This property is used in one or more templates and hence the object type'
+                        . ' cannot be changed.'
+                    ) : ''
+                ]
+            );
+
+            $this->addElement(
+                'select',
+                'item_type',
+                [
+                    'label'             => $this->translate('Item Type'),
+                    'description'       => $this->translate(
+                        'Whether this custom variable holds a single object or a list of objects.'
+                        . ' Only a list of users or user groups can be picked in a notification'
+                        . ' as "Users Custom Variable" or "User Groups Custom Variable".'
+                    ),
+                    'class'             => 'autosubmit',
+                    'disabledOptions'   => [''],
+                    'value'             => 'string',
+                    'options'           => ['string' => 'String', 'dynamic-array' => 'Array'],
+                    'disabled'          => $used,
+                    'title'             => $used ? $this->translate(
+                        'This property is used in one or more templates and hence the item type'
+                        . ' cannot be changed.'
+                    ) : ''
+                ]
+            );
         }
 
         if ($pendingRename) {
@@ -567,6 +613,7 @@ class CustomVariableForm extends CompatForm
 
         $datalist = [];
         $itemType = '';
+        $objectType = null;
         $valueType = $values['value_type'];
         if (str_starts_with($valueType, 'datalist-')) {
             $datalist = $this->fetchDatalist($values['list']);
@@ -574,10 +621,17 @@ class CustomVariableForm extends CompatForm
             unset($values['list']);
         } elseif ($valueType == 'dynamic-array') {
             $itemType = $values['item_type'];
+        } elseif ($valueType === DirectorObjectReference::VALUE_TYPE) {
+            $itemType = $values['item_type'] ?? '';
+            $objectType = $values['object_type'] ?? null;
         }
 
         if (isset($values['list'])) {
             unset($values['list']);
+        }
+
+        if (array_key_exists('object_type', $values)) {
+            unset($values['object_type']);
         }
 
         if (isset($values['item_type'])) {
@@ -595,9 +649,9 @@ class CustomVariableForm extends CompatForm
         $this->db->getDbAdapter()->beginTransaction();
         try {
             if ($this->uuid === null) {
-                $this->addNewProperty($values, $datalist, $itemType);
+                $this->addNewProperty($values, $datalist, $itemType, $objectType);
             } else {
-                $this->updateExistingProperty($values, $datalist, $itemType);
+                $this->updateExistingProperty($values, $datalist, $itemType, $objectType);
             }
         } catch (Throwable $e) {
             $this->db->getDbAdapter()->rollBack();
@@ -611,16 +665,18 @@ class CustomVariableForm extends CompatForm
     /**
      * Add a new custom variable
      *
-     * @param array  $values Form values
-     * @param array  $datalist Datalist values if any
-     * @param string $itemType Item type if any
+     * @param array   $values Form values
+     * @param array   $datalist Datalist values if any
+     * @param string  $itemType Item type if any
+     * @param ?string $objectType Referenced object type of a director-object property
      *
      * @return void
      */
     private function addNewProperty(
         array $values,
         array $datalist = [],
-        string $itemType = ''
+        string $itemType = '',
+        ?string $objectType = null
     ): void {
         $this->uuid = Uuid::uuid4();
         $quotedUuid = Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter());
@@ -665,21 +721,27 @@ class CustomVariableForm extends CompatForm
                 ),
             ]);
         }
+
+        if ($values['value_type'] === DirectorObjectReference::VALUE_TYPE && $objectType !== null) {
+            DirectorObjectReference::link($this->db->getDbAdapter(), $this->uuid->getBytes(), $objectType);
+        }
     }
 
     /**
      * Update an existing property
      *
-     * @param array  $values Form values
-     * @param array  $datalist Datalist values if any
-     * @param string $itemType Item type if any
+     * @param array   $values Form values
+     * @param array   $datalist Datalist values if any
+     * @param string  $itemType Item type if any
+     * @param ?string $objectType Referenced object type of a director-object property
      *
      * @return void
      */
     private function updateExistingProperty(
         array $values,
         array $datalist = [],
-        string $itemType = ''
+        string $itemType = '',
+        ?string $objectType = null
     ): void {
         $valueType = $values['value_type'];
         if (isset($values['used_count'])) {
@@ -769,7 +831,13 @@ class CustomVariableForm extends CompatForm
                     ))
                 );
 
-                if ($itemType && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
+                DirectorObjectReference::unlink($db, array_merge([$this->uuid->getBytes()], $descendantUuids));
+
+                if ($valueType === DirectorObjectReference::VALUE_TYPE && $objectType !== null) {
+                    DirectorObjectReference::link($db, $this->uuid->getBytes(), $objectType);
+                }
+
+                if ($itemType && ($valueType === 'dynamic-array' || self::hasListItemType($valueType))) {
                     $this->db->insert('director_property', [
                         'uuid' => Db\DbUtil::quoteBinaryCompat(Uuid::uuid4()->getBytes(), $this->db->getDbAdapter()),
                         'key_name' => '0',
@@ -798,7 +866,11 @@ class CustomVariableForm extends CompatForm
                     $this->relinkDatalist($this->uuid->getBytes(), $datalist);
                 }
 
-                if ($itemType !== '' && ($valueType === 'dynamic-array' || str_starts_with($valueType, 'datalist-'))) {
+                if ($valueType === DirectorObjectReference::VALUE_TYPE && $objectType !== null) {
+                    DirectorObjectReference::link($this->db->getDbAdapter(), $this->uuid->getBytes(), $objectType);
+                }
+
+                if ($itemType !== '' && ($valueType === 'dynamic-array' || self::hasListItemType($valueType))) {
                     $this->updateItemType($this->uuid->getBytes(), $itemType);
                 }
             }
@@ -848,6 +920,20 @@ class CustomVariableForm extends CompatForm
             $values,
             Filter::where('uuid', Db\DbUtil::quoteBinaryCompat($this->uuid->getBytes(), $this->db->getDbAdapter()))
         );
+    }
+
+    /**
+     * Whether the given value type picks single value vs. list through an item type child
+     *
+     * A dynamic-array has an item type child too, but there it is the type of its entries.
+     *
+     * @param string $valueType
+     *
+     * @return bool
+     */
+    private static function hasListItemType(string $valueType): bool
+    {
+        return str_starts_with($valueType, 'datalist-') || $valueType === DirectorObjectReference::VALUE_TYPE;
     }
 
     /**

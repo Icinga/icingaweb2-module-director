@@ -29,6 +29,7 @@ class CustomVariableValueValidator
      * A datalist's item type child decides single value vs list, same as a
      * plain dynamic-array. Pass $propertyUuid and $db to check that. Without
      * them a datalist just takes either shape, only a dictionary is rejected.
+     * A director-object property works the same way.
      *
      * @param string $key
      * @param mixed $value
@@ -70,6 +71,7 @@ class CustomVariableValueValidator
                 break;
             case 'datalist-strict':
             case 'datalist-non-strict':
+            case DirectorObjectReference::VALUE_TYPE:
                 if ($propertyUuid !== null && $db !== null) {
                     self::assertDatalistShapeMatchesItemType($key, $value, $propertyUuid, $db);
                     break;
@@ -94,6 +96,74 @@ class CustomVariableValueValidator
                         get_debug_type($value)
                     ));
                 }
+        }
+    }
+
+    /**
+     * Assert that the given value is one of the values a strict property accepts
+     *
+     * Covers every value type that restricts its values to a known set, a strict
+     * datalist and a director-object property. Any other value type accepts any
+     * value of the right shape, so nothing is checked for it.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @param string $valueType
+     * @param UuidInterface $propertyUuid
+     * @param Db $db
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function assertValueAllowed(
+        string $key,
+        mixed $value,
+        string $valueType,
+        UuidInterface $propertyUuid,
+        Db $db
+    ): void {
+        if ($valueType === 'datalist-strict') {
+            self::assertDatalistValueAllowed($key, $value, $propertyUuid, $db);
+        } elseif ($valueType === DirectorObjectReference::VALUE_TYPE) {
+            self::assertDirectorObjectValueAllowed($key, $value, $propertyUuid, $db);
+        }
+    }
+
+    /**
+     * Assert that the given value names existing objects of the type the
+     * director-object property with the given uuid references
+     *
+     * A property without a linked object type is treated as unrestricted, same
+     * as a datalist property without a linked datalist.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @param UuidInterface $propertyUuid
+     * @param Db $db
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function assertDirectorObjectValueAllowed(
+        string $key,
+        mixed $value,
+        UuidInterface $propertyUuid,
+        Db $db
+    ): void {
+        $dbAdapter = $db->getDbAdapter();
+        $objectType = DirectorObjectReference::fetchObjectType($dbAdapter, $propertyUuid->getBytes());
+        if ($objectType === null) {
+            return;
+        }
+
+        $allowedNames = DirectorObjectReference::enumObjects($dbAdapter, $objectType);
+        foreach ((array) $value as $singleValue) {
+            if (! is_string($singleValue) || ! array_key_exists($singleValue, $allowedNames)) {
+                throw new InvalidArgumentException(sprintf(
+                    "'%s' is not a valid value for the custom variable '%s', there is no such %s",
+                    is_scalar($singleValue) ? (string) $singleValue : get_debug_type($singleValue),
+                    $key,
+                    $objectType
+                ));
+            }
         }
     }
 

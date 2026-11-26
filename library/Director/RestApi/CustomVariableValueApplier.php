@@ -218,9 +218,13 @@ class CustomVariableValueApplier
                 $propertyUuid,
                 $this->db
             );
-            if ($customProperties[$key]['value_type'] === 'datalist-strict') {
-                CustomVariableValueValidator::assertDatalistValueAllowed($key, $value, $propertyUuid, $this->db);
-            }
+            CustomVariableValueValidator::assertValueAllowed(
+                $key,
+                $value,
+                $customProperties[$key]['value_type'],
+                $propertyUuid,
+                $this->db
+            );
 
             $objectVars->registerVarUuid($key, $propertyUuid);
 
@@ -290,14 +294,13 @@ class CustomVariableValueApplier
             Uuid::fromBytes($customPropertyUuid),
             $this->db
         );
-        if ($propertyRow['value_type'] === 'datalist-strict') {
-            CustomVariableValueValidator::assertDatalistValueAllowed(
-                $key,
-                $value,
-                Uuid::fromBytes($customPropertyUuid),
-                $this->db
-            );
-        }
+        CustomVariableValueValidator::assertValueAllowed(
+            $key,
+            $value,
+            $propertyRow['value_type'],
+            Uuid::fromBytes($customPropertyUuid),
+            $this->db
+        );
 
         $type = $object->getShortTableName();
         $dbAdapter->insert('icinga_' . $type . '_property', [
@@ -336,14 +339,13 @@ class CustomVariableValueApplier
                 Uuid::fromBytes($attachment['uuid']),
                 $this->db
             );
-            if ($attachment['value_type'] === 'datalist-strict') {
-                CustomVariableValueValidator::assertDatalistValueAllowed(
-                    $key,
-                    $value,
-                    Uuid::fromBytes($attachment['uuid']),
-                    $this->db
-                );
-            }
+            CustomVariableValueValidator::assertValueAllowed(
+                $key,
+                $value,
+                $attachment['value_type'],
+                Uuid::fromBytes($attachment['uuid']),
+                $this->db
+            );
         }
 
         $type = $object->getShortTableName();

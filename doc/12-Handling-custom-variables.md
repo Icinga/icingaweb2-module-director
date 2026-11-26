@@ -58,6 +58,7 @@ types:
 | `fixed-array`         | Fixed Array            | Ordered list with a pre-defined structure; values assigned to preconfigured positions                |
 | `datalist-strict`     | Data List Strict       | Only values from the chosen datalist can be assigned; can be stored as a single value or an array    |
 | `datalist-non-strict` | Data List Non Strict   | Values outside the chosen datalist are also accepted; can be stored as a single value or an array    |
+| `director-object`     | Director Object        | Names of existing Director objects of one type (hosts, users, ...); a single value or an array       |
 | `dynamic-array`       | Dynamic Array          | Uniform array where end-users can add values freely                                                  |
 | `fixed-dictionary`    | Fixed Dictionary       | Key-value map with a fixed set of preconfigured keys                                                 |
 | `dynamic-dictionary`  | Dynamic Dictionary     | Key-value map where each key maps to a structured sub-dictionary; keys are added by end-users        |
@@ -65,8 +66,8 @@ types:
 > Only one level of nesting is allowed. The fields of a `fixed-array`,
 > `fixed-dictionary` or `dynamic-dictionary` may only be scalar (`string`,
 > `number`, `bool`, `sensitive`), datalist (`datalist-strict`,
-> `datalist-non-strict`), or `dynamic-array` types. A nested field can
-> never itself be a `fixed-array`, `fixed-dictionary` or
+> `datalist-non-strict`), `director-object` or `dynamic-array` types. A
+> nested field can never itself be a `fixed-array`, `fixed-dictionary` or
 > `dynamic-dictionary`, that also rules out nesting a `fixed-array`
 > inside another `fixed-array`. A `dynamic-array` can be nested this
 > way, but not inside another `dynamic-array`. Also, `dynamic-dictionary`
@@ -188,6 +189,22 @@ vars.check_zone = "custom-satellite-eu3"
 vars.responsible_team = "database-infra-temp"
 ```
 
+##### `director-object`
+The value must be the name of an existing Director object of the type chosen for the property: hosts, host groups, services, service groups, service sets, users, user groups or notification apply rules. Templates can't be picked. Can be stored as a single name or as an array of names. The object form offers the existing objects by their display name.
+
+This is the replacement for the `DirectorObject` Data Field. An array of users or user groups can be chosen as `Users Custom Variable` or `User Groups Custom Variable` of a notification apply rule, which then notifies the users or groups listed in that variable on the host or service.
+
+```
+# On a host: the users to notify for this host, used as "Users Custom
+# Variable" of a notification apply rule
+vars.notification_contacts = ["alice", "bob"]
+
+# On a service: the host this service actually depends on
+vars.upstream_host = "router-eu-west-1"
+```
+
+Renaming or deleting a referenced object doesn't update the values that reference it, the same as for the `DirectorObject` Data Field.
+
 ##### `fixed-dictionary`
 A dictionary with a predefined, fixed set of keys. All keys are configured in the property schema; end-users only supply values. Good for structured connection parameters where the key set never changes.
 
@@ -292,11 +309,12 @@ Go to `Custom Variables` in the Icinga Director menu and choose
 * `Property Type`: one of the types listed above
 * `List name`: only for `datalist-strict` / `datalist-non-strict`,
   selects which Director datalist supplies the allowed values
-* `Item Type`: for `dynamic-array` and for the array variant of a
-  datalist type, selects whether items are scalar values or, for
-  datalists, a `dynamic-array` of values. A plain `dynamic-array` only
-  offers `string` and `number` as item type, `bool` and `sensitive`
-  items aren't supported
+* `Object Type`: only for `director-object`, selects which kind of
+  Director objects can be referenced
+* `Item Type`: for a `dynamic-array`, the type of its items, either
+  `string` or `number` (`bool` and `sensitive` items aren't supported).
+  For a datalist or `director-object` property, whether it holds a
+  single value (`String`) or a list of values (`Array`)
 
 Once a `fixed-array`, `fixed-dictionary`, `dynamic-array` or
 `dynamic-dictionary` property has been created, use its detail page to add
@@ -306,8 +324,8 @@ its nested structure: fixed positions for `fixed-array`, fixed keys for
 matter what key an end-user later assigns to that entry.
 
 > Once a property is used on one or more templates, its `Property Type`,
-> `Item Type` and `List name` can no longer be changed. Remove it from
-> all templates first if it needs to change.
+> `Item Type`, `List name` and `Object Type` can no longer be changed.
+> Remove it from all templates first if it needs to change.
 
 <a id="Attaching-custom-variables-to-objects-and-templates"></a>### Attaching custom variables to objects and templates
 
@@ -415,12 +433,19 @@ A field's `Category` migrates along with the field.
 | `DataTypeArray` | `dynamic-array` (string items) |
 | `DataTypeDatalist` (strict / suggest strict) | `datalist-strict` |
 | `DataTypeDatalist` (other) | `datalist-non-strict` |
+| `DataTypeDirectorObject` | `director-object`, same object type |
 
 A `DataTypeDatalist` field configured to accept multiple values (its
 `data_type` setting is `array`) migrates with `item_type` set to
 `dynamic-array`, so the resulting property stores a list of datalist
 values instead of a single one. Every other `Datalist` field migrates
-with a plain `string` item type.
+with a plain `string` item type. A `DataTypeDirectorObject` field
+migrates the same way, its `data_type` setting decides between a list
+and a single object.
+
+Notification apply rules keep working after a `DataTypeDirectorObject`
+field has been migrated, their `Users Custom Variable` and `User Groups
+Custom Variable` only store the variable's name.
 
 Existing template assignments are carried over automatically, so
 migrated variables show up already attached to the same host, service,
@@ -468,6 +493,8 @@ detached property.
 > datalist's name travels with the basket, not its entries. Restoring
 > such a snapshot onto a target that doesn't already have a matching
 > datalist creates it empty; populate the datalist there separately.
+> A `director-object` property carries its object type, the referenced
+> objects themselves aren't part of the basket.
 
 Custom variable values on an existing object can also be updated
 directly through the REST API, without having to submit the whole

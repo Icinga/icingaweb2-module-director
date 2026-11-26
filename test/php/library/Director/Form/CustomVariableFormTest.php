@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Director\Form;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\CustomVariableForm;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -160,6 +161,132 @@ class CustomVariableFormTest extends BaseTestCase
             $fieldOptions->getOption('dynamic-array'),
             'dynamic-array must still be offered as a nested field'
         );
+    }
+
+    public function testAssembleOffersObjectTypeAndItemTypeForDirectorObject(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $form = new CustomVariableForm($db);
+        $form->populate(['value_type' => DirectorObjectReference::VALUE_TYPE]);
+        self::callMethod($form, 'assemble', []);
+
+        $this->assertNotNull($form->getElement('value_type')->getOption(DirectorObjectReference::VALUE_TYPE));
+        $objectType = $form->getElement('object_type');
+        $this->assertTrue($objectType->isRequired(), 'a director-object property needs an object type');
+        $this->assertNotNull($objectType->getOption('user'));
+        $this->assertNotNull($objectType->getOption('usergroup'));
+        $this->assertNull($objectType->getOption('timeperiod'), 'only the legacy object types may be offered');
+        $this->assertNotNull($form->getElement('item_type')->getOption('dynamic-array'));
+
+        $fieldForm = new CustomVariableForm($db, null, true, Uuid::uuid4());
+        self::callMethod($fieldForm, 'assemble', []);
+        $this->assertNotNull(
+            $fieldForm->getElement('value_type')->getOption(DirectorObjectReference::VALUE_TYPE),
+            'director-object can be nested, like a datalist'
+        );
+    }
+
+    public function testAddDirectorObjectPropertyLinksObjectTypeAndItemType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $form = new TestableCustomVariableForm($db);
+        $form->setTestValues([
+            'key_name'    => '___TEST___notify_users',
+            'value_type'  => DirectorObjectReference::VALUE_TYPE,
+            'object_type' => 'user',
+            'item_type'   => 'dynamic-array',
+            'label'       => 'Notify Users',
+        ]);
+        $this->createdKeyNames[] = '___TEST___notify_users';
+        self::callMethod($form, 'onSuccess', []);
+        $uuid = $form->getUUid();
+
+        $row = $dba->fetchRow(
+            $dba->select()->from('director_property', ['value_type'])->where('key_name = ?', '___TEST___notify_users')
+        );
+        $this->assertSame(DirectorObjectReference::VALUE_TYPE, $row->value_type);
+        $this->assertSame('user', DirectorObjectReference::fetchObjectType($dba, $uuid->getBytes()));
+        $this->assertSame('dynamic-array', $this->fetchItemType($dba, $uuid));
+    }
+
+    public function testUpdateUnusedDirectorObjectPropertyChangesObjectTypeAndItemType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $createForm = new TestableCustomVariableForm($db);
+        $createForm->setTestValues([
+            'key_name'    => '___TEST___notify_target',
+            'value_type'  => DirectorObjectReference::VALUE_TYPE,
+            'object_type' => 'user',
+            'item_type'   => 'string',
+        ]);
+        $this->createdKeyNames[] = '___TEST___notify_target';
+        self::callMethod($createForm, 'onSuccess', []);
+        $uuid = $createForm->getUUid();
+
+        $updateForm = new TestableCustomVariableForm($db, $uuid);
+        $updateForm->setStoredKeyName('___TEST___notify_target');
+        $updateForm->setTestValues([
+            'key_name'    => '___TEST___notify_target',
+            'value_type'  => DirectorObjectReference::VALUE_TYPE,
+            'object_type' => 'usergroup',
+            'item_type'   => 'dynamic-array',
+        ]);
+        self::callMethod($updateForm, 'onSuccess', []);
+
+        $this->assertSame('usergroup', DirectorObjectReference::fetchObjectType($dba, $uuid->getBytes()));
+        $this->assertSame('dynamic-array', $this->fetchItemType($dba, $uuid));
+    }
+
+    public function testRetypingADirectorObjectPropertyRemovesItsObjectType(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $dba = $db->getDbAdapter();
+
+        $createForm = new TestableCustomVariableForm($db);
+        $createForm->setTestValues([
+            'key_name'    => '___TEST___retyped_reference',
+            'value_type'  => DirectorObjectReference::VALUE_TYPE,
+            'object_type' => 'host',
+            'item_type'   => 'string',
+        ]);
+        $this->createdKeyNames[] = '___TEST___retyped_reference';
+        self::callMethod($createForm, 'onSuccess', []);
+        $uuid = $createForm->getUUid();
+
+        $updateForm = new TestableCustomVariableForm($db, $uuid);
+        $updateForm->setStoredKeyName('___TEST___retyped_reference');
+        $updateForm->setTestValues([
+            'key_name'   => '___TEST___retyped_reference',
+            'value_type' => 'string',
+        ]);
+        self::callMethod($updateForm, 'onSuccess', []);
+
+        $this->assertNull(
+            DirectorObjectReference::fetchObjectType($dba, $uuid->getBytes()),
+            'a property that no longer references objects must not keep its object type'
+        );
+        $this->assertNull($this->fetchItemType($dba, $uuid), 'a plain string has no item type child');
     }
 
     public function testUpdateStringPropertyKeyName(): void
@@ -873,6 +1000,18 @@ class CustomVariableFormTest extends BaseTestCase
             json_decode($storedValue, true),
             'the stored value must not move while a Data Field owns the root varname'
         );
+    }
+
+    private function fetchItemType($dba, UuidInterface $uuid): ?string
+    {
+        $itemType = $dba->fetchOne(
+            $dba->select()
+                ->from('director_property', ['value_type'])
+                ->where('parent_uuid = ?', DbUtil::quoteBinaryCompat($uuid->getBytes(), $dba))
+                ->where('key_name = ?', '0')
+        );
+
+        return $itemType === false ? null : $itemType;
     }
 
     private function createHost(string $objectName, string $address): IcingaHost

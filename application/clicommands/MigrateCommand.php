@@ -10,6 +10,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterMatch;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -31,7 +32,7 @@ class MigrateCommand extends Command
      * Datatype suffixes (after 'Icinga\Module\Director\DataType\DataType') that are supported
      * for migration.
      */
-    private const SUPPORTED_DATATYPES = ['Array', 'Boolean', 'Number', 'String', 'Datalist'];
+    private const SUPPORTED_DATATYPES = ['Array', 'Boolean', 'Number', 'String', 'Datalist', 'DirectorObject'];
 
     /**
      * Show what would be migrated, without making any changes
@@ -284,6 +285,19 @@ class MigrateCommand extends Command
                         $db
                     )->get('uuid');
                 }
+            } elseif ($dataType === 'directorobject') {
+                $settings = DirectorDatafield::load($row->id, $db)->getSettings();
+                $objectType = $settings['icinga_object_type'] ?? null;
+                if (DirectorObjectReference::isValidObjectType($objectType)) {
+                    $customProperty['value_type'] = DirectorObjectReference::VALUE_TYPE;
+                    $customProperty['object_type'] = $objectType;
+                    $customProperty['item_type'] = ($settings['data_type'] ?? 'string') === 'array'
+                        ? 'dynamic-array'
+                        : 'string';
+                } else {
+                    // A field without a usable object type has nothing to reference, leave it alone
+                    $customProperty['value_type'] = "unsupported-$dataType";
+                }
             } else {
                 $customProperty['value_type'] = "unsupported-$dataType";
             }
@@ -371,6 +385,12 @@ class MigrateCommand extends Command
                     unset($customProperty['datalist_uuid']);
                 }
 
+                $objectType = null;
+                if (isset($customProperty['object_type'])) {
+                    $objectType = $customProperty['object_type'];
+                    unset($customProperty['object_type']);
+                }
+
                 $uuidBytes = $customProperty['uuid'];
                 $propertyUuid = Uuid::fromBytes($uuidBytes);
                 $migratedDataFields[$datafieldId] = $varName;
@@ -395,6 +415,10 @@ class MigrateCommand extends Command
                             'property_uuid' => DbUtil::quoteBinaryCompat($uuidBytes, $dbAdapter),
                             'list_uuid' => DbUtil::quoteBinaryCompat($datalistUuidBytes, $dbAdapter)
                         ]);
+                    }
+
+                    if ($objectType !== null) {
+                        DirectorObjectReference::link($dbAdapter, $uuidBytes, $objectType);
                     }
                 }
 

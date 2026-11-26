@@ -6,6 +6,7 @@
 namespace Icinga\Module\Director\Forms\DictionaryElements;
 
 use Icinga\Application\Config;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Forms\CustomVariablesForm;
@@ -119,6 +120,37 @@ class DictionaryItem extends FieldsetElement
         return $entries;
     }
 
+    /**
+     * Whether the given value type offers a list of known entries, a datalist or a director-object
+     *
+     * Both pick single value vs. list through their item type child.
+     *
+     * @param string $type
+     *
+     * @return bool
+     */
+    private static function isListBackedType(string $type): bool
+    {
+        return str_starts_with($type, 'datalist-') || $type === DirectorObjectReference::VALUE_TYPE;
+    }
+
+    /**
+     * Fetch the entries a datalist or director-object property offers, name => label
+     *
+     * @param UuidInterface $uuid
+     * @param string $type
+     *
+     * @return array
+     */
+    private static function fetchListEntries(UuidInterface $uuid, string $type): array
+    {
+        if ($type === DirectorObjectReference::VALUE_TYPE) {
+            return DirectorObjectReference::enumObjectsForProperty(self::getDb(), $uuid->getBytes());
+        }
+
+        return self::fetchDataListEntries($uuid);
+    }
+
     protected function assemble(): void
     {
         if (empty($this->fields)) {
@@ -144,7 +176,7 @@ class DictionaryItem extends FieldsetElement
         $isContainer = in_array($type, ['fixed-dictionary', 'dynamic-dictionary'], true);
 
         $uuid = Uuid::fromBytes($this->fields['uuid']);
-        $itemType = str_starts_with($type, 'datalist-') ? self::fetchItemType($uuid) : null;
+        $itemType = self::isListBackedType($type) ? self::fetchItemType($uuid) : null;
 
         if ($label === null) {
             $label = $name;
@@ -262,9 +294,11 @@ class DictionaryItem extends FieldsetElement
                 ->setVerticalTermDirection()
                 ->setPlaceHolder($placeholder)
                 ->setLabel($valueLabel));
-        } elseif (str_starts_with($type, 'datalist-')) {
-            $isStrict = substr($type, strlen('datalist-')) === 'strict';
-            $datalistEntries = self::fetchDataListEntries($uuid);
+        } elseif (self::isListBackedType($type)) {
+            $isObjectReference = $type === DirectorObjectReference::VALUE_TYPE;
+            // An object reference is always strict, only existing objects can be picked
+            $isStrict = $isObjectReference || substr($type, strlen('datalist-')) === 'strict';
+            $datalistEntries = self::fetchListEntries($uuid, $type);
             if ($itemType === 'string') {
                 if (! CustomVariablesForm::isValueUnset($inherited)) {
                     $placeholder = ($datalistEntries[$inherited] ?? $inherited) . ' ('
@@ -329,11 +363,16 @@ class DictionaryItem extends FieldsetElement
                     ->setPlaceHolder($placeholder)
                     ->setSuggestedValues($datalistEntries)
                     ->setVerticalTermDirection()
-                    ->setSuggestionUrl(Url::fromPath('director/suggestions/datalist-entry', [
-                        'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
-                        'showCompact' => true,
-                        '_disableLayout' => true
-                    ]));
+                    ->setSuggestionUrl(Url::fromPath(
+                        $isObjectReference
+                            ? 'director/suggestions/director-object'
+                            : 'director/suggestions/datalist-entry',
+                        [
+                            'uuid' => Uuid::fromBytes($this->fields['uuid'])->toString(),
+                            'showCompact' => true,
+                            '_disableLayout' => true
+                        ]
+                    ));
 
                 if ($isStrict) {
                     $termValidator = function (array $terms) use ($datalistEntries) {
@@ -403,6 +442,10 @@ class DictionaryItem extends FieldsetElement
     {
         if ($type === 'dynamic-array') {
             return 'Array';
+        }
+
+        if ($type === DirectorObjectReference::VALUE_TYPE) {
+            return 'Director Object ' . ($itemType === 'dynamic-array' ? 'Array' : 'String');
         }
 
         if (str_starts_with($type, 'datalist-')) {
@@ -513,7 +556,7 @@ class DictionaryItem extends FieldsetElement
 
         $property['uuid'] = DbUtil::binaryResult($property['uuid'] ?? '');
 
-        $isDatalist = in_array($property['value_type'], ['datalist-strict', 'datalist-non-strict'], true);
+        $isDatalist = self::isListBackedType($property['value_type']);
         if (
             $property['value_type'] === 'dynamic-array'
             || ($isDatalist && self::fetchItemType(Uuid::fromBytes($property['uuid'])) === 'dynamic-array')
@@ -521,7 +564,10 @@ class DictionaryItem extends FieldsetElement
             $inherited = $property['inherited'] ?? [];
             if ($isDatalist) {
                 // The terms show the labels of the entries, so the inherited hint has to as well
-                $datalistEntries = self::fetchDataListEntries(Uuid::fromBytes($property['uuid']));
+                $datalistEntries = self::fetchListEntries(
+                    Uuid::fromBytes($property['uuid']),
+                    $property['value_type']
+                );
                 $inherited = array_map(fn ($value) => $datalistEntries[$value] ?? $value, $inherited);
             }
 
@@ -880,7 +926,9 @@ class DictionaryItem extends FieldsetElement
                         'number' => $defaultValue = 0,
                         'bool' => $defaultValue = 'n',
                         'fixed-array', 'dynamic-array' => $defaultValue = [],
-                        'datalist-strict', 'datalist-non-strict' => $defaultValue =
+                        'datalist-strict',
+                        'datalist-non-strict',
+                        DirectorObjectReference::VALUE_TYPE => $defaultValue =
                             self::fetchItemType(Uuid::fromBytes($this->fields['uuid'])) === 'string' ? '' : [],
                         default => $defaultValue = null
                     };

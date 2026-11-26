@@ -8,6 +8,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Authentication\Auth;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use InvalidArgumentException;
@@ -31,7 +32,12 @@ class DirectorProperty extends DbObject
     ];
 
     /** Parent value_types whose items are always rendered in the clear, never masked */
-    private const UNMASKED_LIST_TYPES = ['dynamic-array', 'datalist-strict', 'datalist-non-strict'];
+    private const UNMASKED_LIST_TYPES = [
+        'dynamic-array',
+        'datalist-strict',
+        'datalist-non-strict',
+        DirectorObjectReference::VALUE_TYPE
+    ];
 
     protected $table = 'director_property';
 
@@ -66,6 +72,12 @@ class DirectorProperty extends DbObject
 
     /** True once we actually looked up the datalist, so null can mean "none" instead of "not yet" */
     private bool $datalistResolved = false;
+
+    /** @var ?string Object type referenced by a director-object property */
+    private ?string $objectType = null;
+
+    /** True once we actually looked up the object type, so null can mean "none" instead of "not yet" */
+    private bool $objectTypeResolved = false;
 
     /** @var ?DirectorDatafieldCategory */
     private $category;
@@ -192,6 +204,10 @@ class DirectorProperty extends DbObject
                         Db\DbUtil::quoteBinaryCompat($uuid->getBytes(), $db)
                     ));
                 $plain->datalist = $this->db->fetchOne($query);
+            }
+
+            if ($plain->value_type === DirectorObjectReference::VALUE_TYPE) {
+                $plain->object_type = $this->getObjectType();
             }
         }
 
@@ -335,6 +351,73 @@ class DirectorProperty extends DbObject
         $this->datalistResolved = true;
     }
 
+    /**
+     * Get the object type a director-object property references
+     *
+     * @return ?string null for any other value type, or if none is linked
+     */
+    public function getObjectType(): ?string
+    {
+        if ($this->objectTypeResolved) {
+            return $this->objectType;
+        }
+
+        $this->objectTypeResolved = true;
+
+        $uuid = Db\DbUtil::binaryResult($this->get('uuid'));
+        if ($uuid && $this->get('value_type') === DirectorObjectReference::VALUE_TYPE) {
+            $this->objectType = DirectorObjectReference::fetchObjectType($this->db, $uuid);
+        }
+
+        return $this->objectType;
+    }
+
+    /**
+     * Assign the object type resolved for this property during import
+     *
+     * Same reason as assignDatalist(): the object type lives in its own table, so
+     * changing it alone has to mark the property modified, or onStore() never runs.
+     *
+     * @param ?string $objectType
+     *
+     * @throws InvalidArgumentException
+     */
+    public function assignObjectType(?string $objectType): void
+    {
+        if ($objectType !== null && ! DirectorObjectReference::isValidObjectType($objectType)) {
+            throw new InvalidArgumentException(sprintf(
+                "'%s' is not an object type a custom variable can reference",
+                $objectType
+            ));
+        }
+
+        if ($this->hasBeenLoadedFromDb() && $this->getObjectType() !== $objectType) {
+            $this->hasBeenModified = true;
+        }
+
+        $this->objectType = $objectType;
+        $this->objectTypeResolved = true;
+    }
+
+    /**
+     * Take the object type off an exported property, so setProperties() never sees it
+     *
+     * @param stdClass $plain
+     *
+     * @return array{0: bool, 1: ?string} Whether the export carried an object type, and which one
+     */
+    private static function shiftImportedObjectType(stdClass $plain): array
+    {
+        if (! property_exists($plain, 'object_type')) {
+            return [false, null];
+        }
+
+        $objectType = $plain->object_type;
+        unset($plain->object_type);
+
+        return [true, $objectType];
+    }
+
     public static function fromDbRow($row, Db $connection)
     {
         $obj = static::create((array) $row, $connection);
@@ -402,6 +485,7 @@ class DirectorProperty extends DbObject
         // DirectorProperty items (children)
         $items = $plain->items ?? [];
         unset($plain->items);
+        [$objectTypeProvided, $objectType] = self::shiftImportedObjectType($plain);
 
         // If DirectorProperty has a UUID, load it from the database using the "uuid" property
         if ($uuid) {
@@ -422,6 +506,10 @@ class DirectorProperty extends DbObject
                 $candidate->setProperties((array) $plain);
                 if ($datalistProvided) {
                     $candidate->assignDatalist($datalist);
+                }
+
+                if ($objectTypeProvided) {
+                    $candidate->assignObjectType($objectType);
                 }
 
                 $candidate->items = $candidate->importItems((array) $items, $db, $persist);
@@ -453,6 +541,10 @@ class DirectorProperty extends DbObject
                 $candidate->assignDatalist($datalist);
             }
 
+            if ($objectTypeProvided) {
+                $candidate->assignObjectType($objectType);
+            }
+
             $candidate->items = $candidate->importItems((array) $items, $db, $persist);
 
             return $candidate;
@@ -462,6 +554,10 @@ class DirectorProperty extends DbObject
 
         if ($datalistProvided) {
             $property->assignDatalist($datalist);
+        }
+
+        if ($objectTypeProvided) {
+            $property->assignObjectType($objectType);
         }
 
         if ($items) {
@@ -656,6 +752,16 @@ class DirectorProperty extends DbObject
                 ]
             );
         }
+
+        // Fetch the object type before deleting the link row, same as the datalist above
+        $objectType = $this->get('value_type') === DirectorObjectReference::VALUE_TYPE
+            ? $this->getObjectType()
+            : null;
+        $rawUuid = Db\DbUtil::binaryResult($this->get('uuid'));
+        DirectorObjectReference::unlink($db, [$rawUuid]);
+        if ($objectType !== null) {
+            DirectorObjectReference::link($db, $rawUuid, $objectType);
+        }
     }
 
     /**
@@ -712,10 +818,16 @@ class DirectorProperty extends DbObject
                 unset($value->datalist);
             }
 
+            [$objectTypeProvided, $objectType] = self::shiftImportedObjectType($value);
+
             $itemCandidate->setProperties((array) $value);
 
             if ($datalistProvided) {
                 $itemCandidate->assignDatalist($datalist);
+            }
+
+            if ($objectTypeProvided) {
+                $itemCandidate->assignObjectType($objectType);
             }
 
             $itemCandidate->items = $itemCandidate->importItems($nestedItems, $db, $persist);

@@ -11,6 +11,7 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Dashboard\Dashlet\DeploymentDashlet;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
@@ -621,8 +622,9 @@ abstract class ObjectController extends ActionController
                 true
             );
 
+            $listBackedTypes = ['datalist-strict', 'datalist-non-strict', DirectorObjectReference::VALUE_TYPE];
             $datalistItemType = null;
-            if (in_array($row['value_type'], ['datalist-strict', 'datalist-non-strict'], true)) {
+            if (in_array($row['value_type'], $listBackedTypes, true)) {
                 $datalistItemType = $db->fetchOne(
                     $db->select()
                         ->from(['cdp' => 'director_property'], ['value_type' => 'cdp.value_type'])
@@ -634,7 +636,7 @@ abstract class ObjectController extends ActionController
                 $row['value_type'] === 'string' => is_string($existingValue),
                 $row['value_type'] === 'number' => is_numeric($existingValue),
                 $row['value_type'] === 'bool' => is_bool($existingValue),
-                in_array($row['value_type'], ['datalist-strict', 'datalist-non-strict'], true)
+                in_array($row['value_type'], $listBackedTypes, true)
                     => $datalistItemType === 'dynamic-array' ? is_array($existingValue) : is_string($existingValue),
                 default => is_array($existingValue),
             };
@@ -1164,6 +1166,7 @@ abstract class ObjectController extends ActionController
                 'bool',
                 'datalist-strict',
                 'datalist-non-strict',
+                DirectorObjectReference::VALUE_TYPE,
                 'dynamic-array',
                 'fixed-dictionary',
                 'dynamic-dictionary'

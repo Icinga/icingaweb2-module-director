@@ -7,6 +7,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\CustomVariable\CustomVariableValueCleaner;
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Forms\DeleteCustomVariableForm;
 use Icinga\Module\Director\Forms\CustomVariableForm;
@@ -86,7 +87,11 @@ class CustomvarController extends CompatController
 
         $property['used_count'] = $usedCount;
 
-        if ($property['value_type'] === 'dynamic-array' || str_starts_with($property['value_type'], 'datalist-')) {
+        if (
+            $property['value_type'] === 'dynamic-array'
+            || str_starts_with($property['value_type'], 'datalist-')
+            || $property['value_type'] === DirectorObjectReference::VALUE_TYPE
+        ) {
             $itemTypeQuery = $db
                 ->select()->from('director_property', 'value_type')
                 ->where(
@@ -107,6 +112,10 @@ class CustomvarController extends CompatController
                 );
 
             $property['list'] = $db->fetchOne($datalistId);
+        }
+
+        if ($property['value_type'] === DirectorObjectReference::VALUE_TYPE) {
+            $property['object_type'] = DirectorObjectReference::fetchObjectType($db, $uuid->getBytes());
         }
 
         $showFields = $this->showFields($property['value_type']);

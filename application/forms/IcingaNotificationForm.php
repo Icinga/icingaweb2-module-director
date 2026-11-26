@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\CustomVariable\DirectorObjectReference;
 use Icinga\Module\Director\DataType\DataTypeDirectorObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -148,7 +149,8 @@ class IcingaNotificationForm extends DirectorObjectForm
                 . ' e.g.: when set to notification_contacts, this notification will pick Users from the Array'
                 . ' service.vars.notification_contacts and fall back to host.vars.notification_contacts, in'
                 . ' case the former one does not exist.'
-                . ' Only Array type DirectorObject Fields for User objects are eligible for this feature.'
+                . ' Only Array type DirectorObject Fields and Director Object Custom Variables for User'
+                . ' objects are eligible for this feature.'
             )
         ]);
 
@@ -185,7 +187,8 @@ class IcingaNotificationForm extends DirectorObjectForm
                 . ' e.g.: when set to notification_groups, this notification will pick User Groups from the Array'
                 . ' service.vars.notification_groups and fall back to host.vars.notification_groups, in'
                 . ' case the former one does not exist.'
-                . ' Only Array type DirectorObject Fields for User objects are eligible for this feature.'
+                . ' Only Array type DirectorObject Fields and Director Object Custom Variables for User'
+                . ' Group objects are eligible for this feature.'
             )
         ]);
 
@@ -212,7 +215,24 @@ class IcingaNotificationForm extends DirectorObjectForm
             ->where('dft.setting_value = ?', $dataType)
             ->order('df.varname');
 
-        return $this->optionalEnum($db->fetchPairs($query));
+        $fields = $db->fetchPairs($query);
+
+        // The same for custom variables of the new kind, a director-object property
+        // referencing the given object type, holding a list or a single object
+        $propertyQuery = $db->select()
+            ->from(['dp' => 'director_property'], ['k' => 'dp.key_name', 'v' => 'dp.key_name'])
+            ->join(['dpo' => DirectorObjectReference::TABLE], 'dpo.property_uuid = dp.uuid', [])
+            ->join(['item' => 'director_property'], 'item.parent_uuid = dp.uuid', [])
+            ->where('dp.parent_uuid IS NULL')
+            ->where('dp.value_type = ?', DirectorObjectReference::VALUE_TYPE)
+            ->where('dpo.object_type = ?', $objectType)
+            ->where('item.value_type = ?', $dataType === 'array' ? 'dynamic-array' : 'string')
+            ->order('dp.key_name');
+
+        $fields += $db->fetchPairs($propertyQuery);
+        ksort($fields);
+
+        return $this->optionalEnum($fields);
     }
 
     /**
