@@ -460,10 +460,11 @@ They're being replaced by a new Custom Property system. Use
 `icingacli director migrate <action>` to move your existing Data Fields
 over to Custom Properties.
 
-| Action       | Description                                     |
-|--------------|--------------------------------------------------|
-| `summary`    | Show what would be migrated, nothing gets touched |
-| `datafields` | Run the migration                                 |
+| Action              | Description                                       |
+|---------------------|---------------------------------------------------|
+| `summary`           | Show what would be migrated, nothing gets touched |
+| `datafields`        | Run the migration                                 |
+| `cleanupDatafields` | Remove Data Fields that were migrated earlier     |
 
 ### Show what would be migrated
 
@@ -484,8 +485,9 @@ and totals for what would be migrated versus skipped.
 | Option                  | Description                                       |
 |--------------------------|---------------------------------------------------|
 | `--dry-run`              | Preview the migration, nothing gets written        |
-| `--delete`               | Remove a Data Field once it's been migrated        |
-|                          | (has no effect together with `--dry-run`)          |
+| `--delete`               | Remove a Data Field once it's been migrated,       |
+|                          | only the ones migrated by this run. Has no effect  |
+|                          | together with `--dry-run`                          |
 | `--allow-lossy-filters`  | Migrate a binding even if it has a var_filter,      |
 |                          | dropping the filter. Left alone by default          |
 | `--verbose`              | Print every Data Field as it's migrated or skipped |
@@ -506,6 +508,49 @@ has the same name, or when one of its bindings has a var_filter and
 you didn't pass `--allow-lossy-filters`.
 
 Run with `--verbose` to see the reason for each one.
+
+### Remove Data Fields that were migrated earlier
+
+#### Usage
+
+`icingacli director migrate cleanupDatafields [options]`
+
+#### Options
+
+| Option      | Description                                            |
+|-------------|--------------------------------------------------------|
+| `--dry-run` | Preview what would be removed, nothing gets written     |
+| `--verbose` | Print every Data Field as it's removed                  |
+
+Removes Data Fields that an earlier run migrated without `--delete`, together
+with their template assignments. A Data Field is only removed when a matching
+Custom Variable exists. If the type, the Data List or any template assignment
+differs, the Data Field is kept and the reason is printed.
+
+A template assignment that is missing on the Custom Variable keeps the Data
+Field, and the message names the template. Add the Custom Variable to that
+template, or remove the Data Field from it, and run the cleanup again. A
+different "required" flag doesn't count as a difference, the one on the Custom
+Variable is kept, as it was set after the migration. The command prints a
+notice for each one, also with `--dry-run`, so a required field that turns
+optional doesn't go unnoticed.
+
+A `var_filter` on a template assignment can't be carried over, so it is lost
+once the Data Field is removed. The command prints a warning for each one, also
+with `--dry-run`.
+
+Run the cleanup while nobody is editing Data Fields, like the migration itself.
+A template assignment added while it runs may be removed without being checked.
+
+#### Examples
+
+```shell
+icingacli director migrate cleanupDatafields --dry-run --verbose
+```
+
+```shell
+icingacli director migrate cleanupDatafields --verbose
+```
 
 
 Configuration handling

@@ -34,6 +34,28 @@ class MigrateCommand extends Command
     private const SUPPORTED_DATATYPES = ['Array', 'Boolean', 'Number', 'String', 'Datalist'];
 
     /**
+     * Object types that can carry a datafield binding
+     */
+    private const OBJECT_TYPES = ['host', 'service', 'notification', 'command', 'user'];
+
+    /**
+     * Legacy bindings already looked up in this run, by datafield id
+     *
+     * The cleanup checks the same datafields a few times, this saves going back to the database
+     * each time. Cleared once datafields get deleted.
+     *
+     * @var array
+     */
+    private array $legacyBindings = [];
+
+    /**
+     * Property bindings already looked up in this run, by property name
+     *
+     * @var array
+     */
+    private array $propertyBindings = [];
+
+    /**
      * Show what would be migrated, without making any changes
      *
      * USAGE
@@ -182,6 +204,67 @@ class MigrateCommand extends Command
         echo "Summary:\n";
         printf("Total number of datafields migrated: %d\n", $totalMigrated);
         printf("Total number of datafields skipped: %d\n", $totalSkipped);
+
+        // Fields migrated by an earlier run are never touched here, not even with --delete
+        $leftForCleanup = ! empty($existingCustomProperties)
+            || ($totalMigrated > 0 && ! $dryRun && ! $delete);
+
+        if ($leftForCleanup) {
+            echo "Run 'icingacli director migrate cleanupDatafields' to remove the migrated datafields\n";
+        }
+    }
+
+    /**
+     * Delete datafields that an earlier run already migrated
+     *
+     * A datafield is only deleted when a property with the same name exists and matches it
+     * in full, anything else is kept and listed with the reason.
+     *
+     * USAGE
+     *
+     * icingacli director migrate cleanupDatafields --dry-run --verbose
+     *
+     * OPTIONS
+     *
+     *  --dry-run  Preview what would be deleted without writing to the database
+     *
+     *  --verbose  List every datafield that is deleted
+     *
+     * @return void
+     */
+    public function cleanupDatafieldsAction()
+    {
+        $dryRun = $this->params->shift('dry-run') ?? false;
+        [$migratedDataFields, $conflicts] = $this->findAlreadyMigratedDatafields();
+
+        echo "Cleaning up migrated Data fields\n";
+
+        foreach ($conflicts as $varName => $reason) {
+            echo "[-] Keeping datafield '$varName', $reason\n";
+        }
+
+        $this->warnAboutDroppedFilters($migratedDataFields);
+        $this->noticeChangedRequiredFlags($migratedDataFields);
+
+        if (! $dryRun && ! empty($migratedDataFields)) {
+            $this->db()->runFailSafeTransaction(function () use ($migratedDataFields) {
+                $this->deleteMigratedDataFields($migratedDataFields);
+            });
+        }
+
+        if ($this->isVerbose) {
+            foreach ($migratedDataFields as $varName) {
+                echo ($dryRun ? '[*] Would delete' : '[+] Deleted') . " datafield '$varName'\n";
+            }
+        }
+
+        echo "Summary:\n";
+        printf(
+            "Total number of datafields %s: %d\n",
+            $dryRun ? 'that would be deleted' : 'deleted',
+            count($migratedDataFields)
+        );
+        printf("Total number of datafields kept: %d\n", count($conflicts));
     }
 
     /**
@@ -235,7 +318,6 @@ class MigrateCommand extends Command
         $customProperties = [];
         $existingCustomProperties = [];
         $migrationQuery = $this->getDataFieldsMigrationQuery();
-        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
         foreach ($migrationQuery as $row) {
             if (isset($existingKeyNamesByLower[mb_strtolower($row->varname, 'UTF-8')])) {
                 $existingCustomProperties[] = $row->varname;
@@ -243,55 +325,69 @@ class MigrateCommand extends Command
                 continue;
             }
 
-            $customProperty = [
-                'datafield_id' => $row->id,
-                'uuid' => Uuid::uuid4()->getBytes(),
-                'key_name' => $row->varname,
-                'label' => $row->caption,
-                'description' => $row->description,
-                'category_id' => $row->category_id
-            ];
-            $dataType = strtolower(substr($row->datatype, $typeOffset));
-
-            if ($dataType === 'array') {
-                $customProperty['value_type'] = 'dynamic-array';
-                $customProperty['item_type'] = 'string';
-            } elseif ($dataType === 'boolean' || $dataType === 'number') {
-                $customProperty['value_type'] = $dataType === 'boolean' ? 'bool' : $dataType;
-            } elseif ($dataType === 'string') {
-                $settings = DirectorDatafield::load($row->id, $db)->getSettings();
-                $customProperty['value_type'] = ($settings['visibility'] ?? null) === 'hidden'
-                    ? 'sensitive'
-                    : 'string';
-            } elseif ($dataType === 'datalist') {
-                $datalist = DirectorDatafield::load($row->id, $db);
-                $settings = $datalist->getSettings();
-                $behaviour = $settings['behavior'] ?? 'strict';
-                if ($behaviour === 'strict' || $behaviour === 'suggest_strict') {
-                    $customProperty['value_type'] = 'datalist-strict';
-                } else {
-                    $customProperty['value_type'] = 'datalist-non-strict';
-                }
-
-                // older datalists were saved without this setting, and it defaulted to string
-                $customProperty['item_type'] = ($settings['data_type'] ?? 'string') === 'array'
-                    ? 'dynamic-array'
-                    : 'string';
-
-                if (isset($settings['datalist_id'])) {
-                    $customProperty['datalist_uuid'] = DirectorDatalist::loadWithAutoIncId(
-                        $settings['datalist_id'],
-                        $db
-                    )->get('uuid');
-                }
-            } else {
-                $customProperty['value_type'] = "unsupported-$dataType";
-            }
-
-            $customProperties[$row->varname] = $customProperty;
+            $customProperties[$row->varname] = $this->buildCustomProperty($row);
         }
 
         return [$customProperties, $existingCustomProperties];
+    }
+
+    /**
+     * Work out the custom property a datafield turns into
+     *
+     * @param object $row A datafield row from the migration query
+     *
+     * @return array
+     */
+    private function buildCustomProperty(object $row): array
+    {
+        $db = $this->db();
+        $typeOffset = strlen("Icinga\Module\Director\DataType\DataType");
+        $customProperty = [
+            'datafield_id' => $row->id,
+            'uuid' => Uuid::uuid4()->getBytes(),
+            'key_name' => $row->varname,
+            'label' => $row->caption,
+            'description' => $row->description,
+            'category_id' => $row->category_id
+        ];
+        $dataType = strtolower(substr($row->datatype, $typeOffset));
+
+        if ($dataType === 'array') {
+            $customProperty['value_type'] = 'dynamic-array';
+            $customProperty['item_type'] = 'string';
+        } elseif ($dataType === 'boolean' || $dataType === 'number') {
+            $customProperty['value_type'] = $dataType === 'boolean' ? 'bool' : $dataType;
+        } elseif ($dataType === 'string') {
+            $settings = DirectorDatafield::load($row->id, $db)->getSettings();
+            $customProperty['value_type'] = ($settings['visibility'] ?? null) === 'hidden'
+                ? 'sensitive'
+                : 'string';
+        } elseif ($dataType === 'datalist') {
+            $datalist = DirectorDatafield::load($row->id, $db);
+            $settings = $datalist->getSettings();
+            $behaviour = $settings['behavior'] ?? 'strict';
+            if ($behaviour === 'strict' || $behaviour === 'suggest_strict') {
+                $customProperty['value_type'] = 'datalist-strict';
+            } else {
+                $customProperty['value_type'] = 'datalist-non-strict';
+            }
+
+            // older datalists were saved without this setting, and it defaulted to string
+            $customProperty['item_type'] = ($settings['data_type'] ?? 'string') === 'array'
+                ? 'dynamic-array'
+                : 'string';
+
+            if (isset($settings['datalist_id'])) {
+                $customProperty['datalist_uuid'] = DirectorDatalist::loadWithAutoIncId(
+                    $settings['datalist_id'],
+                    $db
+                )->get('uuid');
+            }
+        } else {
+            $customProperty['value_type'] = "unsupported-$dataType";
+        }
+
+        return $customProperty;
     }
 
     /**
@@ -644,27 +740,107 @@ class MigrateCommand extends Command
             return false;
         }
 
-        $dbAdapter = $this->db()->getDbAdapter();
-        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
-        foreach ($objectTypes as $type) {
-            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], [])
-                ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['var_filter'])
-                ->where('iof.datafield_id = ?', $datafieldId);
-
-            foreach ($dbAdapter->fetchCol($query) as $varFilter) {
-                if (! empty($varFilter)) {
-                    if ($reportProgress) {
-                        echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
-                            . "var_filter is not supported by the new property system, so it will not be"
-                            . " migrated or deleted\n";
-                    }
-
-                    return true;
+        foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+            if (! empty($binding['var_filter'])) {
+                if ($reportProgress) {
+                    $type = $binding['type'];
+                    echo "[!] Datafield '$varName' has a var_filter set for its icinga_{$type} binding; "
+                        . "var_filter is not supported by the new property system, so it will not be"
+                        . " migrated or deleted\n";
                 }
+
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Get every object binding a datafield still has in the legacy tables
+     *
+     * @param int $datafieldId
+     *
+     * @return array Rows with the keys type, uuid, object_name, is_required and var_filter
+     */
+    private function fetchLegacyBindings(int $datafieldId): array
+    {
+        if (isset($this->legacyBindings[$datafieldId])) {
+            return $this->legacyBindings[$datafieldId];
+        }
+
+        $dbAdapter = $this->db()->getDbAdapter();
+        $bindings = [];
+        foreach (self::OBJECT_TYPES as $type) {
+            $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid', 'object_name'])
+                ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['is_required', 'var_filter'])
+                ->where('iof.datafield_id = ?', $datafieldId);
+
+            foreach ($dbAdapter->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+                $row = DbUtil::normalizeRow($row);
+                $row['type'] = $type;
+                $bindings[] = $row;
+            }
+        }
+
+        $this->legacyBindings[$datafieldId] = $bindings;
+
+        return $bindings;
+    }
+
+    /**
+     * Warn about filters that are lost once the datafields are deleted
+     *
+     * The new properties can't hold a filter, so it only lived on the old binding.
+     *
+     * @param array $migratedDataFields Datafields about to be deleted, as ['id' => 'datafield_name']
+     *
+     * @return void
+     */
+    private function warnAboutDroppedFilters(array $migratedDataFields): void
+    {
+        foreach ($migratedDataFields as $datafieldId => $varName) {
+            foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+                if (! empty($binding['var_filter'])) {
+                    echo "[!] Datafield '$varName' has a var_filter on its icinga_{$binding['type']} binding,"
+                        . " it is not part of the migrated property and is lost once the datafield is deleted\n";
+                }
+            }
+        }
+    }
+
+    /**
+     * Tell when a binding's required flag differs from the one on the property
+     *
+     * The cleanup keeps the property's flag, so a required field may turn optional. Say so,
+     * also on a dry run, instead of changing it quietly.
+     *
+     * @param array $migratedDataFields Datafields about to be deleted, as ['id' => 'datafield_name']
+     *
+     * @return void
+     */
+    private function noticeChangedRequiredFlags(array $migratedDataFields): void
+    {
+        foreach ($migratedDataFields as $datafieldId => $varName) {
+            $propertyBindings = $this->fetchPropertyBindings($varName);
+            foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+                $type = $binding['type'];
+                $propertyFlag = $propertyBindings[$type][Uuid::fromBytes($binding['uuid'])->toString()] ?? null;
+                if ($propertyFlag === null || $propertyFlag === $binding['is_required']) {
+                    continue;
+                }
+
+                printf(
+                    "[i] Datafield '%s' is %s on %s '%s' but its property is %s,"
+                    . " the property's setting is kept\n",
+                    $varName,
+                    $binding['is_required'] === 'y' ? 'required' : 'optional',
+                    $type,
+                    $binding['object_name'],
+                    $propertyFlag === 'y' ? 'required' : 'optional'
+                );
+            }
+        }
     }
 
     /**
@@ -692,8 +868,7 @@ class MigrateCommand extends Command
         $db = $this->db();
         $dbAdapter = $db->getDbAdapter();
         $propertyUuidExpr = $dryRun ? null : DbUtil::quoteBinaryCompat($propertyUuid->getBytes(), $dbAdapter);
-        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
-        foreach ($objectTypes as $type) {
+        foreach (self::OBJECT_TYPES as $type) {
             $query = $dbAdapter->select()->from(['io' => "icinga_{$type}"], ['uuid'])
                 ->join(['iof' => "icinga_{$type}_field"], "io.id = iof.{$type}_id", ['is_required', 'var_filter'])
                 ->where('iof.datafield_id = ?', $datafieldId);
@@ -742,10 +917,13 @@ class MigrateCommand extends Command
             return;
         }
 
+        // Bindings looked up earlier are about to go, don't hand them out anymore
+        $this->legacyBindings = [];
+        $this->propertyBindings = [];
+
         $db = $this->db();
-        $objectTypes = ['host', 'service', 'notification', 'command', 'user'];
         $datafieldIds = array_keys($migratedDataFields);
-        foreach ($objectTypes as $type) {
+        foreach (self::OBJECT_TYPES as $type) {
             $db->delete(
                 "icinga_{$type}_field",
                 Filter::where('datafield_id', $datafieldIds)
@@ -756,5 +934,174 @@ class MigrateCommand extends Command
             'director_datafield',
             Filter::where('id', $datafieldIds)
         );
+    }
+
+    /**
+     * Find the datafields an earlier run already migrated
+     *
+     * A datafield only counts when a property with its name exists and matches it in full.
+     * Everything else with a clashing name is kept and comes back with the reason.
+     *
+     * @return array{0: array, 1: array} The datafields to delete as ['id' => 'name'] and the
+     *         datafields kept as ['name' => 'reason']
+     */
+    private function findAlreadyMigratedDatafields(): array
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $propertyRows = $dbAdapter->fetchAll(
+            $dbAdapter->select()
+                ->from('director_property', ['key_name', 'value_type'])
+                ->where('parent_uuid IS NULL'),
+            fetchMode: PDO::FETCH_ASSOC
+        );
+
+        // Names are case-insensitive in the new schema, so match them the same way here
+        $propertiesByLowerName = [];
+        foreach ($propertyRows as $propertyRow) {
+            $propertiesByLowerName[mb_strtolower($propertyRow['key_name'], 'UTF-8')] = $propertyRow;
+        }
+
+        $migratedDataFields = [];
+        $conflicts = [];
+        foreach ($this->getDataFieldsMigrationQuery() as $row) {
+            $property = $propertiesByLowerName[mb_strtolower($row->varname, 'UTF-8')] ?? null;
+            if ($property === null) {
+                continue;
+            }
+
+            $mismatch = $this->findMismatch($row, $property);
+            if ($mismatch === null) {
+                $migratedDataFields[$row->id] = $row->varname;
+            } else {
+                $conflicts[$row->varname] = $mismatch;
+            }
+        }
+
+        return [$migratedDataFields, $conflicts];
+    }
+
+    /**
+     * Compare a datafield with the property that has its name
+     *
+     * @param object $row      A datafield row from the migration query
+     * @param array  $property The existing property with the same name
+     *
+     * @return ?string Why they differ, or null when the property is a faithful migration
+     */
+    private function findMismatch(object $row, array $property): ?string
+    {
+        $expected = $this->buildCustomProperty($row);
+        if ($expected['value_type'] !== $property['value_type']) {
+            return "its property is a '{$property['value_type']}' but the datafield would migrate"
+                . " as '{$expected['value_type']}'";
+        }
+
+        if (isset($expected['item_type']) && $this->fetchItemType($row->varname) !== $expected['item_type']) {
+            return 'its property holds a different kind of items';
+        }
+
+        if (isset($expected['datalist_uuid'])) {
+            $linkedList = $this->fetchLinkedListUuid($row->varname);
+            if ($linkedList !== DbUtil::binaryResult($expected['datalist_uuid'])) {
+                return 'its property is linked to a different datalist';
+            }
+        }
+
+        return $this->findMissingBinding($row->id, $row->varname);
+    }
+
+    /**
+     * Get the item type of a property, if it has one
+     *
+     * @param string $keyName
+     *
+     * @return ?string
+     */
+    private function fetchItemType(string $keyName): ?string
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $query = $dbAdapter->select()->from(['child' => 'director_property'], ['value_type'])
+            ->join(['parent' => 'director_property'], 'parent.uuid = child.parent_uuid', [])
+            ->where('parent.key_name = ?', $keyName)
+            ->where('parent.parent_uuid IS NULL');
+        $itemType = $dbAdapter->fetchOne($query);
+
+        return $itemType === false ? null : $itemType;
+    }
+
+    /**
+     * Get the uuid of the datalist a property is linked to, if any
+     *
+     * @param string $keyName
+     *
+     * @return ?string
+     */
+    private function fetchLinkedListUuid(string $keyName): ?string
+    {
+        $dbAdapter = $this->db()->getDbAdapter();
+        $query = $dbAdapter->select()->from(['pd' => 'director_property_datalist'], ['list_uuid'])
+            ->join(['dp' => 'director_property'], 'dp.uuid = pd.property_uuid', [])
+            ->where('dp.key_name = ?', $keyName)
+            ->where('dp.parent_uuid IS NULL');
+        $listUuid = DbUtil::binaryResult($dbAdapter->fetchOne($query));
+
+        return $listUuid === false ? null : $listUuid;
+    }
+
+    /**
+     * Check every legacy binding of a datafield was carried over to the property
+     *
+     * The required flag isn't compared. The migration copies it as is, so a different one
+     * means someone changed it on the property later, and that newer choice wins.
+     *
+     * @param int    $datafieldId
+     * @param string $varName
+     *
+     * @return ?string Why a binding is missing, or null when all of them are there
+     */
+    private function findMissingBinding(int $datafieldId, string $varName): ?string
+    {
+        $carriedOver = $this->fetchPropertyBindings($varName);
+        foreach ($this->fetchLegacyBindings($datafieldId) as $binding) {
+            if (! isset($carriedOver[$binding['type']][Uuid::fromBytes($binding['uuid'])->toString()])) {
+                return "its {$binding['type']} binding on '{$binding['object_name']}' was not carried over"
+                    . ' to the property';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the required flag of every object binding a property has
+     *
+     * @param string $keyName
+     *
+     * @return array As ['type' => ['object uuid' => 'y' or 'n']]
+     */
+    private function fetchPropertyBindings(string $keyName): array
+    {
+        if (isset($this->propertyBindings[$keyName])) {
+            return $this->propertyBindings[$keyName];
+        }
+
+        $dbAdapter = $this->db()->getDbAdapter();
+        $bindings = [];
+        foreach (self::OBJECT_TYPES as $type) {
+            $query = $dbAdapter->select()
+                ->from(['ip' => "icinga_{$type}_property"], ["{$type}_uuid", 'required'])
+                ->join(['dp' => 'director_property'], 'dp.uuid = ip.property_uuid', [])
+                ->where('dp.key_name = ?', $keyName)
+                ->where('dp.parent_uuid IS NULL');
+
+            foreach ($dbAdapter->fetchAll($query, fetchMode: PDO::FETCH_ASSOC) as $row) {
+                $row = DbUtil::normalizeRow($row);
+                $bindings[$type][Uuid::fromBytes($row["{$type}_uuid"])->toString()] = $row['required'];
+            }
+        }
+
+        $this->propertyBindings[$keyName] = $bindings;
+
+        return $bindings;
     }
 }
