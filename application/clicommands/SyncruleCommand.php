@@ -24,8 +24,8 @@ class SyncruleCommand extends Command
      * List defined Sync Rules
      *
      * This shows a table with your defined Sync Rules, their IDs and
-     * current state. As triggering a Sync requires an ID, this is where
-     * you can look up the desired ID.
+     * current state. Use it to look up the ID or name of the Sync Rule
+     * you want to check or run.
      *
      * USAGE
      *
