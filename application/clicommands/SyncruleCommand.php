@@ -24,8 +24,8 @@ class SyncruleCommand extends Command
      * List defined Sync Rules
      *
      * This shows a table with your defined Sync Rules, their IDs and
-     * current state. As triggering a Sync requires an ID, this is where
-     * you can look up the desired ID.
+     * current state. Use it to look up the ID or name of the Sync Rule
+     * you want to check or run.
      *
      * USAGE
      *
@@ -176,6 +176,15 @@ class SyncruleCommand extends Command
         $name = null;
         if ($id === null) {
             $name = $this->params->get('name');
+
+            // A --name without a value is read as true, which ends up looking for a rule
+            // called "1" and could delete it by mistake. Given twice, it becomes a list.
+            // Make sure the name is valid and is passed only once.
+            if ($name !== null && (! is_string($name) || $name === '')) {
+                throw new MissingParameterException($this->translate(
+                    '--name has no value or was given more than once. Pass one rule name, e.g. --name <rule_name>'
+                ));
+            }
         }
 
         if ($id === null && $name === null) {
@@ -186,7 +195,7 @@ class SyncruleCommand extends Command
             return SyncRule::loadWithAutoIncId($id, $this->db());
         }
 
-        return SyncRule::loadWithAutoIncId($name, $this->db());
+        return SyncRule::load($name, $this->db());
     }
 
     /**
