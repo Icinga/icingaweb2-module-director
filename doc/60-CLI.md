@@ -719,8 +719,8 @@ fresh data. In case data didn't change, nothing is going to be stored.
 #### List defined Sync Rules
 
 This shows a table with your defined Sync Rules, their IDs and current
-state. As triggering a Sync requires an ID, this is where you can look
-up the desired ID.
+state. Use it to look up the ID or name of the Sync Rule you want to
+check or run.
 
 `icingacli director syncrule list`
 
@@ -731,12 +731,15 @@ changes.
 
 `icingacli director syncrule check --id <id>`
 
+`icingacli director syncrule check --name <rule_name>`
+
 ##### Options
 
-| Option        | Description                                        |
-|---------------|----------------------------------------------------|
-| `--id <id>`   | A Sync Rule ID. Use the list command to figure out |
-| `--benchmark` | Show timing and memory usage details               |
+| Option               | Description                                               |
+|----------------------|-----------------------------------------------------------|
+| `--id <id>`          | A Sync Rule ID. Use the list command to figure out        |
+| `--name <rule_name>` | A Sync Rule name. Use either `--id` or `--name`, not both |
+| `--benchmark`        | Show timing and memory usage details                      |
 
 #### Trigger a Sync Run for a given Sync Rule
 
@@ -745,12 +748,17 @@ with existing ones and persists eventual changes.
 
 `icingacli director syncrule run --id <id>`
 
+or
+
+`icingacli director syncrule run --name <rule_name>`
+
 ##### Options
 
-| Option        | Description                                        |
-|---------------|----------------------------------------------------|
-| `--id <id>`   | A Sync Rule ID. Use the list command to figure out |
-| `--benchmark` | Show timing and memory usage details               |
+| Option               | Description                                               |
+|----------------------|-----------------------------------------------------------|
+| `--id <id>`          | A Sync Rule ID. Use the list command to figure out        |
+| `--name <rule_name>` | A Sync Rule name. Use either `--id` or `--name`, not both |
+| `--benchmark`        | Show timing and memory usage details                      |
 
 
 Database housekeeping
