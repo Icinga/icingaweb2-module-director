@@ -686,6 +686,12 @@ class HostController extends ObjectController
             $set->getObjectName(),
         );
 
+        $setName = $setTemplate->getObjectName();
+        $this->content()->add(Hint::info(Html::sprintf(
+            $this->translate('This service belongs to the service set "%s".'),
+            Link::create($setName, 'director/serviceset', ['name' => $setName], ['data-base-target' => '_next'])
+        )));
+
         $deactivateForm = (new HostServiceBlacklistForm($db, $host, $originalService))
             ->on(HostServiceBlacklistForm::ON_SUBMIT, function () {
                 $this->redirectNow(Url::fromRequest());
