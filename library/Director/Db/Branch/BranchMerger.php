@@ -5,10 +5,12 @@
 
 namespace Icinga\Module\Director\Db\Branch;
 
+use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Ramsey\Uuid\UuidInterface;
 
 class BranchMerger
@@ -149,12 +151,45 @@ class BranchMerger
             }
         } else {
             if ($exists) {
-                $activity->applyToDbObject($class::requireWithUniqueId($uuid, $this->connection))->store();
+                $object = $activity->applyToDbObject($class::requireWithUniqueId($uuid, $this->connection));
+                // Note the dropped imports before storing, it overwrites them
+                $removedImportNames = $this->removedImportNames($object);
+                $object->store();
+
+                // The branch only staged the import change, clean up the values it orphaned now
+                if (! empty($removedImportNames)) {
+                    PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
+                        $object,
+                        $removedImportNames,
+                        $this->connection
+                    );
+                }
+
                 // TODO: you modified an object, and related properties have been changed in the meantime.
                 //       We're able to detect this with the given data, and might want to offer a rebase.
             } elseif (! $this->ignoreModificationWhenMissing && ! $this->ignoresActivity($activity)) {
                 throw new MergeErrorModificationForMissingObject($activity);
             }
         }
+    }
+
+    /**
+     * Imports the object had in the database but no longer has
+     *
+     * @param DbObject $object
+     *
+     * @return string[]
+     */
+    protected function removedImportNames(DbObject $object): array
+    {
+        if (
+            ! $object instanceof IcingaObject
+            || ! $object->supportsImports()
+            || ! $object->supportsCustomVars()
+        ) {
+            return [];
+        }
+
+        return array_diff($object->imports()->listOriginalImportNames(), $object->getImports());
     }
 }
