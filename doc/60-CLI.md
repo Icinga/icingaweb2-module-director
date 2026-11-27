@@ -731,6 +731,8 @@ changes.
 
 `icingacli director syncrule check --id <id>`
 
+or
+
 `icingacli director syncrule check --name <rule_name>`
 
 ##### Options
