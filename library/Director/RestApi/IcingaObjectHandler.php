@@ -269,6 +269,9 @@ class IcingaObjectHandler extends RequestHandler
         $object = $request->object;
         $data = $request->data;
         $type = $request->type;
+        // A GET exports these along with the object, but they are no object properties.
+        // Drop them so that a GET response can be sent back as it is.
+        unset($data['fields'], $data['customVariables']);
 
         if ($request->actionName !== 'variables') {
             if ($object) {
