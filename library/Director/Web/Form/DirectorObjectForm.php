@@ -724,18 +724,22 @@ abstract class DirectorObjectForm extends DirectorForm
             // nothing backing it, so note which imports went away before
             // saving below overwrites that history
             $removedImportNames = $this->removedImportNames();
-
-            $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
+            if ($this->branch && $this->branch->isBranch()) {
+                // A branch save already runs in its own transaction and leaves live values alone
                 $this->getDbObjectStore()->store($object);
+            } else {
+                $this->getDb()->runFailSafeTransaction(function () use ($removedImportNames, $object) {
+                    $this->getDbObjectStore()->store($object);
 
-                if (! empty($removedImportNames)) {
-                    PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
-                        $object,
-                        $removedImportNames,
-                        $this->getDb()
-                    );
-                }
-            });
+                    if (! empty($removedImportNames)) {
+                        PropertyDetachmentCleaner::removeValuesLostToRemovedImports(
+                            $object,
+                            $removedImportNames,
+                            $this->getDb()
+                        );
+                    }
+                });
+            }
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);

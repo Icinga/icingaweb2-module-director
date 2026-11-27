@@ -5,7 +5,13 @@
 
 namespace Tests\Icinga\Module\Director\CustomVariable;
 
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\CustomVariable\PropertyDetachmentCleaner;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Db\Branch\BranchMerger;
+use Icinga\Module\Director\Db\Branch\BranchStore;
 use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\DirectorProperty;
 use Icinga\Module\Director\Objects\IcingaDependency;
@@ -20,7 +26,9 @@ use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\RestApi\CustomVarApplyRequest;
 use Icinga\Module\Director\RestApi\CustomVariableValueApplier;
 use Icinga\Module\Director\Test\BaseTestCase;
+use Icinga\User;
 use Ramsey\Uuid\Uuid;
+use ReflectionProperty;
 
 class PropertyDetachmentCleanerTest extends BaseTestCase
 {
@@ -34,6 +42,7 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
     private const SERVICE_TEMPLATE_TWO_NAME = self::PREFIX . 'import-cleanup-svc-storage';
     private const SERVICE_LEAF_NAME = self::PREFIX . 'import-cleanup-svc-leaf';
     private const CHILD_TEMPLATE_PREFIX = self::PREFIX . 'import-cleanup-child-';
+    private const BRANCH_NAME = self::PREFIX . 'import-cleanup-branch';
 
     public function testValueSurvivesWhenAnotherRemainingImportStillProvidesTheProperty(): void
     {
@@ -71,6 +80,61 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
             'eu-west',
             $leaf->vars()->get(self::REGION_KEY)->getValue(),
             'a property still reachable through the other remaining import must keep its local value'
+        );
+    }
+
+    public function testValueIsRemovedOnlyOnceABranchDroppingItsOnlyProviderIsMerged(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateOne = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $this->attachProperty($property, $templateOne, $db);
+        $leaf = $this->createLeafHostWithValue([self::TEMPLATE_ONE_NAME], $db);
+
+        $branch = $this->stageImportsOnBranch($leaf, [], $db);
+
+        $this->assertEquals(
+            'eu-west',
+            IcingaHost::load(self::LEAF_HOST_NAME, $db)->vars()->get(self::REGION_KEY)->getValue(),
+            'staging the import removal on a branch must not touch the live value'
+        );
+
+        (new BranchMerger($branch->getUuid(), $db))->merge();
+
+        $this->assertNull(
+            IcingaHost::load(self::LEAF_HOST_NAME, $db)->vars()->get(self::REGION_KEY),
+            'merging the branch must remove the value that lost its only provider'
+        );
+    }
+
+    public function testValueSurvivesABranchMergeWhenAnotherImportStillProvidesTheProperty(): void
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $property = $this->createProperty($db);
+        $templateOne = $this->createTemplate(self::TEMPLATE_ONE_NAME, $db);
+        $templateTwo = $this->createTemplate(self::TEMPLATE_TWO_NAME, $db);
+        $this->attachProperty($property, $templateOne, $db);
+        $this->attachProperty($property, $templateTwo, $db);
+        $leaf = $this->createLeafHostWithValue([self::TEMPLATE_ONE_NAME, self::TEMPLATE_TWO_NAME], $db);
+
+        $branch = $this->stageImportsOnBranch($leaf, [self::TEMPLATE_TWO_NAME], $db);
+
+        (new BranchMerger($branch->getUuid(), $db))->merge();
+
+        $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
+        $this->assertEquals([self::TEMPLATE_TWO_NAME], $leaf->getImports());
+        $this->assertEquals(
+            'eu-west',
+            $leaf->vars()->get(self::REGION_KEY)->getValue(),
+            'a value still provided by another import must survive the merge'
         );
     }
 
@@ -721,6 +785,44 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
         return $host;
     }
 
+    /**
+     * Create the leaf host with the given imports and a local region value
+     */
+    private function createLeafHostWithValue(array $imports, Db $db): IcingaHost
+    {
+        $leaf = $this->createLeafHost($db);
+        $leaf->setImports($imports);
+        $leaf->store($db);
+        $leaf = IcingaHost::load(self::LEAF_HOST_NAME, $db);
+
+        (new CustomVariableValueApplier($db))->apply(new CustomVarApplyRequest(
+            $leaf,
+            [self::REGION_KEY => 'eu-west'],
+            'index',
+            'POST',
+            false
+        ));
+
+        return IcingaHost::load(self::LEAF_HOST_NAME, $db);
+    }
+
+    /**
+     * Change the host's imports on a new branch, the live host stays as is
+     */
+    private function stageImportsOnBranch(IcingaHost $host, array $imports, Db $db): Branch
+    {
+        // Saving to a branch records who made the change
+        Auth::getInstance()->setUser(new User(self::PREFIX . 'branch-user'));
+
+        $branch = (new BranchStore($db))->createBranchByName(self::BRANCH_NAME, self::PREFIX . 'branch-user');
+        $objectStore = new DbObjectStore($db, $branch);
+        $branchedHost = $objectStore->load('icinga_host', $host->getUniqueId());
+        $branchedHost->setImports($imports);
+        $objectStore->store($branchedHost);
+
+        return $branch;
+    }
+
     private function attachProperty(DirectorProperty $property, IcingaHost $template, $db): void
     {
         $dba = $db->getDbAdapter();
@@ -782,6 +884,9 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
             $db = $this->getDb();
             $dba = $db->getDbAdapter();
 
+            // A failed merge leaves the branch behind
+            (new BranchStore($db))->deleteByName(self::BRANCH_NAME);
+
             // The child templates import template one, so they go first
             $childNames = $dba->fetchCol(
                 $dba->select()
@@ -838,6 +943,11 @@ class PropertyDetachmentCleanerTest extends BaseTestCase
 
             $dba->delete('director_property', $dba->quoteInto('key_name = ?', self::REGION_KEY));
         }
+
+        // Don't leak the branch user into other tests
+        $user = new ReflectionProperty(Auth::class, 'user');
+        $user->setAccessible(true);
+        $user->setValue(Auth::getInstance(), null);
 
         parent::tearDown();
     }
